@@ -11,6 +11,7 @@ import { DEFAULT_GST, GST_PERCENT, fmt1, formatCurrency, PAYMENT_MODES, PAYMENT_
 const API = (path) => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
   return baseUrl + path
+}
 
 export default function App(){
   // PWA and Offline functionality
@@ -2066,16 +2067,294 @@ export default function App(){
   
   function printBill() {
     if (!lastBill) return;
-    
-    const printWindow = window.open('', '_blank');
-    
-    // Use saved bill data instead of current state values
-    const subtotal = lastBill.subtotal;
-    const discountAmount = lastBill.discountAmount;
-    const discountPercent = lastBill.discountPercent || lastBill.discountValue || 0;
-    const afterDiscount = subtotal - discountAmount;
 
-  // WhatsApp helpers: format phone, create/ensure public invoice link, build message and open click-to-chat
+    const printWindow = window.open('', '_blank');
+
+    // Calculate bill details
+    const subtotal = lastBill.items.reduce((s, it) => s + (it.price * it.quantity), 0);
+    const discountAmount = (subtotal * discount / 100);
+    const afterDiscount = subtotal - discountAmount;
+    const taxAmount = afterDiscount * (taxRate / 100);
+    const grandTotal = afterDiscount + taxAmount;
+
+    const billHTML = `
+      <html>
+        <head>
+          <title>Invoice #${lastBill.billId}</title>
+          <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body { 
+              font-family: 'Arial', sans-serif; 
+              padding: 20mm; 
+              background: #fff;
+              color: #000;
+              font-size: 11pt;
+            }
+            .invoice-box { 
+              max-width: 800px; 
+              margin: auto; 
+              border: 1px solid #000;
+              padding: 20px;
+            }
+            .header { 
+              text-align: center; 
+              border-bottom: 3px double #000;
+              padding-bottom: 15px;
+              margin-bottom: 15px;
+            }
+            .logo { font-size: 48px; margin-bottom: 5px; }
+            .company-name { font-size: 24px; font-weight: bold; margin: 5px 0; }
+            .company-details { font-size: 10pt; line-height: 1.4; color: #333; }
+            .invoice-title { 
+              text-align: center;
+              font-size: 18px;
+              font-weight: bold;
+              background: #000;
+              color: #fff;
+              padding: 8px;
+              margin: 15px 0;
+              letter-spacing: 2px;
+            }
+            .section { 
+              display: flex; 
+              justify-content: space-between; 
+              margin: 15px 0;
+              padding: 10px 0;
+            }
+            .info-block { flex: 1; }
+            .info-block h3 { 
+              font-size: 11pt; 
+              margin-bottom: 8px; 
+              border-bottom: 2px solid #000;
+              padding-bottom: 3px;
+            }
+            .info-block p { 
+              margin: 4px 0; 
+              font-size: 10pt;
+              line-height: 1.5;
+            }
+            .label { font-weight: bold; display: inline-block; min-width: 80px; }
+            table { 
+              width: 100%; 
+              border-collapse: collapse; 
+              margin: 15px 0;
+              border: 1px solid #000;
+            }
+            th { 
+              background: #000; 
+              color: #fff; 
+              padding: 10px 8px; 
+              text-align: left;
+              font-size: 10pt;
+              border: 1px solid #000;
+            }
+            td { 
+              padding: 8px; 
+              border: 1px solid #000;
+              font-size: 10pt;
+            }
+            .text-right { text-align: right; }
+            .text-center { text-align: center; }
+            .totals-section { 
+              margin-top: 20px;
+              padding-top: 15px;
+              border-top: 2px solid #000;
+            }
+            .totals-table {
+              margin-left: auto;
+              width: 300px;
+              border: none;
+            }
+            .totals-table td {
+              border: none;
+              padding: 5px 10px;
+              border-bottom: 1px dotted #ccc;
+            }
+            .totals-table .grand-total {
+              font-size: 14pt;
+              font-weight: bold;
+              border-top: 3px double #000;
+              border-bottom: 3px double #000;
+              background: #f0f0f0;
+            }
+            .amount-words {
+              margin: 15px 0;
+              padding: 10px;
+              background: #f9f9f9;
+              border: 1px dashed #000;
+              font-style: italic;
+              font-size: 10pt;
+            }
+            .footer {
+              margin-top: 30px;
+              padding-top: 15px;
+              border-top: 2px dashed #000;
+              text-align: center;
+              font-size: 10pt;
+            }
+            .terms {
+              margin: 20px 0;
+              font-size: 9pt;
+              line-height: 1.5;
+              padding: 10px;
+              background: #f9f9f9;
+            }
+            .signature-section {
+              display: flex;
+              justify-content: space-between;
+              margin-top: 40px;
+            }
+            .signature-box {
+              text-align: center;
+              padding-top: 40px;
+              border-top: 1px solid #000;
+              width: 200px;
+            }
+            @media print {
+              body { padding: 0; }
+              .no-print { display: none !important; }
+              .invoice-box { border: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="invoice-box">
+            <!-- Header -->
+            <div class="header">
+              <div class="logo">${companyInfo.logo}</div>
+              <div class="company-name">${companyInfo.name}</div>
+              <div class="company-details">
+                ${companyInfo.address}<br>
+                Phone: ${companyInfo.phone} | Email: ${companyInfo.email}<br>
+                GSTIN: ${companyInfo.gstin}
+              </div>
+            </div>
+            
+            <!-- Invoice Title -->
+            <div class="invoice-title">TAX INVOICE</div>
+            
+            <!-- Invoice & Customer Info -->
+            <div class="section">
+              <div class="info-block">
+                <h3>Bill To:</h3>
+                ${selectedCustomer ? `
+                  <p><span class="label">Name:</span> ${selectedCustomer.name}</p>
+                  <p><span class="label">Phone:</span> ${selectedCustomer.phone || 'N/A'}</p>
+                  <p><span class="label">Address:</span> ${selectedCustomer.address || 'N/A'}</p>
+                  ${selectedCustomer.gstin ? `<p><span class="label">GSTIN:</span> ${selectedCustomer.gstin}</p>` : ''}
+                ` : `
+                  <p><span class="label">Customer:</span> Walk-in Customer</p>
+                `}
+              </div>
+              <div class="info-block" style="text-align: right;">
+                <h3>Invoice Details:</h3>
+                <p><span class="label">Invoice #:</span> ${lastBill.billId}</p>
+                <p><span class="label">Date:</span> ${new Date(lastBill.date).toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
+                <p><span class="label">Time:</span> ${new Date(lastBill.date).toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit'})}</p>
+                <p><span class="label">Payment:</span> ${paymentMode}</p>
+              </div>
+            </div>
+            
+            <!-- Items Table -->
+            <table>
+              <thead>
+                <tr>
+                  <th class="text-center">S.No</th>
+                  <th>Product Name</th>
+                  <th>HSN Code</th>
+                  <th class="text-center">Qty</th>
+                  <th class="text-right">Rate</th>
+                  <th class="text-right">Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${lastBill.items.map((item, idx) => {
+                  const product = products.find(p => p._id === item.productId);
+                  return `
+                    <tr>
+                      <td class="text-center">${idx + 1}</td>
+                      <td>${item.name}</td>
+                      <td>${product?.hsnCode || 'N/A'}</td>
+                      <td class="text-center">${item.quantity}</td>
+                      <td class="text-right">₹${item.price.toFixed(2)}</td>
+                      <td class="text-right">₹${(item.price * item.quantity).toFixed(2)}</td>
+                    </tr>
+                  `;
+                }).join('')}
+              </tbody>
+            </table>
+            
+            <!-- Totals Section -->
+            <div class="totals-section">
+              <table class="totals-table">
+                <tr>
+                  <td>Subtotal:</td>
+                  <td class="text-right">₹${subtotal.toFixed(2)}</td>
+                </tr>
+                ${discount > 0 ? `
+                  <tr>
+                    <td>Discount (${discount}%):</td>
+                    <td class="text-right">- ₹${discountAmount.toFixed(2)}</td>
+                  </tr>
+                  <tr>
+                    <td>After Discount:</td>
+                    <td class="text-right">₹${afterDiscount.toFixed(2)}</td>
+                  </tr>
+                ` : ''}
+                <tr>
+                  <td>GST (${taxRate}%):</td>
+                  <td class="text-right">₹${taxAmount.toFixed(2)}</td>
+                </tr>
+                <tr class="grand-total">
+                  <td><strong>GRAND TOTAL:</strong></td>
+                  <td class="text-right"><strong>₹${grandTotal.toFixed(2)}</strong></td>
+                </tr>
+              </table>
+            </div>
+            
+            <!-- Amount in Words -->
+            <div class="amount-words">
+              <strong>Amount in Words:</strong> ${numberToWords(Math.round(grandTotal))} Rupees Only
+            </div>
+            
+            <!-- Terms & Conditions -->
+            <div class="terms">
+              <strong>Terms & Conditions:</strong><br>
+              1. Goods once sold cannot be returned or exchanged.<br>
+              2. Payment is due at the time of purchase.<br>
+              3. Subject to local jurisdiction only.<br>
+              4. E. & O.E. (Errors and Omissions Excepted)
+            </div>
+            
+            <!-- Signature Section -->
+            <div class="signature-section">
+              <div class="signature-box">Customer Signature</div>
+              <div class="signature-box">Authorized Signatory</div>
+            </div>
+            
+            <!-- Footer -->
+            <div class="footer">
+              <strong>Thank you for your business!</strong><br>
+              This is a computer-generated invoice.
+            </div>
+          </div>
+          
+          <!-- Print Button -->
+          <div class="no-print" style="text-align: center; margin: 20px;">
+            <button onclick="window.print()" style="padding: 12px 30px; font-size: 14px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+              🖨️ Print Invoice
+            </button>
+            <button onclick="window.close()" style="padding: 12px 30px; font-size: 14px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">
+              ✖️ Close
+            </button>
+          </div>
+        </body>
+      </html>
+    `;
+    
+    printWindow.document.write(billHTML);
+    printWindow.document.close();
+  }
   function formatPhoneForWhatsApp(phone) {
     if (!phone) return null;
     let digits = ('' + phone).replace(/\D/g, '');
@@ -5454,4 +5733,6 @@ export default function App(){
       </footer>
     </div>
   );
+
+}
 
