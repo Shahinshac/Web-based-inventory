@@ -11,7 +11,6 @@ import { DEFAULT_GST, GST_PERCENT, fmt1, formatCurrency, PAYMENT_MODES, PAYMENT_
 const API = (path) => {
   const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
   return baseUrl + path
-}
 
 export default function App(){
   // PWA and Offline functionality
@@ -136,7 +135,6 @@ export default function App(){
     lowStock: [],
     revenueSummary: {}
   });
-            <p style={{color:'#666',marginBottom:'20px'}}>Export professional reports in PDF format</p>
   
   // Admin password from secure environment variable
   const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'shaahnc'
@@ -204,6 +202,54 @@ export default function App(){
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [])
+
+  // Validate sessionVersion with server when online — force logout if session invalidated remotely
+  useEffect(() => {
+    if (!isAuthenticated || !isOnline || !currentUser || !currentUser.username) return
+
+    const stored = localStorage.getItem('currentUser')
+    if (!stored) return
+    let storedUser
+    try { storedUser = JSON.parse(stored) } catch(e) { return }
+
+    if (!storedUser.sessionVersion) return // nothing to validate for local-only accounts
+
+    (async () => {
+      try {
+        const res = await fetch(API(`/api/users/${encodeURIComponent(storedUser.username)}/session`))
+        if (!res.ok) return
+        const j = await res.json()
+        if (j.sessionVersion && j.sessionVersion !== storedUser.sessionVersion) {
+          showNotification('⚠️ Your session was invalidated — logging out', 'warning')
+          handleLogout()
+        }
+      } catch(e) {
+        // ignore network errors — we'll try again later
+      }
+    })()
+
+  }, [isAuthenticated, isOnline, currentUser])
+
+  // Periodically validate session on a small interval (helps catch remote invalidation)
+  useEffect(() => {
+    if (!isAuthenticated || !isOnline || !currentUser) return
+
+    const intervalId = setInterval(async () => {
+      try {
+        const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+        if (!stored || !stored.sessionVersion) return
+        const res = await fetch(API(`/api/users/${encodeURIComponent(stored.username)}/session`))
+        if (!res.ok) return
+        const j = await res.json()
+        if (j.sessionVersion && j.sessionVersion !== stored.sessionVersion) {
+          showNotification('⚠️ Your session was invalidated — logging out', 'warning')
+          handleLogout()
+        }
+      } catch(e) {}
+    }, 30000) // check every 30 seconds
+
+    return () => clearInterval(intervalId)
+  }, [isAuthenticated, isOnline, currentUser])
 
   // Check authentication on mount (permanent session until logout)
   useEffect(() => {
@@ -946,13 +992,16 @@ export default function App(){
       return
     }
 
-    // No email required for registration
-    
+    if (!/^[a-zA-Z0-9_]+$/.test(registerUsername)) {
+      setRegisterError('Username can only contain letters, numbers, and underscores.')
+      return
+    }
+
     if (registerPassword.length < 6) {
       setRegisterError('Password must be at least 6 characters long.')
       return
     }
-    
+
     try {
       const res = await fetch(API('/api/users/register'), {
         method: 'POST',
@@ -962,11 +1011,11 @@ export default function App(){
           password: registerPassword
         })
       })
-      
-      const data = await res.json()
-      
+
+      let data = {};
+      try { data = await res.json(); } catch (err) { data = {}; }
+
       if (res.ok) {
-        // Reset all states
         setShowRegisterModal(false)
         setRegisterUsername('')
         setRegisterPassword('')
@@ -974,11 +1023,19 @@ export default function App(){
         showNotification('✅ Registration successful! Please wait for admin approval.', 'success')
         setShowLoginPage(true)
       } else {
-        setRegisterError(data.error || 'Registration failed.')
+        if (data.error && data.error.toLowerCase().includes('duplicate')) {
+          setRegisterError('This username is already taken. Please choose another.')
+        } else if (data.error && data.error.toLowerCase().includes('password')) {
+          setRegisterError('Password is too weak. Please choose a stronger password.')
+        } else if (data.error) {
+          setRegisterError(data.error)
+        } else {
+          setRegisterError('Registration failed. Please try again.')
+        }
       }
     } catch(e) {
       console.error('Registration error:', e)
-      setRegisterError('Registration failed. Please try again.')
+      setRegisterError('Network error. Please check your connection and try again.')
     }
   }
 
@@ -1045,12 +1102,33 @@ export default function App(){
   // Force logout user (Admin only) - removes user session
   function forceLogoutUser(username) {
     if (!isAdmin) return
-    
+
     if (!confirm(`Force logout user "${username}"? They will need to login again.`)) return
-    
-    // In a real app, this would invalidate the session on the server
-    // For now, we'll just show a confirmation that it would work
-    alert(`✅ User "${username}" has been force logged out. They will need to login again on their next action.`)
+
+    // Ask for admin password to authorize the invalidation
+    const adminPass = prompt('Please enter your admin password to confirm:')
+    if (!adminPass) return
+
+    (async () => {
+      try {
+        const res = await fetch(API(`/api/users/${encodeURIComponent(username)}/invalidate`), {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ adminUsername: currentUser?.username || 'admin', adminPassword: adminPass })
+        })
+
+        const data = await res.json()
+        if (res.ok) {
+          alert(`✅ User "${username}" sessions invalidated.`)
+          fetchUsers()
+        } else {
+          alert(data.error || 'Failed to invalidate user session')
+        }
+      } catch (e) {
+        console.error('Invalidate session error:', e)
+        alert('Failed to invalidate user session')
+      }
+    })()
   }
   
   // Revoke user access (Admin only) - unapprove user
@@ -1074,6 +1152,44 @@ export default function App(){
     } catch(e) {
       console.error('Revoke access error:', e)
       alert('Failed to revoke access.')
+    }
+  }
+
+  // Admin — change admin password and optionally logout all sessions
+  async function changeAdminPassword() {
+    if (!isAdmin) return
+
+    const currentPass = prompt('Enter current admin password:')
+    if (!currentPass) return
+
+    const newPass = prompt('Enter new admin password:')
+    if (!newPass) return
+
+    const confirmPass = prompt('Confirm new admin password:')
+    if (newPass !== confirmPass) {
+      alert('Passwords do not match')
+      return
+    }
+
+    try {
+      const res = await fetch(API('/api/admin/change-password'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ adminUsername: currentUser?.username || 'admin', currentPassword: currentPass, newPassword: newPass, logoutAll: true })
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        alert(data.message || 'Admin password changed — logging out all sessions')
+        // Log out locally
+        handleLogout()
+        // notify users that sessions were invalidated is handled server-side
+      } else {
+        alert(data.error || 'Failed to change admin password')
+      }
+    } catch (e) {
+      console.error('Change admin password error:', e)
+      alert('Failed to change admin password')
     }
   }
 
@@ -1958,672 +2074,6 @@ export default function App(){
     const discountAmount = lastBill.discountAmount;
     const discountPercent = lastBill.discountPercent || lastBill.discountValue || 0;
     const afterDiscount = subtotal - discountAmount;
-    const taxAmount = lastBill.taxAmount;
-    const taxRate = lastBill.taxRate;
-    const grandTotal = lastBill.total;
-    
-    // Get customer info from lastBill
-    const customerName = lastBill.customerName || lastBill.customer_name || 'Walk-in Customer';
-    const customerPhone = lastBill.customerPhone || lastBill.customerPhone || '';
-    const customerAddress = lastBill.customerAddress || lastBill.customerAddress || '';
-    
-    // Get date/time from lastBill
-    const billDate = lastBill.date || lastBill.created_at || new Date();
-    const dateObj = new Date(billDate);
-    
-    // Get seller name
-    const sellerName = lastBill.createdByUsername || currentUser?.username || 'Unknown';
-    
-    // Check if split payment - use lastBill.paymentMode instead of state
-    const billPaymentMode = lastBill.paymentMode || 'Cash';
-    const isSplitPayment = (billPaymentMode === 'split' || billPaymentMode === 'Split') && lastBill.splitPaymentDetails;
-    const splitDetails = lastBill.splitPaymentDetails;
-    
-    const billHTML = `
-      <!DOCTYPE html>
-      <html lang="en">
-        <head>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Invoice #${lastBill.billId}</title>
-          <style>
-            * { margin: 0; padding: 0; box-sizing: border-box; }
-            
-            @page { size: A4 portrait; margin: 10mm; }
-            body { 
-              font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-              padding: 15mm; 
-              background: #ffffff;
-              color: #1a1a1a;
-              font-size: 10pt;
-              line-height: 1.4;
-            }
-            
-            .invoice-container { 
-              width: 210mm;
-              height: 277mm; /* A4 height minus margins */
-              margin: 0 auto; 
-              background: #fff;
-              border: 2px solid #2d3748;
-              border-radius: 8px;
-              overflow: hidden;
-            }
-            
-            /* Header Section */
-            .invoice-header { 
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              padding: 25px 30px;
-              position: relative;
-            }
-            
-            .header-top {
-              display: flex;
-              justify-content: space-between;
-              align-items: flex-start;
-              margin-bottom: 15px;
-            }
-            
-            .company-logo {
-              font-size: 42px;
-              line-height: 1;
-            }
-            
-            .invoice-badge {
-              background: rgba(255, 255, 255, 0.2);
-              backdrop-filter: blur(10px);
-              padding: 8px 20px;
-              border-radius: 20px;
-              font-size: 11pt;
-              font-weight: 600;
-              letter-spacing: 1px;
-            }
-            
-            .company-info h1 {
-              font-size: 26pt;
-              font-weight: 700;
-              margin-bottom: 8px;
-              letter-spacing: -0.5px;
-            }
-            
-            .company-details {
-              font-size: 9pt;
-              line-height: 1.6;
-              opacity: 0.95;
-            }
-            
-            .company-details p {
-              margin: 3px 0;
-            }
-            
-            /* Invoice Meta Info */
-            .invoice-meta {
-              background: #f8f9fa;
-              border-bottom: 3px solid #667eea;
-              padding: 20px 30px;
-              display: flex;
-              justify-content: space-between;
-              gap: 20px;
-            }
-            
-            .meta-block h3 {
-              font-size: 10pt;
-              font-weight: 700;
-              color: #667eea;
-              margin-bottom: 10px;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-              border-bottom: 2px solid #667eea;
-              padding-bottom: 5px;
-            }
-            
-            .meta-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 4px 0;
-              font-size: 9pt;
-            }
-            
-            .meta-label {
-              font-weight: 600;
-              color: #4a5568;
-              min-width: 90px;
-            }
-            
-            .meta-value {
-              color: #1a1a1a;
-              font-weight: 500;
-              text-align: right;
-            }
-            
-            /* Content Section */
-            .invoice-content {
-              padding: 18px 20px;
-              max-height: calc(277mm - 160px); /* reduce to try to fit everything on a single A4 */
-              overflow: hidden;
-            }
-            
-            /* Items Table */
-            .items-table-wrapper {
-              margin: 20px 0;
-              border: 1px solid #e2e8f0;
-              border-radius: 6px;
-              overflow: hidden;
-            }
-            
-            .items-table { 
-              width: 100%; 
-              border-collapse: collapse;
-            }
-            
-            .items-table thead {
-              background: linear-gradient(to bottom, #4a5568, #2d3748);
-              color: white;
-            }
-            
-            .items-table th { 
-              padding: 12px 10px; 
-              text-align: left;
-              font-size: 9pt;
-              font-weight: 600;
-              text-transform: uppercase;
-              letter-spacing: 0.5px;
-            }
-            
-            .items-table tbody tr {
-              border-bottom: 1px solid #e2e8f0;
-              transition: background 0.2s;
-            }
-            
-            .items-table tbody tr:nth-child(even) {
-              background: #f8f9fa;
-            }
-            
-            .items-table tbody tr:hover {
-              background: #edf2f7;
-            }
-            
-            .items-table td { 
-              padding: 10px;
-              font-size: 9pt;
-              color: #2d3748;
-            }
-            
-            .text-right { text-align: right !important; }
-            .text-center { text-align: center !important; }
-            .font-medium { font-weight: 500; }
-            .font-semibold { font-weight: 600; }
-            
-            /* Calculations Section */
-            .calculations-section {
-              margin-top: 25px;
-              display: flex;
-              justify-content: flex-end;
-            }
-            
-            .calculations-table {
-              width: 350px;
-              border: 1px solid #e2e8f0;
-              border-radius: 6px;
-              overflow: hidden;
-            }
-            
-            .calc-row {
-              display: flex;
-              justify-content: space-between;
-              padding: 10px 15px;
-              border-bottom: 1px solid #e2e8f0;
-              font-size: 9pt;
-            }
-            
-            .calc-row:last-child {
-              border-bottom: none;
-            }
-            
-            .calc-row.subtotal {
-              background: #f8f9fa;
-            }
-            
-            .calc-row.discount {
-              background: #fef5e7;
-              color: #d97706;
-            }
-            
-            .calc-row.tax {
-              background: #e8f5e9;
-              color: #059669;
-            }
-            
-            .calc-row.total {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-              font-size: 12pt;
-              font-weight: 700;
-              padding: 15px;
-            }
-            
-            .calc-label {
-              font-weight: 600;
-            }
-            
-            .calc-value {
-              font-weight: 600;
-              text-align: right;
-            }
-            
-            /* Amount in Words */
-            .amount-words {
-              margin: 20px 0;
-              padding: 15px;
-              background: linear-gradient(to right, #f8f9fa, #e8f5e9);
-              border-left: 4px solid #667eea;
-              border-radius: 4px;
-              font-size: 9pt;
-            }
-            
-            .amount-words strong {
-              color: #667eea;
-              display: block;
-              margin-bottom: 5px;
-            }
-            
-            /* Payment Details */
-            .payment-details {
-              margin: 20px 0;
-              padding: 15px;
-              background: #fff7ed;
-              border: 1px dashed #fb923c;
-              border-radius: 6px;
-            }
-            
-            .payment-details h4 {
-              color: #ea580c;
-              font-size: 10pt;
-              margin-bottom: 10px;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-            }
-            
-            .payment-split {
-              display: grid;
-              grid-template-columns: repeat(3, 1fr);
-              gap: 15px;
-              margin-top: 10px;
-            }
-            
-            .payment-item {
-              background: white;
-              padding: 10px;
-              border-radius: 4px;
-              border: 1px solid #fed7aa;
-              text-align: center;
-            }
-            
-            .payment-method {
-              font-size: 8pt;
-              color: #9a3412;
-              font-weight: 600;
-              text-transform: uppercase;
-              margin-bottom: 5px;
-            }
-            
-            .payment-amount {
-              font-size: 11pt;
-              color: #ea580c;
-              font-weight: 700;
-            }
-            
-            /* Terms Section */
-            .terms-section {
-              margin: 25px 0;
-              padding: 15px;
-              background: #f8f9fa;
-              border-radius: 6px;
-              border: 1px solid #e2e8f0;
-            }
-            
-            .terms-section h4 {
-              font-size: 10pt;
-              color: #2d3748;
-              margin-bottom: 10px;
-              font-weight: 700;
-            }
-            
-            .terms-section ul {
-              margin-left: 20px;
-              font-size: 8pt;
-              color: #4a5568;
-              line-height: 1.8;
-            }
-            
-            /* Signatures */
-            .signature-section {
-              margin-top: 40px;
-              display: flex;
-              justify-content: space-between;
-              gap: 30px;
-            }
-            
-            .signature-box {
-              flex: 1;
-              text-align: center;
-            }
-            
-            .signature-line {
-              border-top: 2px solid #2d3748;
-              padding-top: 8px;
-              margin-top: 50px;
-              font-size: 9pt;
-              font-weight: 600;
-              color: #4a5568;
-            }
-            
-            /* Footer */
-            .invoice-footer {
-              background: #2d3748;
-              color: white;
-              padding: 20px 30px;
-              text-align: center;
-              font-size: 9pt;
-            }
-            
-            .footer-message {
-              font-size: 11pt;
-              font-weight: 600;
-              margin-bottom: 5px;
-            }
-            
-            .footer-note {
-              opacity: 0.8;
-              font-size: 8pt;
-            }
-            
-            /* Print Styles */
-            @media print {
-              @page { size: A4 portrait; margin: 10mm; }
-              body { 
-                padding: 0; 
-                background: white;
-              }
-              html, body { height: 297mm; }
-              .invoice-container { width: 210mm; height: 277mm; transform-origin: top left; }
-              /* Try to scale if overflowing slightly so the whole invoice fits one A4 page */
-              .invoice-container { transform: scale(0.98); }
-              .invoice-container { 
-                border: none; 
-                border-radius: 0;
-                box-shadow: none;
-              }
-              .no-print { 
-                display: none !important; 
-              }
-              .items-table tbody tr:hover {
-                background: inherit;
-              }
-            }
-            
-            /* Print Buttons */
-            .print-actions {
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              z-index: 1000;
-              display: flex;
-              gap: 10px;
-            }
-            
-            .btn {
-              padding: 12px 24px;
-              font-size: 11pt;
-              font-weight: 600;
-              border: none;
-              border-radius: 6px;
-              cursor: pointer;
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              transition: all 0.3s;
-              box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            }
-            
-            .btn-print {
-              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-              color: white;
-            }
-            
-            .btn-print:hover {
-              transform: translateY(-2px);
-              box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
-            }
-            
-            .btn-close {
-              background: #e53e3e;
-              color: white;
-            }
-            
-            .btn-close:hover {
-              background: #c53030;
-              transform: translateY(-2px);
-            }
-          </style>
-        </head>
-        <body>
-          <!-- Print Action Buttons -->
-          <div class="print-actions no-print">
-            <button class="btn btn-print" onclick="window.print()">
-              <span>🖨️</span> Print Invoice
-            </button>
-            <button class="btn btn-close" onclick="window.close()">
-              <span>✖️</span> Close
-            </button>
-          </div>
-
-          <div class="invoice-container">
-            <!-- Header -->
-            <div class="invoice-header">
-              <div class="header-top">
-                <div class="company-info">
-                  <div class="company-logo">${companyInfo.logo}</div>
-                  <h1>${companyInfo.name}</h1>
-                  <div class="company-details">
-                    <p>📍 ${companyInfo.address}</p>
-                    <p>📞 ${companyInfo.phone} | ✉️ ${companyInfo.email}</p>
-                    <p>🏢 GSTIN: ${companyInfo.gstin}</p>
-                  </div>
-                </div>
-                <div class="invoice-badge">TAX INVOICE</div>
-              </div>
-            </div>
-            
-            <!-- Invoice Meta Information -->
-            <div class="invoice-meta">
-              <div class="meta-block" style="flex: 1;">
-                <h3>📋 Bill To</h3>
-                <div class="meta-row">
-                  <span class="meta-label">Name:</span>
-                  <span class="meta-value">${customerName}</span>
-                </div>
-                ${customerPhone ? `
-                <div class="meta-row">
-                  <span class="meta-label">Phone:</span>
-                  <span class="meta-value">${customerPhone}</span>
-                </div>` : ''}
-                ${customerAddress ? `
-                <div class="meta-row">
-                  <span class="meta-label">Address:</span>
-                  <span class="meta-value">${customerAddress}</span>
-                </div>` : ''}
-              </div>
-              
-              <div class="meta-block" style="flex: 1;">
-                <h3>📄 Invoice Details</h3>
-                <div class="meta-row">
-                  <span class="meta-label">Invoice #:</span>
-                  <span class="meta-value">${lastBill.billId || lastBill.billNumber || lastBill.id}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">Date:</span>
-                  <span class="meta-value">${dateObj.toLocaleDateString('en-IN', {day: '2-digit', month: 'short', year: 'numeric'})}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">Time:</span>
-                  <span class="meta-value">${dateObj.toLocaleTimeString('en-IN', {hour: '2-digit', minute: '2-digit', hour12: true})}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">Seller:</span>
-                  <span class="meta-value">${sellerName}</span>
-                </div>
-                <div class="meta-row">
-                  <span class="meta-label">Payment:</span>
-                  <span class="meta-value">${isSplitPayment ? 'Split Payment' : billPaymentMode.toUpperCase()}</span>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Main Content -->
-            <div class="invoice-content">
-              <!-- Items Table -->
-              <div class="items-table-wrapper">
-                <table class="items-table">
-                  <thead>
-                    <tr>
-                      <th class="text-center" style="width: 50px;">S.No</th>
-                      <th style="width: 40%;">Product Description</th>
-                      <th class="text-center" style="width: 100px;">HSN Code</th>
-                      <th class="text-center" style="width: 80px;">Quantity</th>
-                      <th class="text-right" style="width: 100px;">Rate (₹)</th>
-                      <th class="text-right" style="width: 120px;">Amount (₹)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${(lastBill.items || []).map((item, idx) => {
-                      const product = products.find(p => p._id === item.productId || p._id?.toString() === item.productId?.toString());
-                      const itemName = item.name || item.productName || 'Unknown';
-                      const itemPrice = item.price || item.unitPrice || 0;
-                      const itemQuantity = item.quantity || 0;
-                      const hsnCode = item.hsnCode || product?.hsnCode || 'N/A';
-                      return `
-                        <tr>
-                          <td class="text-center font-medium">${idx + 1}</td>
-                          <td class="font-semibold">${itemName}</td>
-                          <td class="text-center">${hsnCode}</td>
-                          <td class="text-center font-medium">${itemQuantity}</td>
-                          <td class="text-right">${fmt1(itemPrice)}</td>
-                          <td class="text-right font-semibold">${fmt1(itemPrice * itemQuantity)}</td>
-                        </tr>
-                      `;
-                    }).join('')}
-                  </tbody>
-                </table>
-              </div>
-              
-              <!-- Calculations -->
-              <div class="calculations-section">
-                <div class="calculations-table">
-                  <div class="calc-row subtotal">
-                    <span class="calc-label">Subtotal:</span>
-                    <span class="calc-value">₹${fmt1(subtotal)}</span>
-                  </div>
-                  ${discountPercent > 0 ? `
-                    <div class="calc-row discount">
-                      <span class="calc-label">Discount (${discountPercent}%):</span>
-                      <span class="calc-value">- ₹${fmt1(discountAmount)}</span>
-                    </div>
-                    <div class="calc-row">
-                      <span class="calc-label">After Discount:</span>
-                      <span class="calc-value">₹${fmt1(afterDiscount)}</span>
-                    </div>
-                  ` : ''}
-                  <div class="calc-row tax">
-                    <span class="calc-label">GST (${taxRate}%):</span>
-                    <span class="calc-value">₹${fmt1(taxAmount)}</span>
-                  </div>
-                  <div class="calc-row total">
-                    <span class="calc-label">GRAND TOTAL:</span>
-                    <span class="calc-value">₹${fmt1(grandTotal)}</span>
-                  </div>
-                </div>
-              </div>
-              
-              <!-- Amount in Words -->
-              <div class="amount-words">
-                <strong>Amount in Words:</strong>
-                <span>${numberToWords(Math.round(grandTotal))} Rupees Only</span>
-              </div>
-              
-              <!-- Payment Details -->
-              ${isSplitPayment && splitDetails ? `
-                <div class="payment-details">
-                  <h4>💰 Payment Breakdown</h4>
-                  <div class="payment-split">
-                    ${splitDetails.cashAmount > 0 ? `
-                      <div class="payment-item">
-                        <div class="payment-method"><Icon name="cash" size={14} /> Cash</div>
-                        <div class="payment-amount">₹${fmt1(splitDetails.cashAmount)}</div>
-                      </div>
-                    ` : ''}
-                    ${splitDetails.upiAmount > 0 ? `
-                      <div class="payment-item">
-                        <div class="payment-method"><Icon name="spark" size={14} /> UPI</div>
-                        <div class="payment-amount">₹${fmt1(splitDetails.upiAmount)}</div>
-                      </div>
-                    ` : ''}
-                    ${splitDetails.cardAmount > 0 ? `
-                      <div class="payment-item">
-                        <div class="payment-method"><Icon name="card" size={14} /> Card</div>
-                        <div class="payment-amount">₹${fmt1(splitDetails.cardAmount)}</div>
-                      </div>
-                    ` : ''}
-                  </div>
-                </div>
-              ` : `
-                <div class="payment-details">
-                  <h4>💰 Payment Method</h4>
-                  <div style="padding: 10px; background: white; border-radius: 4px; text-align: center;">
-                    <div class="payment-method" style="font-size: 10pt; margin-bottom: 5px;">${billPaymentMode === 'cash' ? '<Icon name="cash" size={12} /> Cash' : billPaymentMode === 'upi' ? '<Icon name="spark" size={12} /> UPI' : billPaymentMode === 'card' ? '<Icon name="card" size={12} /> Card' : billPaymentMode.toUpperCase()}</div>
-                    <div class="payment-amount">₹${fmt1(grandTotal)}</div>
-                  </div>
-                </div>
-              `}
-              
-              <!-- Terms & Conditions -->
-              <div class="terms-section">
-                <h4>📜 Terms & Conditions</h4>
-                <ul>
-                  <li>Goods once sold cannot be returned or exchanged without a valid reason.</li>
-                  <li>Payment is due at the time of purchase unless credit terms are agreed.</li>
-                  <li>All disputes are subject to local jurisdiction only.</li>
-                  <li>E. & O.E. (Errors and Omissions Excepted)</li>
-                </ul>
-              </div>
-              
-              <!-- Signatures -->
-              <div class="signature-section">
-                <div class="signature-box">
-                  <div class="signature-line">Customer Signature</div>
-                </div>
-                <div class="signature-box">
-                  <div class="signature-line">Authorized Signatory</div>
-                </div>
-              </div>
-            </div>
-            
-            <!-- Footer -->
-            <div class="invoice-footer">
-              <div class="footer-message">✨ Thank You For Your Business! ✨</div>
-              <div class="footer-note">
-                This is a computer-generated invoice | For any queries, please contact us at ${companyInfo.phone}
-              </div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-    
-    printWindow.document.write(billHTML);
-    printWindow.document.close();
-  }
 
   // WhatsApp helpers: format phone, create/ensure public invoice link, build message and open click-to-chat
   function formatPhoneForWhatsApp(phone) {
@@ -3888,7 +3338,7 @@ export default function App(){
           <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`${tab==='reports' ? 'active' : ''} btn-icon`}><Icon name="reports"/> <span className="label">Reports</span></button>
           {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''} btn-icon`}><Icon name="users"/> <span className="label">Users</span></button>}
           {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''} btn-icon`}><Icon name="audit"/> <span className="label">Audit Logs</span></button>}
-          <span style={{display:'inline-flex', alignItems:'center', gap:'10px', marginLeft:'20px', whiteSpace:'nowrap'}}>
+          <span style={{display:'inline-flex', alignItems:'center', gap:'10px', marginLeft:'auto', whiteSpace:'nowrap'}}>
             <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : currentUser?.username}</span>
             <button onClick={handleLogout} className="logout-btn" style={{background:'#48bb78'}}><Icon name="lock" size={16} /> Logout</button>
           </span>
@@ -5183,6 +4633,7 @@ export default function App(){
                 <span style={{color:'#000',fontSize:'14px',fontWeight:'500'}}>
                   Total Users: {users.length} | Pending: {users.filter(u=>!u.approved).length}
                 </span>
+                <button onClick={changeAdminPassword} className="btn-primary" style={{padding:'8px 12px'}} title="Change admin password and logout all sessions">Change Admin Password & Logout All</button>
               </div>
             </div>
             
@@ -5314,6 +4765,20 @@ export default function App(){
                               }}
                             >
                               <Icon name="trash" size={12} /> Delete
+                            </button>
+                            <button 
+                              onClick={() => forceLogoutUser(user.username)}
+                              style={{
+                                padding: '6px 12px',
+                                fontSize: '12px',
+                                background: '#9f7aea',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              <Icon name="logout" size={12} /> Force Logout
                             </button>
                           </div>
                         </td>
@@ -5975,5 +5440,5 @@ export default function App(){
         </div>
       </footer>
     </div>
-  )
-}
+  );
+

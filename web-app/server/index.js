@@ -1505,7 +1505,8 @@ app.post('/api/users/register', async (req, res) => {
       role: 'user',
       approved: false,
       createdAt: new Date(),
-      lastLogin: null
+      lastLogin: null,
+      sessionVersion: 1
     };
     
     const result = await db.collection('users').insertOne(user);
@@ -1572,7 +1573,8 @@ app.post('/api/users/login', async (req, res) => {
         username: user.username,
         email: user.email,
         role: user.role,
-        approved: user.approved
+        approved: user.approved,
+        sessionVersion: user.sessionVersion || 1
       }
     });
   } catch (e) {
@@ -1599,6 +1601,7 @@ app.get('/api/users', async (req, res) => {
       email: u.email,
       role: u.role,
       approved: u.approved,
+      sessionVersion: u.sessionVersion || 1,
       createdAt: u.createdAt,
       lastLogin: u.lastLogin
     }));
@@ -1727,6 +1730,78 @@ app.get('/api/users/check/:id', async (req, res) => {
     });
   } catch (e) {
     logger.error('Check user error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Get a user's current sessionVersion (used by clients to validate sessions)
+app.get('/api/users/:username/session', async (req, res) => {
+  try {
+    const { username } = req.params;
+    const db = getDB();
+    const user = await db.collection('users').findOne({ username: username.toLowerCase() });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+    res.json({ username: user.username, sessionVersion: user.sessionVersion || 1 });
+  } catch (e) {
+    logger.error('Error fetching user sessionVersion:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: change admin password and optionally invalidate all sessions
+app.post('/api/admin/change-password', async (req, res) => {
+  try {
+    const { adminUsername, currentPassword, newPassword, logoutAll } = req.body;
+    if (!adminUsername || !currentPassword || !newPassword) return res.status(400).json({ error: 'Missing required fields' });
+
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+
+    // Verify current password
+    const match = await bcrypt.compare(currentPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Current admin password incorrect' });
+
+    // Update password
+    const hashed = await bcrypt.hash(newPassword, 10);
+    await db.collection('users').updateOne({ _id: admin._id }, { $set: { password: hashed }, $inc: { sessionVersion: 1 } });
+
+    // Optionally invalidate all sessions across users
+    if (logoutAll) {
+      await db.collection('users').updateMany({}, { $inc: { sessionVersion: 1 } });
+      await logAudit(db, 'ADMIN_PASSWORD_CHANGED_INVALIDATE_ALL', null, adminUsername, { message: 'Admin changed password and logged out all sessions' });
+    } else {
+      await logAudit(db, 'ADMIN_PASSWORD_CHANGED', null, adminUsername, { message: 'Admin changed password' });
+    }
+
+    res.json({ success: true, message: 'Admin password updated successfully' });
+  } catch (e) {
+    logger.error('Change password error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: invalidate a specific user's sessions (increment sessionVersion)
+app.post('/api/users/:username/invalidate', async (req, res) => {
+  try {
+    const target = req.params.username;
+    const { adminUsername, adminPassword } = req.body;
+    if (!adminUsername || !adminPassword) return res.status(400).json({ error: 'Admin credentials required' });
+
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+    const match = await bcrypt.compare(adminPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
+
+    const targetUser = await db.collection('users').findOne({ username: target.toLowerCase() });
+    if (!targetUser) return res.status(404).json({ error: 'Target user not found' });
+
+    await db.collection('users').updateOne({ _id: targetUser._id }, { $inc: { sessionVersion: 1 } });
+    await logAudit(db, 'USER_SESSION_INVALIDATED', null, adminUsername, { target: targetUser.username });
+    res.json({ success: true, message: `Invalidated sessions for ${targetUser.username}` });
+  } catch (e) {
+    logger.error('Invalidate session error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -1958,6 +2033,7 @@ async function initializeAdminUser() {
         role: 'admin',
         approved: true,
         createdAt: new Date(),
+        sessionVersion: 1,
         isDefault: true
       });
       
