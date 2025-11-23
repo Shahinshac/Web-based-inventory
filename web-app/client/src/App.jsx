@@ -3276,7 +3276,14 @@ export default function App(){
               </div>
               <div className="detail-row">
                 <span className="detail-label">Profit:</span>
-                <span className="detail-value profit">₹{selectedProduct.profit} ({selectedProduct.profitPercent}%)</span>
+                <span
+                  className="detail-value profit"
+                  style={{
+                    color: selectedProduct.profit < 0 ? '#ef4444' : selectedProduct.profit > 0 ? '#10b981' : '#6b7280'
+                  }}
+                >
+                  ₹{selectedProduct.profit} ({selectedProduct.profitPercent}%)
+                </span>
               </div>
               <div className="detail-row">
                 <span className="detail-label">Current Stock:</span>
@@ -3921,7 +3928,10 @@ export default function App(){
                     {canViewProfit() && <td>₹{prod.costPrice || 0}</td>}
                     <td>₹{prod.price}</td>
                     {canViewProfit() && (
-                      <td style={{color: prod.profit > 0 ? 'green' : 'red', fontWeight: 'bold'}}>
+                      <td style={{
+                        color: prod.profit < 0 ? '#ef4444' : prod.profit > 0 ? '#10b981' : '#6b7280',
+                        fontWeight: 'bold'
+                      }}>
                         ₹{prod.profit || 0} ({prod.profitPercent || 0}%)
                       </td>
                     )}
@@ -4883,7 +4893,10 @@ export default function App(){
                                 )}
                                 {log.details.grandTotal && <span> | Total: ₹{log.details.grandTotal}</span>}
                                 {log.details.profit !== undefined && (
-                                  <span style={{color:'#48bb78',fontWeight:'bold'}}> | Profit: ₹{log.details.profit}</span>
+                                  <span style={{
+                                    color: log.details.profit < 0 ? '#ef4444' : log.details.profit > 0 ? '#48bb78' : '#6b7280',
+                                    fontWeight: 'bold'
+                                  }}> | Profit: ₹{log.details.profit}</span>
                                 )}
                               </div>
                             )}
