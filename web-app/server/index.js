@@ -1018,13 +1018,18 @@ app.get('/public/invoice/:token', async (req, res) => {
         <body>
           <div class="paper">
             <div class="header">
-              <div>
+              <div style="flex:1;">
+                <div style="font-size:36px;margin-bottom:6px;">⚡</div>
                 <div class="company">${companyName}</div>
-                <div class="small">${companyAddress} ${companyPhone ? ' • ' + companyPhone : ''} ${companyEmail ? ' • ' + companyEmail : ''} ${companyGSTIN ? ' • GSTIN: ' + companyGSTIN : ''}</div>
+                <div class="small">${companyAddress}</div>
+                <div class="small">Phone: ${companyPhone || '—'} ${companyEmail ? ' | Email: ' + companyEmail : ''}</div>
+                ${companyGSTIN ? `<div class="small">GSTIN: ${companyGSTIN}</div>` : ''}
               </div>
-              <div class="meta">
-                <div>Invoice: <strong>${invoice.billNumber || invoice._id}</strong></div>
-                <div>Date: ${new Date(invoiceDate).toLocaleString()}</div>
+              <div class="meta" style="text-align:right;min-width:240px;">
+                <div><strong style="font-size:18px;padding:8px 12px;background:#111;color:#fff;display:inline-block;letter-spacing:2px">TAX INVOICE</strong></div>
+                <div style="margin-top:10px">Invoice: <strong>${invoice.billNumber || invoice._id}</strong></div>
+                <div>Date: ${new Date(invoiceDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</div>
+                <div>Time: ${new Date(invoiceDate).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}</div>
               </div>
             </div>
 
@@ -1059,12 +1064,63 @@ app.get('/public/invoice/:token', async (req, res) => {
             <div class="totals">
               <div class="col">
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Subtotal</div><div>₹${Number(invoice.subtotal || invoice.totalBeforeTax || 0).toFixed(2)}</div></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Discount</div><div>₹${Number(invoice.discountAmount || 0).toFixed(2)}</div></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">After Discount</div><div>₹${Number((invoice.subtotal || invoice.totalBeforeTax || 0) - (invoice.discountAmount || 0)).toFixed(2)}</div></div>
-                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">GST / Tax</div><div>₹${Number(invoice.gstAmount || invoice.taxAmount || 0).toFixed(2)}</div></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Discount ${invoice.discountPercent ? '(' + invoice.discountPercent + '%)' : ''}</div><div>- ₹${Number(invoice.discountAmount || 0).toFixed(2)}</div></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">After Discount</div><div>₹${Number(invoice.afterDiscount || ((invoice.subtotal || invoice.totalBeforeTax || 0) - (invoice.discountAmount || 0))).toFixed(2)}</div></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">GST (${invoice.taxRate || 18}%):</div><div>₹${Number(invoice.gstAmount || invoice.taxAmount || 0).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(2)}</div></div>
               </div>
             </div>
+
+            <!-- Amount in words, terms and signature similar to client printable bill -->
+            <div style="margin-top:14px;padding:12px;background:#f9f9f9;border:1px dashed #ccc">
+              <strong>Amount in Words: </strong><span id="amount-in-words">${''}</span>
+            </div>
+
+            <div style="margin-top:14px;background:#fff;padding:10px;border:1px dotted #ccc">
+              <strong>Terms & Conditions:</strong>
+              <ol style="margin-top:6px;color:#444">
+                <li>Goods once sold cannot be returned or exchanged.</li>
+                <li>Payment is due at the time of purchase.</li>
+                <li>Subject to local jurisdiction only.</li>
+                <li>E. &amp; O.E. (Errors and Omissions Excepted)</li>
+              </ol>
+            </div>
+
+            <div style="display:flex;justify-content:space-between;margin-top:24px">
+              <div style="text-align:center;width:45%"><div style="border-top:1px solid #000;padding-top:10px;">Customer Signature</div></div>
+              <div style="text-align:center;width:45%"><div style="border-top:1px solid #000;padding-top:10px;">Authorized Signatory</div></div>
+            </div>
+
+            <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleDateString() + ', ' + new Date(entry.expiresAt).toLocaleTimeString() : '—'}</div>
+
+            <div class="print-cta"><button onclick="window.print()" style="padding:8px 14px;border-radius:6px;background:#111;color:#fff;border:none;cursor:pointer;margin-top:12px">Print / Save PDF</button></div>
+
+            <script>
+              // Render amount in words (small client-side helper)
+              (function(){
+                function numberToWords(num){
+                  const ones=['','One','Two','Three','Four','Five','Six','Seven','Eight','Nine'];
+                  const teens=['Ten','Eleven','Twelve','Thirteen','Fourteen','Fifteen','Sixteen','Seventeen','Eighteen','Nineteen'];
+                  const tens=['','','Twenty','Thirty','Forty','Fifty','Sixty','Seventy','Eighty','Ninety'];
+                  function convertHundreds(n){
+                    let s='';
+                    if(n>99){ s += ones[Math.floor(n/100)] + ' Hundred '; n = n%100 }
+                    if(n>19){ s += tens[Math.floor(n/10)] + ' '; n = n%10 }
+                    else if(n>=10){ s += teens[n-10] + ' '; return s.trim() }
+                    s += ones[n] + ' ';
+                    return s.trim();
+                  }
+                  if(num===0) return 'Zero';
+                  if(num>=10000000) return convertHundreds(Math.floor(num/10000000)) + ' Crore ' + numberToWords(num%10000000);
+                  if(num>=100000) return convertHundreds(Math.floor(num/100000)) + ' Lakh ' + numberToWords(num%100000);
+                  if(num>=1000) return convertHundreds(Math.floor(num/1000)) + ' Thousand ' + numberToWords(num%1000);
+                  return convertHundreds(num);
+                }
+                const total = ${Number(invoice.grandTotal || invoice.total || 0).toFixed(0)};
+                const el = document.getElementById('amount-in-words');
+                if(el) el.innerText = numberToWords(total) + ' Rupees Only';
+              })();
+            </script>
 
             <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleString() : '—'}</div>
             <div class="print-cta"><button onclick="window.print()">Print / Save PDF</button></div>
