@@ -47,6 +47,7 @@ This guide will help you deploy the Inventory Management System to Vercel (front
    DB_NAME=inventorydb
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=your-secure-password-here
+   ALLOW_ADMIN_PASSWORD_CHANGE=false # set to true only if you explicitly want to allow changing admin password via API
    UNSPLASH_ACCESS_KEY=your-key-here (optional)
    ```
    Replace with your actual values.
@@ -75,6 +76,7 @@ This guide will help you deploy the Inventory Management System to Vercel (front
    Click "Environment Variables" and add:
    ```
    VITE_API_URL=https://inventory-api.onrender.com
+   VITE_ADMIN_PASSWORD=YourSecurePasswordHere  # optional local fallback - not recommended for production
    ```
    Replace with your actual Render backend URL.
 
@@ -93,7 +95,7 @@ This guide will help you deploy the Inventory Management System to Vercel (front
    - Visit your Vercel URL
    - Try logging in with admin credentials
    - Default admin username: `admin`
-   - Default admin password: (what you set in `ADMIN_PASSWORD`)
+   - Default admin password: (what you set in `ADMIN_PASSWORD`). Note: password changes via the API/web UI are disabled by default — set `ALLOW_ADMIN_PASSWORD_CHANGE=true` if you need the API enabled (not recommended for production).
 
 ## Troubleshooting
 
@@ -123,6 +125,7 @@ This guide will help you deploy the Inventory Management System to Vercel (front
    DB_NAME=inventorydb
    ADMIN_USERNAME=admin
    ADMIN_PASSWORD=your-secure-password-here
+   ALLOW_ADMIN_PASSWORD_CHANGE=false
    ```
 
 6. Click **"Save Changes"**
@@ -187,12 +190,14 @@ MONGODB_URI=your-mongodb-connection-string
 DB_NAME=inventorydb
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-secure-password
+ALLOW_ADMIN_PASSWORD_CHANGE=false
 UNSPLASH_ACCESS_KEY=optional-unsplash-key
 ```
 
 ### Frontend (Vercel)
 ```
 VITE_API_URL=https://your-backend-url.onrender.com
+VITE_ADMIN_PASSWORD=YourSecurePasswordHere
 ```
 
 ## Notes

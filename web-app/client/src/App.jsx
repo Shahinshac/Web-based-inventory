@@ -142,7 +142,19 @@ export default function App(){
   // Admin password from secure environment variable
   // New admin password set per request. NOTE: hard-coding credentials is insecure
   // for production — consider storing this in environment variables / secrets.
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'shahinsha'
+  // Prefer explicit build-time secret. Do NOT keep a fallback in source for security.
+  // If VITE_ADMIN_PASSWORD is not provided we disable the local fallback and require
+  // server-based admin authentication. This prevents accidental exposure of creds.
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || null
+
+  // Developer-friendly notice: we intentionally disable a plaintext fallback.
+  // If you're running locally without `VITE_ADMIN_PASSWORD` set, admin actions
+  // requiring a password will fall back to server auth only.
+  useEffect(() => {
+    if (!ADMIN_PASSWORD) {
+      console.warn('VITE_ADMIN_PASSWORD is not set — local admin fallback is disabled. Use server-auth or set VITE_ADMIN_PASSWORD for local testing.');
+    }
+  }, []);
 
   // Helper function to track tab changes
   const handleTabChange = (newTab) => {

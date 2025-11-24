@@ -1847,7 +1847,12 @@ app.get('/api/users/:username/session', async (req, res) => {
 });
 
 // Admin: change admin password and optionally invalidate all sessions
+// Guard: admin password changes via the web API are disabled by default.
+// Set ALLOW_ADMIN_PASSWORD_CHANGE=true in the server environment to enable.
+const ALLOW_ADMIN_PASSWORD_CHANGE = process.env.ALLOW_ADMIN_PASSWORD_CHANGE === 'true';
+
 app.post('/api/admin/change-password', async (req, res) => {
+  if (!ALLOW_ADMIN_PASSWORD_CHANGE) return res.status(403).json({ error: 'Admin password change via API is disabled. Enable by setting ALLOW_ADMIN_PASSWORD_CHANGE=true.' });
   try {
     const { adminUsername, currentPassword, newPassword, logoutAll } = req.body;
     if (!adminUsername || !currentPassword || !newPassword) return res.status(400).json({ error: 'Missing required fields' });
@@ -2115,7 +2120,11 @@ async function initializeAdminUser() {
     
     // Get admin credentials from environment variables
     const adminUsername = process.env.ADMIN_USERNAME || 'admin';
-    const adminPassword = process.env.ADMIN_PASSWORD || 'shaahnc';
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminPassword) {
+      logger.warn('ADMIN_PASSWORD is not set — skipping creation of a default admin account. Ensure an admin user exists in the DB.');
+      return;
+    }
     
     // Check if your original admin account exists
     const existingAdmin = await usersCollection.findOne({ username: adminUsername });

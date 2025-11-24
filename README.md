@@ -152,16 +152,22 @@ A modern, full-stack inventory management system with React frontend and Node.js
 - `NODE_ENV`: Environment (`development` or `production`)
 - `ADMIN_USERNAME`: Default admin username
 - `ADMIN_PASSWORD`: Default admin password
+ - `ADMIN_PASSWORD`: Default admin password
+ - `ALLOW_ADMIN_PASSWORD_CHANGE`: (optional) When `true`, allows changing admin password via the API/web UI. Recommended: leave `false` in production.
 - `UNSPLASH_ACCESS_KEY`: (Optional) Unsplash API key for product images
 
 ### Frontend (.env)
 - `VITE_API_URL`: Backend API URL
+ - `VITE_ADMIN_PASSWORD` (optional): Client-side admin fallback for local/dev testing only. Do not use in production — prefer server-side admin authentication.
 
 ## 🔐 Default Admin Account
 
 On first startup, the backend automatically creates an admin user:
 - **Username**: Set via `ADMIN_USERNAME` env var (default: `admin`)
 - **Password**: Set via `ADMIN_PASSWORD` env var
+ - **Password**: Set via `ADMIN_PASSWORD` env var
+
+Note: Web/API admin password changes are disabled by default. To enable password changes via the web/API set `ALLOW_ADMIN_PASSWORD_CHANGE=true` in your backend deployment — but this is not recommended for production.
 
 **Important**: Change the default password in production!
 

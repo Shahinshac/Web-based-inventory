@@ -11,6 +11,7 @@ MONGODB_URI=mongodb+srv://username:password@cluster.mongodb.net/inventorydb?retr
 DB_NAME=inventorydb
 ADMIN_USERNAME=admin
 ADMIN_PASSWORD=your-secure-password-here
+ALLOW_ADMIN_PASSWORD_CHANGE=false
 UNSPLASH_ACCESS_KEY=your-unsplash-key-here
 ```
 
@@ -23,6 +24,7 @@ UNSPLASH_ACCESS_KEY=your-unsplash-key-here
 - **ADMIN_USERNAME**: Default admin username (created on first startup)
 - **ADMIN_PASSWORD**: Default admin password (change this!)
 - **UNSPLASH_ACCESS_KEY**: (Optional) Unsplash API key for auto-fetching product images
+ - **ALLOW_ADMIN_PASSWORD_CHANGE**: When `true`, the server API allows changing the admin password via the API. Default is `false` and recommended for production.
 
 ## Frontend (Vercel)
 
@@ -30,6 +32,9 @@ Copy this into your Vercel project environment variables:
 
 ```bash
 VITE_API_URL=https://your-backend-url.onrender.com
+
+# Optional local dev admin fallback (not recommended for production)
+VITE_ADMIN_PASSWORD=YourSecurePasswordHere
 ```
 
 ### Variable Descriptions:
@@ -54,6 +59,7 @@ UNSPLASH_ACCESS_KEY=your-unsplash-key-here
 
 ```bash
 VITE_API_URL=http://localhost:4000
+VITE_ADMIN_PASSWORD=YourSecurePasswordHere
 ```
 
 ## Getting MongoDB Connection String
