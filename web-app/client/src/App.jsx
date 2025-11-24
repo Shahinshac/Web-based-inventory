@@ -3669,7 +3669,7 @@ export default function App(){
               {/* Customer Selection */}
               <div className="form-group">
                 <label>Customer:</label>
-                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                <div className="customer-inline-wrapper">
                   <select className="customer-select-inline" value={selectedCustomer?.id || ''} onChange={e=> {
                   const cust = customers.find(c=>c.id==e.target.value);
                   setSelectedCustomer(cust);

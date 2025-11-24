@@ -958,15 +958,19 @@ ul:not(.products):not(.cart) li:hover {
 .customer-add-btn:hover { background: #f4f6fb; transform: translateY(-2px) }
 
 /* Inline select next to add button used in POS */
+.customer-inline-wrapper { display:flex; align-items:center; gap:8px; }
 .customer-select-inline {
   flex: 1 1 auto;
   min-width: 0; /* allow shrinking inside flex */
   height: 40px;
-  padding: 8px 10px;
+  padding: 8px 12px;
   border-radius: 8px;
   border: 2px solid #e0e0e0;
   background: white;
   font-size: 14px;
+  -webkit-appearance: none; /* consistent cross-browser */
+  appearance: none;
+  box-sizing: border-box;
 }
 
 /* Ensure .customer-add-btn doesn't get the large .right button styles (override) */
@@ -975,7 +979,10 @@ ul:not(.products):not(.cart) li:hover {
   background: white !important;
   border: 2px solid #e0e0e0 !important;
   box-shadow: 0 6px 14px rgba(0,0,0,0.06) !important;
-  padding: 8px 12px !important;
+  padding: 0 12px !important;
+  height: 40px;
+  display:inline-flex; align-items:center; justify-content:center;
+  min-width: 44px;
 }
 
 /* Small screen: when space is tight, stack select + add button neatly */
