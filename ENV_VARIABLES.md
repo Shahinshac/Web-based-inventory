@@ -26,6 +26,14 @@ UNSPLASH_ACCESS_KEY=your-unsplash-key-here
 - **UNSPLASH_ACCESS_KEY**: (Optional) Unsplash API key for auto-fetching product images
  - **ALLOW_ADMIN_PASSWORD_CHANGE**: When `true`, the server API allows changing the admin password via the API. Default is `false` and recommended for production.
 
+## Server-side password helper
+
+You may want to change the stored admin password directly on the server without enabling the web change endpoint.
+
+- The repo includes a helper script: `web-app/server/scripts/change-admin-password.js`
+- You can supply the new password via the `NEW_ADMIN_PASSWORD` environment variable, CLI `--password`, or the script will prompt you interactively.
+- Example: `ADMIN_USERNAME=admin NEW_ADMIN_PASSWORD='S3cure' node web-app/server/scripts/change-admin-password.js --logoutAll`
+
 ## Frontend (Vercel)
 
 Copy this into your Vercel project environment variables:

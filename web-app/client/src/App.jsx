@@ -136,7 +136,7 @@ export default function App(){
     lowStock: [],
     revenueSummary: {}
   });
-  // Date range (days) for analytics requests
+  // D(days) for analytics requests
   const [analyticsDateRange, setAnalyticsDateRange] = useState(30);
   
   // Admin password from secure environment variable

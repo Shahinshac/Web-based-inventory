@@ -5,135 +5,11 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
-const { ObjectId } = require('mongodb');
-const { connectDB, getDB } = require('./db');
-const logger = require('./logger');
-const JsBarcode = require('jsbarcode');
-const QRCode = require('qrcode');
-const { createCanvas } = require('canvas');
-const multer = require('multer');
-const fs = require('fs').promises;
-const https = require('https');
-const crypto = require('crypto');
-const http = require('http');
-const PDFDocument = require('pdfkit');
-const {
-  validateProduct,
-  validateCustomer,
-  validateUserRegistration,
-  validateCheckout,
-  sanitizeObject,
-  sanitizeString
-} = require('./validators');
-
-const app = express();
-app.use(cors());
-app.use(express.json());
-
-// Configure multer for product photo uploads
-const storage = multer.diskStorage({
-  destination: async (req, file, cb) => {
-    const uploadDir = path.join(__dirname, 'uploads', 'products');
-    try {
-      await fs.mkdir(uploadDir, { recursive: true });
-      cb(null, uploadDir);
-    } catch (err) {
-      cb(err, null);
-    }
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, `product-${uniqueSuffix}${path.extname(file.originalname)}`);
-  }
-});
-
-const upload = multer({
-  storage: storage,
-  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter: (req, file, cb) => {
-    const allowedTypes = /jpeg|jpg|png|webp/;
-    const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-    const mimetype = allowedTypes.test(file.mimetype);
-    
-    if (mimetype && extname) {
-      return cb(null, true);
-    } else {
-      cb(new Error('Only image files (jpeg, jpg, png, webp) are allowed!'));
-    }
-  }
-});
-
-// Serve uploaded images statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
-
-// Utility: Generate unique barcode for product
-function generateProductBarcode(productName, productId) {
-  // Create barcode based on product ID (unique)
-  // Using EAN-13 format: pad with zeros
-  const numericId = parseInt(productId, 16).toString().slice(-12);
-  const paddedId = numericId.padStart(12, '0');
-  return paddedId;
-}
-
-// Utility: Generate barcode image as Base64
-async function generateBarcodeImage(value, format = 'CODE128') {
-  try {
-    const canvas = createCanvas(200, 100);
-    JsBarcode(canvas, value, {
-      format: format,
-      width: 2,
-      height: 60,
-      displayValue: true,
-      fontSize: 14,
-      margin: 10
-    });
-    return canvas.toDataURL();
-  } catch (error) {
-    logger.error('Barcode generation error:', error);
-    return null;
-  }
-}
-
-// Utility: Generate QR code as Base64
-async function generateQRCode(data) {
-  try {
-    const qrDataURL = await QRCode.toDataURL(JSON.stringify(data), {
-      width: 200,
-      margin: 2,
-      color: {
-        dark: '#000000',
-        light: '#FFFFFF'
-      }
-    });
-    return qrDataURL;
-  } catch (error) {
-    logger.error('QR code generation error:', error);
-    return null;
-  }
-}
-
-// Utility: Fetch product image from internet
-async function fetchProductImage(productName) {
-  try {
-    console.log(`🔍 Fetching image for product: ${productName}`);
-    
-    // Clean and enhance product name for better search results
-    const cleanName = productName.toLowerCase().trim();
-    let searchQuery = cleanName;
-    
-    // Add category keywords for better professional images
-    const categoryMappings = {
-      'iphone': 'iphone smartphone apple',
-      'samsung': 'samsung galaxy smartphone',
-      'laptop': 'laptop computer technology',
-      'macbook': 'macbook apple laptop',
-      'tv': 'television smart tv electronics',
-      'headphone': 'headphones audio wireless',
-      'tablet': 'tablet ipad technology',
-      'watch': 'smartwatch apple watch',
-      'speaker': 'bluetooth speaker audio',
-      'camera': 'digital camera photography',
-      'mouse': 'computer mouse wireless',
+// OTP functionality and email-sending helpers are no longer used in this
+// deployment. The previous OTP endpoints, the email-send flow and related
+// helpers have been removed to keep the server lean and avoid unused code.
+// Registration remains "direct" (username + password) and email fields are
+// optional on user records.
       'keyboard': 'mechanical keyboard gaming',
       'phone': 'smartphone mobile phone',
       'charger': 'usb charger power adapter',
@@ -490,42 +366,9 @@ app.post('/api/checkout', async (req, res) => {
       paymentMode
     });
     
-    // Send invoice email if customer has email
-    if (customerId) {
-      const customer = await db.collection('customers').findOne({ _id: new ObjectId(customerId) });
-      if (customer && customer.email) {
-        const invoiceData = {
-          invoiceNumber: billNumber,
-          date: bill.billDate,
-          customer: {
-            name: customerName,
-            email: customer.email,
-            phone: customerPhone
-          },
-          items: bill.items.map(item => ({
-            name: item.productName,
-            quantity: item.quantity,
-            price: item.unitPrice,
-            total: item.lineSubtotal
-          })),
-          subtotal: bill.subtotal,
-          discountPercent: bill.discountPercent,
-          discountAmount: bill.discountAmount,
-          taxRate: 18,
-          taxAmount: bill.gstAmount,
-          cgst: bill.cgst,
-          sgst: bill.sgst,
-          igst: bill.igst,
-          total: bill.grandTotal,
-          paymentMode: bill.paymentMode
-        };
-        
-        // Send email asynchronously (don't wait for it)
-        sendInvoiceEmail(invoiceData, customer.email).catch(err => {
-          logger.error('Failed to send invoice email:', err);
-        });
-      }
-    }
+    // Invoice email sending is disabled/removed in this deployment. If you
+    // need invoice emails in the future, implement a secure mail sender and
+    // re-enable here with proper configuration and secrets.
     
     res.json({ 
       billId: result.insertedId.toString(), 
