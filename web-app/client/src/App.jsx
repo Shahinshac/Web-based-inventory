@@ -4047,7 +4047,11 @@ export default function App(){
                       color: isValid ? '#2f855a' : '#c53030',
                       fontSize: '14px'
                     }}>
-                      {isValid ? '✓ Exact Amount' : `<Icon name="analytics" size={14} /> ${remaining > 0 ? 'Remaining' : 'Excess'}: ${formatCurrency(Math.abs(remaining))}`}
+                      {isValid ? '✓ Exact Amount' : (
+                        <>
+                          <Icon name="analytics" size={14} /> {remaining > 0 ? `Remaining: ${formatCurrency(Math.abs(remaining))}` : `Excess: ${formatCurrency(Math.abs(remaining))}`}
+                        </>
+                      )}
                     </div>
                   </div>
                 );
@@ -4890,9 +4894,9 @@ export default function App(){
                               inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? 'info' : 
                               'info'
                             }`}>
-                              {inv.paymentMode === 'Cash' || inv.paymentMode === 'cash' ? '<Icon name="cash" size={10} /> ' : 
-                               inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? '<Icon name="spark" size={10} /> ' : 
-                               inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? '<Icon name="card" size={10} /> ' : ''}
+                              {inv.paymentMode === 'Cash' || inv.paymentMode === 'cash' ? <Icon name="cash" size={10} /> :
+                               inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? <Icon name="spark" size={10} /> :
+                               inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? <Icon name="card" size={10} /> : null}
                               {inv.paymentMode || 'Cash'}
                             </span>
                           )}
