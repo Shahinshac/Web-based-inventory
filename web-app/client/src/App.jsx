@@ -241,15 +241,8 @@ export default function App(){
           showNotification('⚠️ Your session was invalidated — logging out', 'warning')
           handleLogout()
         }
-      } catch(e) {
-        // ignore network errors — we'll try again later
-      }
+      } catch(e) {}
     })()
-
-  }, [isAuthenticated, isOnline, currentUser])
-
-  // Periodically validate session on a small interval (helps catch remote invalidation)
-  useEffect(() => {
     if (!isAuthenticated || !isOnline || !currentUser) return
 
     const intervalId = setInterval(async () => {
@@ -4793,19 +4786,26 @@ export default function App(){
                     <th>Discount</th>
                     <th>GST</th>
                     <th>Total</th>
+                    <th>Profit</th>
                     <th>Payment</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {getFilteredInvoices().length === 0 ? (
+                  {getFilteredInvoices().length === 0 && (
                     <tr>
-                      <td colSpan="10" style={{textAlign:'center',padding:'40px',color:'#999'}}>
+                      <td colSpan="11" style={{textAlign:'center',padding:'40px',color:'#999'}}>
                         No invoices found for selected period
                       </td>
                     </tr>
-                  ) : (
-                    getFilteredInvoices().reverse().map(inv => (
+                  )}
+                  {getFilteredInvoices().length > 0 && getFilteredInvoices().reverse().map(inv => {
+                      // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
+                      const profit = typeof inv.totalProfit === 'number'
+                        ? inv.totalProfit
+                        : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
+
+                      return (
                       <tr key={inv.id || inv._id}>
                         <td><strong>#{inv.id || inv.billNumber}</strong></td>
                         <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
@@ -4828,6 +4828,11 @@ export default function App(){
                           </span>
                         </td>
                         <td><strong style={{color:'#2c3e50'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
+                        <td>
+                          <strong style={{color: profit < 0 ? '#ef4444' : '#10b981'}}>
+                            ₹{(profit || 0).toFixed(1)}
+                          </strong>
+                        </td>
                         <td>
                           {(inv.paymentMode === 'split' || inv.paymentMode === 'Split') && inv.splitPaymentDetails ? (
                             <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
@@ -4876,8 +4881,8 @@ export default function App(){
                           </button>
                         </td>
                       </tr>
-                    ))
-                  )}
+                    )})
+                  }
                 </tbody>
               </table>
             </div>
