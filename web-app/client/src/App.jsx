@@ -2304,7 +2304,7 @@ export default function App(){
       const res = await fetch(API(`/api/invoices/${id}/public`), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ requestedBy: currentUser?.username || 'system' })
+        body: JSON.stringify({ requestedBy: currentUser?.username || 'system', company: companyInfo })
       });
       if (!res.ok) return null;
       const j = await res.json();

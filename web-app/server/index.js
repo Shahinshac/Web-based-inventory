@@ -943,7 +943,8 @@ app.post('/api/invoices/:id/public', async (req, res) => {
       invoiceId: invoice._id.toString(),
       createdAt: new Date(),
       expiresAt: new Date(expiresAt),
-      createdBy: req.body.requestedBy || 'system'
+      createdBy: req.body.requestedBy || 'system',
+      companySnapshot: req.body.company || null
     });
 
     const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
@@ -981,9 +982,12 @@ app.get('/public/invoice/:token', async (req, res) => {
 
     // Public printable invoice page (styling similar to printable bill)
     res.set('Content-Type', 'text/html');
-    const companyName = process.env.COMPANY_NAME || 'My Inventory';
-    const companyPhone = process.env.COMPANY_PHONE || '';
-    const companyAddress = process.env.COMPANY_ADDRESS || '';
+    const companySnapshot = entry.companySnapshot || {};
+    const companyName = companySnapshot.name || invoice.companyName || process.env.COMPANY_NAME || 'My Inventory';
+    const companyPhone = companySnapshot.phone || invoice.companyPhone || process.env.COMPANY_PHONE || '';
+    const companyAddress = companySnapshot.address || invoice.companyAddress || process.env.COMPANY_ADDRESS || '';
+    const companyEmail = companySnapshot.email || invoice.companyEmail || process.env.COMPANY_EMAIL || '';
+    const companyGSTIN = companySnapshot.gstin || invoice.companyGst || process.env.COMPANY_GSTIN || '';
     const invoiceDate = invoice.billDate || invoice.created_at || invoice.date || new Date().toISOString();
 
     res.send(`<!doctype html>
@@ -1017,7 +1021,7 @@ app.get('/public/invoice/:token', async (req, res) => {
             <div class="header">
               <div>
                 <div class="company">${companyName}</div>
-                <div class="small">${companyAddress} ${companyPhone ? ' • ' + companyPhone : ''}</div>
+                <div class="small">${companyAddress} ${companyPhone ? ' • ' + companyPhone : ''} ${companyEmail ? ' • ' + companyEmail : ''} ${companyGSTIN ? ' • GSTIN: ' + companyGSTIN : ''}</div>
               </div>
               <div class="meta">
                 <div>Invoice: <strong>${invoice.billNumber || invoice._id}</strong></div>
@@ -1057,6 +1061,7 @@ app.get('/public/invoice/:token', async (req, res) => {
               <div class="col">
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Subtotal</div><div>₹${Number(invoice.subtotal || invoice.totalBeforeTax || 0).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Discount</div><div>₹${Number(invoice.discountAmount || 0).toFixed(2)}</div></div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">After Discount</div><div>₹${Number((invoice.subtotal || invoice.totalBeforeTax || 0) - (invoice.discountAmount || 0)).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">GST / Tax</div><div>₹${Number(invoice.gstAmount || invoice.taxAmount || 0).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(2)}</div></div>
               </div>
