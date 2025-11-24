@@ -16,33 +16,15 @@ body {
   min-height: 100vh;
 }
 
-/* Custom Scrollbar Styling */
-.left::-webkit-scrollbar,
-.cart::-webkit-scrollbar,
-.products::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+/* Hide visible scrollbars (keep natural scroll behavior) - cleaner UI while preserving scrolling */
+/* This prevents ugly thin scrollbars from showing but doesn't disable scrolling. */
+html, body, .app, .left, .products, .cart, .right {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
 }
 
-.left::-webkit-scrollbar-track,
-.cart::-webkit-scrollbar-track,
-.products::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 10px;
-}
-
-.left::-webkit-scrollbar-thumb,
-.cart::-webkit-scrollbar-thumb,
-.products::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 10px;
-}
-
-.left::-webkit-scrollbar-thumb:hover,
-.cart::-webkit-scrollbar-thumb:hover,
-.products::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
-}
+/* Webkit browsers */
+::-webkit-scrollbar { width: 0; height: 0; }
 
 .app {
   animation: fadeIn 0.5s ease-in;

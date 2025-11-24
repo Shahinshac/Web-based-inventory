@@ -136,6 +136,8 @@ export default function App(){
     lowStock: [],
     revenueSummary: {}
   });
+  // Date range (days) for analytics requests
+  const [analyticsDateRange, setAnalyticsDateRange] = useState(30);
   
   // Admin password from secure environment variable
   const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'shaahnc'
@@ -691,6 +693,14 @@ export default function App(){
       console.error('Error fetching analytics:', e);
     }
   }
+
+  // Make sure analytics data is fetched when user navigates to the Analytics tab
+  useEffect(() => {
+    if (tab === 'analytics') {
+      // fetch current range (guard with try/catch inside the function already)
+      fetchAnalyticsData(analyticsDateRange);
+    }
+  }, [tab, analyticsDateRange]);
 
   // PWA and Offline Functionality
   const installPWA = async () => {
@@ -4584,8 +4594,8 @@ export default function App(){
                       <tr key={idx}>
                         <td>{product.name}</td>
                         <td>{product.quantity}</td>
-                        <td>₹{product.revenue.toLocaleString()}</td>
-                        {canViewProfit() && <td>₹{product.profit.toLocaleString()}</td>}
+                        <td>₹{(product.revenue || 0).toLocaleString()}</td>
+                        {canViewProfit() && <td>₹{((product.profit || 0)).toLocaleString()}</td>}
                       </tr>
                     ))}
                   </tbody>
