@@ -1438,11 +1438,12 @@ app.post('/api/users/register', async (req, res) => {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user (sanitize inputs). Email is optional now.
+    // Create user (sanitize inputs). Email is required now (collected at registration).
     const user = {
       username: sanitizeObject(username.toLowerCase()),
       password: hashedPassword,
-      email: email ? sanitizeObject(email.toLowerCase()) : undefined,
+      // Email was validated earlier — store the sanitized normalized value
+      email: sanitizeObject(email.toLowerCase()),
       role: 'user',
       approved: false,
       createdAt: new Date(),

@@ -114,8 +114,10 @@ function validateUserRegistration(user) {
     errors.push('Password must be less than 100 characters');
   }
   
-  // Email is optional; if provided it must be valid
-  if (user.email && !isValidEmail(user.email)) {
+  // Email is required and must be valid
+  if (!user.email) {
+    errors.push('Email is required');
+  } else if (!isValidEmail(user.email)) {
     errors.push('Invalid email format');
   }
   

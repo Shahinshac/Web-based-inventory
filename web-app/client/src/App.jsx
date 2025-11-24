@@ -73,6 +73,7 @@ export default function App(){
   const [showRegisterModal, setShowRegisterModal] = useState(false)
   const [registerUsername, setRegisterUsername] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
+  const [registerEmail, setRegisterEmail] = useState('')
   const [registerError, setRegisterError] = useState('')
   const [showLoginPage, setShowLoginPage] = useState(true) // Toggle between login/register page
   const [auditLogs, setAuditLogs] = useState([]) // Audit trail logs
@@ -1045,10 +1046,17 @@ export default function App(){
       return
     }
 
-    if (registerPassword.length < 6) {
+      if (registerPassword.length < 6) {
       setRegisterError('Password must be at least 6 characters long.')
       return
     }
+
+      // Validate email presence + format (client-side check)
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+      if (!registerEmail || !emailRegex.test(registerEmail)) {
+        setRegisterError('Please enter a valid email address.')
+        return
+      }
 
     try {
       const res = await fetch(API('/api/users/register'), {
@@ -1056,7 +1064,8 @@ export default function App(){
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({ 
           username: registerUsername, 
-          password: registerPassword
+          password: registerPassword,
+          email: registerEmail
         })
       })
 
@@ -1067,6 +1076,7 @@ export default function App(){
         setShowRegisterModal(false)
         setRegisterUsername('')
         setRegisterPassword('')
+        setRegisterEmail('')
         setRegisterError('')
         showNotification('✅ Registration successful! Please wait for admin approval.', 'success')
         setShowLoginPage(true)
@@ -1087,7 +1097,7 @@ export default function App(){
     }
   }
 
-  // OTP/resend removed — registration uses username + password only
+  // Registration requires email (no OTP verification)
   
   // Approve user (Admin only)
   async function approveUser(userId) {
@@ -3229,6 +3239,8 @@ export default function App(){
         
         registerPassword={registerPassword}
         setRegisterPassword={setRegisterPassword}
+        registerEmail={registerEmail}
+        setRegisterEmail={setRegisterEmail}
         handleRegister={handleRegister}
         
         registerError={registerError}
@@ -4910,7 +4922,7 @@ export default function App(){
                         <td>
                           <strong>{user.username}</strong>
                         </td>
-                        <td>{user.email}</td>
+                        <td>{user.email || '—'}</td>
                         <td>
                           <select
                             value={user.role}

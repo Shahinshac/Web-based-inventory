@@ -92,7 +92,7 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
   )
 }
 
-function RegisterForm({ registerUsername, registerPassword, setRegisterUsername, setRegisterPassword, registerError, handleRegister }) {
+function RegisterForm({ registerUsername, registerPassword, registerEmail, setRegisterUsername, setRegisterPassword, setRegisterEmail, registerError, handleRegister }) {
   const [loading, setLoading] = useState(false)
 
   const onSubmit = async (e) => {
@@ -119,7 +119,18 @@ function RegisterForm({ registerUsername, registerPassword, setRegisterUsername,
           style={{width:'100%', padding:'14px 16px', border:'2px solid #e8ebf0', borderRadius:'12px'}}
         />
       </div>
-      {/* Email removed — registration now only needs username and password */}
+      {/* Email required — ask user for email at registration */}
+      <div style={{marginBottom:'20px'}}>
+        <label style={{display:'block', marginBottom:'10px', color:'#555', fontWeight:'600'}}><Icon name="mail" size={16} /> Email</label>
+        <input
+          type="email"
+          value={registerEmail}
+          onChange={(e)=>setRegisterEmail(e.target.value)}
+          placeholder="Enter your email address"
+          required
+          style={{width:'100%', padding:'14px 16px', border:'2px solid #e8ebf0', borderRadius:'12px'}}
+        />
+      </div>
       <div style={{marginBottom:'28px'}}>
         <label style={{display:'block', marginBottom:'10px', color:'#555', fontWeight:'600'}}><Icon name="lock" size={16} /> Password</label>
         <input
@@ -159,6 +170,8 @@ export default function Login(props) {
     setRegisterUsername,
     registerPassword,
     setRegisterPassword,
+    registerEmail,
+    setRegisterEmail,
     handleRegister,
     registerError
   } = props
@@ -203,8 +216,10 @@ export default function Login(props) {
                 <RegisterForm
                   registerUsername={registerUsername}
                   registerPassword={registerPassword}
+                  registerEmail={registerEmail}
                   setRegisterUsername={setRegisterUsername}
                   setRegisterPassword={setRegisterPassword}
+                  setRegisterEmail={setRegisterEmail}
                   registerError={registerError}
                   handleRegister={handleRegister}
                 />
