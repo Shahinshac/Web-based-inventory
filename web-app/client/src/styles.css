@@ -957,6 +957,34 @@ ul:not(.products):not(.cart) li:hover {
 }
 .customer-add-btn:hover { background: #f4f6fb; transform: translateY(-2px) }
 
+/* Inline select next to add button used in POS */
+.customer-select-inline {
+  flex: 1 1 auto;
+  min-width: 0; /* allow shrinking inside flex */
+  height: 40px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  font-size: 14px;
+}
+
+/* Ensure .customer-add-btn doesn't get the large .right button styles (override) */
+.right .customer-add-btn {
+  width: auto !important;
+  background: white !important;
+  border: 2px solid #e0e0e0 !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06) !important;
+  padding: 8px 12px !important;
+}
+
+/* Small screen: when space is tight, stack select + add button neatly */
+@media (max-width: 480px) {
+  .form-group > div { flex-direction: column; align-items: stretch; }
+  .customer-select-inline { width: 100%; height: 44px; }
+  .customer-add-btn { margin-top: 8px; width: 100%; height: 44px; }
+}
+
 /* Cost Price and Profit Display */
 .cost-display {
   font-size: 12px;
