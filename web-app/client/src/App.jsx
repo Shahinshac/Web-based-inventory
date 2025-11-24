@@ -1168,7 +1168,12 @@ export default function App(){
 
   // Admin — change admin password and optionally logout all sessions
   async function changeAdminPassword() {
-    if (!isAdmin) return
+    if (!isAdmin) {
+      showNotification('Only admins can change the admin password', 'error')
+      return
+    }
+
+    if (!confirm('This action will change the admin password and optionally log out all active sessions. Continue?')) return
 
     const currentPass = prompt('Enter current admin password:')
     if (!currentPass) return
@@ -1178,29 +1183,33 @@ export default function App(){
 
     const confirmPass = prompt('Confirm new admin password:')
     if (newPass !== confirmPass) {
-      alert('Passwords do not match')
+      showNotification('Passwords do not match', 'error')
       return
     }
 
     try {
+      showNotification('🔄 Changing admin password...', 'info')
+      const payload = { adminUsername: currentUser?.username || 'admin', currentPassword: currentPass, newPassword: newPass, logoutAll: true }
       const res = await fetch(API('/api/admin/change-password'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ adminUsername: currentUser?.username || 'admin', currentPassword: currentPass, newPassword: newPass, logoutAll: true })
+        body: JSON.stringify(payload)
       })
 
-      const data = await res.json()
+      const data = await res.json().catch(() => ({}))
+
       if (res.ok) {
-        alert(data.message || 'Admin password changed — logging out all sessions')
-        // Log out locally
+        showNotification(data.message || 'Admin password changed — all sessions will be logged out', 'success')
+        // Clear local session and force re-login
         handleLogout()
-        // notify users that sessions were invalidated is handled server-side
       } else {
-        alert(data.error || 'Failed to change admin password')
+        // Show more actionable message where available
+        const err = data.error || (res.status === 401 ? 'Current admin password incorrect' : 'Failed to change admin password')
+        showNotification(`❌ ${err}`, 'error')
       }
     } catch (e) {
       console.error('Change admin password error:', e)
-      alert('Failed to change admin password')
+      showNotification('❌ Failed to change admin password. Try again later.', 'error')
     }
   }
 
@@ -1352,42 +1361,7 @@ export default function App(){
   }
 
 
-  function exportProductsToPDF() {
-    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-    addPDFHeader(doc, 'Product Inventory Report');
-    
-    const tableData = products.map((p, index) => [
-      index + 1,
-      p.name,
-      p.quantity,
-      `₹${p.price.toFixed(1)}`,
-      p.quantity === 0 ? 'Out of Stock' : p.quantity < 10 ? 'Low Stock' : 'In Stock'
-    ]);
-    
-    // Use column styles and wrapping to avoid overflow
-    doc.autoTable({
-      startY: 30,
-      head: [['SI No', 'Name', 'Stock', 'Price', 'Status']],
-      body: tableData,
-      theme: 'striped',
-      styles: { fontSize: 9, cellPadding: 3 },
-      columnStyles: {
-        0: { cellWidth: 12 },
-        1: { cellWidth: 70 },
-        2: { cellWidth: 20 },
-        3: { cellWidth: 30 },
-        4: { cellWidth: 40 }
-      },
-      headStyles: { fillColor: [102, 126, 234] },
-      bodyStyles: { valign: 'middle' },
-      didDrawPage: (data) => {
-        /* no-op but ensures pagination works cleanly */
-      }
-    });
-    
-    doc.save('Products-Report.pdf');
-    showNotification('✅ Products PDF downloaded!', 'success');
-  }
+  // Products PDF export removed — we keep CSV/other report telemetry instead
 
   function exportTransactionsToPDF() {
     const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -4682,13 +4656,7 @@ export default function App(){
                     <small>Stock levels & pricing</small>
                   </div>
                 </button>
-                <button onClick={exportProductsToPDF} className="download-btn inventory">
-                  <span className="btn-icon"><Icon name="products" size={16} /></span>
-                  <div>
-                    <strong>Products (PDF)</strong>
-                    <small>Complete product list</small>
-                  </div>
-                </button>
+                {/* Products PDF export removed; use CSV Inventory or other reports */}
                 <button onClick={downloadCustomerCSV} className="download-btn customers">
                   <span className="btn-icon"><Icon name="customers" size={16} /></span>
                   <div>
