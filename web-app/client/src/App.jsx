@@ -136,6 +136,11 @@ export default function App(){
     lowStock: [],
     revenueSummary: {}
   });
+  // When fresh invoice data is received while user is viewing the invoices
+  // tab, we avoid clobbering the user's view. Instead we store the new data
+  // here and surface a manual refresh control in the UI.
+  const [pendingInvoices, setPendingInvoices] = useState(null)
+  const [invoicesPending, setInvoicesPending] = useState(false)
   // Date range (days) for analytics requests
   const [analyticsDateRange, setAnalyticsDateRange] = useState(30);
   
@@ -607,11 +612,25 @@ export default function App(){
         if (res.ok) {
           const data = await res.json()
           // Only update the visible invoice list when appropriate
-          if (force || tab !== 'invoices') {
-            setInvoices(data)
+          if (tab === 'invoices') {
+            // Store the incoming data as pending so the user can refresh manually,
+            // but only mark as pending if it differs from the currently-displayed
+            // invoices to avoid noisy behavior.
+            try {
+              const same = JSON.stringify(data) === JSON.stringify(invoices)
+              if (!same) {
+                setPendingInvoices(data)
+                setInvoicesPending(true)
+                console.debug('Stored fetched invoices as pending while user views invoices tab')
+              } else {
+                console.debug('Fetched invoices identical to current view; no pending update created')
+              }
+            } catch (err) {
+              setPendingInvoices(data)
+              setInvoicesPending(true)
+            }
           } else {
-            // Log that we skipped an automatic refresh to avoid surprise live-updates
-            console.debug('Skipped auto-refresh of invoices while user is viewing the invoices tab')
+            setInvoices(data)
           }
 
           // Cache fresh data regardless — caching shouldn't affect visible UI
@@ -626,11 +645,24 @@ export default function App(){
           if (cachedBills.length > 0) {
             // When loading from cache, avoid surprising the user if they're actively
             // on the invoices tab unless the operation is forced to update.
-            if (tab !== 'invoices' || force) {
+            if (tab === 'invoices' && !force) {
+              try {
+                const same = JSON.stringify(cachedBills) === JSON.stringify(invoices)
+                if (!same) {
+                  setPendingInvoices(cachedBills)
+                  setInvoicesPending(true)
+                  console.debug('Loaded cached invoices as pending (user on invoices view)')
+                } else {
+                  console.debug('Cached invoices identical to current view; no pending update created')
+                }
+              } catch (err) {
+                setPendingInvoices(cachedBills)
+                setInvoicesPending(true)
+                console.debug('Loaded cached invoices as pending (error comparing)')
+              }
+            } else {
               setInvoices(cachedBills)
               console.log('Loaded invoices from cache')
-            } else {
-              console.debug('Skipped loading cached invoices to avoid replacing user view')
             }
           }
         }
@@ -638,11 +670,28 @@ export default function App(){
     } catch(e) { 
       console.error('Error fetching invoices:', e)
       // Fallback to cached data on error
-      if (window.offlineStorage) {
+        if (window.offlineStorage) {
         const cachedBills = await window.offlineStorage.getCachedBills()
         if (cachedBills.length > 0) {
-          setInvoices(cachedBills)
-          console.log('Loaded invoices from cache (fallback)')
+          if (tab === 'invoices') {
+            try {
+              const same = JSON.stringify(cachedBills) === JSON.stringify(invoices)
+              if (!same) {
+                setPendingInvoices(cachedBills)
+                setInvoicesPending(true)
+                console.log('Loaded invoices from cache (fallback) as pending')
+              } else {
+                console.log('Cached bills fallback identical to current invoices; skipping')
+              }
+            } catch (err) {
+              setPendingInvoices(cachedBills)
+              setInvoicesPending(true)
+              console.log('Loaded invoices from cache (fallback) as pending (error comparing)')
+            }
+          } else {
+            setInvoices(cachedBills)
+            console.log('Loaded invoices from cache (fallback)')
+          }
         }
       }
     }
@@ -718,6 +767,20 @@ export default function App(){
       fetchAnalyticsData(analyticsDateRange);
     }
   }, [tab, analyticsDateRange]);
+
+  // Apply pending invoices (user-driven) — used when fresh data is available but
+  // the user chose not to be interrupted while viewing the invoices tab.
+  function applyPendingInvoices() {
+    if (!pendingInvoices || !Array.isArray(pendingInvoices)) {
+      showNotification('No pending invoice updates', 'warning')
+      return
+    }
+
+    setInvoices(pendingInvoices)
+    setPendingInvoices(null)
+    setInvoicesPending(false)
+    showNotification('✅ Invoice list refreshed with latest data', 'success')
+  }
 
   // PWA and Offline Functionality
   const installPWA = async () => {
@@ -4769,6 +4832,17 @@ export default function App(){
                       }}
                     />
                   </>
+                )}
+                {/* Pending refresh control - appears when newer invoice data arrived while user is on invoices tab */}
+                {invoicesPending && (
+                  <div style={{display:'flex',alignItems:'center',gap:'8px'}}>
+                    <button onClick={applyPendingInvoices} title="Apply latest invoices" style={{padding:'8px 12px',borderRadius:8,border:'1px solid #667eea',background:'#667eea',color:'#fff',cursor:'pointer'}}>
+                      Refresh ({pendingInvoices?.length || 'new'})
+                    </button>
+                    <button onClick={() => { setPendingInvoices(null); setInvoicesPending(false); showNotification('Ignored pending invoice updates', 'info') }} title="Ignore new data" style={{padding:'6px 10px',borderRadius:8,border:'1px solid #e2e8f0',background:'#fff',cursor:'pointer'}}>
+                      Ignore
+                    </button>
+                  </div>
                 )}
               </div>
             </div>
