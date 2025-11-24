@@ -3430,7 +3430,7 @@ export default function App(){
           }}
           title="Install App"
         >
-          <Icon name="spark" size={18} />
+          <Icon name="download" size={18} />
           Install App
         </button>
       )}
@@ -3456,7 +3456,7 @@ export default function App(){
           onClick={() => setShowQuickActions(!showQuickActions)}
           title="Quick Actions"
         >
-          <Icon name="spark" size={20} />
+          <Icon name="add" size={20} />
         </button>
         {showQuickActions && (
           <div className="quick-actions-menu fade-in">
@@ -3590,7 +3590,7 @@ export default function App(){
             WebkitTextFillColor: 'transparent',
             fontWeight: 'bold',
             fontSize: '32px'
-          }}><Icon name="spark" size={32} /> 26:07</span>
+          }}><Icon name="dashboard" size={32} /> 26:07</span>
           <span style={{marginLeft: '8px'}}>Electronics</span>
         </h1>
         <div className="header-clock" aria-hidden={!indiaTime} style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'2px',position:'absolute',right:20,top:18}}>
@@ -3936,7 +3936,7 @@ export default function App(){
                 }}>
                   <option value={PAYMENT_MODES.CASH}><Icon name="cash" size={16} /> Cash</option>
                   <option value={PAYMENT_MODES.CARD}><Icon name="card" size={16} /> Card</option>
-                  <option value={PAYMENT_MODES.UPI}><Icon name="spark" size={16} /> UPI</option>
+                  <option value={PAYMENT_MODES.UPI}><Icon name="rupee" size={16} /> UPI</option>
                   <option value={PAYMENT_MODES.SPLIT}><Icon name="cash" size={16} /> Split Payment</option>
                 </select>
               </div>
@@ -3989,7 +3989,7 @@ export default function App(){
                         />
                       </div>
                       <div className="form-group" style={{marginBottom: '0'}}>
-                        <label style={{fontSize: '13px'}}><Icon name="spark" size={14} /> UPI</label>
+                        <label style={{fontSize: '13px'}}><Icon name="rupee" size={14} /> UPI</label>
                         <input 
                           type="number" 
                           value={upiAmount} 
@@ -4814,23 +4814,7 @@ export default function App(){
                             <small style={{color:'#888'}}>₹{(inv.discountAmount || 0).toFixed(1)}</small>
                           </span>
                         </td>
-                        <td style={{whiteSpace:'nowrap'}}>
-                          <button
-                            onClick={() => sendInvoiceWhatsApp(inv)}
-                            title="Send invoice via WhatsApp"
-                            className="fancy-btn"
-                            style={{padding:'6px 10px', background:'#25D366', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
-                          >
-                            <Icon name="whatsapp" /> <span className="label">WhatsApp</span>
-                          </button>
-                          <button
-                            onClick={() => { setLastBill(inv); setShowBill(true); }}
-                            style={{padding:'6px 10px', background:'#667eea', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
-                            className="btn-icon"
-                          >
-                            <Icon name="products"/> <span className="label">View</span>
-                          </button>
-                        </td>
+                        {/* removed duplicated Actions column (was misaligned under GST) */}
                         <td>
                           <span style={{color:'#27ae60',fontSize:'13px'}}>
                             +{inv.taxRate || 0}%
@@ -4848,7 +4832,7 @@ export default function App(){
                                   <span><Icon name="cash" size={10} /> Cash: ₹{inv.splitPaymentDetails.cashAmount.toFixed(1)}</span>
                                 )}
                                 {inv.splitPaymentDetails.upiAmount > 0 && (
-                                  <span><Icon name="spark" size={10} /> UPI: ₹{inv.splitPaymentDetails.upiAmount.toFixed(1)}</span>
+                                  <span><Icon name="rupee" size={10} /> UPI: ₹{inv.splitPaymentDetails.upiAmount.toFixed(1)}</span>
                                 )}
                                 {inv.splitPaymentDetails.cardAmount > 0 && (
                                   <span><Icon name="card" size={10} /> Card: ₹{inv.splitPaymentDetails.cardAmount.toFixed(1)}</span>
@@ -4863,7 +4847,7 @@ export default function App(){
                               'info'
                             }`}>
                               {inv.paymentMode === 'Cash' || inv.paymentMode === 'cash' ? <Icon name="cash" size={10} /> :
-                               inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? <Icon name="spark" size={10} /> :
+                               inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? <Icon name="rupee" size={10} /> :
                                inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? <Icon name="card" size={10} /> : null}
                               {inv.paymentMode || 'Cash'}
                             </span>
@@ -4883,7 +4867,7 @@ export default function App(){
                             style={{padding:'6px 10px', background:'#667eea', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
                             className="btn-icon"
                           >
-                            <Icon name="products"/> <span className="label">View</span>
+                            <Icon name="eye"/> <span className="label">View</span>
                           </button>
                         </td>
                       </tr>
@@ -5422,7 +5406,7 @@ export default function App(){
           }}>
             <div id="bill-print-content">
               <div className="bill-header">
-                <h2><Icon name="spark" size={24} /> 26:07 ELECTRONICS</h2>
+                <h2><Icon name="dashboard" size={24} /> 26:07 ELECTRONICS</h2>
                 <h3>Premium Electronics & Smart Solutions</h3>
                 <p>Tax Invoice</p>
               </div>

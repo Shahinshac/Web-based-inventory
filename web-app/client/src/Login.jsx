@@ -65,7 +65,7 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
               color: '#666'
             }}
           >
-            <Icon name={showPassword ? "lock" : "spark"} size={16} />
+            <Icon name={showPassword ? "lock" : "eye"} size={16} />
           </button>
         </div>
       </div>
@@ -168,7 +168,7 @@ export default function Login(props) {
       <div className="login-center">
         <div className="login-card">
           <div className="login-brand">
-            <div className="brand-icon"><Icon name="spark" size={36} /></div>
+            <div className="brand-icon"><Icon name="dashboard" size={36} /></div>
             <div className="brand-text">
               <h2>26:07 Electronics</h2>
               <p>Premium Electronics & Smart Solutions</p>
@@ -183,7 +183,7 @@ export default function Login(props) {
           <div className="card-body animated-panel">
             {showLoginPage ? (
               <div>
-                <h3><Icon name="spark" size={20} /> Welcome Back!</h3>
+                <h3><Icon name="dashboard" size={20} /> Welcome Back!</h3>
                 <p className="muted">Please login to continue to your account</p>
                 <LoginForm
                   authUsername={authUsername}
@@ -194,11 +194,11 @@ export default function Login(props) {
                   handleAuth={handleAuth}
                 />
 
-                <div className="info-box"><Icon name="spark" size={16} /> Admin credentials required for owner access</div>
+                <div className="info-box"><Icon name="lock" size={16} /> Admin credentials required for owner access</div>
               </div>
             ) : (
               <div>
-                <h3><Icon name="spark" size={20} /> Create Account</h3>
+                <h3><Icon name="dashboard" size={20} /> Create Account</h3>
                 <p className="muted">Sign up to start managing your inventory</p>
                 <RegisterForm
                   registerUsername={registerUsername}

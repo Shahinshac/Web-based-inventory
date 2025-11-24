@@ -177,6 +177,22 @@ export default function Icon({ name, size = 18, className = '', stroke = 'curren
             <path d="M12 2l1.8 4.6L19 8l-4.6 1.8L12 14 10.6 9.8 6 8l4.6-1.4L12 2z" />
           </svg>
         )
+      case 'rupee':
+        return (
+          <svg {...common} className={className}>
+            <path d="M3 7h18" />
+            <path d="M3 12h18" />
+            <path d="M8 18c1.5 0 2.8-1 3.3-2.4.2-.6.7-1 1.3-1h3" />
+            <path d="M12 15c-1.5 0-2.7-1.2-2.7-2.6S10.5 9.8 12 9.8h4" />
+          </svg>
+        )
+      case 'eye':
+        return (
+          <svg {...common} className={className}>
+            <path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7S1 12 1 12z" />
+            <circle cx="12" cy="12" r="3" />
+          </svg>
+        )
     default:
       return null
   }
