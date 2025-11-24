@@ -4913,12 +4913,6 @@ export default function App(){
                                   </span>
                                 )}
                                 {log.details.grandTotal && <span> | Total: ₹{log.details.grandTotal}</span>}
-                                {log.details.profit !== undefined && (
-                                  <span style={{
-                                    color: log.details.profit < 0 ? '#ef4444' : log.details.profit > 0 ? '#48bb78' : '#6b7280',
-                                    fontWeight: 'bold'
-                                  }}> | Profit: ₹{log.details.profit}</span>
-                                )}
                               </div>
                             )}
                           </td>

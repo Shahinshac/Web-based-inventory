@@ -361,7 +361,6 @@ app.post('/api/checkout', async (req, res) => {
       billNumber,
       customerName: bill.customerName,
       grandTotal: bill.grandTotal,
-      profit: bill.totalProfit,
       itemCount: bill.items.length,
       paymentMode
     });

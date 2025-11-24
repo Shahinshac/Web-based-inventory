@@ -419,6 +419,12 @@ table {
   transition: none !important;
 }
 
+/* Force-disable all animations/transitions inside invoices tab to prevent any movement/visual transitions */
+.invoices-tab * {
+  animation: none !important;
+  transition: none !important;
+}
+
 table thead {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
