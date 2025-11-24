@@ -3677,7 +3677,7 @@ export default function App(){
                   <option value="">Walk-in Customer</option>
                   {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <button onClick={()=>{ setShowAddCustomer(true); }} className="btn-secondary" style={{padding:'8px 10px',borderRadius:8}}>➕ Add</button>
+                  <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
                 </div>
               </div>
 
@@ -3719,41 +3719,11 @@ export default function App(){
               </ul>
 
               {/* Discount Section */}
-              <div className="form-group discount-group">
-                <label style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-                  <span>Discount</span>
-                  <div style={{display:'flex',alignItems:'center',gap:10}}>
-                    <input type="number" min="0" max="50" step="0.1" value={discount} onChange={(e)=>{
-                        const v = parseFloat(e.target.value) || 0; setDiscount(Math.max(0, Math.min(50, v)));
-                      }} style={{width:70, padding:'6px 8px', borderRadius:6, border:'1px solid #e2e8f0', textAlign:'right'}} />
-                    <span style={{fontSize:13,color:'#666'}}>%</span>
-                  </div>
-                </label>
-
-                {/* Slider + rupee value. Allow editing rupee discount which updates percent when applicable */}
-                <div style={{display:'flex',alignItems:'center',gap:10}}>
-                  <input type="range" min="0" max="50" value={discount} 
-                         onChange={(e)=>setDiscount(parseFloat(e.target.value))}
-                         style={{flex:1}} />
-
-                  <div style={{minWidth:100,textAlign:'right'}}>
-                      <input
-                        className="rupee-input"
-                      type="number"
-                      value={cart.length ? (Math.round((cart.reduce((s,it)=> s + it.price*it.quantity, 0) * discount / 100) * 10) / 10) : 0}
-                      onChange={(e)=>{
-                        const val = parseFloat(e.target.value) || 0;
-                        const subtotal = cart.reduce((s,it)=> s + it.price*it.quantity, 0);
-                        if (subtotal > 0) {
-                          const pct = Math.max(0, Math.min(50, (val / subtotal) * 100));
-                          setDiscount(parseFloat(pct.toFixed(2)));
-                        }
-                      }}
-                      style={{width:90,padding:'6px 8px', borderRadius:6, border:'1px solid #e2e8f0', textAlign:'right'}}
-                    />
-                    <div style={{fontSize:11,color:'#888'}}>₹ Discount</div>
-                  </div>
-                </div>
+              <div className="form-group">
+                <label>Discount: {discount}%</label>
+                <input type="range" min="0" max="50" value={discount}
+                       onChange={(e)=>setDiscount(parseFloat(e.target.value))}
+                       style={{width:'100%'}} />
               </div>
 
               {/* GST Rate (fixed 18% — not editable) */}
@@ -4227,7 +4197,9 @@ export default function App(){
                     </td>
                     <td>
                       <strong>{prod.name}</strong>
-                      <div style={{fontSize:'0.85em',color:'#666'}}>{prod.category || 'Uncategorized'}</div>
+                      {prod.category ? (
+                        <div style={{fontSize:'0.85em',color:'#666'}}>{prod.category}</div>
+                      ) : null}
                     </td>
                     <td>
                       <span style={{
@@ -4653,7 +4625,7 @@ export default function App(){
                       </td>
                     </tr>
                   )}
-                  {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().reverse().map(inv => {
+                  {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
                       // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
                       const profit = typeof inv.totalProfit === 'number'
                         ? inv.totalProfit

@@ -943,9 +943,19 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 /* Discount group styles (POS) */
-.discount-group { display:flex; flex-direction:column; gap:8px }
-.discount-group input[type="range"] { accent-color: #667eea }
-.discount-group .rupee-input { width: 90px; text-align: right; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0 }
+/* Customer add button next to select */
+.customer-add-btn {
+  padding: 8px 12px;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  background: white;
+  cursor: pointer;
+  font-weight: 700;
+  height: 40px; /* vertically match select */
+  display: inline-flex;
+  align-items: center;
+}
+.customer-add-btn:hover { background: #f4f6fb; transform: translateY(-2px) }
 
 /* Cost Price and Profit Display */
 .cost-display {
