@@ -341,10 +341,20 @@ h2 {
 }
 
 .cart li:hover {
-  background: #e9ecef;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-  transform: translateX(2px);
+  background: #eef2f7;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.06);
 }
+
+/* New cart item classes for cleaner buttons and improved UX */
+.cart-item{display:flex; justify-content:space-between; align-items:center; padding:10px; margin-bottom:8px; background:#fbfbfd; border-radius:8px; border:1px solid #eef2f7; box-shadow:0 4px 12px rgba(23,23,23,0.03);}
+.cart-item strong{font-size:14px;color:#1e3c72}
+.qty-btn{width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer; border:2px solid transparent; background:white; color:inherit; font-weight:700}
+.qty-btn.qty-dec{border-color:#e53e3e; color:#e53e3e}
+.qty-btn.qty-inc{border-color:#48bb78; color:#48bb78}
+.qty-btn.remove-btn{background:#f56565; color:white; border:none}
+.qty-btn.qty-dec:hover{background:#e53e3e;color:white}
+.qty-btn.qty-inc:hover{background:#48bb78;color:white}
+.qty-btn.remove-btn:hover{background:#c53030}
 
 .total {
   margin-top: 12px;
@@ -423,6 +433,15 @@ table {
 .invoices-tab * {
   animation: none !important;
   transition: none !important;
+}
+
+/* Extra: ensure table row hover/transform effects are completely disabled in invoices view
+   (some earlier rules applied to table rows can still trigger transforms; be explicit). */
+.invoices-tab table tbody tr,
+.invoices-tab table tbody tr:hover {
+  transition: none !important;
+  transform: none !important;
+  background: none !important;
 }
 
 table thead {
@@ -922,6 +941,11 @@ ul:not(.products):not(.cart) li:hover {
   transform: scale(1.2);
   background: #764ba2;
 }
+
+/* Discount group styles (POS) */
+.discount-group { display:flex; flex-direction:column; gap:8px }
+.discount-group input[type="range"] { accent-color: #667eea }
+.discount-group .rupee-input { width: 90px; text-align: right; padding: 6px 8px; border-radius: 6px; border: 1px solid #e2e8f0 }
 
 /* Cost Price and Profit Display */
 .cost-display {

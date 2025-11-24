@@ -616,7 +616,38 @@ export default function App(){
           const data = await res.json()
           // Only update the visible invoice list when appropriate
           if (force || tab !== 'invoices') {
-            setInvoices(data)
+            // If we are forcing refresh while user is actively viewing the invoices
+            // tab, avoid replacing the entire list which can cause a jarring
+            // visual re-render. Instead merge new/updated invoices into the
+            // existing array: update changed entries and prepend truly new
+            // invoices. This keeps the UI stable while still reflecting new
+            // data.
+            if (force && tab === 'invoices') {
+              setInvoices(prev => {
+                try {
+                  const prevMap = new Map(prev.map(i => [i.id, i]));
+                  const dataMap = new Map(data.map(i => [i.id, i]));
+
+                  // Update existing invoices in-place where possible so React
+                  // re-uses object refs for unchanged entries and avoids
+                  // unnecessary re-renders.
+                  const mergedExisting = prev.map(p => dataMap.has(p.id) ? dataMap.get(p.id) : p);
+
+                  // Identify truly new invoices not present in current view
+                  const newItems = data.filter(d => !prevMap.has(d.id));
+
+                  // Prepend new items so the newest invoices appear first.
+                  return [...newItems, ...mergedExisting];
+                } catch (e) {
+                  // If anything goes wrong during the merge, fall back to a
+                  // full replace to keep data consistent.
+                  console.warn('Invoice merge failed, falling back to full replace', e);
+                  return data;
+                }
+              })
+            } else {
+              setInvoices(data)
+            }
           } else {
             // Log that we skipped an automatic refresh to avoid surprise live-updates
             console.debug('Skipped auto-refresh of invoices while user is viewing the invoices tab')
@@ -2494,12 +2525,23 @@ export default function App(){
         })
       })
       if (res.ok) { 
+        const result = await res.json();
         showNotification(`✓ Customer "${newCustomer.name}" added successfully!`, 'success');
         addActivity('Customer Added', newCustomer.name);
         setShowAddCustomer(false); 
         setNewCustomer({name:'', phone:'', address:'', state:'Same', gstin:''}); 
-        fetchCustomers(); 
-        fetchStats();
+        // Refresh customer list and auto-select the newly created customer so
+        // users can continue the checkout flow without manually searching.
+        await fetchCustomers(); 
+        await fetchStats();
+        // If API returned the created customer id, select it in the POS.
+        if (result && (result.id || result._id)) {
+          const id = result.id || result._id;
+          const cust = (await (async ()=> { try { const c = await fetch(API('/api/customers')); if (c.ok) return await c.json(); } catch(e){} return customers; })()) || null;
+          // Try to find the newly created customer in freshest list and select it
+          const newCust = (cust && Array.isArray(cust)) ? cust.find(c => c.id === id || c._id === id) : null;
+          if (newCust) setSelectedCustomer(newCust);
+        }
       } else {
         const err = await res.json()
         showNotification('Failed to add customer: ' + (err.error || 'Unknown error'), 'error');
@@ -3627,19 +3669,22 @@ export default function App(){
               {/* Customer Selection */}
               <div className="form-group">
                 <label>Customer:</label>
-                <select value={selectedCustomer?.id || ''} onChange={e=> {
+                <div style={{display:'flex',alignItems:'center',gap:8}}>
+                  <select value={selectedCustomer?.id || ''} onChange={e=> {
                   const cust = customers.find(c=>c.id==e.target.value);
                   setSelectedCustomer(cust);
-                }}>
+                  }}>
                   <option value="">Walk-in Customer</option>
                   {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
-                </select>
+                  </select>
+                  <button onClick={()=>{ setShowAddCustomer(true); }} className="btn-secondary" style={{padding:'8px 10px',borderRadius:8}}>➕ Add</button>
+                </div>
               </div>
 
               {/* Cart Items */}
               <ul className="cart">
                 {cart.map(it=> (
-                  <li key={it.productId} style={{display:'flex', justifyContent:'space-between', alignItems:'center', padding:'10px', marginBottom:'5px', background:'#f9f9f9', borderRadius:'5px'}}>
+                  <li key={it.productId} className="cart-item">
                     <div style={{flex:1}}>
                       <strong>{it.name}</strong>
                       <div style={{fontSize:'12px', color:'#666'}}>₹{it.price} each</div>
@@ -3647,9 +3692,7 @@ export default function App(){
                     <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
                       <button 
                         onClick={()=>decreaseCartQty(it.productId)} 
-                        style={{width:'32px', height:'32px', border:'2px solid #e53e3e', background:'white', color:'#e53e3e', cursor:'pointer', borderRadius:'6px', fontSize:'20px', fontWeight:'bold', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s'}}
-                        onMouseOver={(e)=>{e.target.style.background='#e53e3e'; e.target.style.color='white'}}
-                        onMouseOut={(e)=>{e.target.style.background='white'; e.target.style.color='#e53e3e'}}
+                        className="qty-btn qty-dec"
                         title="Decrease quantity"
                       >
                         <Icon name="close" size={16} />
@@ -3657,18 +3700,14 @@ export default function App(){
                       <span style={{minWidth:'40px', textAlign:'center', fontWeight:'bold', fontSize:'16px'}}>{it.quantity}</span>
                       <button 
                         onClick={()=>increaseCartQty(it.productId)} 
-                        style={{width:'32px', height:'32px', border:'2px solid #48bb78', background:'white', color:'#48bb78', cursor:'pointer', borderRadius:'6px', fontSize:'20px', fontWeight:'bold', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s'}}
-                        onMouseOver={(e)=>{e.target.style.background='#48bb78'; e.target.style.color='white'}}
-                        onMouseOut={(e)=>{e.target.style.background='white'; e.target.style.color='#48bb78'}}
+                        className="qty-btn qty-inc"
                         title="Increase quantity"
                       >
                         <Icon name="add" size={16} />
                       </button>
                       <button 
                         onClick={()=>removeFromCart(it.productId)} 
-                        style={{width:'32px', height:'32px', border:'none', background:'#f56565', color:'white', cursor:'pointer', borderRadius:'6px', marginLeft:'5px', fontSize:'18px', fontWeight:'bold', display:'flex', alignItems:'center', justifyContent:'center', transition:'all 0.2s'}}
-                        onMouseOver={(e)=>e.target.style.background='#c53030'}
-                        onMouseOut={(e)=>e.target.style.background='#f56565'}
+                        className="qty-btn remove-btn"
                         title="Remove item"
                       >
                         <Icon name="trash" size={16} />
@@ -3680,11 +3719,41 @@ export default function App(){
               </ul>
 
               {/* Discount Section */}
-              <div className="form-group">
-                <label>Discount: {discount}%</label>
-                <input type="range" min="0" max="50" value={discount} 
-                       onChange={(e)=>setDiscount(parseFloat(e.target.value))}
-                       style={{width:'100%'}} />
+              <div className="form-group discount-group">
+                <label style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
+                  <span>Discount</span>
+                  <div style={{display:'flex',alignItems:'center',gap:10}}>
+                    <input type="number" min="0" max="50" step="0.1" value={discount} onChange={(e)=>{
+                        const v = parseFloat(e.target.value) || 0; setDiscount(Math.max(0, Math.min(50, v)));
+                      }} style={{width:70, padding:'6px 8px', borderRadius:6, border:'1px solid #e2e8f0', textAlign:'right'}} />
+                    <span style={{fontSize:13,color:'#666'}}>%</span>
+                  </div>
+                </label>
+
+                {/* Slider + rupee value. Allow editing rupee discount which updates percent when applicable */}
+                <div style={{display:'flex',alignItems:'center',gap:10}}>
+                  <input type="range" min="0" max="50" value={discount} 
+                         onChange={(e)=>setDiscount(parseFloat(e.target.value))}
+                         style={{flex:1}} />
+
+                  <div style={{minWidth:100,textAlign:'right'}}>
+                      <input
+                        className="rupee-input"
+                      type="number"
+                      value={cart.length ? (Math.round((cart.reduce((s,it)=> s + it.price*it.quantity, 0) * discount / 100) * 10) / 10) : 0}
+                      onChange={(e)=>{
+                        const val = parseFloat(e.target.value) || 0;
+                        const subtotal = cart.reduce((s,it)=> s + it.price*it.quantity, 0);
+                        if (subtotal > 0) {
+                          const pct = Math.max(0, Math.min(50, (val / subtotal) * 100));
+                          setDiscount(parseFloat(pct.toFixed(2)));
+                        }
+                      }}
+                      style={{width:90,padding:'6px 8px', borderRadius:6, border:'1px solid #e2e8f0', textAlign:'right'}}
+                    />
+                    <div style={{fontSize:11,color:'#888'}}>₹ Discount</div>
+                  </div>
+                </div>
               </div>
 
               {/* GST Rate (fixed 18% — not editable) */}
@@ -4584,7 +4653,7 @@ export default function App(){
                       </td>
                     </tr>
                   )}
-                  {getFilteredInvoices().length > 0 && getFilteredInvoices().reverse().map(inv => {
+                  {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().reverse().map(inv => {
                       // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
                       const profit = typeof inv.totalProfit === 'number'
                         ? inv.totalProfit
