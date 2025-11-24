@@ -481,7 +481,7 @@ export default function App(){
     initAnalytics();
     trackPageView('Inventory Management App');
     
-    Promise.all([fetchProducts(), fetchCustomers(), fetchInvoices(), fetchStats()])
+    Promise.all([fetchProducts(), fetchCustomers(), fetchInvoices(true), fetchStats()])
       .then(() => {
         trackEvent('data_loaded', 'initialization', 'initial_load');
       })
@@ -596,14 +596,25 @@ export default function App(){
       }
     }
   }
-  async function fetchInvoices(){
+  // Fetch invoices. If `force` is false, do not overwrite the currently-displayed
+  // invoices while the user has the Invoices tab active. Use `force=true` when
+  // the caller needs to ensure the UI shows the latest invoices immediately
+  // (for example: after creating a sale or finishing an offline sync).
+  async function fetchInvoices(force = false){
     try {
       if (isOnline) {
         const res = await fetch(API('/api/invoices'))
         if (res.ok) {
           const data = await res.json()
-          setInvoices(data)
-          // Cache fresh data
+          // Only update the visible invoice list when appropriate
+          if (force || tab !== 'invoices') {
+            setInvoices(data)
+          } else {
+            // Log that we skipped an automatic refresh to avoid surprise live-updates
+            console.debug('Skipped auto-refresh of invoices while user is viewing the invoices tab')
+          }
+
+          // Cache fresh data regardless — caching shouldn't affect visible UI
           if (window.offlineStorage) {
             await window.offlineStorage.cacheBills(data)
           }
@@ -613,8 +624,14 @@ export default function App(){
         if (window.offlineStorage) {
           const cachedBills = await window.offlineStorage.getCachedBills()
           if (cachedBills.length > 0) {
-            setInvoices(cachedBills)
-            console.log('Loaded invoices from cache')
+            // When loading from cache, avoid surprising the user if they're actively
+            // on the invoices tab unless the operation is forced to update.
+            if (tab !== 'invoices' || force) {
+              setInvoices(cachedBills)
+              console.log('Loaded invoices from cache')
+            } else {
+              console.debug('Skipped loading cached invoices to avoid replacing user view')
+            }
           }
         }
       }
@@ -751,7 +768,13 @@ export default function App(){
           await window.offlineStorage.cacheCustomers(freshData[1])
         }
         if (freshData[2].length > 0) {
-          setInvoices(freshData[2])
+          // For this initialization path we want the invoices available — force.
+          if (tab === 'invoices') {
+            // If the user is already viewing invoices, still update for a fresh load
+            setInvoices(freshData[2])
+          } else {
+            setInvoices(freshData[2])
+          }
           await window.offlineStorage.cacheBills(freshData[2])
         }
       }
@@ -801,7 +824,7 @@ export default function App(){
       }
 
       // Refresh data after sync
-      await Promise.all([fetchProducts(), fetchCustomers(), fetchInvoices(), fetchStats()])
+      await Promise.all([fetchProducts(), fetchCustomers(), fetchInvoices(true), fetchStats()])
       await loadOfflineTransactions()
       
       showNotification('✅ Offline data synced successfully!', 'success')
@@ -1960,7 +1983,7 @@ export default function App(){
           
           // Refresh data
           fetchProducts(); 
-          fetchInvoices(); 
+          fetchInvoices(true); 
           fetchStats();
         } else if (j.error) {
           trackEvent('sale_failed', 'transaction', j.error);
@@ -3326,7 +3349,7 @@ export default function App(){
                 await Promise.all([
                   fetchProducts(),
                   fetchCustomers(), 
-                  fetchInvoices(),
+                  fetchInvoices(true),
                   fetchStats()
                 ])
                 await loadOfflineTransactions()
