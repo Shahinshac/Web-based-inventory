@@ -1725,58 +1725,7 @@ export default function App(){
     downloadCSV([headers, ...rows], 'Customers_Report');
   }
 
-  function downloadProfitReport() {
-    if (!invoices || invoices.length === 0) { showNotification('No invoice data available for profit report', 'warning'); return; }
-    const doc = new jsPDF();
-    
-    // Header
-    doc.setFontSize(20);
-    doc.text('Profit Analysis Report', 105, 20, { align: 'center' });
-    doc.setFontSize(10);
-    doc.text(`Generated: ${new Date().toLocaleString()}`, 105, 28, { align: 'center' });
-    
-    // Calculate metrics
-    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.total || inv.grandTotal || 0), 0);
-    const totalProfit = invoices.reduce((sum, inv) => sum + (inv.totalProfit || 0), 0);
-    const profitMargin = totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(1) : 0;
-    const avgProfitPerSale = invoices.length > 0 ? (totalProfit / invoices.length).toFixed(1) : 0;
-    const lowStockItems = products.filter(p => p.quantity > 0 && p.quantity < 10).length;
-    
-    // Table data
-    const tableData = [
-      ['Total Revenue', `₹${totalRevenue.toFixed(1)}`],
-      ['Total Profit', `₹${totalProfit.toFixed(1)}`],
-      ['Profit Margin', `${profitMargin}%`],
-      ['Total Invoices', invoices.length.toString()],
-      ['Average Profit/Sale', `₹${avgProfitPerSale}`],
-      ['Total Products', products.length.toString()],
-      ['Total Customers', customers.length.toString()],
-      ['Low Stock Items', lowStockItems.toString()],
-      ['Out of Stock Items', products.filter(p => p.quantity === 0).length.toString()]
-    ];
-    
-    doc.autoTable({
-      startY: 40,
-      head: [['Metric', 'Value']],
-      body: tableData,
-      theme: 'grid',
-      headStyles: { fillColor: [231, 76, 60], fontSize: 12 },
-      styles: { fontSize: 11 },
-      columnStyles: {
-        0: { fontStyle: 'bold', fillColor: [245, 245, 245] }
-      }
-    });
-    
-    // Add visual emphasis
-    const finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 15 : 55;
-    doc.setFontSize(14);
-    doc.setFont(undefined, 'bold');
-    doc.setTextColor(46, 204, 113);
-    doc.text(`Profit Margin: ${profitMargin}%`, 105, finalY, { align: 'center' });
-    
-    doc.save(`Profit-Analysis-${new Date().toISOString().split('T')[0]}.pdf`);
-    showNotification('✅ Profit Analysis PDF downloaded!', 'success');
-  }
+  // Profit Analysis feature removed — exports replaced by CSV. If needed, re-add via secure server report pipeline.
 
   function addToCart(p){
     if (!p || !p.id) {
@@ -2413,184 +2362,7 @@ export default function App(){
     showNotification('Opening WhatsApp with invoice message...', 'info');
   }
 
-  // Generate a high-quality A4 PDF for an invoice (supports multi-page for long invoices)
-  async function downloadInvoicePDF(invoice) {
-    try {
-      const doc = new jsPDF({ unit: 'mm', format: 'a4' });
-      const margin = 12;
-      const pageWidth = (doc.internal && doc.internal.pageSize && typeof doc.internal.pageSize.getWidth === 'function') ? doc.internal.pageSize.getWidth() : 210; // mm
-      const pageHeight = 297; // A4 height mm
-      const usableW = pageWidth - margin * 2;
-
-      // Header background
-      // Attempt to draw a header background + logo
-      doc.setFillColor(102, 126, 234); // #667eea
-      doc.rect(0, 0, pageWidth, 36, 'F');
-
-      // Try embedding the app icon or fallback to emoji/company text
-      try {
-        // prefer public icon if present (vite/serve will expose /icon-512.png)
-        const logoData = await (async function getLogoData(){
-          const url = '/icon-512.png';
-          try {
-            const resp = await fetch(url);
-            if (!resp.ok) throw new Error('no logo');
-            const blob = await resp.blob();
-            return await new Promise((res) => {
-              const reader = new FileReader();
-              reader.onload = () => res(reader.result);
-              reader.readAsDataURL(blob);
-            });
-          } catch(e) { return null; }
-        })();
-
-        if (logoData) {
-          // Add image at left of header
-          const imgW = 18; // mm
-          const imgH = 18; // mm
-          doc.addImage(logoData, 'PNG', margin, 6, imgW, imgH);
-          doc.setTextColor(255,255,255);
-          doc.setFontSize(18);
-          doc.setFont(undefined, 'bold');
-          doc.text(companyInfo.name, margin + 22, 18);
-        } else {
-          doc.setTextColor(255, 255, 255);
-          doc.setFontSize(20);
-          doc.setFont(undefined, 'bold');
-          doc.text(companyInfo.logo + ' ' + companyInfo.name, margin, 18);
-        }
-
-        // company small details
-        doc.setFontSize(8);
-        doc.setTextColor(255,255,255);
-        const details = `${companyInfo.address || ''} ${companyInfo.phone ? '• ' + companyInfo.phone : ''} ${companyInfo.email ? '• ' + companyInfo.email : ''}`.trim();
-        doc.text(details, margin, 28);
-      } catch (e) {
-        // fallback - simply write the company name
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
-        doc.setFont(undefined, 'bold');
-        doc.text(companyInfo.logo + ' ' + companyInfo.name, margin, 14);
-      }
-
-      // Invoice meta box
-      doc.setTextColor(20, 20, 20);
-      doc.setFontSize(11);
-      doc.setFont(undefined, 'normal');
-
-      const invoiceId = invoice.billNumber || invoice.billId || invoice.id || '';
-      const date = new Date(invoice.date || invoice.created_at || Date.now()).toLocaleString();
-      const topY = 42;
-
-      doc.setFillColor(248, 249, 250); // light bg
-      doc.roundedRect(margin, topY, usableW, 18, 3, 3, 'F');
-
-      doc.setTextColor(65, 75, 85);
-      doc.text(`Invoice # ${invoiceId}`, margin + 4, topY + 7);
-      doc.text(`Date: ${date}`, margin + 4, topY + 13);
-      doc.text(`Customer: ${invoice.customer_name || invoice.customerName || 'Walk-in'}`, margin + usableW/2, topY + 7);
-      doc.text(`Phone: ${invoice.customerPhone || ''}`, margin + usableW/2, topY + 13);
-
-      // Items table
-      const columns = [
-        { header: 'S.No', dataKey: 'sno' },
-        { header: 'Item', dataKey: 'item' },
-        { header: 'Qty', dataKey: 'qty' },
-        { header: 'Rate (₹)', dataKey: 'rate' },
-        { header: 'Amount (₹)', dataKey: 'amount' }
-      ];
-
-      const items = (invoice.items || []).map((it, idx) => ({
-        sno: idx + 1,
-        item: it.productName || it.name || 'Item',
-        qty: it.quantity || 0,
-        rate: fmt1(it.unitPrice || it.price || 0),
-        amount: fmt1((it.unitPrice || it.price || 0) * (it.quantity || 0))
-      }));
-
-      // Use autoTable with page break support and denser layout (smaller font, tighter cells)
-      doc.autoTable({
-        startY: topY + 26,
-        margin: { left: margin, right: margin },
-        tableWidth: usableW,
-        head: [columns.map(c => c.header)],
-        body: items.map(r => [r.sno, r.item, r.qty, r.rate, r.amount]),
-        styles: { fontSize: 8, cellPadding: 1.5, overflow: 'linebreak' },
-        columnStyles: { 0: { cellWidth: 12 }, 1: { cellWidth: usableW - 12 - 20 - 28 - 28 }, 2: { cellWidth: 20 }, 3: { cellWidth: 28 }, 4: { cellWidth: 28 } },
-        headStyles: { fillColor: [102,126,234], textColor: 255 },
-        theme: 'striped',
-        // show header on each page and support custom page header/footer
-        showHead: 'everyPage',
-        didDrawPage: function (data) {
-          // draw small page header for subsequent pages
-          const page = doc.getNumberOfPages();
-          if (page > 1) {
-            doc.setFillColor(240, 240, 240);
-            doc.rect(0, 0, pageWidth, 16, 'F');
-            doc.setFontSize(10);
-            doc.setTextColor(40,40,40);
-            doc.text(companyInfo.name || 'Company', margin, 11);
-          }
-          // page footer (page x of y) will be added later after generation
-        }
-      });
-
-      let finalY = (doc.lastAutoTable && doc.lastAutoTable.finalY) ? doc.lastAutoTable.finalY + 6 : (topY + 26 + (items.length ? items.length * 6 : 0));
-
-      // Calculations box on the right (fits under items if space)
-      const calcX = pageWidth - margin - 80;
-      const calcW = 80;
-
-      doc.setFillColor(245, 245, 245);
-      const calcBoxHeight = 36;
-
-      // Move calc box to a new page if it would overflow the page
-      if (finalY + calcBoxHeight > (pageHeight - margin - 12)) {
-        doc.addPage();
-        finalY = margin + 6;
-      }
-
-      doc.roundedRect(calcX, finalY, calcW, calcBoxHeight, 3, 3, 'F');
-
-      const subtotal = invoice.subtotal || 0;
-      const discount = invoice.discountAmount || 0;
-      const tax = invoice.taxAmount || 0;
-      const grand = invoice.grandTotal || invoice.total || 0;
-
-      doc.setFontSize(9);
-      doc.setTextColor(50,50,50);
-      doc.text('Subtotal:', calcX + 6, finalY + 8);
-      doc.text(`₹${fmt1(subtotal)}`, calcX + calcW - 6, finalY + 8, { align: 'right' });
-
-      doc.text('Discount:', calcX + 6, finalY + 15);
-      doc.text(`-₹${fmt1(discount)}`, calcX + calcW - 6, finalY + 15, { align: 'right' });
-
-      doc.text(`GST (${invoice.taxRate || GST_PERCENT}%) :`, calcX + 6, finalY + 22);
-      doc.text(`₹${fmt1(tax)}`, calcX + calcW - 6, finalY + 22, { align: 'right' });
-
-      doc.setFont(undefined, 'bold');
-      doc.text('GRAND TOTAL', calcX + 6, finalY + 30);
-      doc.text(`₹${fmt1(grand)}`, calcX + calcW - 6, finalY + 30, { align: 'right' });
-
-      // Footer / thank you + page numbers
-      const pageCount = doc.getNumberOfPages();
-      for (let i = 1; i <= pageCount; i++) {
-        doc.setPage(i);
-        doc.setFontSize(9);
-        doc.setTextColor(110,110,110);
-        doc.text('Thank you for your business!', margin, pageHeight - margin - 6);
-        doc.text(`Page ${i} of ${pageCount}`, pageWidth - margin, pageHeight - margin - 6, { align: 'right' });
-      }
-
-      // Save as A4 PDF
-      const fileName = `Invoice-${invoiceId || Date.now()}.pdf`;
-      doc.save(fileName);
-      showNotification('✅ Invoice PDF downloaded (A4)', 'success');
-    } catch (err) {
-      console.error('Error generating invoice PDF', err);
-      showNotification('❌ Failed to create PDF. Try the print button instead.', 'error');
-    }
-  }
+  // Invoice PDF generation (client-side) removed — UI no longer offers Download or Server PDF functions.
   
   // Convert number to words (Indian system)
   function numberToWords(num) {
@@ -4662,13 +4434,7 @@ export default function App(){
                     <small>Customer database</small>
                   </div>
                 </button>
-                <button onClick={downloadProfitReport} className="download-btn profit">
-                  <span className="btn-icon"><Icon name="analytics" size={16} /></span>
-                  <div>
-                    <strong>Profit Analysis</strong>
-                    <small>Financial overview</small>
-                  </div>
-                </button>
+                {/* Profit Analysis removed — exports are now CSV-only using Sales/Inventory/Customer reports */}
               </div>
             </div>
 
@@ -4697,7 +4463,7 @@ export default function App(){
 
         {/* Invoices Tab */}
         {tab==='invoices' && (
-          <div>
+          <div className="invoices-tab">
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
               <h2><Icon name="invoices" size={24} /> Invoices</h2>
               <div style={{display:'flex',gap:'10px',alignItems:'center'}}>
@@ -5473,25 +5239,6 @@ export default function App(){
 
             <div className="modal-actions" style={{marginTop:'20px'}}>
               <button onClick={printBill} className="btn-primary important-btn btn-icon"><Icon name="print"/> <span className="label">Print Bill</span></button>
-              <button
-                onClick={() => { if (!lastBill) return; downloadInvoicePDF(lastBill); }}
-                className="btn-primary"
-                style={{background:'#2b6cb0', marginLeft:'8px'}}
-              >
-                <Icon name="download"/> <span className="label">Download PDF</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (!lastBill) return;
-                  const id = lastBill.id || lastBill._id || lastBill.billNumber || lastBill.id;
-                  const url = API(`/api/invoices/${encodeURIComponent(id)}/server-pdf`);
-                  window.open(url, '_blank');
-                }}
-                className="btn-primary"
-                style={{background:'#1f7a8c', marginLeft:'8px'}}
-              >
-                <Icon name="download"/> <span className="label">Server PDF</span>
-              </button>
               <button
                 onClick={() => {
                   if (!lastBill) return;
