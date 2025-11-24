@@ -1306,6 +1306,17 @@ export default function App(){
   // Filter and sort products
   function getFilteredProducts() {
     let filtered = [...products]
+    // Apply global search (name, barcode, category)
+    if (searchQuery && String(searchQuery).trim() !== '') {
+      const q = String(searchQuery).trim().toLowerCase();
+      filtered = filtered.filter(p => {
+        return (
+          (p.name || '').toLowerCase().includes(q) ||
+          (p.barcode || '').toLowerCase().includes(q) ||
+          (p.category || '').toLowerCase().includes(q)
+        )
+      })
+    }
     
     // Apply filter
     switch(productFilter) {

@@ -983,6 +983,8 @@ ul:not(.products):not(.cart) li:hover {
   height: 40px;
   display:inline-flex; align-items:center; justify-content:center;
   min-width: 44px;
+  border-top-left-radius: 8px;
+  border-bottom-left-radius: 8px;
 }
 
 /* Small screen: when space is tight, stack select + add button neatly */
@@ -1289,10 +1291,10 @@ ul:not(.products):not(.cart) li:hover {
   background: rgba(255, 255, 255, 0.2);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 8px 14px;
-  border-radius: 8px;
+  padding: 10px 20px; /* match nav buttons */
+  border-radius: 25px; /* match nav buttons */
   cursor: pointer;
-  font-size: 12px;
+  font-size: 14px; /* consistent with nav buttons */
   font-weight: 600;
   transition: all 0.3s ease;
   animation: slideInRight 0.5s ease-out;
