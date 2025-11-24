@@ -1999,12 +1999,31 @@ export default function App(){
 
     const printWindow = window.open('', '_blank');
 
-    // Calculate bill details
-    const subtotal = lastBill.items.reduce((s, it) => s + (it.price * it.quantity), 0);
-    const discountAmount = (subtotal * discount / 100);
-    const afterDiscount = subtotal - discountAmount;
-    const taxAmount = afterDiscount * (taxRate / 100);
-    const grandTotal = afterDiscount + taxAmount;
+    // Use stored bill totals when available, otherwise compute from items
+    const subtotal = typeof lastBill.subtotal === 'number'
+      ? lastBill.subtotal
+      : lastBill.items.reduce((s, it) => s + (it.price * it.quantity), 0);
+
+    // discountPercent may be stored as discountPercent or discountValue; fall back to current discount state
+    const discountPercent = typeof lastBill.discountPercent === 'number'
+      ? lastBill.discountPercent
+      : (typeof lastBill.discountValue === 'number' ? lastBill.discountValue : discount);
+
+    const discountAmount = typeof lastBill.discountAmount === 'number'
+      ? lastBill.discountAmount
+      : (subtotal * (discountPercent / 100));
+
+    const afterDiscount = typeof lastBill.afterDiscount === 'number'
+      ? lastBill.afterDiscount
+      : (subtotal - discountAmount);
+
+    const taxAmount = typeof lastBill.gstAmount === 'number'
+      ? lastBill.gstAmount
+      : (afterDiscount * ((lastBill.taxRate || taxRate) / 100));
+
+    const grandTotal = typeof lastBill.grandTotal === 'number'
+      ? lastBill.grandTotal
+      : (afterDiscount + taxAmount);
 
     const billHTML = `
       <html>
@@ -2220,9 +2239,9 @@ export default function App(){
                   <td>Subtotal:</td>
                   <td class="text-right">₹${subtotal.toFixed(2)}</td>
                 </tr>
-                ${discount > 0 ? `
+                ${discountAmount > 0 ? `
                   <tr>
-                    <td>Discount (${discount}%):</td>
+                    <td>Discount (${discountPercent}%):</td>
                     <td class="text-right">- ₹${discountAmount.toFixed(2)}</td>
                   </tr>
                   <tr>
