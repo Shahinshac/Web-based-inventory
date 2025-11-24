@@ -786,29 +786,71 @@ app.post('/api/products/:id/photo', upload.single('photo'), async (req, res) => 
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    // Delete old photo if exists
+    // Delete old photo if exists (support both DB-backed and filesystem-backed)
     if (product.photo) {
       try {
-        await fs.unlink(path.join(__dirname, 'uploads', 'products', path.basename(product.photo)));
+        if (product.photoStorage === 'db' || product.photoDbId) {
+          const photoId = product.photoDbId || String(product.photo).replace(/^db:/, '');
+          if (photoId) await db.collection('product_images').deleteOne({ _id: new ObjectId(photoId) });
+        } else {
+          const filename = product.photoFilename || (product.photo && path.basename(product.photo));
+          if (filename) await fs.unlink(path.join(__dirname, 'uploads', 'products', filename));
+        }
       } catch (err) {
         logger.warn('Failed to delete old photo:', err.message);
       }
     }
     
-    // Save relative URL path
-    const photoUrl = `/uploads/products/${req.file.filename}`;
-    
-    await db.collection('products').updateOne(
-      { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          photo: photoUrl,
-          lastModifiedBy: userId || null,
-          lastModifiedByUsername: username || 'Unknown',
-          lastModified: new Date()
-        } 
-      }
-    );
+    // Use a consistent API path so client can request the product image through the server
+    let photoUrl = `/api/products/${id}/photo`;
+
+    if (String(req.query.storage || '').toLowerCase() === 'db') {
+      // Read file into buffer, insert into product_images collection
+      const buffer = await fs.readFile(req.file.path);
+      const imgDoc = {
+        productId: new ObjectId(id),
+        filename: req.file.originalname || req.file.filename,
+        contentType: req.file.mimetype || 'application/octet-stream',
+        data: buffer,
+        uploadedAt: new Date()
+      };
+
+      const imgResult = await db.collection('product_images').insertOne(imgDoc);
+      // remove file from disk (we don't need it when storing in DB)
+      try { await fs.unlink(req.file.path); } catch (e) {/* ignore */}
+
+      // product.photo will point at server image endpoint; photoDbId stores DB image id
+      await db.collection('products').updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            photo: photoUrl,
+            photoStorage: 'db',
+            photoDbId: imgResult.insertedId.toString(),
+            lastModifiedBy: userId || null,
+            lastModifiedByUsername: username || 'Unknown',
+            lastModified: new Date()
+          }
+        }
+      );
+
+    } else {
+      // filesystem-backed - keep a reference to the filename while exposing a stable API URL
+      photoUrl = `/api/products/${id}/photo`;
+      await db.collection('products').updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            photo: photoUrl,
+            photoStorage: 'fs',
+            photoFilename: req.file.filename,
+            lastModifiedBy: userId || null,
+            lastModifiedByUsername: username || 'Unknown',
+            lastModified: new Date()
+          }
+        }
+      );
+    }
     
     // Log audit trail
     await logAudit(db, 'PRODUCT_PHOTO_UPDATED', userId, username, {
@@ -851,13 +893,24 @@ app.delete('/api/products/:id/photo', async (req, res) => {
     }
     
     if (product.photo) {
-      try {
-        await fs.unlink(path.join(__dirname, 'uploads', 'products', path.basename(product.photo)));
-      } catch (err) {
-        logger.warn('Failed to delete photo file:', err.message);
+      // If photo references DB-stored image (db:<id>), remove from product_images collection
+      if (String(product.photo).startsWith('db:') || product.photoDbId) {
+        const photoId = product.photoDbId || String(product.photo).replace(/^db:/, '');
+        try {
+          await db.collection('product_images').deleteOne({ _id: new ObjectId(photoId) });
+        } catch (err) {
+          logger.warn('Failed to delete DB-stored product photo:', err.message);
+        }
+      } else {
+        // filesystem-backed image
+        try {
+          await fs.unlink(path.join(__dirname, 'uploads', 'products', path.basename(product.photo)));
+        } catch (err) {
+          logger.warn('Failed to delete photo file:', err.message);
+        }
       }
     }
-    
+
     await db.collection('products').updateOne(
       { _id: new ObjectId(id) },
       { 
@@ -866,7 +919,12 @@ app.delete('/api/products/:id/photo', async (req, res) => {
           lastModifiedBy: userId || null,
           lastModifiedByUsername: username || 'Unknown',
           lastModified: new Date()
-        } 
+        },
+        $unset: {
+          photoFilename: "",
+          photoDbId: "",
+          photoStorage: ""
+        }
       }
     );
     
@@ -877,6 +935,46 @@ app.delete('/api/products/:id/photo', async (req, res) => {
     });
     
     res.json({ success: true, message: 'Product photo deleted successfully' });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Serve product photo (file-system or DB-backed)
+app.get('/api/products/:id/photo', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDB();
+    const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
+
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // If DB-backed image
+    if (product.photoStorage === 'db' || product.photoDbId) {
+      const imgId = product.photoDbId || String(product.photo || '').replace(/^db:/, '');
+      if (!imgId) return res.status(404).json({ error: 'No DB-stored photo found' });
+
+      const imgDoc = await db.collection('product_images').findOne({ _id: new ObjectId(imgId) });
+      if (!imgDoc) return res.status(404).json({ error: 'Image data not found' });
+
+      res.setHeader('Content-Type', imgDoc.contentType || 'application/octet-stream');
+      // cache images for a short time
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(imgDoc.data.buffer ? Buffer.from(imgDoc.data.buffer) : imgDoc.data);
+    }
+
+    // Filesystem-backed image
+    const filename = product.photoFilename || (product.photo && path.basename(product.photo));
+    if (!filename) return res.status(404).json({ error: 'No photo available for this product' });
+
+    const imgPath = path.join(__dirname, 'uploads', 'products', filename);
+    return res.sendFile(imgPath, err => {
+      if (err) {
+        logger.warn('Failed to send image file:', err.message);
+        res.status(404).json({ error: 'Image not found' });
+      }
+    });
   } catch (e) {
     logger.error(e);
     res.status(500).json({ error: e.message });
