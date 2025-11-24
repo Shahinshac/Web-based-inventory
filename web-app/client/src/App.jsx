@@ -140,7 +140,9 @@ export default function App(){
   const [analyticsDateRange, setAnalyticsDateRange] = useState(30);
   
   // Admin password from secure environment variable
-  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'shaahnc'
+  // New admin password set per request. NOTE: hard-coding credentials is insecure
+  // for production — consider storing this in environment variables / secrets.
+  const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || 'shahinsha'
 
   // Helper function to track tab changes
   const handleTabChange = (newTab) => {
@@ -1189,52 +1191,8 @@ export default function App(){
     }
   }
 
-  // Admin — change admin password and optionally logout all sessions
-  async function changeAdminPassword() {
-    if (!isAdmin) {
-      showNotification('Only admins can change the admin password', 'error')
-      return
-    }
-
-    if (!confirm('This action will change the admin password and optionally log out all active sessions. Continue?')) return
-
-    const currentPass = prompt('Enter current admin password:')
-    if (!currentPass) return
-
-    const newPass = prompt('Enter new admin password:')
-    if (!newPass) return
-
-    const confirmPass = prompt('Confirm new admin password:')
-    if (newPass !== confirmPass) {
-      showNotification('Passwords do not match', 'error')
-      return
-    }
-
-    try {
-      showNotification('🔄 Changing admin password...', 'info')
-      const payload = { adminUsername: currentUser?.username || 'admin', currentPassword: currentPass, newPassword: newPass, logoutAll: true }
-      const res = await fetch(API('/api/admin/change-password'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      })
-
-      const data = await res.json().catch(() => ({}))
-
-      if (res.ok) {
-        showNotification(data.message || 'Admin password changed — all sessions will be logged out', 'success')
-        // Clear local session and force re-login
-        handleLogout()
-      } else {
-        // Show more actionable message where available
-        const err = data.error || (res.status === 401 ? 'Current admin password incorrect' : 'Failed to change admin password')
-        showNotification(`❌ ${err}`, 'error')
-      }
-    } catch (e) {
-      console.error('Change admin password error:', e)
-      showNotification('❌ Failed to change admin password. Try again later.', 'error')
-    }
-  }
+  // Admin password change via web UI has been removed. Use server-side tools or
+  // environment variables to manage the admin password securely.
 
   // Change user role (Admin only)
   async function changeUserRole(userId, newRole, username) {
@@ -4911,7 +4869,7 @@ export default function App(){
                 <span style={{color:'#000',fontSize:'14px',fontWeight:'500'}}>
                   Total Users: {users.length} | Pending: {users.filter(u=>!u.approved).length}
                 </span>
-                <button onClick={changeAdminPassword} className="btn-primary" style={{padding:'8px 12px'}} title="Change admin password and logout all sessions">Change Admin Password & Logout All</button>
+                {/* Change admin password via web UI removed (password is set in code/config) */}
               </div>
             </div>
             
