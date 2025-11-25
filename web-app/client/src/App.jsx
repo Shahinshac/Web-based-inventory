@@ -315,6 +315,20 @@ export default function App(){
     const storedRole = localStorage.getItem('userRole')
     
     if (storedUser) {
+      // migrate any legacy global profilePhoto from localStorage into per-user cache
+      try {
+        const globalPhoto = localStorage.getItem('profilePhoto')
+        if (globalPhoto) {
+          const userObj = JSON.parse(storedUser)
+          const uid = userObj && (userObj.id || userObj._id || userObj.userId)
+          if (uid) {
+            const existing = localUserPhotos && localUserPhotos[uid]
+            if (!existing) setLocalUserPhotos(u => ({ ...(u||{}), [uid]: globalPhoto }))
+            // remove legacy key to avoid confusion
+            localStorage.removeItem('profilePhoto')
+          }
+        }
+      } catch(e) {}
       setIsAuthenticated(true)
       setCurrentUser(JSON.parse(storedUser))
       const isAdminStored = (storedIsAdmin === 'true') || (storedRole === 'admin')
