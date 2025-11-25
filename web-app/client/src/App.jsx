@@ -3636,8 +3636,8 @@ export default function App(){
                 const el = document.querySelector('.sidebar .upload-input')
                 if (el) el.click()
               }}>
-              {profilePhoto ? <img src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-              <button className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
+              {profilePhoto ? <img className="user-photo" src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
+              <button type="button" className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
                 <Icon name="camera" size={14} />
               </button>
             </div>
@@ -3675,7 +3675,7 @@ export default function App(){
               <div className="profile-area">
                 <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
                   {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-                  <button className="camera-overlay" title="Set photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
+                  <button type="button" className="camera-overlay" title="Set photo" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
                 </div>
                 <div className="profile-meta">
                   <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
@@ -4995,11 +4995,11 @@ export default function App(){
                           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
                             <div className="user-photo-wrapper" style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
                               {user.photo ? (
-                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
+                                <img className="user-photo" src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
                               ) : (
                                 <div style={{fontWeight:700,color:'var(--accent-secondary)',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
                               )}
-                              <button className="camera-overlay" title="Set user photo" onClick={(e)=>{ e.stopPropagation(); document.getElementById(`user-photo-${user._id}`).click(); }} style={{position:'absolute',right:-6,bottom:-6}}><Icon name="camera" size={12} /></button>
+                              <button type="button" className="camera-overlay" title="Set user photo" aria-label={`Set photo for ${user.username || 'user'}`} onClick={(e)=>{ e.stopPropagation(); document.getElementById(`user-photo-${user._id}`).click(); }} style={{position:'absolute',right:-6,bottom:-6}}><Icon name="camera" size={12} /></button>
                             </div>
                             <div style={{display:'flex',flexDirection:'column'}}>
                               <strong>{user.username}</strong>

@@ -196,6 +196,9 @@ html, body, .app, .left, .products, .cart, .right {
 .avatar-wrapper .camera-overlay:hover { transform: translateY(-2px); background: rgba(255,255,255,0.09); }
 .avatar-wrapper .camera-overlay svg { width:18px; height:18px; color: var(--text); stroke: currentColor; }
 
+/* Keyboard focus for camera overlay buttons (accessibility) */
+.camera-overlay:focus { outline: none; box-shadow: 0 0 0 4px rgba(255,255,255,0.08); transform: translateY(-2px); }
+
 /* Small avatar overlay for user list rows */
 .user-photo-wrapper { position: relative; display: inline-block; }
 .user-photo-wrapper .camera-overlay { right: -6px; bottom: -6px; width:24px; height:24px; }
