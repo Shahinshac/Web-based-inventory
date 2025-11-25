@@ -4915,11 +4915,11 @@ export default function App(){
                             <button
                               onClick={() => sendInvoiceWhatsApp(inv)}
                               title="Send invoice via WhatsApp"
-                              className="fancy-btn whatsapp-btn"
-                              style={{padding:'6px 10px', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
+                              className="fancy-btn whatsapp-btn icon-only"
+                              style={{border:'none', cursor:'pointer', marginRight:'6px'}}
                             >
-                            <Icon name="whatsapp"/> <span className="label">WhatsApp</span>
-                          </button>
+                              <Icon name="whatsapp" size={16} />
+                            </button>
                             <button
                             onClick={() => { setLastBill(inv); setShowBill(true); }}
                             style={{padding:'6px 10px', background:'var(--accent-primary)', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
@@ -5536,14 +5536,12 @@ export default function App(){
             <div className="modal-actions" style={{marginTop:'20px'}}>
               <button onClick={printBill} className="btn-primary important-btn btn-icon"><Icon name="print"/> <span className="label">Print Bill</span></button>
               <button
-                onClick={() => {
-                  if (!lastBill) return;
-                  sendInvoiceWhatsApp(lastBill);
-                }}
-                className="btn-primary whatsapp-btn"
+                onClick={() => { if (!lastBill) return; sendInvoiceWhatsApp(lastBill); }}
+                className="btn-primary whatsapp-btn icon-only"
+                title="Send via WhatsApp"
                 style={{ marginLeft:'8px' }}
               >
-                <Icon name="whatsapp"/> <span className="label">Send via WhatsApp</span>
+                <Icon name="whatsapp" size={18} />
               </button>
               <button onClick={()=>setShowBill(false)} className="btn-secondary">Close</button>
             </div>

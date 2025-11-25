@@ -61,7 +61,7 @@ body {
   --header-bg: linear-gradient(135deg,#000000,#0a0a0a);
   --header-text: #ffffff;
   /* header sizing to support fixed positioning */
-  --header-height: 74px;
+  --header-height: 64px; /* smaller header so content below is visible */
 }
 
 /* Hide visible scrollbars (keep natural scroll behavior) - cleaner UI while preserving scrolling */
@@ -92,7 +92,8 @@ html, body, .app, .left, .products, .cart, .right {
   /* header uses deep black background per user request */
   background: var(--header-bg);
   color: #fff;
-  padding: 20px 30px;
+  /* make header compact and center content vertically */
+  padding: 0 30px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
   /* make header fixed at the top across the app */
   position: fixed;
@@ -109,8 +110,8 @@ html, body, .app, .left, .products, .cart, .right {
 .app header h1 {
   margin: 0;
   display: inline-block;
-  font-size: 28px;
-  font-weight: 600;
+  font-size: 22px; /* slightly smaller to keep header compact */
+  font-weight: 700;
   animation: slideInLeft 0.6s ease-out;
 }
 
@@ -141,7 +142,8 @@ html, body, .app, .left, .products, .cart, .right {
   margin-left: auto;
   position: absolute;
   right: 20px;
-  top: 20px;
+  top: 50%;
+  transform: translateY(-50%);
 }
 
 .app header .header-time {
@@ -235,8 +237,8 @@ html, body, .app, .left, .products, .cart, .right {
 
 .sidebar-bottom { margin-top: 28px }
 .profile-area { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; background:#fff; border:1px solid rgba(100,116,139,0.06); box-shadow: 0 6px 18px rgba(14,22,36,0.06); }
-.avatar-wrapper { width:56px; height:auto; overflow:visible; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff; background:linear-gradient(135deg,#f5f5f5,#ffffff); border-radius:8px }
-.avatar-wrapper img { max-width:100%; height:auto; object-fit:contain; display:block }
+.avatar-wrapper { width:56px; height:56px; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff; background:linear-gradient(135deg,#f5f5f5,#ffffff); border-radius:10px }
+.avatar-wrapper img { width:100%; height:100%; object-fit:cover; display:block }
 .avatar-fallback { font-weight:700; color:var(--accent-secondary); font-size:18px }
 .profile-meta { flex:1; min-width:0 }
 .profile-name { font-weight:800; font-size:14px; color:#0f172a }
@@ -246,8 +248,8 @@ html, body, .app, .left, .products, .cart, .right {
 .logout-inline { background:#f8fafc; border:none; padding:8px 8px; border-radius:8px; cursor:pointer }
 
 /* Small header avatar (top right) */
-.header-avatar { width:36px; height:auto; overflow:visible; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:3px }
-.header-avatar img{max-width:100%; height:auto; object-fit:contain}
+.header-avatar { width:36px; height:36px; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:8px }
+.header-avatar img{width:100%; height:100%; object-fit:cover}
 
 /* Camera overlay button on avatars */
 .avatar-wrapper { position: relative; }
@@ -3213,6 +3215,21 @@ table tbody tr:last-child td {
 /* WhatsApp button styling */
 .whatsapp-btn { background: #25D366 !important; color: white !important; }
 .whatsapp-btn:hover { background: #1fae5a !important; }
+
+/* Icon-only circular variant used in tables and modals so the button remains fully visible */
+.whatsapp-btn.icon-only {
+  width: 40px;
+  height: 40px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  box-shadow: 0 6px 14px rgba(37,211,102,0.18);
+}
+
+.whatsapp-btn.icon-only .label { display: none !important; }
 
 
 /* Enhanced Button Styles */
