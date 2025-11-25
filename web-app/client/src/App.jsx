@@ -2410,7 +2410,7 @@ export default function App(){
           
           <!-- Print Button -->
           <div class="no-print" style="text-align: center; margin: 20px;">
-            <button onclick="window.print()" style="padding: 12px 30px; font-size: 14px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
+            <button onclick="window.print()" style="padding: 12px 30px; font-size: 14px; background: #111; color: white; border: none; border-radius: 5px; cursor: pointer; margin-right: 10px;">
               🖨️ Print Invoice
             </button>
             <button onclick="window.close()" style="padding: 12px 30px; font-size: 14px; background: #666; color: white; border: none; border-radius: 5px; cursor: pointer;">
@@ -3069,7 +3069,7 @@ export default function App(){
         left: 0,
         width: '100%',
         height: '100%',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        background: 'linear-gradient(135deg,#111,#444)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
@@ -3249,7 +3249,7 @@ export default function App(){
           position: 'fixed',
           top: '80px',
           right: '20px',
-          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          background: 'linear-gradient(135deg,#111,#444)',
           color: 'white',
           padding: '15px 20px',
           borderRadius: '12px',
@@ -3305,14 +3305,14 @@ export default function App(){
           left: '20px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#ff6b6b',
+          background: '#444',
           color: 'white',
           padding: '8px 16px',
           borderRadius: '20px',
           fontSize: '14px',
           fontWeight: 'bold',
           zIndex: 9999,
-          boxShadow: '0 4px 12px rgba(255,107,107,0.3)',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
           animation: 'pulse 2s infinite',
           maxWidth: '220px'
         }}>
@@ -3680,6 +3680,7 @@ export default function App(){
             </div>
           </div>
         </aside>
+        <div className="content">
         {tab==='dashboard' && (
           <div className="dashboard">
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
@@ -5249,6 +5250,7 @@ export default function App(){
             </div>
           </div>
         )}
+        </div>
       </main>
 
       {/* Mobile bottom navigation (small screens) */}
