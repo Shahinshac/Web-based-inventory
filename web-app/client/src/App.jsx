@@ -2167,7 +2167,7 @@ export default function App(){
             }
             .header { 
               text-align: center; 
-              border-bottom: 3px double #000;
+              border-bottom: 3px double var(--border);
               padding-bottom: 15px;
               margin-bottom: 15px;
             }
@@ -2941,43 +2941,20 @@ export default function App(){
       fd.append('userId', stored.id || stored._id || '')
       fd.append('username', stored.username || '')
 
-      // attempt upload up to 3 times (exponential backoff)
-      const maxAttempts = 3
-      let attempt = 0
-      let lastErr = null
+      const res = await fetch(API(`/api/users/${userId}/photo`), {
+        method: 'POST',
+        body: fd
+      })
 
-      while (attempt < maxAttempts) {
-        try {
-          const res = await fetch(API(`/api/users/${userId}/photo`), {
-            method: 'POST',
-            body: fd
-          })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
 
-          const data = await res.json()
-          if (!res.ok) throw new Error(data.error || 'Upload failed')
-
-          // success
-          setProfilePhoto(API(`/api/users/${userId}/photo`))
-          showNotification('✅ Profile photo saved to server', 'success')
-          lastErr = null
-          break
-        } catch (err) {
-          lastErr = err
-          attempt += 1
-          // short exponential backoff
-          const delay = 400 * Math.pow(2, attempt - 1)
-          await new Promise(r => setTimeout(r, delay))
-        }
-      }
-
-      if (lastErr) {
-        // failed after retries — keep locally persisted copy and silently fallback; no blocking toast
-        console.warn('Failed to sync profile photo after retries; saved locally.', lastErr)
-      }
+      // server returns a stable endpoint - use full API path resolution
+      setProfilePhoto(API(`/api/users/${userId}/photo`))
+      showNotification('✅ Profile photo saved to server', 'success')
     } catch (e) {
-      console.error('Failed to upload profile photo (outer error):', e)
-      // silent fallback — keep photo saved locally; avoid showing a blocking toast repeatedly
-      console.warn('Profile photo persistence: using local image until server sync succeeds')
+      console.error('Failed to upload profile photo:', e)
+      showNotification('Failed to sync photo to server. Saved locally instead.', 'warning')
     } finally {
       setUploadingPhoto(false)
     }
@@ -3387,7 +3364,7 @@ export default function App(){
           position: 'fixed',
           top: isOnline ? '20px' : '60px',
           left: '20px',
-          background: 'var(--accent-primary)',
+          background: '#4ecdc4',
           color: 'white',
           padding: '8px 16px',
           borderRadius: '20px',
@@ -3407,7 +3384,7 @@ export default function App(){
             position: 'fixed',
             top: '20px',
             left: isOnline ? '120px' : '160px',
-            background: 'var(--accent-warning)',
+            background: '#ffa726',
             color: 'white',
             padding: '6px 12px',
             borderRadius: '15px',
@@ -3525,7 +3502,7 @@ export default function App(){
                 ))}
               </div>
               
-                      <h3 style={{color: 'var(--accent-warning)', marginTop: '20px'}}><Icon name="analytics" size={16} /> Low Stock ({products.filter(p => p.quantity > 0 && p.quantity < 10).length})</h3>
+              <h3 style={{color: '#f39c12', marginTop: '20px'}}><Icon name="analytics" size={16} /> Low Stock ({products.filter(p => p.quantity > 0 && p.quantity < 10).length})</h3>
               <div className="alert-list">
                 {products.filter(p => p.quantity > 0 && p.quantity < 10).map(p => (
                   <div key={p._id} className="alert-item low-stock">
@@ -3636,8 +3613,8 @@ export default function App(){
                 const el = document.querySelector('.sidebar .upload-input')
                 if (el) el.click()
               }}>
-              {profilePhoto ? <img className="user-photo" src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-              <button type="button" className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
+              {profilePhoto ? <img src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
+              <button className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
                 <Icon name="camera" size={14} />
               </button>
             </div>
@@ -3675,7 +3652,7 @@ export default function App(){
               <div className="profile-area">
                 <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
                   {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-                  <button type="button" className="camera-overlay" title="Set photo" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
+                  <button className="camera-overlay" title="Set photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
                 </div>
                 <div className="profile-meta">
                   <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
@@ -3835,8 +3812,8 @@ export default function App(){
                           position: 'absolute',
                           top: '8px',
                           right: '8px',
-                          background: 'var(--accent-danger)',
-                          color: 'var(--accent-danger)',
+                          background: '#feb2b2',
+                          color: '#742a2a',
                           fontSize: '10px',
                           padding: '3px 6px',
                           borderRadius: '4px',
@@ -3850,8 +3827,8 @@ export default function App(){
                           position: 'absolute',
                           top: '8px',
                           right: '8px',
-                          background: 'var(--accent-warning)',
-                          color: 'var(--accent-warning)',
+                          background: '#feebc8',
+                          color: '#7c2d12',
                           fontSize: '10px',
                           padding: '3px 6px',
                           borderRadius: '4px',
@@ -4085,10 +4062,10 @@ export default function App(){
                     </div>
                     <div style={{
                       padding: '10px',
-                      background: isValid ? 'var(--accent-success)' : 'var(--card-2)',
+                      background: isValid ? '#c6f6d5' : '#fff5f5',
                       borderRadius: '5px',
                       fontWeight: '600',
-                      color: isValid ? 'var(--accent-success)' : 'var(--accent-danger)',
+                      color: isValid ? '#2f855a' : '#c53030',
                       fontSize: '14px'
                     }}>
                       {isValid ? '✓ Exact Amount' : (
@@ -4248,7 +4225,7 @@ export default function App(){
                     </td>
                     <td style={{fontFamily:'monospace', fontSize:'0.9em'}}>{index + 1}</td>
                     <td>
-                      <span onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} style={{cursor:'pointer', textDecoration:'underline', color:'var(--accent-primary)'}}>
+                      <span onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} style={{cursor:'pointer', textDecoration:'underline', color:'#3498db'}}>
                         {prod.name}
                       </span>
                       {prod.quantity === 0 && <span className="badge out-of-stock">Out of Stock</span>}
@@ -4447,7 +4424,7 @@ export default function App(){
                       <span style={{
                         fontSize: '18px',
                         fontWeight: 'bold',
-                        color: prod.quantity === 0 ? 'var(--accent-danger)' : prod.quantity < 10 ? 'var(--accent-warning)' : 'var(--accent-success)'
+                        color: prod.quantity === 0 ? '#ef4444' : prod.quantity < 10 ? '#f59e0b' : '#10b981'
                       }}>
                         {prod.quantity}
                       </span>
@@ -4889,13 +4866,13 @@ export default function App(){
                         </td>
                         {/* removed duplicated Actions column (was misaligned under GST) */}
                         <td>
-                          <span style={{color:'var(--accent-success)',fontSize:'13px'}}>
+                          <span style={{color:'#27ae60',fontSize:'13px'}}>
                             +{inv.taxRate || 0}%
                             <br/>
                             <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
                           </span>
                         </td>
-                        <td><strong style={{color:'var(--text)'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
+                        <td><strong style={{color:'#2c3e50'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
                         <td>
                           <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
                             ₹{(profit || 0).toFixed(1)}
@@ -4931,11 +4908,12 @@ export default function App(){
                             </span>
                           )}
                         </td>
-                        <td className="actions-cell" style={{whiteSpace:'nowrap', overflow:'visible', position:'relative'}}>
+                        <td style={{whiteSpace:'nowrap'}}>
                           <button
                             onClick={() => sendInvoiceWhatsApp(inv)}
                             title="Send invoice via WhatsApp"
-                            className="fancy-btn whatsapp-btn"
+                            className="fancy-btn"
+                            style={{padding:'6px 10px', background:'#25D366', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
                           >
                             <Icon name="whatsapp"/> <span className="label">WhatsApp</span>
                           </button>
@@ -4995,11 +4973,11 @@ export default function App(){
                           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
                             <div className="user-photo-wrapper" style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
                               {user.photo ? (
-                                <img className="user-photo" src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
+                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
                               ) : (
                                 <div style={{fontWeight:700,color:'var(--accent-secondary)',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
                               )}
-                              <button type="button" className="camera-overlay" title="Set user photo" aria-label={`Set photo for ${user.username || 'user'}`} onClick={(e)=>{ e.stopPropagation(); document.getElementById(`user-photo-${user._id}`).click(); }} style={{position:'absolute',right:-6,bottom:-6}}><Icon name="camera" size={12} /></button>
+                              <button className="camera-overlay" title="Set user photo" onClick={(e)=>{ e.stopPropagation(); document.getElementById(`user-photo-${user._id}`).click(); }} style={{position:'absolute',right:-6,bottom:-6}}><Icon name="camera" size={12} /></button>
                             </div>
                             <div style={{display:'flex',flexDirection:'column'}}>
                               <strong>{user.username}</strong>
@@ -5203,7 +5181,7 @@ export default function App(){
                           <td>
                             <span style={{
                               background: 
-                                log.action.includes('DELETE') ? 'var(--accent-danger)' :
+                                log.action.includes('DELETE') ? '#f56565' :
                                 log.action.includes('ADD') || log.action.includes('COMPLETE') ? 'var(--accent-success)' :
                                 log.action.includes('UPDATE') ? 'var(--accent-warning)' : 'var(--accent-primary)',
                               color: 'white',
@@ -5437,7 +5415,7 @@ export default function App(){
                   <div style={{fontSize: '12px', color: '#666'}}>Total Spent</div>
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
-                  <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-warning)'}}>
+                  <div style={{fontSize: '24px', fontWeight: 'bold', color: '#f6ad55'}}>
                     ₹{customerPurchases.length > 0 ? (customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0) / customerPurchases.length).toFixed(1) : '0.00'}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Avg Purchase</div>
@@ -5549,6 +5527,7 @@ export default function App(){
 
               <div className="bill-footer">
                 <p><strong>Thank you for your business!</strong></p>
+                <p>© {new Date().getFullYear()} Shahinsha</p>
               </div>
             </div>
 
@@ -5559,8 +5538,8 @@ export default function App(){
                   if (!lastBill) return;
                   sendInvoiceWhatsApp(lastBill);
                 }}
-                className="btn-primary whatsapp-btn"
-                style={{ marginLeft: '8px' }}
+                className="btn-primary"
+                style={{background:'var(--accent-success)', marginLeft:'8px'}}
               >
                 <Icon name="whatsapp"/> <span className="label">Send via WhatsApp</span>
               </button>
@@ -5763,7 +5742,12 @@ export default function App(){
         </div>
       )}
 
-      {/* Copyright footer deliberately removed per design preference */}
+      {/* Copyright Footer */}
+      <footer className="copyright-footer">
+        <div className="footer-content">
+          <p>© {new Date().getFullYear()} Shahinsha</p>
+        </div>
+      </footer>
     </div>
   );
 

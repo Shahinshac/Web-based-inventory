@@ -34,7 +34,6 @@ body {
   --accent-success: #bfbfbf; /* neutral gray (used for positive states) */
   --accent-danger: #8f8f8f; /* darker gray for 'danger' states */
   --accent-warning: #cfcfcf; /* soft gray */
-  --whatsapp-green: #25D366; /* keep WhatsApp action green */
 
   /* Gradients / helpers */
   --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -195,9 +194,6 @@ html, body, .app, .left, .products, .cart, .right {
 .avatar-wrapper .camera-overlay { position: absolute; right: -6px; bottom: -6px; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
 .avatar-wrapper .camera-overlay:hover { transform: translateY(-2px); background: rgba(255,255,255,0.09); }
 .avatar-wrapper .camera-overlay svg { width:18px; height:18px; color: var(--text); stroke: currentColor; }
-
-/* Keyboard focus for camera overlay buttons (accessibility) */
-.camera-overlay:focus { outline: none; box-shadow: 0 0 0 4px rgba(255,255,255,0.08); transform: translateY(-2px); }
 
 /* Small avatar overlay for user list rows */
 .user-photo-wrapper { position: relative; display: inline-block; }
@@ -475,11 +471,11 @@ h2 {
 .cart-item strong{font-size:14px;color:#1e3c72}
 .qty-btn{width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer; border:2px solid transparent; background:white; color:inherit; font-weight:700}
 .qty-btn.qty-dec{border-color:#e53e3e; color:#e53e3e}
-.qty-btn.qty-inc{border-color:var(--accent-success); color:var(--accent-success)}
-.qty-btn.remove-btn{background:var(--accent-danger); color:white; border:none}
+.qty-btn.qty-inc{border-color:#48bb78; color:#48bb78}
+.qty-btn.remove-btn{background:#f56565; color:white; border:none}
 .qty-btn.qty-dec:hover{background:#e53e3e;color:white}
-.qty-btn.qty-inc:hover{background:var(--accent-success);color:white}
-.qty-btn.remove-btn:hover{background:var(--accent-danger)}
+.qty-btn.qty-inc:hover{background:#48bb78;color:white}
+.qty-btn.remove-btn:hover{background:#c53030}
 
 .total {
   margin-top: 12px;
@@ -894,20 +890,9 @@ ul:not(.products):not(.cart) li:hover {
 /* Reports Grid */
 .reports-grid {
   display: grid;
-  /* Default: 3 equal-width columns for a clear reports layout on desktop */
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
   margin-bottom: 30px;
-}
-
-@media (max-width: 1100px) {
-  /* Fall back to 2 columns on medium screens */
-  .reports-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-@media (max-width: 640px) {
-  /* Single-column on small screens */
-  .reports-grid { grid-template-columns: 1fr; }
 }
 
 .report-card {
@@ -2200,19 +2185,19 @@ button, .products li, .stat-card {
 }
 
 .notification.success {
-  border-color: var(--accent-success);
+  border-color: #2ecc71;
 }
 
 .notification.error {
-  border-color: var(--accent-danger);
+  border-color: #e74c3c;
 }
 
 .notification.warning {
-  border-color: var(--accent-warning);
+  border-color: #f39c12;
 }
 
 .notification.info {
-  border-color: var(--accent-primary);
+  border-color: #3498db;
 }
 
 .notification-icon {
@@ -2221,25 +2206,25 @@ button, .products li, .stat-card {
 }
 
 .notification.success .notification-icon {
-  color: var(--accent-success);
+  color: #2ecc71;
 }
 
 .notification.error .notification-icon {
-  color: var(--accent-danger);
+  color: #e74c3c;
 }
 
 .notification.warning .notification-icon {
-  color: var(--accent-warning);
+  color: #f39c12;
 }
 
 .notification.info .notification-icon {
-  color: var(--accent-primary);
+  color: #3498db;
 }
 
 .notification-message {
   flex: 1;
   font-size: 14px;
-  color: var(--muted);
+  color: #333;
 }
 
 .notification-close {
@@ -2470,7 +2455,7 @@ button, .products li, .stat-card {
 }
 
 .detail-value.profit {
-  color: var(--accent-success);
+  color: #2ecc71;
   font-weight: bold;
 }
 
@@ -2511,7 +2496,7 @@ button, .products li, .stat-card {
 .badge.in-stock {
   background: #d1fae5;
   color: #065f46;
-  border: 1px solid var(--accent-success);
+  border: 1px solid #10b981;
 }
 
 .badge.low-stock {
@@ -2541,7 +2526,7 @@ button, .products li, .stat-card {
 /* ==================== BUTTON STYLES ==================== */
 
 .btn-info {
-  background: linear-gradient(135deg, var(--accent-primary), #0b86ff);
+  background: linear-gradient(135deg, #3498db, #2980b9);
   color: white;
   border: none;
   border-radius: 6px;
@@ -3411,15 +3396,6 @@ table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform:
 
 /* Keep accent colors to provide visual affordances (buttons, badges) */
 .fancy-btn.primary { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
-
-/* WhatsApp invoice button — preserve green and ensure it sits above table rows */
-.whatsapp-btn { background: var(--whatsapp-green) !important; color: white !important; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; margin-right: 6px; position: relative; z-index: 6000; box-shadow: 0 6px 18px rgba(0,0,0,0.28); }
-.actions-cell { overflow: visible !important; position: relative; z-index: 1; }
-
-/* Ensure WhatsApp button stays on top in table cells and modals */
-.table-container td.actions-cell .whatsapp-btn,
-.modal-content .whatsapp-btn { z-index: 9999 !important; position: relative !important; }
-.whatsapp-btn svg { fill: white; stroke: none; }
 .total { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
 
 /* Mobile bottom nav background */
