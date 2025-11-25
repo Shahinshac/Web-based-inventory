@@ -94,6 +94,7 @@ export default function App(){
   const [sortBy, setSortBy] = useState('name') // 'name', 'stock', 'price', 'profit'
   const [showProductDetails, setShowProductDetails] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState(null)
+  const [modalAddQty, setModalAddQty] = useState(1)
   const [recentActivity, setRecentActivity] = useState([])
   
   // Invoice filters
@@ -232,6 +233,11 @@ export default function App(){
     const id = setInterval(tick, 1000)
     return () => clearInterval(id)
   }, [])
+
+  // reset modal add-quantity whenever a product details modal is opened
+  useEffect(() => {
+    if (selectedProduct) setModalAddQty(1)
+  }, [selectedProduct])
 
   // Validate sessionVersion with server when online — force logout if session invalidated remotely
   useEffect(() => {
@@ -3585,13 +3591,18 @@ export default function App(){
                 </span>
               </div>
             </div>
-            <div className="modal-actions">
-              <button onClick={() => {
-                quickAddToCart(selectedProduct, 1);
-                setShowProductDetails(false);
-              }} className="btn-primary important-btn btn-icon" disabled={selectedProduct.quantity === 0}>
-                <Icon name="add"/> <span className="label">Add to Cart</span>
-              </button>
+              <div className="modal-actions" style={{alignItems: 'center', gap: 12}}>
+                <div style={{display:'flex', alignItems:'center', gap:8}}>
+                  <label style={{fontSize:12, color:'#666'}}>Qty</label>
+                  <input type="number" min="1" max={selectedProduct.quantity || 999} value={modalAddQty} onChange={(e)=> setModalAddQty(Math.max(1, parseInt(e.target.value || '1')))} style={{width:72,padding:'8px 10px',borderRadius:8,border:'1px solid #e2e8f0'}} />
+                </div>
+                <button onClick={() => {
+                  quickAddToCart(selectedProduct, modalAddQty || 1);
+                  setShowProductDetails(false);
+                  setModalAddQty(1);
+                }} className="btn-primary important-btn btn-icon" disabled={selectedProduct.quantity === 0}>
+                  <Icon name="add"/> <span className="label">Add to Cart</span>
+                </button>
               <button onClick={() => setShowProductDetails(false)} className="btn-secondary">Close</button>
             </div>
           </div>
@@ -3693,6 +3704,14 @@ export default function App(){
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
               <h2>Dashboard Overview</h2>
             </div>
+
+            {/* Quick Actions */}
+            <div className="quick-actions" style={{display:'flex', gap:12, marginBottom:18, alignItems:'center'}}>
+              <button className="btn-primary" onClick={()=>{ setShowAddProduct(true); handleTabChange('products') }}><Icon name="add"/> Add Product</button>
+              <button className="btn-primary" onClick={()=>{ setShowAddCustomer(true); handleTabChange('customers') }}><Icon name="customers"/> Add Customer</button>
+              <button className="btn-primary" onClick={()=>{ handleTabChange('pos') }}><Icon name="invoices"/> New Sale</button>
+              <button className="btn-secondary" onClick={()=>{ handleTabChange('reports') }}><Icon name="reports"/> Reports</button>
+            </div>
             <div className="stats-grid">
               <div className="stat-card scale-in" style={{animationDelay: '0s'}}>
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
@@ -3722,6 +3741,61 @@ export default function App(){
                 <div className="stat-info">
                   <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.todayProfit || 0).toFixed(2))}</h3>
                   <p>Today's Profit</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Extra widgets: Low stock / Top products */}
+            <div style={{display:'grid', gridTemplateColumns: '1fr 320px', gap: 18, marginTop: 18}}>
+              <div style={{display:'flex', flexDirection:'column', gap:12}}>
+                {/* Low stock alert */}
+                <div style={{padding:14, borderRadius:12, border: '1px dashed #f1b0b0', background: '#fff6f6', color:'#992b2b'}}>
+                  <strong>Low stock alert</strong>
+                  <div style={{marginTop:8, fontSize:13, color:'#333'}}>
+                    { (analyticsData && analyticsData.lowStock && analyticsData.lowStock.length > 0) ? (
+                      `You have ${analyticsData.lowStock.length} items low on stock. Check Inventory tab.`
+                    ) : (
+                      `${products.filter(p=> typeof p.quantity === 'number' && p.quantity < (p.minStock || 10)).length} products below their minimum stocks.`
+                    ) }
+                  </div>
+                </div>
+
+                {/* Top selling products */}
+                <div style={{padding:14, borderRadius:12, border:'1px solid rgba(0,0,0,0.06)', background:'#fff'}}>
+                  <strong>Top selling products</strong>
+                  <div style={{marginTop:12}}>
+                    {(analyticsData && analyticsData.topProducts && analyticsData.topProducts.length > 0) ? (
+                      analyticsData.topProducts.slice(0,5).map((t, i) => (
+                        <div key={t.id || t.name} style={{display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom: i < 4 ? '1px dashed rgba(0,0,0,0.06)' : 'none'}}>
+                          <div style={{display:'flex',gap:8, alignItems:'center'}}>
+                            <div style={{width:36, height:36, borderRadius:8, overflow:'hidden', background:'#f2f6fb', display:'flex', alignItems:'center',justifyContent:'center'}}>{/* optional image */}
+                              <span style={{fontWeight:700, color:'#0b5cff'}}>{(i+1)}</span>
+                            </div>
+                            <div style={{fontSize:13}}>{t.name || t.productName}</div>
+                          </div>
+                          <div style={{fontSize:13, color:'#0b5cff'}}>₹{(t.revenue || t.total || 0).toFixed ? (t.revenue || t.total).toFixed(1) : (t.revenue || t.total)}</div>
+                        </div>
+                      ))
+                    ) : (
+                      <div style={{color:'#666'}}>Not enough data yet — sell a few items to build analytics.</div>
+                    ) }
+                  </div>
+                </div>
+              </div>
+
+              <div style={{padding:14, borderRadius:12, border:'1px solid rgba(0,0,0,0.06)', background:'#fff'}}>
+                <strong>Recent Activity</strong>
+                <div style={{marginTop:12}}>
+                  {recentActivity.length === 0 ? (
+                    <div style={{padding:'24px 0', color:'#777'}}>No recent activity yet</div>
+                  ) : (
+                    recentActivity.slice(0,6).map((a, idx) => (
+                      <div key={idx} style={{padding:'8px 0', borderBottom: idx < recentActivity.length - 1 ? '1px dotted rgba(0,0,0,0.06)' : 'none', fontSize:13}}>
+                        <div style={{fontWeight:700}}>{a.title}</div>
+                        <div style={{color:'#666', fontSize:12}}>{a.detail}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
               </div>
             </div>

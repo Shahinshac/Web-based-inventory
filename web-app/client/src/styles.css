@@ -341,11 +341,21 @@ html, body, .app, .left, .products, .cart, .right {
 }
 
 h2 {
-  color: #0f172a;
+  color: var(--text) !important; /* ensure headings are visible on all themes */
   margin-bottom: 20px;
   font-size: 22px;
   border-bottom: 3px solid var(--accent-primary);
   padding-bottom: 10px;
+}
+
+/* Quick Actions layout */
+.quick-actions button { padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer; background: var(--accent-primary); color: #fff; font-weight:700 }
+.quick-actions .btn-secondary { background: transparent; color: var(--text); border: 1px solid rgba(0,0,0,0.06); }
+
+/* Small responsive fixes to ensure H2 remains visible on small screens */
+@media (max-width: 768px) {
+  .app main { margin-top: calc(var(--header-height) + 8px); }
+  h2 { font-size: 18px; padding-bottom: 8px; }
 }
 
 /* Dashboard hero and stat cards */
