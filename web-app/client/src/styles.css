@@ -154,7 +154,8 @@ html, body, .app, .left, .products, .cart, .right {
   .app header { display: none; }
   /* keep main centered visually with room for sidebar */
   .app { padding-top: 20px; }
-  .app main { max-width: 1200px; margin-left: 280px; width: calc(100% - 300px); }
+  /* expand main content to fill remaining viewport width to the right of the fixed sidebar */
+  .app main { max-width: none; margin-left: 300px; width: calc(100% - 340px); padding-right: 40px; }
   .sidebar { position: fixed; left: 20px; top: 40px; height: calc(100vh - 80px); }
 }
 
@@ -224,8 +225,8 @@ h2 {
 .dashboard .hero h1 { font-size:34px; color:#0f172a; margin:0; font-weight:800 }
 .dashboard .hero .date { color:#64748b; font-size:13px }
 
-.stats-grid { display:flex; gap:16px; align-items:stretch; margin-bottom:18px }
-.stat-card { flex:1; background: linear-gradient(180deg,#ffffff,#fbfdff); padding:18px; border-radius:12px; box-shadow:0 8px 26px rgba(12,18,30,0.06); border:1px solid rgba(99,102,241,0.04) }
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; align-items:stretch; margin-bottom:18px; width:100%; }
+.stat-card { background: linear-gradient(180deg,#ffffff,#fbfdff); padding:18px; border-radius:12px; box-shadow:0 8px 26px rgba(12,18,30,0.06); border:1px solid rgba(99,102,241,0.04); min-height:96px; display:flex; align-items:center; }
 .stat-card .stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#eef2ff,#f3f8ff); margin-bottom:12px }
 .stat-info h3 { font-size:20px; color:#0f172a; margin:0 }
 .stat-info p { color:#6b7280; margin-top:6px }
