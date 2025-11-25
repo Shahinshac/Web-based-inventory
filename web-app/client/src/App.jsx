@@ -125,12 +125,8 @@ export default function App(){
     try { return JSON.parse(localStorage.getItem('localUserPhotos') || '{}') } catch(e) { return {} }
   })
   const [photoPreview, setPhotoPreview] = useState(null)
-  // Profile photo stored in localStorage as base64 data URL
-  const [profilePhoto, setProfilePhoto] = useState(() => {
-    try {
-      return localStorage.getItem('profilePhoto') || null
-    } catch(e) { return null }
-  })
+  // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
+  const [profilePhoto, setProfilePhoto] = useState(null)
   
   // Dark mode removed — UI will always use the default (light) theme.
 
@@ -332,13 +328,20 @@ export default function App(){
     }
   }, [])
 
-  // Persist profile photo when changed
+  // Persist current user's profilePhoto into per-user cache so different users
+  // don't overwrite each other. We keep a localUserPhotos map that is persisted
+  // separately (see useEffect for localUserPhotos persistence).
   useEffect(() => {
     try {
-      if (profilePhoto) localStorage.setItem('profilePhoto', profilePhoto)
-      else localStorage.removeItem('profilePhoto')
-    } catch(e) {}
-  }, [profilePhoto])
+      const uid = currentUser && (currentUser.id || currentUser._id || currentUser.userId)
+      if (!uid) return
+      if (profilePhoto) {
+        setLocalUserPhotos(u => ({ ...(u || {}), [uid]: profilePhoto }))
+      } else {
+        setLocalUserPhotos(u => { const copy = { ...(u || {}) }; delete copy[uid]; return copy })
+      }
+    } catch(e) { console.error('Failed to persist profilePhoto to user cache', e) }
+  }, [profilePhoto, currentUser])
 
   // persist local photo caches and pending uploads
   useEffect(() => { try { localStorage.setItem('pendingUploads', JSON.stringify(pendingUploads || [])) } catch(e) {} }, [pendingUploads])
@@ -353,6 +356,11 @@ export default function App(){
         // try to load server photo if available
         const id = currentUser.id || currentUser._id || currentUser.userId
         if (!id) return
+        // If there's a cached local user photo, use that first
+        if (localUserPhotos && localUserPhotos[id]) {
+          setProfilePhoto(localUserPhotos[id])
+          return
+        }
         try {
           const res = await fetch(API(`/api/users/${id}/photo`), { method: 'GET' })
           if (res.ok) {
@@ -426,7 +434,9 @@ export default function App(){
             if (res.ok) {
               setPendingUploads(q => q.filter(p => p !== item))
               // update profilePhoto URL if successful (server path)
-              setProfilePhoto(API(`/api/users/${item.id}/photo`))
+                      const serverPath = API(`/api/users/${item.id}/photo`)
+                      setProfilePhoto(serverPath)
+                      setLocalUserPhotos(u => ({ ...(u||{}), [item.id]: serverPath }))
             }
           }
         } catch (e) {
@@ -439,6 +449,23 @@ export default function App(){
 
     trySync()
   }, [isOnline, isAuthenticated, currentUser, profilePhoto])
+
+  // When a user signs in or the local cache changes, ensure profilePhoto reflects the current user's image
+  useEffect(() => {
+    try {
+      if (!currentUser) { setProfilePhoto(null); return }
+      const uid = currentUser.id || currentUser._id || currentUser.userId
+      if (!uid) { setProfilePhoto(null); return }
+      if (localUserPhotos && localUserPhotos[uid]) {
+        setProfilePhoto(localUserPhotos[uid])
+      } else {
+        // default to server path for user's image (server will 404 if not available)
+        setProfilePhoto(API(`/api/users/${uid}/photo`))
+      }
+    } catch (e) {
+      console.error('Failed to initialize profilePhoto for user', e)
+    }
+  }, [currentUser, localUserPhotos])
 
   // PWA Install Prompt Handler
   useEffect(() => {
@@ -3042,6 +3069,8 @@ export default function App(){
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Upload failed')
       showNotification('✅ User photo uploaded', 'success')
+      // update local cache so UI immediately reflects the server photo
+      setLocalUserPhotos(u => ({ ...(u||{}), [userId]: API(`/api/users/${userId}/photo`) }))
       fetchUsers()
     } catch (e) {
       console.error('Upload user photo failed:', e)
@@ -3077,6 +3106,8 @@ export default function App(){
       const j = await res.json()
       if (!res.ok) throw new Error(j.error || 'Failed')
       showNotification('✅ User photo deleted', 'success')
+      // remove local cache entry for this user
+      setLocalUserPhotos(u => { const copy = { ...(u||{}) }; delete copy[userId]; return copy })
       fetchUsers()
     } catch (e) {
       console.error('Delete user photo failed:', e)
@@ -3112,7 +3143,9 @@ export default function App(){
       if (!res.ok) throw new Error(data.error || 'Upload failed')
 
       // server returns a stable endpoint - use full API path resolution
-      setProfilePhoto(API(`/api/users/${userId}/photo`))
+      const serverPath = API(`/api/users/${userId}/photo`)
+      setProfilePhoto(serverPath)
+      setLocalUserPhotos(u => ({ ...(u||{}), [userId]: serverPath }))
       showNotification('✅ Profile photo saved to server', 'success')
     } catch (e) {
       console.error('Failed to upload profile photo:', e)
