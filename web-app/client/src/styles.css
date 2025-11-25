@@ -34,6 +34,7 @@ body {
   --accent-success: #bfbfbf; /* neutral gray (used for positive states) */
   --accent-danger: #8f8f8f; /* darker gray for 'danger' states */
   --accent-warning: #cfcfcf; /* soft gray */
+  --whatsapp-green: #25D366; /* keep WhatsApp action green */
 
   /* Gradients / helpers */
   --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
@@ -3396,6 +3397,10 @@ table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform:
 
 /* Keep accent colors to provide visual affordances (buttons, badges) */
 .fancy-btn.primary { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
+
+/* WhatsApp invoice button — preserve green and ensure it sits above table rows */
+.whatsapp-btn { background: var(--whatsapp-green) !important; color: white !important; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; margin-right: 6px; position: relative; z-index: 6000; box-shadow: 0 6px 18px rgba(0,0,0,0.28); }
+.actions-cell { overflow: visible !important; position: relative; z-index: 1; }
 .total { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
 
 /* Mobile bottom nav background */

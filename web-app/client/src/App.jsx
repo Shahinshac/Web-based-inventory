@@ -4908,12 +4908,11 @@ export default function App(){
                             </span>
                           )}
                         </td>
-                        <td style={{whiteSpace:'nowrap'}}>
+                        <td className="actions-cell" style={{whiteSpace:'nowrap', overflow:'visible', position:'relative'}}>
                           <button
                             onClick={() => sendInvoiceWhatsApp(inv)}
                             title="Send invoice via WhatsApp"
-                            className="fancy-btn"
-                            style={{padding:'6px 10px', background:'#25D366', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
+                            className="fancy-btn whatsapp-btn"
                           >
                             <Icon name="whatsapp"/> <span className="label">WhatsApp</span>
                           </button>
@@ -5538,8 +5537,8 @@ export default function App(){
                   if (!lastBill) return;
                   sendInvoiceWhatsApp(lastBill);
                 }}
-                className="btn-primary"
-                style={{background:'var(--accent-success)', marginLeft:'8px'}}
+                className="btn-primary whatsapp-btn"
+                style={{ marginLeft: '8px' }}
               >
                 <Icon name="whatsapp"/> <span className="label">Send via WhatsApp</span>
               </button>
