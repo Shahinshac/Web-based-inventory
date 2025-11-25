@@ -3591,36 +3591,18 @@ export default function App(){
           }}><Icon name="dashboard" size={32} /> 26:07</span>
           <span style={{marginLeft: '8px'}}>Electronics</span>
         </h1>
-        <div className="header-clock" aria-hidden={!indiaTime} style={{display:'flex',flexDirection:'column',alignItems:'flex-end',gap:'2px',position:'absolute',right:20,top:18}}>
-          <div style={{fontSize: '14px', fontWeight: 700}}>{indiaTime}</div>
-          <div style={{fontSize: '12px', opacity: 0.9}}>{indiaDate}</div>
-        </div>
+        {/* header-clock removed from here; time will be shown in header-controls */}
         {/* Header controls (auth / quick actions) - primary navigation moved to left sidebar */}
-        <div className="header-controls" style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto',position:'absolute',right:20,top:20}}>
+        <div className="header-controls">
           {/* Mobile menu to open sidebar overlay on small screens */}
           <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
-          <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
-            <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={() => {
-                if (profilePhoto) {
-                  if (String(profilePhoto).startsWith('data:')) window.open(profilePhoto, '_blank');
-                  else {
-                    const id = currentUser && (currentUser.id || currentUser._id || currentUser.userId)
-                    if (id) window.open(API(`/api/users/${id}/photo`), '_blank')
-                    else window.open(profilePhoto, '_blank')
-                  }
-                  return
-                }
-                const el = document.querySelector('.sidebar .upload-input')
-                if (el) el.click()
-              }}>
-              {profilePhoto ? <img src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-              <button className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
-                <Icon name="camera" size={14} />
-              </button>
+          <div style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto'}}>
+            {/* Show time prominently here (replacing header user controls) */}
+            <div className="header-time" aria-hidden={!indiaTime}>
+              <div className="header-time-clock">{indiaTime}</div>
+              <div className="header-time-date">{indiaDate}</div>
             </div>
-            <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
           </div>
-          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}>Logout</button>
         </div>
       </header>
       <main>
