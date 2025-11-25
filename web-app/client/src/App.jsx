@@ -1916,6 +1916,18 @@ export default function App(){
     setCart(c=> c.filter(x=> x.productId !== productId))
   }
 
+  function setCartQty(productId, newQty){
+    if (typeof newQty !== 'number') newQty = parseInt(newQty || '0') || 0
+    if (newQty < 1) newQty = 1
+    // try to respect stock limits
+    const productObj = products.find(p => (p._id || p.id) === productId)
+    if (productObj && typeof productObj.quantity === 'number' && newQty > productObj.quantity) {
+      showNotification(`Only ${productObj.quantity} units available for ${productObj.name}`, 'error')
+      newQty = productObj.quantity
+    }
+    setCart(c => c.map(x => x.productId === productId ? {...x, quantity: newQty} : x))
+  }
+
   async function checkout(){
     try {
       setCheckoutLoading(true);
@@ -3993,7 +4005,7 @@ export default function App(){
                       >
                         <Icon name="close" size={16} />
                       </button>
-                      <span style={{minWidth:'40px', textAlign:'center', fontWeight:'bold', fontSize:'16px'}}>{it.quantity}</span>
+                      <input type="number" min="1" value={it.quantity} onChange={(e)=> setCartQty(it.productId, parseInt(e.target.value || '1'))} style={{width:56, textAlign:'center', fontWeight:'700', fontSize:15, padding:'6px 8px', borderRadius:6, border:'1px solid #e6e8f0'}} />
                       <button 
                         onClick={()=>increaseCartQty(it.productId)} 
                         className="qty-btn qty-inc"
