@@ -62,13 +62,6 @@ html, body, .app, .left, .products, .cart, .right {
   to { transform: translateX(0); opacity: 1; }
 }
 
-.app header nav {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  margin-left: 30px;
-  animation: slideInRight 0.6s ease-out;
-}
 
 /* Header clock (India time/date) */
 .app header .header-clock {
@@ -89,30 +82,6 @@ html, body, .app, .left, .products, .cart, .right {
   to { transform: translateX(0); opacity: 1; }
 }
 
-.app header nav button {
-  margin-right: 8px;
-  padding: 10px 20px;
-  border: none;
-  background: rgba(255,255,255,0.2);
-  color: white;
-  border-radius: 25px;
-  cursor: pointer;
-  font-size: 13px;
-  font-weight: 500;
-  transition: all 0.3s ease;
-  backdrop-filter: blur(10px);
-  white-space: nowrap;
-}
-
-.app header nav button:hover {
-  background: rgba(255,255,255,0.3);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-}
-
-.app header nav button:active {
-  transform: translateY(0);
-}
 
 .app main {
   padding: 30px 50px;
@@ -176,11 +145,11 @@ html, body, .app, .left, .products, .cart, .right {
 @media (max-width: 980px) {
   .sidebar { display:none }
   .app main { display:block }
-  .header-nav { display:flex }
+  /* header-nav removed; mobile uses bottom navigation */
 }
 
 @media (min-width: 981px) {
-  .header-nav { display:none }
+  /* header-nav removed */
   /* Prefer left sidebar layout on larger screens — hide the top header for a clean dashboard canvas */
   .app header { display: none; }
   /* keep main centered visually with room for sidebar */
@@ -866,11 +835,7 @@ ul:not(.products):not(.cart) li:hover {
   opacity: 0.95;
 }
 
-/* Active nav button */
-.app header nav button.active {
-  background: rgba(255,255,255,0.4);
-  border-bottom: 3px solid #38ef7d;
-}
+/* Header nav removed - navigation lives in left sidebar */
 
 /* Bill Breakdown Styles */
 .bill-breakdown {
@@ -1591,28 +1556,7 @@ ul:not(.products):not(.cart) li:hover {
     margin-bottom: 10px;
   }
 
-  .app header nav {
-    display: none; /* hide long top navigation on small screens and use mobile bottom nav */
-    margin-left: 0;
-    overflow-x: auto;
-    white-space: nowrap;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 5px;
-  }
-
-  .app header nav button,
-  .app header nav .auth-badge,
-  .app header nav .logout-btn {
-    display: inline-block;
-    vertical-align: middle;
-  }
-
-  .app header nav button {
-    padding: 10px 20px;
-    font-size: 14px;
-    margin-right: 5px;
-    margin-bottom: 5px;
-  }
+  /* header nav was removed from the layout */
 
   /* Main content */
   .app main {
@@ -1892,10 +1836,7 @@ ul:not(.products):not(.cart) li:hover {
     font-size: 18px;
   }
 
-  .app header nav button {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
+  /* header nav removed */
 
   .app main {
     padding: 10px;
@@ -1987,11 +1928,7 @@ ul:not(.products):not(.cart) li:hover {
     margin-right: 15px;
   }
 
-  .app header nav {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-  }
+  /* header nav removed */
 
   .stats-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -2001,9 +1938,7 @@ ul:not(.products):not(.cart) li:hover {
 /* Touch-friendly improvements */
 @media (hover: none) and (pointer: coarse) {
   /* Larger touch targets */
-  .app header nav button {
-    min-height: 44px;
-  }
+  /* header nav removed - no touch targets here */
 
   .products li button {
     min-height: 44px;

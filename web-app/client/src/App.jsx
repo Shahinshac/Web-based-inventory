@@ -3567,51 +3567,28 @@ export default function App(){
           <div style={{fontSize: '14px', fontWeight: 700}}>{indiaTime}</div>
           <div style={{fontSize: '12px', opacity: 0.9}}>{indiaDate}</div>
         </div>
-        <nav className="header-nav">
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`${tab==='dashboard' ? 'active' : ''} btn-icon`}><Icon name="dashboard"/> <span className="label">Dashboard</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`${tab==='pos' ? 'active' : ''} btn-icon`}><Icon name="pos"/> <span className="label">Transactions</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`${tab==='products' ? 'active' : ''} btn-icon`}><Icon name="products"/> <span className="label">Products</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('inventory')}} className={`${tab==='inventory' ? 'active' : ''} btn-icon`}><Icon name="analytics"/> <span className="label">Inventory</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('customers')}} className={`${tab==='customers' ? 'active' : ''} btn-icon`}><Icon name="customers"/> <span className="label">Customers</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('invoices')}} className={`${tab==='invoices' ? 'active' : ''} btn-icon`}><Icon name="invoices"/> <span className="label">Invoices</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity()){handleTabChange('analytics');fetchAnalyticsData(analyticsDateRange);}}} className={`${tab==='analytics' ? 'active' : ''} btn-icon`}><Icon name="analytics"/> <span className="label">Analytics</span></button>
-          <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`${tab==='reports' ? 'active' : ''} btn-icon`}><Icon name="reports"/> <span className="label">Reports</span></button>
-          {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''} btn-icon`}><Icon name="users"/> <span className="label">Users</span></button>}
-          {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''} btn-icon`}><Icon name="audit"/> <span className="label">Audit Logs</span></button>}
-          <span style={{display:'inline-flex', alignItems:'center', gap:'10px', marginLeft:'auto', whiteSpace:'nowrap'}}>
-            <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={() => {
-                // Show the original uploaded photo in a new tab (no cropping) if we have one
-                try {
-                  if (profilePhoto) {
-                    if (String(profilePhoto).startsWith('data:')) {
-                      window.open(profilePhoto, '_blank')
-                    } else {
-                      // If currentUser has an id, prefer the stable server endpoint
-                      const id = currentUser && (currentUser.id || currentUser._id || currentUser.userId)
-                      if (id) window.open(API(`/api/users/${id}/photo`), '_blank')
-                      else window.open(profilePhoto, '_blank')
-                    }
-                    return
+        {/* Header controls (auth / quick actions) - primary navigation moved to left sidebar */}
+        <div className="header-controls" style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto',position:'absolute',right:20,top:20}}>
+          <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
+            <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={() => {
+                if (profilePhoto) {
+                  if (String(profilePhoto).startsWith('data:')) window.open(profilePhoto, '_blank');
+                  else {
+                    const id = currentUser && (currentUser.id || currentUser._id || currentUser.userId)
+                    if (id) window.open(API(`/api/users/${id}/photo`), '_blank')
+                    else window.open(profilePhoto, '_blank')
                   }
-                } catch(e) {
-                  // fallback to upload if open fails
+                  return
                 }
-                // fallback: open the upload input if no photo is available
                 const el = document.querySelector('.sidebar .upload-input')
                 if (el) el.click()
-              }} onContextMenu={(e) => { e.preventDefault(); const el = document.querySelector('.sidebar .upload-input'); if (el) el.click(); }}>
-                {profilePhoto ? (
-                  <img src={profilePhoto} alt="profile" />
-                ) : (
-                  <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>
-                )}
-              </div>
-              <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
+              }}>
+              {profilePhoto ? <img src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
             </div>
-            <button onClick={handleLogout} className="logout-btn" style={{background:'#48bb78'}}><Icon name="lock" size={16} /> Logout</button>
-          </span>
-        </nav>
+            <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
+          </div>
+          <button onClick={handleLogout} className="logout-btn" style={{background:'#48bb78'}}><Icon name="lock" size={16} /> Logout</button>
+        </div>
       </header>
       <main>
         {/* Sidebar - left navigation and profile */}
