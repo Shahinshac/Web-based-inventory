@@ -195,12 +195,68 @@ app.get('/api/customers', async (req, res) => {
       address: c.address,
       state: c.state || 'Same',
       gstin: c.gstin || ''
+      ,
+      // expose essential loyalty summary to the client
+      loyalty: c.loyalty ? {
+        cardIssued: !!c.loyalty.cardIssued,
+        cardNumber: c.loyalty.cardNumber || null,
+        discountAmount: c.loyalty.discountAmount || 0,
+        remainingUses: c.loyalty.remainingUses || 0,
+        issuedAt: c.loyalty.issuedAt || null
+      } : { cardIssued: false, remainingUses: 0 }
     }));
     
     res.json(formatted);
   } catch (e) {
     logger.error(e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Loyalty card render endpoint
+app.get('/api/customers/:id/loyalty-card', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDB();
+
+    let customer = null;
+    try {
+      customer = await db.collection('customers').findOne({ _id: new ObjectId(id) });
+    } catch (e) {
+      return res.status(404).json({ error: 'Customer not found' });
+    }
+
+    if (!customer) return res.status(404).json({ error: 'Customer not found' });
+    if (!customer.loyalty || !customer.loyalty.cardNumber) return res.status(404).json({ error: 'No loyalty card available for this customer' });
+
+    const card = customer.loyalty;
+
+    // Simple ATM-card-like HTML snippet (safe, embeddable) — callers may include this in WhatsApp text or display
+    const cardHtml = `
+      <div style="border-radius:12px;padding:18px;background:linear-gradient(135deg,#0b5cff,#667eea);color:#fff;max-width:520px;font-family:Segoe UI,Arial,sans-serif;">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+          <div style="font-weight:700;font-size:18px;">${(process.env.COMPANY_NAME || 'My Shop').toUpperCase()}</div>
+          <div style="font-size:12px;opacity:.85">Loyalty Card</div>
+        </div>
+        <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:10px 0">${card.cardNumber}</div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px">
+          <div>
+            <div style="font-size:11px;opacity:.9">Holder</div>
+            <div style="font-weight:700">${customer.name || 'Valued Customer'}</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;opacity:.9">BENEFIT</div>
+            <div style="font-weight:800;font-size:18px">₹${(card.discountAmount||3000).toLocaleString()}</div>
+            <div style="font-size:11px;opacity:.85">Remaining uses: ${card.remainingUses || 0}</div>
+          </div>
+        </div>
+      </div>
+    `;
+
+    res.json({ ok: true, card: { cardNumber: card.cardNumber, discountAmount: card.discountAmount, remainingUses: card.remainingUses, issuedAt: card.issuedAt }, cardHtml });
+  } catch (e) {
+    logger.error('Failed to fetch loyalty card', e);
+    res.status(500).json({ error: 'Failed to fetch loyalty card' });
   }
 });
 
@@ -318,9 +374,66 @@ app.post('/api/checkout', async (req, res) => {
       );
     }
 
-    // Calculate discount
-    const discountAmount = (subtotal * discountPercent) / 100;
-    const afterDiscount = subtotal - discountAmount;
+    // Calculate discount (percentage first)
+    let discountAmount = (subtotal * discountPercent) / 100;
+    let afterDiscount = subtotal - discountAmount;
+
+    // Loyalty logic: issue a card when a customer makes their first qualifying purchase (>= 100000)
+    // and apply a flat ₹3,000 discount on subsequent qualifying purchases.
+    // This implementation treats the loyalty card as a single-use discount (remainingUses = 1).
+    let loyaltyDiscount = 0;
+    let loyaltyIssued = false;
+    let loyaltyCardData = null;
+
+    try {
+      if (customerId) {
+        // Re-fetch customer record (we need up-to-date loyalty info)
+        const cust = await db.collection('customers').findOne({ _id: new ObjectId(customerId) });
+        if (cust) {
+          // Ensure loyalty default structure
+          if (!cust.loyalty) cust.loyalty = { cardIssued: false, remainingUses: 0, discountAmount: 3000 };
+
+          // Issue card on first qualifying purchase
+          if (!cust.loyalty.cardIssued && subtotal >= 100000) {
+            const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
+            const issuedAt = new Date();
+            loyaltyCardData = { cardIssued: true, cardNumber, discountAmount: 3000, remainingUses: 1, issuedAt };
+
+            await db.collection('customers').updateOne(
+              { _id: new ObjectId(customerId) },
+              { $set: { loyalty: loyaltyCardData }, $inc: { purchasesCount: 1, totalPurchases: subtotal } }
+            );
+
+            loyaltyIssued = true;
+          } else {
+            // If customer already has a card with remaining uses and this purchase qualifies
+            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && subtotal >= 100000) {
+              loyaltyDiscount = cust.loyalty.discountAmount || 3000;
+              const newRemaining = Math.max(0, (cust.loyalty.remainingUses || 1) - 1);
+              await db.collection('customers').updateOne(
+                { _id: new ObjectId(customerId) },
+                { $set: { 'loyalty.remainingUses': newRemaining }, $inc: { purchasesCount: 1, totalPurchases: subtotal } }
+              );
+            } else {
+              // Count the purchase even if no loyalty activity
+              await db.collection('customers').updateOne(
+                { _id: new ObjectId(customerId) },
+                { $inc: { purchasesCount: 1, totalPurchases: subtotal } }
+              );
+            }
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn('Loyalty processing failed: ' + (err && err.message ? err.message : String(err)));
+    }
+
+    // Apply loyaltyDiscount (flat) after percentage discount
+    if (loyaltyDiscount > 0) {
+      const effectiveLoyalty = Math.min(loyaltyDiscount, afterDiscount);
+      afterDiscount = afterDiscount - effectiveLoyalty;
+      discountAmount = discountAmount + effectiveLoyalty;
+    }
     
     // Calculate GST
     let cgst = 0, sgst = 0, igst = 0;
@@ -353,6 +466,10 @@ app.post('/api/checkout', async (req, res) => {
     bill.totalProfit = parseFloat(totalProfit.toFixed(2));
 
     // Insert bill
+    // Attach loyalty info to bill if present
+    if (loyaltyDiscount > 0) bill.loyaltyApplied = loyaltyDiscount;
+    if (loyaltyIssued && loyaltyCardData) bill.loyaltyIssued = loyaltyCardData;
+
     const result = await db.collection('bills').insertOne(bill);
     
     // Log audit trail
@@ -387,7 +504,11 @@ app.post('/api/checkout', async (req, res) => {
       afterDiscount: bill.afterDiscount,
       gstAmount: bill.gstAmount,
       grandTotal: bill.grandTotal,
-      profit: bill.totalProfit
+      profit: bill.totalProfit,
+      // Return loyalty metadata to the client so UI can display and send the ATM-style card where applicable
+      loyaltyIssued: loyaltyIssued ? true : false,
+      loyaltyCard: loyaltyIssued ? loyaltyCardData : null,
+      loyaltyApplied: loyaltyDiscount > 0 ? loyaltyDiscount : 0
     });
   } catch (e) {
     logger.error(e);
@@ -842,6 +963,16 @@ app.post('/api/customers', async (req, res) => {
       phone: phone ? sanitizeObject(phone) : '',
       address: address ? sanitizeObject(address) : '',
       gstin: gstin ? sanitizeObject(gstin) : '',
+      // Loyalty fields: default values for newly created customers
+      loyalty: {
+        cardIssued: false,
+        cardNumber: null,
+        discountAmount: 0,
+        remainingUses: 0,
+        issuedAt: null
+      },
+      purchasesCount: 0,
+      totalPurchases: 0,
       createdAt: new Date(),
       createdBy: userId || null,
       createdByUsername: username || 'Unknown'
@@ -891,6 +1022,8 @@ app.get('/api/invoices', async (req, res) => {
       igst: bill.igst || 0,
       total: bill.grandTotal || 0,
       totalProfit: bill.totalProfit || 0,
+      loyaltyApplied: bill.loyaltyApplied || 0,
+      loyaltyIssued: bill.loyaltyIssued || false,
       paymentMode: bill.paymentMode || 'Cash',
       splitPaymentDetails: bill.splitPaymentDetails || null,
       items: bill.items ? bill.items.map(item => ({

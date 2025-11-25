@@ -2093,6 +2093,11 @@ export default function App(){
             })),
             date: new Date().toISOString(),
             createdByUsername: selectedSeller || (isAdmin ? 'admin' : currentUser?.username || 'Unknown')
+          ,
+            // Loyalty metadata from server
+            loyaltyIssued: j.loyaltyIssued || false,
+            loyaltyCard: j.loyaltyCard || null,
+            loyaltyApplied: j.loyaltyApplied || 0
           });
           setShowBill(true);
           
@@ -2559,7 +2564,17 @@ export default function App(){
     let msg = `Hello ${customer},\nHere is your invoice #${id} for ₹${fmt1(total)}.\n`;
     if (itemsSummary) msg += `Items: ${itemsSummary}\n`;
     if (due) msg += `Due: ${due}\n`;
-    msg += `View invoice: ${url}\n\nThank you!\n${companyInfo.name}`;
+    msg += `View invoice: ${url}\n`;
+
+    // Loyalty messages
+    if (invoice.loyaltyIssued && invoice.loyaltyCard) {
+      msg += `\n🎉 Congratulations! You've been issued a loyalty card: ${invoice.loyaltyCard.cardNumber} — ₹${(invoice.loyaltyCard.discountAmount||3000)} off on your next qualifying purchase.`;
+    }
+    if (invoice.loyaltyApplied && Number(invoice.loyaltyApplied) > 0) {
+      msg += `\n\n✅ Loyalty discount applied: ₹${invoice.loyaltyApplied} on this purchase.`;
+    }
+
+    msg += `\n\nThank you!\n${companyInfo.name}`;
     return encodeURIComponent(msg);
   }
 
@@ -4756,6 +4771,7 @@ export default function App(){
                   <th>Phone</th>
                   <th>GSTIN</th>
                   <th>Address</th>
+                  <th>Loyalty</th>
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -4767,6 +4783,16 @@ export default function App(){
                     <td>{c.phone}</td>
                     <td style={{fontFamily:'monospace', fontSize:'0.9em'}}>{c.gstin || 'N/A'}</td>
                     <td style={{maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis'}}>{c.address}</td>
+                    <td>
+                      {c.loyalty && c.loyalty.cardIssued ? (
+                        <div style={{display:'flex',flexDirection:'column',gap:4}}>
+                          <div style={{fontWeight:700}}>{c.loyalty.cardNumber || 'Card'}</div>
+                          <div style={{fontSize:11,color:'#444'}}>₹{(c.loyalty.discountAmount||3000)} off · {c.loyalty.remainingUses || 0} uses</div>
+                        </div>
+                      ) : (
+                        <div style={{color:'#999'}}>—</div>
+                      )}
+                    </td>
                     <td>
                       <button 
                         onClick={async () => {
@@ -5746,6 +5772,29 @@ export default function App(){
                 {lastBill.customerPhone && <p><strong>Phone:</strong> {lastBill.customerPhone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>
+
+              {/* Loyalty card / discount summary */}
+              {lastBill.loyaltyIssued && lastBill.loyaltyCard && (
+                <div style={{marginTop:12, padding:12, borderRadius:8, background:'linear-gradient(90deg,#0b5cff,#6c7be0)', color:'white'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <div>
+                      <div style={{fontSize:12, opacity:0.9}}>🎉 Loyalty Card Issued</div>
+                      <div style={{fontWeight:800, fontSize:18}}>{lastBill.loyaltyCard.cardNumber}</div>
+                      <div style={{fontSize:12, opacity:0.9}}>₹{(lastBill.loyaltyCard.discountAmount||3000)} off on next qualifying purchase</div>
+                    </div>
+                    <div style={{textAlign:'right'}}>
+                      <div style={{fontSize:12}}>Remaining uses</div>
+                      <div style={{fontWeight:700, fontSize:18}}>{lastBill.loyaltyCard.remainingUses || 0}</div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {lastBill.loyaltyApplied > 0 && (
+                <div style={{marginTop:12, padding:12, borderRadius:8, background:'#e8f8ef', color:'#065f46', border:'1px solid #c6f6d5'}}>
+                  <div style={{fontWeight:700}}>✅ Loyalty discount applied: ₹{lastBill.loyaltyApplied}</div>
+                </div>
+              )}
 
               <table>
                 <thead>
