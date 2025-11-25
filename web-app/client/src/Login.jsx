@@ -29,19 +29,18 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
   return (
     <form onSubmit={onSubmit}>
       <div style={{marginBottom: '24px'}}>
-        <label style={{display: 'block', marginBottom: '10px', color: '#555', fontWeight: '600'}}><Icon name="customers" size={16} /> Username</label>
-        <input
+          <label className="login-label"><Icon name="customers" size={16} /> Username</label>
+          <input className="login-input"
           type="text"
           value={authUsername}
           onChange={(e)=>setAuthUsername(e.target.value)}
           placeholder="Enter your username"
           required
           autoFocus
-          style={{width: '100%', padding: '14px 16px', border: '2px solid #e8ebf0', borderRadius: '12px'}}
+            style={{width: '100%', padding: '14px 16px', borderRadius: '12px'}}
         />
       </div>
       <div style={{marginBottom: '28px'}}>
-        <label style={{display: 'block', marginBottom: '10px', color: '#555', fontWeight: '600'}}><Icon name="lock" size={16} /> Password</label>
         <div style={{position: 'relative'}}>
           <input
             type={showPassword ? "text" : "password"}
@@ -49,7 +48,7 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
             onChange={(e)=>setAuthPassword(e.target.value)}
             placeholder="Enter your password"
             required
-            style={{width: '100%', padding: '14px 16px', border: '2px solid #e8ebf0', borderRadius: '12px'}}
+              style={{width: '100%', padding: '14px 16px', borderRadius: '12px'}}
           />
           <button
             type="button"
@@ -79,7 +78,7 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
           <span style={{fontSize: '14px', color: '#666'}}>Remember me</span>
         </label>
       </div>
-      {authError && <div style={{padding: '14px 16px', background: '#fee', borderRadius: '12px', color: '#c33', marginBottom: '24px'}}>{authError}</div>}
+      {authError && <div className="alert alert-error">{authError}</div>}
       <button
         type="submit"
         disabled={loading}
@@ -108,42 +107,42 @@ function RegisterForm({ registerUsername, registerPassword, registerEmail, setRe
   return (
     <form onSubmit={onSubmit}>
       <div style={{marginBottom:'24px'}}>
-        <label style={{display:'block', marginBottom:'10px', color:'#555', fontWeight:'600'}}><Icon name="customers" size={16} /> Username</label>
-        <input
+        <label className="login-label"><Icon name="customers" size={16} /> Username</label>
+        <input className="login-input"
           type="text"
           value={registerUsername}
           onChange={(e)=>setRegisterUsername(e.target.value)}
           placeholder="Choose a unique username (min 3 characters)"
           required
           minLength="3"
-          style={{width:'100%', padding:'14px 16px', border:'2px solid #e8ebf0', borderRadius:'12px'}}
+          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
         />
       </div>
       {/* Email required — ask user for email at registration */}
       <div style={{marginBottom:'20px'}}>
-        <label style={{display:'block', marginBottom:'10px', color:'#555', fontWeight:'600'}}><Icon name="mail" size={16} /> Email</label>
-        <input
+        <label className="login-label"><Icon name="mail" size={16} /> Email</label>
+        <input className="login-input"
           type="email"
           value={registerEmail}
           onChange={(e)=>setRegisterEmail(e.target.value)}
           placeholder="Enter your email address"
           required
-          style={{width:'100%', padding:'14px 16px', border:'2px solid #e8ebf0', borderRadius:'12px'}}
+          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
         />
       </div>
       <div style={{marginBottom:'28px'}}>
-        <label style={{display:'block', marginBottom:'10px', color:'#555', fontWeight:'600'}}><Icon name="lock" size={16} /> Password</label>
-        <input
+        <label className="login-label"><Icon name="lock" size={16} /> Password</label>
+        <input className="login-input"
           type="password"
           value={registerPassword}
           onChange={(e)=>setRegisterPassword(e.target.value)}
           placeholder="Create a strong password (min 6 characters)"
           required
           minLength="6"
-          style={{width:'100%', padding:'14px 16px', border:'2px solid #e8ebf0', borderRadius:'12px'}}
+          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
         />
       </div>
-      {registerError && <div style={{padding:'14px 16px', background:'#fee', borderRadius:'12px', color:'#c33', marginBottom:'24px'}}>{registerError}</div>}
+      {registerError && <div className="alert alert-error">{registerError}</div>}
       <button
         type="submit"
         disabled={loading}

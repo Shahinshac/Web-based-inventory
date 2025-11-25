@@ -1144,6 +1144,25 @@ ul:not(.products):not(.cart) li:hover {
 .brand-text h2 { margin:0; font-size:24px; font-weight:800; }
 .brand-text p { margin:0; font-size:13px; opacity:0.9 }
 .tab-bar { display:flex; gap:8px; padding:10px; background:#f8f9fa; align-items:center }
+
+/* Login form inputs and labels should follow theme variables so the
+  login screen matches the main app visual style consistently */
+.login-label { display:block; margin-bottom:10px; color:var(--muted); font-weight:600; }
+.login-input { width:100%; padding:14px 16px; border-radius:12px; border:1px solid var(--border); background:var(--card-2); color:var(--text); }
+
+/* Small error alert used across login & register */
+.alert { padding:14px 16px; border-radius:12px; margin-bottom:16px; font-weight:600; }
+.alert-error { background: rgba(255,235,238,0.95); color: #b91c1c; border: 1px solid rgba(185,28,28,0.06); }
+
+/* Global error overlay (rendered if unhandled errors / crashes occur) */
+.error-overlay { position: fixed; inset: 0; display:flex; align-items:center; justify-content:center; background: linear-gradient(180deg, rgba(0,0,0,0.45), rgba(0,0,0,0.6)); z-index: 99999; }
+.error-overlay .panel { width: min(760px, calc(100% - 32px)); background: var(--card); color: var(--text); padding: 28px; border-radius: 12px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); text-align: left; }
+.error-overlay .panel h3 { margin:0 0 8px 0; }
+.error-overlay .panel p { color: var(--muted); margin-bottom: 16px; }
+.error-overlay .panel .actions { display:flex; gap:12px; justify-content:flex-end; margin-top:12px; }
+.error-overlay .panel .actions button { padding: 10px 14px; border-radius:8px; border:none; cursor:pointer; }
+.error-overlay .panel .actions .btn-reload { background: var(--accent-primary); color: white; }
+.error-overlay .panel .actions .btn-reset { background: transparent; border:1px solid var(--border); color: var(--text); }
 .tab-btn { flex:1; padding:12px 18px; border-radius:12px; background:transparent; border:none; cursor:pointer; color:#7b7b7b; font-weight:700; transition: all 250ms cubic-bezier(.2,.9,.2,1); position:relative; }
 .tab-btn.active { background:white; color:#2b6cb0; box-shadow: 0 8px 20px rgba(43,108,176,0.12); transform:translateY(-2px); }
 .animated-panel { padding:30px 36px; animation: cardIn 420ms cubic-bezier(.2,.9,.2,1); }

@@ -80,6 +80,8 @@ export default function App(){
   const [registerError, setRegisterError] = useState('')
   const [showRegisterConfirmation, setShowRegisterConfirmation] = useState(false)
   const [showLoginPage, setShowLoginPage] = useState(true) // Toggle between login/register page
+  // Global error guard: if the app hits an unhandled error, show an overlay
+  const [globalError, setGlobalError] = useState(null)
   const [auditLogs, setAuditLogs] = useState([]) // Audit trail logs
   const [showCustomerHistory, setShowCustomerHistory] = useState(false)
   const [selectedCustomerHistory, setSelectedCustomerHistory] = useState(null)
@@ -131,6 +133,27 @@ export default function App(){
   })
   
   // Dark mode removed — UI will always use the default (light) theme.
+
+  // Install global error handlers so the app doesn't drop into a blank page
+  useEffect(() => {
+    function onErr(msg, source, lineno, colno, err) {
+      try { setGlobalError({ message: msg || (err && err.message) || 'Unknown error', stack: (err && err.stack) || `${source}:${lineno}:${colno}` }) } catch(e) {}
+      // return false to let default handler run
+      return false
+    }
+
+    function onUnhandledRejection(e) {
+      try { setGlobalError({ message: e?.reason?.message || 'Unhandled promise rejection', stack: e?.reason?.stack || String(e) }) } catch(err) {}
+    }
+
+    window.addEventListener('error', onErr)
+    window.addEventListener('unhandledrejection', onUnhandledRejection)
+
+    return () => {
+      window.removeEventListener('error', onErr)
+      window.removeEventListener('unhandledrejection', onUnhandledRejection)
+    }
+  }, [])
   
   // Checkout loading state
   const [checkoutLoading, setCheckoutLoading] = useState(false);
@@ -3386,6 +3409,19 @@ export default function App(){
 
   return (
     <div className={`app`}>
+      {globalError && (
+        <div className="error-overlay">
+          <div className="panel">
+            <h3>Something went wrong — app is unstable</h3>
+            <p>We detected an unexpected error. This prevents the interface from rendering correctly. You can try reloading the page or reset local data.</p>
+            <pre style={{whiteSpace:'pre-wrap', fontSize:12, background:'transparent', borderRadius:6, padding:8, color:'var(--muted)'}}>{globalError.message}{globalError.stack ? '\n\n' + globalError.stack : ''}</pre>
+            <div className="actions" style={{display:'flex', justifyContent:'flex-end', gap:12}}>
+              <button className="btn-reset" onClick={() => { try { localStorage.clear(); } catch(e){} window.location.reload(); }}>Clear local data & Reload</button>
+              <button className="btn-reload" onClick={() => window.location.reload()}>Reload</button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* PWA Install Prompt */}
       {showInstallPrompt && (
         <div style={{
