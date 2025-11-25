@@ -475,11 +475,11 @@ h2 {
 .cart-item strong{font-size:14px;color:#1e3c72}
 .qty-btn{width:34px; height:34px; display:inline-flex; align-items:center; justify-content:center; border-radius:6px; cursor:pointer; border:2px solid transparent; background:white; color:inherit; font-weight:700}
 .qty-btn.qty-dec{border-color:#e53e3e; color:#e53e3e}
-.qty-btn.qty-inc{border-color:#48bb78; color:#48bb78}
-.qty-btn.remove-btn{background:#f56565; color:white; border:none}
+.qty-btn.qty-inc{border-color:var(--accent-success); color:var(--accent-success)}
+.qty-btn.remove-btn{background:var(--accent-danger); color:white; border:none}
 .qty-btn.qty-dec:hover{background:#e53e3e;color:white}
-.qty-btn.qty-inc:hover{background:#48bb78;color:white}
-.qty-btn.remove-btn:hover{background:#c53030}
+.qty-btn.qty-inc:hover{background:var(--accent-success);color:white}
+.qty-btn.remove-btn:hover{background:var(--accent-danger)}
 
 .total {
   margin-top: 12px;
@@ -2200,19 +2200,19 @@ button, .products li, .stat-card {
 }
 
 .notification.success {
-  border-color: #2ecc71;
+  border-color: var(--accent-success);
 }
 
 .notification.error {
-  border-color: #e74c3c;
+  border-color: var(--accent-danger);
 }
 
 .notification.warning {
-  border-color: #f39c12;
+  border-color: var(--accent-warning);
 }
 
 .notification.info {
-  border-color: #3498db;
+  border-color: var(--accent-primary);
 }
 
 .notification-icon {
@@ -2221,25 +2221,25 @@ button, .products li, .stat-card {
 }
 
 .notification.success .notification-icon {
-  color: #2ecc71;
+  color: var(--accent-success);
 }
 
 .notification.error .notification-icon {
-  color: #e74c3c;
+  color: var(--accent-danger);
 }
 
 .notification.warning .notification-icon {
-  color: #f39c12;
+  color: var(--accent-warning);
 }
 
 .notification.info .notification-icon {
-  color: #3498db;
+  color: var(--accent-primary);
 }
 
 .notification-message {
   flex: 1;
   font-size: 14px;
-  color: #333;
+  color: var(--muted);
 }
 
 .notification-close {
@@ -2470,7 +2470,7 @@ button, .products li, .stat-card {
 }
 
 .detail-value.profit {
-  color: #2ecc71;
+  color: var(--accent-success);
   font-weight: bold;
 }
 
@@ -2511,7 +2511,7 @@ button, .products li, .stat-card {
 .badge.in-stock {
   background: #d1fae5;
   color: #065f46;
-  border: 1px solid #10b981;
+  border: 1px solid var(--accent-success);
 }
 
 .badge.low-stock {
@@ -2541,7 +2541,7 @@ button, .products li, .stat-card {
 /* ==================== BUTTON STYLES ==================== */
 
 .btn-info {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, var(--accent-primary), #0b86ff);
   color: white;
   border: none;
   border-radius: 6px;

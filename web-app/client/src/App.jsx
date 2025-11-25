@@ -3387,7 +3387,7 @@ export default function App(){
           position: 'fixed',
           top: isOnline ? '20px' : '60px',
           left: '20px',
-          background: '#4ecdc4',
+          background: 'var(--accent-primary)',
           color: 'white',
           padding: '8px 16px',
           borderRadius: '20px',
@@ -3407,7 +3407,7 @@ export default function App(){
             position: 'fixed',
             top: '20px',
             left: isOnline ? '120px' : '160px',
-            background: '#ffa726',
+            background: 'var(--accent-warning)',
             color: 'white',
             padding: '6px 12px',
             borderRadius: '15px',
@@ -3525,7 +3525,7 @@ export default function App(){
                 ))}
               </div>
               
-              <h3 style={{color: '#f39c12', marginTop: '20px'}}><Icon name="analytics" size={16} /> Low Stock ({products.filter(p => p.quantity > 0 && p.quantity < 10).length})</h3>
+                      <h3 style={{color: 'var(--accent-warning)', marginTop: '20px'}}><Icon name="analytics" size={16} /> Low Stock ({products.filter(p => p.quantity > 0 && p.quantity < 10).length})</h3>
               <div className="alert-list">
                 {products.filter(p => p.quantity > 0 && p.quantity < 10).map(p => (
                   <div key={p._id} className="alert-item low-stock">
@@ -3835,8 +3835,8 @@ export default function App(){
                           position: 'absolute',
                           top: '8px',
                           right: '8px',
-                          background: '#feb2b2',
-                          color: '#742a2a',
+                          background: 'var(--accent-danger)',
+                          color: 'var(--accent-danger)',
                           fontSize: '10px',
                           padding: '3px 6px',
                           borderRadius: '4px',
@@ -3850,8 +3850,8 @@ export default function App(){
                           position: 'absolute',
                           top: '8px',
                           right: '8px',
-                          background: '#feebc8',
-                          color: '#7c2d12',
+                          background: 'var(--accent-warning)',
+                          color: 'var(--accent-warning)',
                           fontSize: '10px',
                           padding: '3px 6px',
                           borderRadius: '4px',
@@ -4085,10 +4085,10 @@ export default function App(){
                     </div>
                     <div style={{
                       padding: '10px',
-                      background: isValid ? '#c6f6d5' : '#fff5f5',
+                      background: isValid ? 'var(--accent-success)' : 'var(--card-2)',
                       borderRadius: '5px',
                       fontWeight: '600',
-                      color: isValid ? '#2f855a' : '#c53030',
+                      color: isValid ? 'var(--accent-success)' : 'var(--accent-danger)',
                       fontSize: '14px'
                     }}>
                       {isValid ? '✓ Exact Amount' : (
@@ -4248,7 +4248,7 @@ export default function App(){
                     </td>
                     <td style={{fontFamily:'monospace', fontSize:'0.9em'}}>{index + 1}</td>
                     <td>
-                      <span onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} style={{cursor:'pointer', textDecoration:'underline', color:'#3498db'}}>
+                      <span onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} style={{cursor:'pointer', textDecoration:'underline', color:'var(--accent-primary)'}}>
                         {prod.name}
                       </span>
                       {prod.quantity === 0 && <span className="badge out-of-stock">Out of Stock</span>}
@@ -4447,7 +4447,7 @@ export default function App(){
                       <span style={{
                         fontSize: '18px',
                         fontWeight: 'bold',
-                        color: prod.quantity === 0 ? '#ef4444' : prod.quantity < 10 ? '#f59e0b' : '#10b981'
+                        color: prod.quantity === 0 ? 'var(--accent-danger)' : prod.quantity < 10 ? 'var(--accent-warning)' : 'var(--accent-success)'
                       }}>
                         {prod.quantity}
                       </span>
@@ -4889,13 +4889,13 @@ export default function App(){
                         </td>
                         {/* removed duplicated Actions column (was misaligned under GST) */}
                         <td>
-                          <span style={{color:'#27ae60',fontSize:'13px'}}>
+                          <span style={{color:'var(--accent-success)',fontSize:'13px'}}>
                             +{inv.taxRate || 0}%
                             <br/>
                             <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
                           </span>
                         </td>
-                        <td><strong style={{color:'#2c3e50'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
+                        <td><strong style={{color:'var(--text)'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
                         <td>
                           <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
                             ₹{(profit || 0).toFixed(1)}
@@ -5203,7 +5203,7 @@ export default function App(){
                           <td>
                             <span style={{
                               background: 
-                                log.action.includes('DELETE') ? '#f56565' :
+                                log.action.includes('DELETE') ? 'var(--accent-danger)' :
                                 log.action.includes('ADD') || log.action.includes('COMPLETE') ? 'var(--accent-success)' :
                                 log.action.includes('UPDATE') ? 'var(--accent-warning)' : 'var(--accent-primary)',
                               color: 'white',
@@ -5437,7 +5437,7 @@ export default function App(){
                   <div style={{fontSize: '12px', color: '#666'}}>Total Spent</div>
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
-                  <div style={{fontSize: '24px', fontWeight: 'bold', color: '#f6ad55'}}>
+                  <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-warning)'}}>
                     ₹{customerPurchases.length > 0 ? (customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0) / customerPurchases.length).toFixed(1) : '0.00'}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Avg Purchase</div>
