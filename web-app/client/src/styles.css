@@ -60,6 +60,8 @@ body {
   /* header: use a true black background as requested */
   --header-bg: linear-gradient(135deg,#000000,#0a0a0a);
   --header-text: #ffffff;
+  /* header sizing to support fixed positioning */
+  --header-height: 74px;
 }
 
 /* Hide visible scrollbars (keep natural scroll behavior) - cleaner UI while preserving scrolling */
@@ -92,8 +94,15 @@ html, body, .app, .left, .products, .cart, .right {
   color: #fff;
   padding: 20px 30px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  position: sticky;
+  /* make header fixed at the top across the app */
+  position: fixed;
   top: 0;
+  left: 0;
+  right: 0;
+  width: 100%;
+  height: var(--header-height);
+  display: flex;
+  align-items: center;
   z-index: 100;
 }
 
@@ -160,6 +169,8 @@ html, body, .app, .left, .products, .cart, .right {
 
 .app main {
   padding: 24px 24px; /* more compact padding and relative units */
+  /* ensure main content sits below fixed header */
+  margin-top: calc(var(--header-height) + 8px);
   max-width: 100%;
   margin: 0 auto;
   animation: slideUp 0.6s ease-out;
@@ -269,7 +280,7 @@ html, body, .app, .left, .products, .cart, .right {
       use a slightly narrower reserved gutter so main content uses more horizontal space */
     /* use CSS variables so sidebar + content spacing remains consistent and avoids overflow */
     .app main { max-width: none; margin-left: calc(var(--sidebar-width) + var(--content-gap)); width: calc(100% - (var(--sidebar-width) + var(--content-gap))); padding-right: 30px; }
-  .sidebar { position: fixed; left: 20px; top: 40px; height: calc(100vh - 80px); }
+  .sidebar { position: fixed; left: 20px; top: calc(var(--header-height) + 12px); height: calc(100vh - (var(--header-height) + 40px)); }
 }
 
 @keyframes slideUp {

@@ -78,6 +78,7 @@ export default function App(){
   const [registerPassword, setRegisterPassword] = useState('')
   const [registerEmail, setRegisterEmail] = useState('')
   const [registerError, setRegisterError] = useState('')
+  const [showRegisterConfirmation, setShowRegisterConfirmation] = useState(false)
   const [showLoginPage, setShowLoginPage] = useState(true) // Toggle between login/register page
   const [auditLogs, setAuditLogs] = useState([]) // Audit trail logs
   const [showCustomerHistory, setShowCustomerHistory] = useState(false)
@@ -1181,7 +1182,9 @@ export default function App(){
         setRegisterPassword('')
         setRegisterEmail('')
         setRegisterError('')
+        // Keep toast but also show a modal so the user sees the next step clearly
         showNotification('✅ Registration successful! Please wait for admin approval.', 'success')
+        setShowRegisterConfirmation(true)
         setShowLoginPage(true)
       } else {
         if (data.error && data.error.toLowerCase().includes('duplicate')) {
@@ -3297,6 +3300,21 @@ export default function App(){
         </div>
       )}
 
+      {/* Registration confirmation popup - displayed after successful registration */}
+      {showRegisterConfirmation && (
+        <div className="modal-overlay" onClick={()=>setShowRegisterConfirmation(false)} style={{zIndex: 10000}}>
+          <div className="modal-content" onClick={(e)=>e.stopPropagation()} style={{maxWidth: '520px'}}>
+            <h2>Registration Submitted</h2>
+            <div style={{marginTop:12, color:'#333'}}>
+              Your registration has been submitted successfully. An admin must approve your account before you can log in — you will be notified by email once approved.
+            </div>
+            <div className="modal-actions" style={{marginTop:20}}>
+              <button onClick={() => { setShowRegisterConfirmation(false); setShowLoginPage(true) }} className="btn-primary">Okay</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Offline Status Indicator */}
       {!isOnline && (
         <div style={{
@@ -3602,6 +3620,10 @@ export default function App(){
               <div className="header-time-clock">{indiaTime}</div>
               <div className="header-time-date">{indiaDate}</div>
             </div>
+            {/* Visible Logout button in header for convenience */}
+            {isAuthenticated && (
+              <button className="logout-btn" onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }} style={{marginLeft: 8}}>Logout</button>
+            )}
           </div>
         </div>
       </header>
