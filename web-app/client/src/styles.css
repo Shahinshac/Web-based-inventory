@@ -20,7 +20,19 @@ body {
   overflow-x: hidden;
 }
 
+/* Ensure images and embedded content never overflow their containers */
+.content img, .content video, .content svg {
+  max-width: 100%;
+  height: auto;
+}
+
+/* Header safe layout */
+.app header { overflow: hidden; }
+
 :root {
+  /* layout sizing helpers */
+  --sidebar-width: 250px; /* fixed sidebar width */
+  --content-gap: 28px; /* horizontal gap between sidebar and content */
   /* Brand blue (bolder, higher contrast) */
   --brand-blue-1: #0b5cff; /* deep vibrant blue */
   --brand-blue-2: #1e90ff; /* lighter accent blue */
@@ -45,7 +57,8 @@ body {
   --brand-blue-gradient: linear-gradient(135deg, var(--brand-blue-1), var(--brand-blue-2));
   --accent-success-gradient: linear-gradient(135deg, var(--accent-success), #bfbfbf);
   --accent-danger-gradient: linear-gradient(135deg, var(--accent-danger), #8f8f8f);
-  --header-bg: var(--brand-blue-gradient);
+  /* header: use a true black background as requested */
+  --header-bg: linear-gradient(135deg,#000000,#0a0a0a);
   --header-text: #ffffff;
 }
 
@@ -74,8 +87,8 @@ html, body, .app, .left, .products, .cart, .right {
 }
 
 .app header {
-  /* monochrome header for B/W theme */
-  background: linear-gradient(135deg,#111,#444);
+  /* header uses deep black background per user request */
+  background: var(--header-bg);
   color: #fff;
   padding: 20px 30px;
   box-shadow: 0 4px 6px rgba(0,0,0,0.1);
@@ -100,19 +113,43 @@ html, body, .app, .left, .products, .cart, .right {
 
 /* Header clock (India time/date) */
 .app header .header-clock {
-  position: absolute;
-  right: 20px;
-  top: 18px;
+  position: relative;
+  right: 0;
+  top: 0;
   text-align: right;
-  color: rgba(0,0,0,0.95);
+  color: var(--header-text);
   line-height: 1;
-  display: flex; /* ensure clock is visible by default */
+  display: flex; /* ensure clock is visible */
   flex-direction: column;
   align-items: flex-end;
 }
 
+/* Header controls (top-right): layout and time display */
+.app header .header-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  position: absolute;
+  right: 20px;
+  top: 20px;
+}
+
+.app header .header-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  margin-right: 8px;
+  color: var(--header-text);
+}
+
+.app header .header-time .header-time-clock { font-size: 14px; font-weight: 700; }
+.app header .header-time .header-time-date { font-size: 12px; opacity: 0.9; }
+
 @media (max-width: 800px) {
   .app header .header-clock { display: none; }
+  .app header .header-time { display: none; }
 }
 
 @keyframes slideInRight {
@@ -142,6 +179,8 @@ html, body, .app, .left, .products, .cart, .right {
   width: 100%;
   height: 100%;
   padding: 8px 16px;
+  /* allows nested flex children to shrink properly and avoid overflow */
+  min-width: 0;
 }
 
 /* Layout with a left sidebar and main content area */
@@ -152,7 +191,7 @@ html, body, .app, .left, .products, .cart, .right {
 }
 
 .sidebar {
-  width: 250px; /* fixed, consistent width requested */
+  width: var(--sidebar-width); /* fixed, consistent width requested */
   background: linear-gradient(180deg, #f6fafb 0%, #ffffff 100%);
   border-radius: 14px;
   padding: 18px;
@@ -228,7 +267,8 @@ html, body, .app, .left, .products, .cart, .right {
   .app { padding-top: 20px; }
     /* expand main content to fill remaining viewport width to the right of the fixed sidebar
       use a slightly narrower reserved gutter so main content uses more horizontal space */
-    .app main { max-width: none; margin-left: 300px; width: calc(100% - 300px); padding-right: 30px; }
+    /* use CSS variables so sidebar + content spacing remains consistent and avoids overflow */
+    .app main { max-width: none; margin-left: calc(var(--sidebar-width) + var(--content-gap)); width: calc(100% - (var(--sidebar-width) + var(--content-gap))); padding-right: 30px; }
   .sidebar { position: fixed; left: 20px; top: 40px; height: calc(100vh - 80px); }
 }
 
@@ -252,6 +292,8 @@ html, body, .app, .left, .products, .cart, .right {
   box-shadow: 0 6px 20px rgba(0,0,0,0.08);
   animation: scaleIn 0.5s ease-out;
   min-height: 500px;
+  /* let left column shrink on smaller widths without causing overflow */
+  min-width: 0;
   /* allow page to control scrolling — remove internal scrollbar */
   max-height: none;
   overflow-y: visible;
@@ -266,8 +308,9 @@ html, body, .app, .left, .products, .cart, .right {
 
 .right {
   flex: 1;
-  min-width: 320px;
-  max-width: 400px;
+  /* allow right side to be flexible and shrink where needed; use sensible min so controls remain usable */
+  min-width: 240px;
+  max-width: 420px;
   background: white;
   padding: 20px;
   border-radius: 14px;
@@ -304,18 +347,22 @@ h2 {
 .dashboard .stats-grid {
   /* allow cards to flow side-by-side and stretch to fill available space
      on large screens — responsive to viewport width */
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
   gap: 20px; /* slightly larger gap for visual breathing room */
 }
 .stat-card { background: linear-gradient(180deg,#ffffff,#fbfdff); padding:18px; border-radius:12px; box-shadow:0 8px 26px rgba(12,18,30,0.06); border:1px solid rgba(99,102,241,0.04); min-height:96px; display:flex; align-items:center; }
-.stat-card .stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#eef2ff,#f3f8ff); margin-bottom:12px }
+ .stat-card .stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#eef2ff,#f3f8ff); margin-bottom:12px; flex-shrink: 0 }
 .stat-info h3 { font-size:20px; color:#0f172a; margin:0 }
+.stat-info h3, .stat-info p { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.stat-info { min-width: 0; }
+.stat-card { min-width: 160px; }
 .stat-info p { color:#6b7280; margin-top:6px }
 
 .products {
   list-style: none;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  /* more flexible product card sizing so more items fit on mid-width screens */
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 12px;
   margin-top: 12px;
   padding: 0;
@@ -670,9 +717,10 @@ ul:not(.products):not(.cart) li:hover {
 .modal-content {
   background: white;
   border-radius: 15px;
-  padding: 30px;
-  max-width: 500px;
-  width: 90%;
+  padding: 28px;
+  /* keep modals responsive: relative width for small screens, reasonable cap on large screens */
+  width: 95%;
+  max-width: 1100px;
   box-shadow: 0 10px 40px rgba(0,0,0,0.3);
   animation: slideUp 0.3s ease;
   position: relative;
@@ -1563,7 +1611,7 @@ ul:not(.products):not(.cart) li:hover {
   }
 
   .products {
-    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
     gap: 15px;
   }
 
@@ -3133,6 +3181,23 @@ table tbody tr:last-child td {
 /* Allow actions column cells to show overflowing buttons (e.g., WhatsApp & View buttons) */
 .table-container td.actions-cell { overflow: visible !important; white-space: nowrap !important; }
 .table-container td.actions-cell button { white-space: nowrap !important; position: relative; z-index: 50; }
+
+/* Table internals: ensure tables fit available space and cells truncate safely */
+.table-container table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+  min-width: 640px; /* allow a reasonable minimum for tabular data */
+}
+
+.table-container th,
+.table-container td {
+  padding: 10px 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 700px;
+}
 
 /* WhatsApp button styling */
 .whatsapp-btn { background: #25D366 !important; color: white !important; }
