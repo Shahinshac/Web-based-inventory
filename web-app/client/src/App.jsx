@@ -109,6 +109,12 @@ export default function App(){
   const [qrCodeImage, setQrCodeImage] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [photoPreview, setPhotoPreview] = useState(null)
+  // Profile photo stored in localStorage as base64 data URL
+  const [profilePhoto, setProfilePhoto] = useState(() => {
+    try {
+      return localStorage.getItem('profilePhoto') || null
+    } catch(e) { return null }
+  })
   
   // Dark mode removed — UI will always use the default (light) theme.
   
@@ -281,6 +287,51 @@ export default function App(){
       }
     }
   }, [])
+
+  // Persist profile photo when changed
+  useEffect(() => {
+    try {
+      if (profilePhoto) localStorage.setItem('profilePhoto', profilePhoto)
+      else localStorage.removeItem('profilePhoto')
+    } catch(e) {}
+  }, [profilePhoto])
+
+  // When we become online and user is authenticated, sync local base64 avatar to server
+  useEffect(() => {
+    const trySync = async () => {
+      if (!isOnline || !isAuthenticated || !currentUser) return
+      if (!profilePhoto) {
+        // try to load server photo if available
+        const id = currentUser.id || currentUser._id || currentUser.userId
+        if (!id) return
+        try {
+          const res = await fetch(API(`/api/users/${id}/photo`), { method: 'GET' })
+          if (res.ok) {
+            setProfilePhoto(API(`/api/users/${id}/photo`))
+          }
+        } catch (e) {
+          // ignore
+        }
+        return
+      }
+
+      // if profilePhoto is a data URL, upload it to server
+      if (profilePhoto && profilePhoto.startsWith('data:')) {
+        try {
+          const id = currentUser.id || currentUser._id || currentUser.userId
+          if (!id) return
+          // Convert dataURL to blob
+          const blob = await (await fetch(profilePhoto)).blob()
+          await uploadProfilePhoto(new File([blob], `avatar-${Date.now()}.png`, { type: blob.type }))
+        } catch (e) {
+          // ignore sync errors — we already persist to localStorage
+          console.error('Profile photo sync failed:', e)
+        }
+      }
+    }
+
+    trySync()
+  }, [isOnline, isAuthenticated, currentUser, profilePhoto])
 
   // PWA Install Prompt Handler
   useEffect(() => {
@@ -2804,6 +2855,83 @@ export default function App(){
     }
   }
 
+  // Admin: upload profile photo for a user
+  async function uploadUserPhoto(userId, file) {
+    if (!file) return
+    setUploadingPhoto(true)
+    try {
+      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+      const fd = new FormData()
+      fd.append('photo', file)
+      fd.append('userId', stored.id || stored._id || '')
+      fd.append('username', stored.username || '')
+
+      const res = await fetch(API(`/api/users/${userId}/photo`), { method: 'POST', body: fd })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      showNotification('✅ User photo uploaded', 'success')
+      fetchUsers()
+    } catch (e) {
+      console.error('Upload user photo failed:', e)
+      showNotification('Failed to upload user photo', 'error')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
+  async function deleteUserPhoto(userId) {
+    if (!confirm('Delete user photo?')) return
+    try {
+      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+      const res = await fetch(API(`/api/users/${userId}/photo?userId=${encodeURIComponent(stored.id || stored._id || '')}&username=${encodeURIComponent(stored.username || '')}`), { method: 'DELETE' })
+      const j = await res.json()
+      if (!res.ok) throw new Error(j.error || 'Failed')
+      showNotification('✅ User photo deleted', 'success')
+      fetchUsers()
+    } catch (e) {
+      console.error('Delete user photo failed:', e)
+      showNotification('Failed to delete user photo', 'error')
+    }
+  }
+
+  // Upload profile photo to server when user is authenticated and online
+  async function uploadProfilePhoto(file) {
+    if (!file) return
+    setUploadingPhoto(true)
+    try {
+      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+      const userId = stored && (stored.id || stored._id || stored.userId)
+      // If user is not authenticated or no id, bail out — fallback to local persist
+      if (!isAuthenticated || !isOnline || !userId) {
+        // fallback: keep preview locally
+        return
+      }
+
+      const fd = new FormData()
+      fd.append('photo', file)
+      // include actor context
+      fd.append('userId', stored.id || stored._id || '')
+      fd.append('username', stored.username || '')
+
+      const res = await fetch(API(`/api/users/${userId}/photo`), {
+        method: 'POST',
+        body: fd
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Upload failed')
+
+      // server returns a stable endpoint - use full API path resolution
+      setProfilePhoto(API(`/api/users/${userId}/photo`))
+      showNotification('✅ Profile photo saved to server', 'success')
+    } catch (e) {
+      console.error('Failed to upload profile photo:', e)
+      showNotification('Failed to sync photo to server. Saved locally instead.', 'warning')
+    } finally {
+      setUploadingPhoto(false)
+    }
+  }
+
   async function deleteProductPhoto(productId) {
     if (!confirm('Delete product photo?')) return;
     
@@ -3439,7 +3567,7 @@ export default function App(){
           <div style={{fontSize: '14px', fontWeight: 700}}>{indiaTime}</div>
           <div style={{fontSize: '12px', opacity: 0.9}}>{indiaDate}</div>
         </div>
-        <nav>
+        <nav className="header-nav">
           <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`${tab==='dashboard' ? 'active' : ''} btn-icon`}><Icon name="dashboard"/> <span className="label">Dashboard</span></button>
           <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`${tab==='pos' ? 'active' : ''} btn-icon`}><Icon name="pos"/> <span className="label">Transactions</span></button>
           <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`${tab==='products' ? 'active' : ''} btn-icon`}><Icon name="products"/> <span className="label">Products</span></button>
@@ -3451,12 +3579,82 @@ export default function App(){
           {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''} btn-icon`}><Icon name="users"/> <span className="label">Users</span></button>}
           {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''} btn-icon`}><Icon name="audit"/> <span className="label">Audit Logs</span></button>}
           <span style={{display:'inline-flex', alignItems:'center', gap:'10px', marginLeft:'auto', whiteSpace:'nowrap'}}>
-            <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : currentUser?.username}</span>
+            <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
+              <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={()=>{
+                // clicking header avatar will open sidebar upload if present
+                const el = document.querySelector('.sidebar .upload-input')
+                if (el) el.click()
+              }}>
+                {profilePhoto ? (
+                  <img src={profilePhoto} alt="profile" />
+                ) : (
+                  <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>
+                )}
+              </div>
+              <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
+            </div>
             <button onClick={handleLogout} className="logout-btn" style={{background:'#48bb78'}}><Icon name="lock" size={16} /> Logout</button>
           </span>
         </nav>
       </header>
       <main>
+        {/* Sidebar - left navigation and profile */}
+        <aside className="sidebar" aria-label="Main navigation">
+          <div className="sidebar-inner">
+            <div className="sidebar-top">
+              <div className="sidebar-logo">
+                <div className="logo-mark">⚡</div>
+                <div className="logo-text">26:07 <span>Electronics</span></div>
+              </div>
+              <nav className="sidebar-nav">
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`${tab==='dashboard' ? 'active' : ''}`}><Icon name="dashboard"/> <span>Dashboard</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`${tab==='pos' ? 'active' : ''}`}><Icon name="pos"/> <span>Transactions</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`${tab==='products' ? 'active' : ''}`}><Icon name="products"/> <span>Products</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('inventory')}} className={`${tab==='inventory' ? 'active' : ''}`}><Icon name="analytics"/> <span>Inventory</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('customers')}} className={`${tab==='customers' ? 'active' : ''}`}><Icon name="customers"/> <span>Customers</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('invoices')}} className={`${tab==='invoices' ? 'active' : ''}`}><Icon name="invoices"/> <span>Invoices</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity()){handleTabChange('analytics');fetchAnalyticsData(analyticsDateRange);}}} className={`${tab==='analytics' ? 'active' : ''}`}><Icon name="analytics"/> <span>Analytics</span></button>
+                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`${tab==='reports' ? 'active' : ''}`}><Icon name="reports"/> <span>Reports</span></button>
+                {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''}`}><Icon name="users"/> <span>Users</span></button>}
+                {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''}`}><Icon name="audit"/> <span>Audit Logs</span></button>}
+              </nav>
+            </div>
+
+            <div className="sidebar-bottom">
+              <div className="profile-area">
+                <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
+                  {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
+                </div>
+                <div className="profile-meta">
+                  <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
+                  <div className="profile-role">{userRole ? `${userRole[0].toUpperCase() + userRole.slice(1)} • Sales` : 'Sales Manager'}</div>
+                </div>
+                <div className="profile-actions">
+                  <input className="upload-input" type="file" accept="image/*" style={{display:'none'}} onChange={async (e)=>{
+                    const f = e.target.files && e.target.files[0]
+                    if (!f) return
+
+                    // Preview immediately
+                    const reader = new FileReader()
+                    reader.onload = () => {
+                      setProfilePhoto(reader.result)
+                    }
+                    reader.readAsDataURL(f)
+
+                    // Try to upload to server if online and user logged in
+                    if (isOnline && isAuthenticated && currentUser && (currentUser.id || currentUser._id)) {
+                      await uploadProfilePhoto(f)
+                    } else {
+                      showNotification('Profile photo saved locally and will sync when you are online.', 'info')
+                    }
+                  }} />
+                  <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="upload"/></button>
+                  <button className="logout-inline" onClick={handleLogout}><Icon name="logout"/></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </aside>
         {tab==='dashboard' && (
           <div className="dashboard">
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
@@ -4761,8 +4959,27 @@ export default function App(){
                   ) : (
                     users.map(user => (
                       <tr key={user._id}>
-                        <td>
-                          <strong>{user.username}</strong>
+                        <td style={{display:'flex',alignItems:'center',gap:10}}>
+                          <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
+                            <div style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                              {user.photo ? (
+                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                              ) : (
+                                <div style={{fontWeight:700,color:'#065f46',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+                              )}
+                            </div>
+                            <div style={{display:'flex',flexDirection:'column'}}>
+                              <strong>{user.username}</strong>
+                              <small style={{color:'#6b7280',fontSize:11}}>{user.role}</small>
+                            </div>
+                          </div>
+
+                          {/* admin upload/delete controls for user photo */}
+                          <div style={{marginLeft:'auto',display:'inline-flex',gap:6}}>
+                            <input id={`user-photo-${user._id}`} type="file" accept="image/*" style={{display:'none'}} onChange={(e)=>{ const f = e.target.files && e.target.files[0]; if(f) uploadUserPhoto(user._id, f); }} />
+                            <button title="Upload" onClick={()=>document.getElementById(`user-photo-${user._id}`).click()} style={{padding:'6px',borderRadius:8,border:'none',background:'#eef2f7',cursor:'pointer'}}><Icon name="upload" size={14}/></button>
+                            <button title="Remove" onClick={()=>deleteUserPhoto(user._id)} style={{padding:'6px',borderRadius:8,border:'none',background:'#fff5f5',cursor:'pointer'}}><Icon name="close" size={14}/></button>
+                          </div>
                         </td>
                         <td>{user.email || '—'}</td>
                         <td>

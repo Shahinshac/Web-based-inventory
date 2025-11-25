@@ -1530,6 +1530,10 @@ app.get('/api/users', async (req, res) => {
       username: u.username,
       email: u.email,
       role: u.role,
+      // Expose a stable server-backed avatar endpoint when a photo exists
+      photo: (u.photo && typeof u.photo === 'string')
+        ? (u.photo.startsWith('http') ? u.photo : `/api/users/${u._id.toString()}/photo`)
+        : null,
       approved: u.approved,
       sessionVersion: u.sessionVersion || 1,
       createdAt: u.createdAt,
@@ -1737,6 +1741,135 @@ app.post('/api/users/:username/invalidate', async (req, res) => {
     res.json({ success: true, message: `Invalidated sessions for ${targetUser.username}` });
   } catch (e) {
     logger.error('Invalidate session error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Upload user profile photo (filesystem or DB storage)
+app.post('/api/users/:id/photo', upload.single('photo'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, username } = req.body; // admin performing action
+    if (!req.file) return res.status(400).json({ error: 'No photo uploaded' });
+
+    const db = getDB();
+    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    if (!user) {
+      try { await fs.unlink(req.file.path); } catch(e) {}
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Delete previous photo record if exists
+    if (user.photo) {
+      try {
+        if (user.photoStorage === 'db' || user.photoDbId) {
+          const photoId = user.photoDbId || String(user.photo).replace(/^db:/, '');
+          if (photoId) await db.collection('user_images').deleteOne({ _id: new ObjectId(photoId) });
+        } else {
+          const filename = user.photoFilename || (user.photo && path.basename(user.photo));
+          if (filename) await fs.unlink(path.join(__dirname, 'uploads', 'users', filename));
+        }
+      } catch (err) { logger.warn('Failed to delete old user photo:', err.message); }
+    }
+
+    // Ensure upload dir exists
+    await fs.mkdir(path.join(__dirname, 'uploads', 'users'), { recursive: true });
+
+    // Choose DB storage when ?storage=db is set
+    let photoUrl = `/api/users/${id}/photo`;
+    if (String(req.query.storage || '').toLowerCase() === 'db') {
+      const buffer = await fs.readFile(req.file.path);
+      const imgDoc = {
+        userId: new ObjectId(id),
+        filename: req.file.originalname || req.file.filename,
+        contentType: req.file.mimetype || 'application/octet-stream',
+        data: buffer,
+        uploadedAt: new Date()
+      };
+      const imgResult = await db.collection('user_images').insertOne(imgDoc);
+      try { await fs.unlink(req.file.path); } catch(e){}
+
+      await db.collection('users').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { photo: photoUrl, photoStorage: 'db', photoDbId: imgResult.insertedId.toString(), lastModified: new Date(), lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown' } }
+      );
+    } else {
+      // filesystem-backed
+      await db.collection('users').updateOne(
+        { _id: new ObjectId(id) },
+        { $set: { photo: photoUrl, photoStorage: 'fs', photoFilename: req.file.filename, lastModified: new Date(), lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown' } }
+      );
+    }
+
+    await logAudit(db, 'USER_PHOTO_UPDATED', userId || null, username || 'system', { userId: id });
+
+    res.json({ success: true, photo: photoUrl, message: 'User photo uploaded' });
+  } catch (e) {
+    logger.error('User photo upload error:', e);
+    if (req.file) { try{ await fs.unlink(req.file.path); }catch(_){} }
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Delete user profile photo
+app.delete('/api/users/:id/photo', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, username } = req.query;
+    const db = getDB();
+
+    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.photo) {
+      if (String(user.photo).startsWith('db:') || user.photoDbId) {
+        const photoId = user.photoDbId || String(user.photo).replace(/^db:/, '');
+        if (photoId) await db.collection('user_images').deleteOne({ _id: new ObjectId(photoId) });
+      } else {
+        try { await fs.unlink(path.join(__dirname, 'uploads', 'users', path.basename(user.photo))); } catch (err) { logger.warn('Failed to delete user photo file:', err.message); }
+      }
+    }
+
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { photo: null, lastModified: new Date(), lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown' }, $unset: { photoFilename: '', photoDbId: '', photoStorage: '' } }
+    );
+
+    await logAudit(db, 'USER_PHOTO_DELETED', userId || null, username || 'system', { userId: id });
+
+    res.json({ success: true, message: 'User photo deleted' });
+  } catch (e) {
+    logger.error('Delete user photo error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Serve user profile photo (filesystem or DB-backed)
+app.get('/api/users/:id/photo', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const db = getDB();
+    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    if (!user) return res.status(404).json({ error: 'User not found' });
+
+    if (user.photoStorage === 'db' || user.photoDbId) {
+      const imgId = user.photoDbId || String(user.photo || '').replace(/^db:/, '');
+      if (!imgId) return res.status(404).json({ error: 'No DB-stored photo' });
+      const imgDoc = await db.collection('user_images').findOne({ _id: new ObjectId(imgId) });
+      if (!imgDoc) return res.status(404).json({ error: 'Image not found' });
+      res.setHeader('Content-Type', imgDoc.contentType || 'application/octet-stream');
+      res.setHeader('Cache-Control', 'public, max-age=3600');
+      return res.send(imgDoc.data.buffer ? Buffer.from(imgDoc.data.buffer) : imgDoc.data);
+    }
+
+    const filename = user.photoFilename || (user.photo && path.basename(user.photo));
+    if (!filename) return res.status(404).json({ error: 'No photo available' });
+    const imgPath = path.join(__dirname, 'uploads', 'users', filename);
+    return res.sendFile(imgPath, err => {
+      if (err) { logger.warn('Failed to send user photo:', err.message); res.status(404).json({ error: 'Image not found' }); }
+    });
+  } catch (e) {
+    logger.error('Serve user photo error:', e);
     res.status(500).json({ error: e.message });
   }
 });
