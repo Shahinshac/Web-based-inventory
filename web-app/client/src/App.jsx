@@ -3580,11 +3580,27 @@ export default function App(){
           {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''} btn-icon`}><Icon name="audit"/> <span className="label">Audit Logs</span></button>}
           <span style={{display:'inline-flex', alignItems:'center', gap:'10px', marginLeft:'auto', whiteSpace:'nowrap'}}>
             <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
-              <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={()=>{
-                // clicking header avatar will open sidebar upload if present
+              <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={() => {
+                // Show the original uploaded photo in a new tab (no cropping) if we have one
+                try {
+                  if (profilePhoto) {
+                    if (String(profilePhoto).startsWith('data:')) {
+                      window.open(profilePhoto, '_blank')
+                    } else {
+                      // If currentUser has an id, prefer the stable server endpoint
+                      const id = currentUser && (currentUser.id || currentUser._id || currentUser.userId)
+                      if (id) window.open(API(`/api/users/${id}/photo`), '_blank')
+                      else window.open(profilePhoto, '_blank')
+                    }
+                    return
+                  }
+                } catch(e) {
+                  // fallback to upload if open fails
+                }
+                // fallback: open the upload input if no photo is available
                 const el = document.querySelector('.sidebar .upload-input')
                 if (el) el.click()
-              }}>
+              }} onContextMenu={(e) => { e.preventDefault(); const el = document.querySelector('.sidebar .upload-input'); if (el) el.click(); }}>
                 {profilePhoto ? (
                   <img src={profilePhoto} alt="profile" />
                 ) : (
@@ -4963,7 +4979,7 @@ export default function App(){
                           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
                             <div style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center'}}>
                               {user.photo ? (
-                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{width:'100%',height:'100%',objectFit:'cover'}}/>
+                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
                               ) : (
                                 <div style={{fontWeight:700,color:'#065f46',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
                               )}
