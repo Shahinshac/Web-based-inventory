@@ -958,14 +958,15 @@ ul:not(.products):not(.cart) li:hover {
 .customer-add-btn:hover { background: #f4f6fb; transform: translateY(-2px) }
 
 /* Inline select next to add button used in POS */
-.customer-inline-wrapper { display:flex; align-items:center; gap:8px; }
+.customer-inline-wrapper { display:flex; align-items:center; gap:8px; flex-wrap:nowrap }
 .customer-select-inline {
   flex: 1 1 auto;
   min-width: 0; /* allow shrinking inside flex */
-  height: 40px;
-  padding: 8px 12px;
-  border-radius: 8px;
+  height: 44px; /* match the header-like control height */
+  padding: 8px 14px;
+  border-radius: 8px 0 0 8px; /* rounded left, square right so it visually joins button */
   border: 2px solid #e0e0e0;
+  border-right: none; /* remove duplicate border where button touches */
   background: white;
   font-size: 14px;
   -webkit-appearance: none; /* consistent cross-browser */
@@ -980,18 +981,22 @@ ul:not(.products):not(.cart) li:hover {
   border: 2px solid #e0e0e0 !important;
   box-shadow: 0 6px 14px rgba(0,0,0,0.06) !important;
   padding: 0 12px !important;
-  height: 40px;
+  height: 44px; /* match select height */
   display:inline-flex; align-items:center; justify-content:center;
   min-width: 44px;
-  border-top-left-radius: 8px;
-  border-bottom-left-radius: 8px;
+  border-top-left-radius: 0; /* square side next to select */
+  border-bottom-left-radius: 0;
+  border-top-right-radius: 8px;
+  border-bottom-right-radius: 8px;
 }
 
 /* Small screen: when space is tight, stack select + add button neatly */
-@media (max-width: 480px) {
-  .form-group > div { flex-direction: column; align-items: stretch; }
-  .customer-select-inline { width: 100%; height: 44px; }
-  .customer-add-btn { margin-top: 8px; width: 100%; height: 44px; }
+/* Keep them inline even on small widths; allow wrapping to new line only if parent forces it */
+@media (max-width: 360px) {
+  /* For very small screens we allow stacking to avoid squeezing the select */
+  .customer-inline-wrapper { flex-direction: column; align-items: stretch; }
+  .customer-select-inline { width:100%; height:44px; border-radius:8px; border-right:2px solid #e0e0e0 }
+  .customer-add-btn { margin-top:8px; width:100%; height:44px; border-radius:8px }
 }
 
 /* Cost Price and Profit Display */
