@@ -113,6 +113,15 @@ export default function App(){
   const [barcodeImage, setBarcodeImage] = useState(null)
   const [qrCodeImage, setQrCodeImage] = useState(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const [pendingUploads, setPendingUploads] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('pendingUploads') || '[]') } catch(e) { return [] }
+  })
+  const [localProductPhotos, setLocalProductPhotos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('localProductPhotos') || '{}') } catch(e) { return {} }
+  })
+  const [localUserPhotos, setLocalUserPhotos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('localUserPhotos') || '{}') } catch(e) { return {} }
+  })
   const [photoPreview, setPhotoPreview] = useState(null)
   // Profile photo stored in localStorage as base64 data URL
   const [profilePhoto, setProfilePhoto] = useState(() => {
@@ -308,6 +317,11 @@ export default function App(){
     } catch(e) {}
   }, [profilePhoto])
 
+  // persist local photo caches and pending uploads
+  useEffect(() => { try { localStorage.setItem('pendingUploads', JSON.stringify(pendingUploads || [])) } catch(e) {} }, [pendingUploads])
+  useEffect(() => { try { localStorage.setItem('localProductPhotos', JSON.stringify(localProductPhotos || {})) } catch(e) {} }, [localProductPhotos])
+  useEffect(() => { try { localStorage.setItem('localUserPhotos', JSON.stringify(localUserPhotos || {})) } catch(e) {} }, [localUserPhotos])
+
   // When we become online and user is authenticated, sync local base64 avatar to server
   useEffect(() => {
     const trySync = async () => {
@@ -341,6 +355,64 @@ export default function App(){
         }
       }
     }
+    
+    // Try to process any Pending uploads whenever we become online
+    const processPending = async () => {
+      if (!isOnline || !pendingUploads || pendingUploads.length === 0) return
+      // iterate through queue sequentially
+      for (const item of [...pendingUploads]) {
+        try {
+          if (item.type === 'product') {
+            // decode dataURL to blob
+            const blob = await (await fetch(item.fileData)).blob()
+            const file = new File([blob], item.fileName || `prod-${item.id}.png`, { type: item.mime || blob.type })
+            const fd = new FormData(); fd.append('photo', file)
+            fd.append('userId', currentUser?.id || '')
+            fd.append('username', isAdmin ? 'admin' : currentUser?.username || '')
+            const res = await fetch(API(`/api/products/${item.id}/photo`), { method: 'POST', body: fd })
+            if (res.ok) {
+              // remove pending item and update state
+              setPendingUploads(q => q.filter(p => p !== item))
+              setLocalProductPhotos(lp => {
+                const copy = { ...lp }
+                delete copy[item.id]
+                return copy
+              })
+              fetchProducts()
+            }
+          } else if (item.type === 'user') {
+            const blob = await (await fetch(item.fileData)).blob()
+            const file = new File([blob], item.fileName || `user-${item.id}.png`, { type: item.mime || blob.type })
+            const fd = new FormData(); fd.append('photo', file)
+            fd.append('userId', item.id)
+            fd.append('username', item.username || '')
+            const res = await fetch(API(`/api/users/${item.id}/photo`), { method: 'POST', body: fd })
+            if (res.ok) {
+              setPendingUploads(q => q.filter(p => p !== item))
+              setLocalUserPhotos(u => { const copy = { ...u }; delete copy[item.id]; return copy })
+              fetchUsers()
+            }
+          } else if (item.type === 'profile') {
+            const blob = await (await fetch(item.fileData)).blob()
+            const file = new File([blob], item.fileName || `profile-${item.id}.png`, { type: item.mime || blob.type })
+            // upload with current user context
+            const fd = new FormData(); fd.append('photo', file)
+            fd.append('userId', item.id)
+            fd.append('username', currentUser?.username || '')
+            const res = await fetch(API(`/api/users/${item.id}/photo`), { method: 'POST', body: fd })
+            if (res.ok) {
+              setPendingUploads(q => q.filter(p => p !== item))
+              // update profilePhoto URL if successful (server path)
+              setProfilePhoto(API(`/api/users/${item.id}/photo`))
+            }
+          }
+        } catch (e) {
+          console.error('Failed to process pending upload', item, e)
+          // keep item so it will retry later
+        }
+      }
+    }
+    processPending()
 
     trySync()
   }, [isOnline, isAuthenticated, currentUser, profilePhoto])
@@ -2894,7 +2966,15 @@ export default function App(){
         fetchProducts(); // Refresh product list
         setPhotoPreview(null);
       } else {
-        showNotification('Failed to upload photo: ' + (data.error || 'Unknown error'), 'error');
+        // server rejected; save to pending queue and local cache so UI retains image
+        showNotification('Server rejected upload. Saved locally and will retry when online.', 'warning');
+        try {
+          const dataUrl = await readFileAsDataURL(file)
+          setLocalProductPhotos(lp => ({ ...lp, [productId]: dataUrl }))
+          setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+        } catch(e) {
+          console.error('Failed to save locally after upload fail', e)
+        }
       }
     } catch (e) {
       console.error('Photo upload error:', e);
@@ -2922,10 +3002,28 @@ export default function App(){
       fetchUsers()
     } catch (e) {
       console.error('Upload user photo failed:', e)
-      showNotification('Failed to upload user photo', 'error')
+      showNotification('Server error — saved locally and will retry when online', 'warning')
+      try {
+        const dataUrl = await readFileAsDataURL(file)
+        // Save to local cache so UI persists
+        setLocalUserPhotos(u => ({ ...u, [userId]: dataUrl }))
+        setPendingUploads(p => ([...p, { type: 'user', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+      } catch(err) { console.error('Failed to store user photo locally:', err) }
     } finally {
       setUploadingPhoto(false)
     }
+  }
+
+  // read File -> dataURL helper
+  function readFileAsDataURL(file) {
+    return new Promise((resolve, reject) => {
+      try {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.onerror = (e) => reject(e)
+        reader.readAsDataURL(file)
+      } catch(err) { reject(err) }
+    })
   }
 
   async function deleteUserPhoto(userId) {
@@ -2975,7 +3073,11 @@ export default function App(){
       showNotification('✅ Profile photo saved to server', 'success')
     } catch (e) {
       console.error('Failed to upload profile photo:', e)
-      showNotification('Failed to sync photo to server. Saved locally instead.', 'warning')
+      showNotification('Failed to sync photo to server. Saved locally and will retry when online.', 'warning')
+      try {
+        const dataUrl = await readFileAsDataURL(file)
+        setPendingUploads(p => ([...p, { type: 'profile', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+      } catch(err) { console.error('Failed to queue profile photo locally', err) }
     } finally {
       setUploadingPhoto(false)
     }
@@ -4341,9 +4443,9 @@ export default function App(){
                   <tr key={prod.id} className="fade-in table-row-hover">
                     <td>
                       <div style={{position:'relative',width:'60px',height:'60px'}}>
-                        {(prod.photo || prod.photoUrl) ? (
+                        {(localProductPhotos[prod.id] || prod.photo || prod.photoUrl) ? (
                           <img 
-                            src={(prod.photo || prod.photoUrl).startsWith('http') ? (prod.photo || prod.photoUrl) : API(prod.photo || prod.photoUrl)} 
+                            src={(localProductPhotos[prod.id]) ? localProductPhotos[prod.id] : ((prod.photo || prod.photoUrl).startsWith('http') ? (prod.photo || prod.photoUrl) : API(prod.photo || prod.photoUrl))} 
                             alt={prod.name}
                             style={{
                               width:'60px',
@@ -4524,7 +4626,7 @@ export default function App(){
                             }
                           }}
                         />
-                        <button
+                          <button
                           onClick={() => document.getElementById(`photo-${prod.id}`).click()}
                           style={{
                             position:'absolute',
@@ -5128,8 +5230,8 @@ export default function App(){
                         <td style={{display:'flex',alignItems:'center',gap:10}}>
                           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
                             <div className="user-photo-wrapper" style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
-                              {user.photo ? (
-                                <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
+                              { (localUserPhotos[user._id] || user.photo) ? (
+                                <img src={(localUserPhotos[user._id]) ? localUserPhotos[user._id] : ((user.photo||'').startsWith('http') ? user.photo : API(user.photo))} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'cover',display:'block'}}/>
                               ) : (
                                 <div style={{fontWeight:700,color:'var(--accent-secondary)',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
                               )}
@@ -5144,8 +5246,8 @@ export default function App(){
                           {/* admin upload/delete controls for user photo */}
                           <div style={{marginLeft:'auto',display:'inline-flex',gap:6,flexWrap:'nowrap'}}>
                             <input id={`user-photo-${user._id}`} type="file" accept="image/*" style={{display:'none'}} onChange={(e)=>{ const f = e.target.files && e.target.files[0]; if(f) uploadUserPhoto(user._id, f); }} />
-                            <button title="Upload" onClick={()=>document.getElementById(`user-photo-${user._id}`).click()} style={{padding:'6px',borderRadius:8,border:'none',background: 'var(--card-2)',cursor:'pointer'}}><Icon name="upload" size={14}/></button>
-                            <button title="Remove" onClick={()=>deleteUserPhoto(user._id)} style={{padding:'6px',borderRadius:8,border:'none',background:'var(--card)',cursor:'pointer',color:'var(--muted)'}}><Icon name="close" size={14}/></button>
+                              <button title="Upload" onClick={()=>document.getElementById(`user-photo-${user._id}`).click()} style={{padding:'6px',borderRadius:8,border:'none',background: 'var(--accent-success)',cursor:'pointer', color: 'white'}}><Icon name="upload" size={14}/></button>
+                              <button title="Remove" onClick={()=>deleteUserPhoto(user._id)} style={{padding:'6px',borderRadius:8,border:'none',background:'var(--accent-danger)',cursor:'pointer',color:'white'}}><Icon name="close" size={14}/></button>
                           </div>
                         </td>
                         <td>{user.email || '—'}</td>
