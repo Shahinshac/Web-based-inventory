@@ -21,6 +21,9 @@ body {
 }
 
 :root {
+  /* Brand blue (bolder, higher contrast) */
+  --brand-blue-1: #0b5cff; /* deep vibrant blue */
+  --brand-blue-2: #1e90ff; /* lighter accent blue */
   --bg: #000000;
   --text: #ffffff;
   --muted: #cfcfcf;
@@ -29,14 +32,17 @@ body {
   --border: rgba(255,255,255,0.06);
 
   /* Monochrome accent palette (strict black/white/gray) */
-  --accent-primary: #d1d1d1; /* light gray */
-  --accent-secondary: #9a9a9a; /* medium gray */
-  --accent-success: #bfbfbf; /* neutral gray (used for positive states) */
-  --accent-danger: #8f8f8f; /* darker gray for 'danger' states */
-  --accent-warning: #cfcfcf; /* soft gray */
+  /* Primary accent colors — now set to a bolder brand blue */
+  --accent-primary: var(--brand-blue-1); /* bold primary blue */
+  --accent-secondary: var(--brand-blue-2); /* lighter blue accent */
+  --accent-success: #2ecc71; /* green for success (kept natural) */
+  --accent-danger: #e74c3c; /* red for danger */
+  --accent-warning: #f39c12; /* amber for warnings */
 
   /* Gradients / helpers */
   --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  --accent: var(--accent-primary);
+  --brand-blue-gradient: linear-gradient(135deg, var(--brand-blue-1), var(--brand-blue-2));
   --accent-success-gradient: linear-gradient(135deg, var(--accent-success), #bfbfbf);
   --accent-danger-gradient: linear-gradient(135deg, var(--accent-danger), #8f8f8f);
   --header-bg: linear-gradient(135deg,#000000,#111111);
@@ -833,6 +839,7 @@ ul:not(.products):not(.cart) li:hover {
   word-break: break-word;
   overflow-wrap: break-word;
   line-height: 1.05;
+  white-space: nowrap; /* keep stat numbers on a single line */
 }
 
 .stat-info p {
@@ -3395,8 +3402,8 @@ table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform:
 .muted, .profile-role, .stat-info p, .cost-display { color: var(--muted) !important; }
 
 /* Keep accent colors to provide visual affordances (buttons, badges) */
-.fancy-btn.primary { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
-.total { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
+.fancy-btn.primary { background: var(--brand-blue-gradient) !important; }
+.total { background: var(--brand-blue-gradient) !important; }
 
 /* Mobile bottom nav background */
 .mobile-bottom-nav { background: var(--card) !important; }

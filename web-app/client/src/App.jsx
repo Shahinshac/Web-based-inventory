@@ -3620,7 +3620,7 @@ export default function App(){
             </div>
             <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
           </div>
-          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}><Icon name="lock" size={16} /> <Icon name="door" size={16} style={{marginLeft:6}}/> Logout</button>
+          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}>Logout</button>
         </div>
       </header>
       <main>
@@ -3677,8 +3677,7 @@ export default function App(){
                       showNotification('Profile photo saved locally and will sync when you are online.', 'info')
                     }
                   }} />
-                  <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="upload"/></button>
-                  <button className="logout-inline" onClick={handleLogout}><Icon name="logout"/></button>
+                  <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>Upload</button>
                 </div>
               </div>
             </div>
@@ -3694,7 +3693,7 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0s'}}>
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3>₹{((stats.totalRevenue || 0).toFixed(1))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.totalRevenue || 0).toFixed(2))}</h3>
                   <p>Total Revenue</p>
                 </div>
               </div>
@@ -3709,7 +3708,7 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0.3s'}}>
                 <div className="stat-icon"><Icon name="analytics" size={24} /></div>
                 <div className="stat-info">
-                  <h3>₹{((stats.todaySales || 0).toFixed(1))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.todaySales || 0).toFixed(2))}</h3>
                   <p>Today's Sales</p>
                 </div>
               </div>
@@ -3717,7 +3716,7 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0.4s'}}>
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3>₹{((stats.todayProfit || 0).toFixed(1))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.todayProfit || 0).toFixed(2))}</h3>
                   <p>Today's Profit</p>
                 </div>
               </div>
@@ -4578,13 +4577,13 @@ export default function App(){
               <div className="stats" style={{marginBottom:'30px'}}>
                 <div className="stat-card">
                   <h3>Total Revenue</h3>
-                  <p>₹{analyticsData.revenueSummary.totalRevenue?.toLocaleString() || '0'}</p>
+                  <p>₹{analyticsData.revenueSummary.totalRevenue?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
                 </div>
                 {canViewProfit() && (
                   <>
                     <div className="stat-card">
                       <h3>Total Profit</h3>
-                      <p>₹{analyticsData.revenueSummary.totalProfit?.toLocaleString() || '0'}</p>
+                      <p>₹{analyticsData.revenueSummary.totalProfit?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
                     </div>
                     <div className="stat-card">
                       <h3>Profit Margin</h3>
@@ -4598,7 +4597,7 @@ export default function App(){
                 </div>
                 <div className="stat-card">
                   <h3>Avg Order Value</h3>
-                  <p>₹{analyticsData.revenueSummary.averageOrderValue || '0'}</p>
+                  <p>₹{analyticsData.revenueSummary.averageOrderValue?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
                 </div>
               </div>
             )}
@@ -4721,7 +4720,7 @@ export default function App(){
             <div className="reports-grid" style={{marginTop:'30px'}}>
               <div className="report-card">
                 <h3><Icon name="analytics" size={20} /> Sales Summary</h3>
-                <p>Total Revenue: ₹{stats.totalRevenue || 0}</p>
+                <p>Total Revenue: ₹{(stats.totalRevenue || 0).toFixed(2)}</p>
                 <p>Total Invoices: {stats.totalInvoices || 0}</p>
                 <p>Average Sale: ₹{stats.totalInvoices > 0 ? Math.round(stats.totalRevenue / stats.totalInvoices) : 0}</p>
               </div>
@@ -5527,7 +5526,6 @@ export default function App(){
 
               <div className="bill-footer">
                 <p><strong>Thank you for your business!</strong></p>
-                <p>© {new Date().getFullYear()} Shahinsha</p>
               </div>
             </div>
 
@@ -5742,12 +5740,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Copyright Footer */}
-      <footer className="copyright-footer">
-        <div className="footer-content">
-          <p>© {new Date().getFullYear()} Shahinsha</p>
-        </div>
-      </footer>
+      {/* Copyright Footer removed as requested */}
     </div>
   );
 
