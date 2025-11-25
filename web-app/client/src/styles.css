@@ -172,7 +172,7 @@ html, body, .app, .left, .products, .cart, .right {
 .app main {
   padding: 24px 24px; /* more compact padding and relative units */
   /* ensure main content sits below fixed header */
-  margin-top: calc(var(--header-height) + 8px);
+  margin-top: calc(var(--header-height) + 18px) !important;
   max-width: 100%;
   margin: 0 auto;
   animation: slideUp 0.6s ease-out;
@@ -346,6 +346,14 @@ h2 {
   font-size: 22px;
   border-bottom: 3px solid var(--accent-primary);
   padding-bottom: 10px;
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+
+/* Ensure headings are not covered by the fixed header on very small screens */
+@media (max-width:1024px) {
+  .app main { margin-top: calc(var(--header-height) + 22px) !important; }
 }
 
 /* Quick Actions layout */
@@ -3268,6 +3276,20 @@ table tbody tr:last-child td {
   font-size: 18px;
   box-shadow: 0 6px 14px rgba(37,211,102,0.18);
 }
+
+/* Generic icon-only circular button for table actions */
+.icon-only {
+  width: 40px !important;
+  height: 40px !important;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.06);
+}
+
+.btn-icon.icon-only { padding: 0 !important; }
 
 .whatsapp-btn.icon-only .label { display: none !important; }
 

@@ -4406,7 +4406,7 @@ export default function App(){
                       </td>
                     )}
                     <td>
-                      <button onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} className="btn-info" style={{padding:'5px 10px', marginRight:'5px'}}>View</button>
+                      <button onClick={() => {setSelectedProduct(prod); setShowProductDetails(true);}} title="View product" className="btn-info icon-only" style={{marginRight:'8px', padding:0}}><Icon name="eye" size={14} /></button>
                       <button onClick={()=>requireAuth(()=>{
                         if(confirm(`Delete ${prod.name}?`)){
                           deleteProduct(prod.id);
@@ -5073,12 +5073,13 @@ export default function App(){
                               <Icon name="whatsapp" size={16} />
                             </button>
                             <button
-                            onClick={() => { setLastBill(inv); setShowBill(true); }}
-                            style={{padding:'6px 10px', background:'var(--accent-primary)', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
-                            className="btn-icon"
-                          >
-                            <Icon name="eye"/> <span className="label">View</span>
-                          </button>
+                              onClick={() => { setLastBill(inv); setShowBill(true); }}
+                              title="View invoice"
+                              className="btn-icon icon-only"
+                              style={{background:'var(--accent-primary)', color:'white', border:'none', cursor:'pointer', marginRight:4}}
+                            >
+                              <Icon name="eye" size={16} />
+                            </button>
                         </td>
                       </tr>
                     )})
