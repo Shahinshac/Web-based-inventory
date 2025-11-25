@@ -5549,7 +5549,6 @@ export default function App(){
 
               <div className="bill-footer">
                 <p><strong>Thank you for your business!</strong></p>
-                <p>© {new Date().getFullYear()} Shahinsha</p>
               </div>
             </div>
 
@@ -5764,12 +5763,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Copyright Footer */}
-      <footer className="copyright-footer">
-        <div className="footer-content">
-          <p>© {new Date().getFullYear()} Shahinsha</p>
-        </div>
-      </footer>
+      {/* Copyright footer deliberately removed per design preference */}
     </div>
   );
 
