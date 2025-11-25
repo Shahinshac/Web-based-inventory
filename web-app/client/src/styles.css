@@ -225,7 +225,10 @@ h2 {
 .dashboard .hero h1 { font-size:34px; color:#0f172a; margin:0; font-weight:800 }
 .dashboard .hero .date { color:#64748b; font-size:13px }
 
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; align-items:stretch; margin-bottom:18px; width:100%; }
+.stats-grid { display: grid; gap: 18px; align-items:stretch; margin-bottom:18px; width:100%; }
+
+/* Dashboard-specific: display cards as full-width rows so each card fills the main area */
+.dashboard .stats-grid { grid-template-columns: 1fr; }
 .stat-card { background: linear-gradient(180deg,#ffffff,#fbfdff); padding:18px; border-radius:12px; box-shadow:0 8px 26px rgba(12,18,30,0.06); border:1px solid rgba(99,102,241,0.04); min-height:96px; display:flex; align-items:center; }
 .stat-card .stat-icon { width:44px; height:44px; border-radius:10px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,#eef2ff,#f3f8ff); margin-bottom:12px }
 .stat-info h3 { font-size:20px; color:#0f172a; margin:0 }
