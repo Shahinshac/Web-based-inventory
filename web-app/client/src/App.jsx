@@ -2941,20 +2941,43 @@ export default function App(){
       fd.append('userId', stored.id || stored._id || '')
       fd.append('username', stored.username || '')
 
-      const res = await fetch(API(`/api/users/${userId}/photo`), {
-        method: 'POST',
-        body: fd
-      })
+      // attempt upload up to 3 times (exponential backoff)
+      const maxAttempts = 3
+      let attempt = 0
+      let lastErr = null
 
-      const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Upload failed')
+      while (attempt < maxAttempts) {
+        try {
+          const res = await fetch(API(`/api/users/${userId}/photo`), {
+            method: 'POST',
+            body: fd
+          })
 
-      // server returns a stable endpoint - use full API path resolution
-      setProfilePhoto(API(`/api/users/${userId}/photo`))
-      showNotification('✅ Profile photo saved to server', 'success')
+          const data = await res.json()
+          if (!res.ok) throw new Error(data.error || 'Upload failed')
+
+          // success
+          setProfilePhoto(API(`/api/users/${userId}/photo`))
+          showNotification('✅ Profile photo saved to server', 'success')
+          lastErr = null
+          break
+        } catch (err) {
+          lastErr = err
+          attempt += 1
+          // short exponential backoff
+          const delay = 400 * Math.pow(2, attempt - 1)
+          await new Promise(r => setTimeout(r, delay))
+        }
+      }
+
+      if (lastErr) {
+        // failed after retries — keep locally persisted copy and silently fallback; no blocking toast
+        console.warn('Failed to sync profile photo after retries; saved locally.', lastErr)
+      }
     } catch (e) {
-      console.error('Failed to upload profile photo:', e)
-      showNotification('Failed to sync photo to server. Saved locally instead.', 'warning')
+      console.error('Failed to upload profile photo (outer error):', e)
+      // silent fallback — keep photo saved locally; avoid showing a blocking toast repeatedly
+      console.warn('Profile photo persistence: using local image until server sync succeeds')
     } finally {
       setUploadingPhoto(false)
     }
