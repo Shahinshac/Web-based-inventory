@@ -12,12 +12,34 @@ html {
 body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
-  /* Black & white theme: neutral white background, dark primary text */
-  background: #ffffff;
-  color: #111;
+  /* Dark theme defaults (black background with light text) */
+  background: var(--bg, #000000);
+  color: var(--text, #ffffff);
   min-height: 100vh;
   /* Prevent horizontal overflow globally */
   overflow-x: hidden;
+}
+
+:root {
+  --bg: #000000;
+  --text: #ffffff;
+  --muted: #cfcfcf;
+  --card: #0b0b0b;
+  --card-2: #0f0f0f;
+  --border: rgba(255,255,255,0.06);
+
+  /* Primary accent palette tuned for dark backgrounds */
+  --accent-primary: #2ea6ff; /* bright blue */
+  --accent-secondary: #8a5cf6; /* vivid purple */
+  --accent-success: #20c997; /* green */
+  --accent-danger: #ff6b6b; /* red/pink */
+  --accent-warning: #ffb020; /* amber */
+
+  /* Gradients / helpers */
+  --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+  --accent-success-gradient: linear-gradient(135deg, var(--accent-success), #17b589);
+  --accent-danger-gradient: linear-gradient(135deg, var(--accent-danger), #e84a4a);
+  --header-bg: linear-gradient(135deg,#000000,#111111);
 }
 
 /* Hide visible scrollbars (keep natural scroll behavior) - cleaner UI while preserving scrolling */
@@ -37,8 +59,6 @@ html, body, .app, .left, .products, .cart, .right {
   min-height: 100vh;
   height: 100vh; /* ensure layout consumes viewport so content scrolling remains inside the content area */
   overflow: hidden; /* avoid page-level horizontal scroll */
-  /* enforce B/W theme visually (covers any remaining color values) */
-  filter: grayscale(100%) contrast(95%);
 }
 
 @keyframes fadeIn {
@@ -248,7 +268,7 @@ h2 {
   color: #0f172a;
   margin-bottom: 20px;
   font-size: 22px;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid var(--accent-primary);
   padding-bottom: 10px;
 }
 
@@ -309,7 +329,7 @@ h2 {
 .products li:hover {
   transform: translateY(-5px);
   box-shadow: 0 12px 24px rgba(0,0,0,0.15);
-  border-color: #667eea;
+  border-color: var(--accent-primary);
 }
 
 .products li strong {
@@ -335,7 +355,7 @@ h2 {
 .products li button {
   margin-top: auto;
   padding: 9px 14px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border: none;
   border-radius: 7px;
@@ -381,7 +401,7 @@ h2 {
 
 .right select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
 }
 
@@ -390,7 +410,7 @@ h2 {
   font-size: 20px;
   margin: 0 0 16px 0;
   padding: 0 0 12px 0;
-  border-bottom: 3px solid #667eea;
+  border-bottom: 3px solid var(--accent-primary);
   color: #1e3c72;
   font-weight: 700;
   letter-spacing: 0.3px;
@@ -424,7 +444,7 @@ h2 {
   background: #f8f9fa;
   margin: 0 0 10px 0;
   border-radius: 8px;
-  border-left: 3px solid #667eea;
+  border-left: 3px solid var(--accent-primary);
   animation: slideInRight 0.3s ease-out;
   transition: all 0.3s ease;
   box-shadow: 0 2px 5px rgba(0,0,0,0.06);
@@ -450,7 +470,7 @@ h2 {
 .total {
   margin-top: 12px;
   padding: 16px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border-radius: 10px;
   font-weight: bold;
@@ -470,7 +490,7 @@ h2 {
 .right button {
   width: 100%;
   padding: 13px;
-  background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+  background: var(--accent-success-gradient);
   color: white;
   border: none;
   border-radius: 10px;
@@ -586,7 +606,7 @@ ul:not(.products):not(.cart) li {
   margin: 8px 0;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  border-left: 4px solid var(--accent-primary);
   transition: all 0.3s ease;
 }
 
@@ -642,7 +662,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .modal-content h2 {
   margin-top: 0;
-  color: #667eea;
+  color: var(--accent-primary);
   margin-bottom: 20px;
 }
 
@@ -668,7 +688,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .form-group input:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
 }
 
@@ -679,7 +699,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border: none;
   padding: 10px 20px;
@@ -712,7 +732,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .btn-danger {
-  background: linear-gradient(135deg, #f85032 0%, #e73827 100%);
+  background: var(--accent-danger-gradient);
   color: white;
   border: none;
   padding: 8px 15px;
@@ -796,7 +816,7 @@ ul:not(.products):not(.cart) li:hover {
   margin: 0;
   font-size: 2.2rem; /* larger stat number/title */
   font-weight: 900;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   background-clip: text;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -825,7 +845,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .recent-section h3 {
   margin-top: 0;
-  color: #667eea;
+  color: var(--accent-primary);
 }
 
 /* Badge Styles */
@@ -839,7 +859,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .badge.danger {
   background: #ffe0e0;
-  color: #e73827;
+  color: var(--accent-danger);
 }
 
 .badge.success {
@@ -866,7 +886,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .report-card {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border-radius: 15px;
   padding: 25px;
@@ -899,7 +919,7 @@ ul:not(.products):not(.cart) li:hover {
   border-radius: 10px;
   padding: 15px;
   margin: 15px 0;
-  border: 2px solid #667eea;
+  border: 2px solid var(--accent-primary);
   animation: slideInRight 0.4s ease-out;
   flex-shrink: 0;
 }
@@ -952,7 +972,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .form-group select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
 }
 
@@ -960,7 +980,7 @@ ul:not(.products):not(.cart) li:hover {
   width: 100%;
   height: 6px;
   border-radius: 5px;
-  background: linear-gradient(to right, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   outline: none;
   -webkit-appearance: none;
 }
@@ -971,14 +991,14 @@ ul:not(.products):not(.cart) li:hover {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #667eea;
+  background: var(--accent-primary);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   transition: all 0.3s ease;
 }
 
 /* ---- Login / Register animated UI ---- */
-.login-root { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
+.login-root { background: var(--accent-gradient); min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:24px; }
 .login-center { width:100%; max-width:680px; }
 .login-card { background: #fff; border-radius:20px; box-shadow: 0 30px 80px rgba(0,0,0,0.35); overflow:hidden; display:flex; flex-direction:column; }
 .login-brand { display:flex; gap:18px; padding:36px 40px; align-items:center; background:linear-gradient(135deg,#111,#444); color:white }
@@ -999,7 +1019,7 @@ ul:not(.products):not(.cart) li:hover {
 .eye-toggle { background:transparent; border:none; cursor:pointer; font-size:18px }
 .form-footer { display:flex; justify-content:space-between; align-items:center; margin-top:6px }
 .remember { display:flex; align-items:center; gap:8px; color:#666; font-weight:600 }
-.link { background:transparent; border:none; color:#667eea; cursor:pointer; font-weight:700 }
+.link { background:transparent; border:none; color:var(--accent-primary); cursor:pointer; font-weight:700 }
 
 .fancy-btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; padding:12px 18px; border-radius:12px; border:none; cursor:pointer; font-weight:700; transition: all 220ms cubic-bezier(.2,.9,.2,1); position:relative; overflow:hidden }
 .fancy-btn.primary { background:linear-gradient(135deg,#111,#444); color:white; box-shadow: 0 10px 30px rgba(0,0,0,0.12) }
@@ -1024,14 +1044,14 @@ ul:not(.products):not(.cart) li:hover {
 
 .form-group input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.2);
-  background: #764ba2;
+  background: var(--accent-secondary);
 }
 
 .form-group input[type="range"]::-moz-range-thumb {
   width: 20px;
   height: 20px;
   border-radius: 50%;
-  background: #667eea;
+  background: var(--accent-primary);
   cursor: pointer;
   box-shadow: 0 2px 6px rgba(0,0,0,0.2);
   border: none;
@@ -1040,7 +1060,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .form-group input[type="range"]::-moz-range-thumb:hover {
   transform: scale(1.2);
-  background: #764ba2;
+  background: var(--accent-secondary);
 }
 
 /* Discount group styles (POS) */
@@ -1125,7 +1145,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .download-reports-section h3 {
   margin-top: 0;
-  color: #667eea;
+  color: var(--accent-primary);
   font-size: 1.3rem;
 }
 
@@ -1155,22 +1175,22 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .download-btn.sales:hover {
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   background: linear-gradient(135deg, #f5f7fa 0%, #e8ecff 100%);
 }
 
 .download-btn.inventory:hover {
-  border-color: #11998e;
+  border-color: var(--accent-success);
   background: linear-gradient(135deg, #f5f7fa 0%, #d4f4f1 100%);
 }
 
 .download-btn.customers:hover {
-  border-color: #764ba2;
+  border-color: var(--accent-secondary);
   background: linear-gradient(135deg, #f5f7fa 0%, #f3e8ff 100%);
 }
 
 .download-btn.profit:hover {
-  border-color: #f85032;
+  border-color: var(--accent-danger);
   background: linear-gradient(135deg, #f5f7fa 0%, #ffe8e0 100%);
 }
 
@@ -1311,7 +1331,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .btn-complete-sale {
   width: 100%;
-  background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+  background: var(--accent-success-gradient);
   color: white;
   border: none;
   padding: 15px 30px;
@@ -1387,7 +1407,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .auth-badge.authenticated {
-  background: linear-gradient(135deg, #38ef7d 0%, #11998e 100%);
+  background: var(--accent-success-gradient);
   color: white;
   box-shadow: 0 4px 12px rgba(56, 239, 125, 0.3);
   animation: pulse 2s infinite;
@@ -1413,7 +1433,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .register-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   border: 2px solid rgba(255, 255, 255, 0.3);
   padding: 8px 16px;
@@ -1448,7 +1468,7 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .auth-header h2 {
-  color: #667eea;
+  color: var(--accent-primary);
   border: none;
   padding: 0;
   margin: 10px 0;
@@ -1462,7 +1482,7 @@ ul:not(.products):not(.cart) li:hover {
 
 .auth-error {
   background: #ffe0e0;
-  color: #e73827;
+  color: var(--accent-danger);
   padding: 12px;
   border-radius: 8px;
   margin: 15px 0;
@@ -2229,7 +2249,7 @@ button, .products li, .stat-card {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   border: none;
   color: white;
   font-size: 28px;
@@ -2273,7 +2293,7 @@ button, .products li, .stat-card {
 }
 
 .quick-actions-menu button:hover {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   transform: translateX(5px);
 }
@@ -2314,12 +2334,12 @@ button, .products li, .stat-card {
 }
 
 .control-select:hover {
-  border-color: #667eea;
+  border-color: var(--accent-primary);
 }
 
 .control-select:focus {
   outline: none;
-  border-color: #667eea;
+  border-color: var(--accent-primary);
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
@@ -2987,7 +3007,7 @@ button, .products li, .stat-card {
 .checkbox-label input[type="checkbox"] {
   width: 18px;
   height: 18px;
-  accent-color: #667eea;
+  accent-color: var(--accent-primary);
   cursor: pointer;
 }
 
@@ -3019,7 +3039,7 @@ table {
 }
 
 table thead {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   color: white;
   position: sticky;
   top: 0;
@@ -3070,7 +3090,7 @@ table tbody tr:last-child td {
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  scrollbar-color: #667eea #f1f1f1;
+  scrollbar-color: var(--accent-primary) var(--card-2);
 }
 
 .table-container::-webkit-scrollbar {
@@ -3083,7 +3103,7 @@ table tbody tr:last-child td {
 }
 
 .table-container::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
   border-radius: 10px;
 }
 
@@ -3247,7 +3267,7 @@ button:active {
   justify-content: center;
   font-size: 24px;
   border-radius: 12px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: var(--accent-gradient);
 }
 
 /* Better Contrast for Dark Mode Buttons */
@@ -3304,4 +3324,84 @@ button:active {
   transform: none !important;
   box-shadow: none !important;
 }
+
+/* ==================================================
+   Dark theme overrides (applies a true black theme)
+   ================================================== */
+
+/* Ensure global background & text use dark variables */
+.app { background: var(--bg); color: var(--text); }
+.app header { background: var(--header-bg); color: var(--text); }
+
+/* Sidebar and content panels */
+.sidebar,
+.sidebar .profile-area,
+.logo-mark,
+.sidebar-nav button,
+.pos .left,
+.pos .right,
+.left,
+.right,
+.stat-card,
+.recent-section,
+.report-card,
+.download-reports-section,
+.download-btn,
+.products li,
+.cart li,
+.modal-content,
+.bill-modal,
+.bill-header,
+.bill-info,
+.bill-summary,
+.table-container,
+table {
+  background: var(--card) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.6) !important;
+}
+
+/* Table header and cells */
+table thead { background: linear-gradient(135deg,#0b0b0b,#1a1a1a) !important; color: var(--text) !important; }
+table th, table td { color: var(--text) !important; border-color: rgba(255,255,255,0.04) !important; }
+table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform: none !important; }
+
+/* Inputs, selects and form controls in dark theme */
+.form-group input,
+.form-group select,
+.control,
+.customer-select-inline {
+  background: var(--card-2) !important;
+  color: var(--text) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.fancy-btn.primary,
+.btn-primary,
+.important-btn { box-shadow: 0 8px 30px rgba(0,0,0,0.6) !important; }
+
+/* Muted text for secondary info */
+.muted, .profile-role, .stat-info p, .cost-display { color: var(--muted) !important; }
+
+/* Keep accent colors to provide visual affordances (buttons, badges) */
+.fancy-btn.primary { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
+.total { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
+
+/* Mobile bottom nav background */
+.mobile-bottom-nav { background: var(--card) !important; }
+
+/* Tweak header avatar contrast */
+.header-avatar { border: 2px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.04); }
+
+/* Download button text contrast */
+.download-btn strong, .products li strong, .stat-info h3 { color: var(--text) !important; }
+
+/* Ensure modals have readable borders */
+.modal-content { border: 1px solid var(--border) !important; }
+
+/* Inputs placeholder color */
+::placeholder { color: rgba(255,255,255,0.45); }
+
+/* End of dark theme overrides */
 

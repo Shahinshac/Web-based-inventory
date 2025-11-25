@@ -3412,7 +3412,7 @@ export default function App(){
             top: '20px',
             right: '80px',
             zIndex: 9999,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'var(--accent-gradient)',
             color: '#fff',
             border: 'none',
             borderRadius: '25px',
@@ -3492,7 +3492,7 @@ export default function App(){
           <div className="modal slide-in" onClick={e => e.stopPropagation()}>
             <h2><Icon name="analytics" size={20} /> Stock Alerts</h2>
             <div className="stock-alerts">
-              <h3 style={{color: '#e74c3c'}}><Icon name="analytics" size={16} /> Out of Stock ({products.filter(p => p.quantity === 0).length})</h3>
+              <h3 style={{color: 'var(--accent-danger)'}}><Icon name="analytics" size={16} /> Out of Stock ({products.filter(p => p.quantity === 0).length})</h3>
               <div className="alert-list">
                 {products.filter(p => p.quantity === 0).map(p => (
                   <div key={p._id} className="alert-item out-of-stock">
@@ -3540,7 +3540,7 @@ export default function App(){
                 <span
                   className="detail-value profit"
                   style={{
-                    color: selectedProduct.profit < 0 ? '#ef4444' : selectedProduct.profit > 0 ? '#10b981' : '#6b7280'
+                    color: selectedProduct.profit < 0 ? 'var(--accent-danger)' : selectedProduct.profit > 0 ? 'var(--accent-success)' : '#6b7280'
                   }}
                 >
                   ₹{selectedProduct.profit} ({selectedProduct.profitPercent}%)
@@ -3583,7 +3583,7 @@ export default function App(){
       <header>
         <h1>
           <span style={{
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            background: 'var(--accent-gradient)',
             WebkitBackgroundClip: 'text',
             WebkitTextFillColor: 'transparent',
             fontWeight: 'bold',
@@ -3617,7 +3617,7 @@ export default function App(){
             </div>
             <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
           </div>
-          <button onClick={handleLogout} className="logout-btn" style={{background:'#48bb78'}}><Icon name="lock" size={16} /> Logout</button>
+          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}><Icon name="lock" size={16} /> Logout</button>
         </div>
       </header>
       <main>
@@ -3773,14 +3773,14 @@ export default function App(){
                       outline: 'none',
                       transition: 'all 0.2s'
                     }}
-                    onFocus={(e) => e.target.style.borderColor = '#667eea'}
+                    onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
                     onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                   />
                   <button
                     onClick={scanBarcodeInPOS}
                     style={{
                       padding: '8px 12px',
-                      background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                      background: 'var(--accent-success-gradient)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
@@ -3803,7 +3803,7 @@ export default function App(){
                     }}
                     style={{
                       padding: '8px 12px',
-                      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                      background: 'var(--accent-gradient)',
                       color: 'white',
                       border: 'none',
                       borderRadius: '8px',
@@ -4021,7 +4021,7 @@ export default function App(){
                 const isValid = Math.abs(remaining) <= 0.01;
                 
                 return (
-                  <div style={{marginBottom: '15px', padding: '15px', background: '#f7fafc', borderRadius: '8px', border: isValid ? '2px solid #48bb78' : '2px solid #fc8181'}}>
+                  <div style={{marginBottom: '15px', padding: '15px', background: '#f7fafc', borderRadius: '8px', border: isValid ? '2px solid var(--accent-success)' : '2px solid #fc8181'}}>
                     <div style={{marginBottom: '10px', fontWeight: '600', color: '#2d3748', display: 'flex', justifyContent: 'space-between', alignItems: 'center'}}>
                       <span>Split Payment - Total: {formatCurrency(grandTotal)}</span>
                       <button 
@@ -4032,7 +4032,7 @@ export default function App(){
                         }}
                         style={{
                           padding: '5px 10px',
-                          background: '#4299e1',
+                          background: 'var(--accent-primary)',
                           color: 'white',
                           border: 'none',
                           borderRadius: '4px',
@@ -4112,7 +4112,7 @@ export default function App(){
                     <div className="breakdown-row"><span>Subtotal:</span><span>{formatCurrency(subtotal)}</span></div>
                     {discount > 0 && (
                       <>
-                        <div className="breakdown-row"><span>Discount ({discount}%):</span><span style={{color: '#48bb78'}}>-{formatCurrency(discountAmount)}</span></div>
+                        <div className="breakdown-row"><span>Discount ({discount}%):</span><span style={{color: 'var(--accent-success)'}}>-{formatCurrency(discountAmount)}</span></div>
                         <div className="breakdown-row"><span>After Discount:</span><span>{formatCurrency(afterDiscount)}</span></div>
                       </>
                     )}
@@ -4255,7 +4255,7 @@ export default function App(){
                     <td>
                       <span style={{
                         fontWeight: 'bold',
-                        color: prod.quantity === 0 ? '#ef4444' : prod.quantity < 10 ? '#f59e0b' : '#10b981'
+                        color: prod.quantity === 0 ? 'var(--accent-danger)' : prod.quantity < 10 ? 'var(--accent-warning)' : 'var(--accent-success)'
                       }}>
                         {prod.quantity}
                       </span>
@@ -4264,7 +4264,7 @@ export default function App(){
                     <td>₹{prod.price}</td>
                     {canViewProfit() && (
                       <td style={{
-                        color: prod.profit < 0 ? '#ef4444' : prod.profit > 0 ? '#10b981' : '#6b7280',
+                        color: prod.profit < 0 ? 'var(--accent-danger)' : prod.profit > 0 ? 'var(--accent-success)' : '#6b7280',
                         fontWeight: 'bold'
                       }}>
                         ₹{prod.profit || 0} ({prod.profitPercent || 0}%)
@@ -4304,19 +4304,19 @@ export default function App(){
 
             {/* Stock Status Summary */}
             <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fit, minmax(200px, 1fr))',gap:'15px',marginBottom:'25px'}}>
-              <div style={{background:'linear-gradient(135deg, #10b981 0%, #059669 100%)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
+              <div style={{background:'var(--accent-success-gradient)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
                 <div style={{fontSize:'14px',opacity:'0.9'}}>In Stock</div>
                 <div style={{fontSize:'32px',fontWeight:'bold',marginTop:'8px'}}>
                   {products.filter(p => p.quantity >= 10).length}
                 </div>
               </div>
-              <div style={{background:'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
+              <div style={{background:'var(--accent-warning)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
                 <div style={{fontSize:'14px',opacity:'0.9'}}>Low Stock</div>
                 <div style={{fontSize:'32px',fontWeight:'bold',marginTop:'8px'}}>
                   {products.filter(p => p.quantity > 0 && p.quantity < 10).length}
                 </div>
               </div>
-              <div style={{background:'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
+              <div style={{background:'var(--accent-danger)',padding:'20px',borderRadius:'10px',color:'white',boxShadow:'0 4px 6px rgba(0,0,0,0.1)'}}>
                 <div style={{fontSize:'14px',opacity:'0.9'}}>Out of Stock</div>
                 <div style={{fontSize:'32px',fontWeight:'bold',marginTop:'8px'}}>
                   {products.filter(p => p.quantity === 0).length}
@@ -4398,7 +4398,7 @@ export default function App(){
                             width:'24px',
                             height:'24px',
                             borderRadius:'50%',
-                            background:'#667eea',
+                            background:'var(--accent-primary)',
                             color:'white',
                             border:'2px solid white',
                             cursor:'pointer',
@@ -4423,7 +4423,7 @@ export default function App(){
                             style={{
                               background:'none',
                               border:'none',
-                              color:'#667eea',
+                              color:'var(--accent-primary)',
                               cursor:'pointer',
                               padding:0,
                               textDecoration:'underline',
@@ -4541,7 +4541,7 @@ export default function App(){
                         }}
                         style={{
                           padding: '6px 12px',
-                          background: '#667eea',
+                          background: 'var(--accent-primary)',
                           color: 'white',
                           border: 'none',
                           borderRadius: '6px',
@@ -4678,7 +4678,7 @@ export default function App(){
                               setTab('products');
                               setSearchQuery(item.name);
                             }}
-                            style={{padding:'6px 12px',background:'#667eea',color:'#fff',border:'none',borderRadius:'4px',cursor:'pointer'}}
+                            style={{padding:'6px 12px',background:'var(--accent-primary)',color:'#fff',border:'none',borderRadius:'4px',cursor:'pointer'}}
                           >
                             Restock
                           </button>
@@ -4695,7 +4695,7 @@ export default function App(){
                 <div className="empty-icon"><Icon name="analytics" size={48} /></div>
                 <h3>No Analytics Data Yet</h3>
                 <p>Make some sales to see analytics insights</p>
-                <button onClick={() => setTab('pos')} style={{marginTop:'20px',padding:'12px 24px',background:'#667eea',color:'#fff',border:'none',borderRadius:'8px',cursor:'pointer'}}>
+                <button onClick={() => setTab('pos')} style={{marginTop:'20px',padding:'12px 24px',background:'var(--accent-primary)',color:'#fff',border:'none',borderRadius:'8px',cursor:'pointer'}}>
                   Start Selling →
                 </button>
               </div>
@@ -4879,7 +4879,7 @@ export default function App(){
                         <td>{inv.items?.length || 0} items</td>
                         <td>₹{(inv.subtotal || 0).toFixed(1)}</td>
                         <td>
-                          <span style={{color:'#e74c3c',fontSize:'13px'}}>
+                          <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
                             -{inv.discountPercent || 0}%
                             <br/>
                             <small style={{color:'#888'}}>₹{(inv.discountAmount || 0).toFixed(1)}</small>
@@ -4895,7 +4895,7 @@ export default function App(){
                         </td>
                         <td><strong style={{color:'#2c3e50'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
                         <td>
-                          <strong style={{color: profit < 0 ? '#ef4444' : '#10b981'}}>
+                          <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
                             ₹{(profit || 0).toFixed(1)}
                           </strong>
                         </td>
@@ -4940,7 +4940,7 @@ export default function App(){
                           </button>
                           <button
                             onClick={() => { setLastBill(inv); setShowBill(true); }}
-                            style={{padding:'6px 10px', background:'#667eea', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
+                            style={{padding:'6px 10px', background:'var(--accent-primary)', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
                             className="btn-icon"
                           >
                             <Icon name="eye"/> <span className="label">View</span>
@@ -5018,7 +5018,7 @@ export default function App(){
                             value={user.role}
                             onChange={(e) => changeUserRole(user._id, e.target.value, user.username)}
                             style={{
-                              background: user.role === 'admin' ? '#667eea' : user.role === 'manager' ? '#4299e1' : '#48bb78',
+                              background: user.role === 'admin' ? 'var(--accent-primary)' : user.role === 'manager' ? 'var(--accent-secondary)' : 'var(--accent-success)',
                               color: 'white',
                               padding: '6px 10px',
                               borderRadius: '4px',
@@ -5036,7 +5036,7 @@ export default function App(){
                         <td>
                           {user.approved ? (
                             <span className="badge" style={{
-                              background: '#48bb78',
+                              background: 'var(--accent-success)',
                               color: 'white',
                               padding: '4px 8px',
                               borderRadius: '4px',
@@ -5046,7 +5046,7 @@ export default function App(){
                             </span>
                           ) : (
                             <span className="badge" style={{
-                              background: '#ed8936',
+                              background: 'var(--accent-warning)',
                               color: 'white',
                               padding: '4px 8px',
                               borderRadius: '4px',
@@ -5072,7 +5072,7 @@ export default function App(){
                                 style={{
                                   padding: '6px 12px',
                                   fontSize: '12px',
-                                  background: '#48bb78',
+                                  background: 'var(--accent-success)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '4px',
@@ -5087,7 +5087,7 @@ export default function App(){
                                 style={{
                                   padding: '6px 12px',
                                   fontSize: '12px',
-                                  background: '#ed8936',
+                                  background: 'var(--accent-warning)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '4px',
@@ -5188,7 +5188,7 @@ export default function App(){
                           </td>
                           <td>
                             <span style={{
-                              background: log.username === 'admin' ? '#667eea' : '#48bb78',
+                              background: log.username === 'admin' ? 'var(--accent-primary)' : 'var(--accent-success)',
                               color: 'white',
                               padding: '4px 10px',
                               borderRadius: '12px',
@@ -5202,8 +5202,8 @@ export default function App(){
                             <span style={{
                               background: 
                                 log.action.includes('DELETE') ? '#f56565' :
-                                log.action.includes('ADD') || log.action.includes('COMPLETE') ? '#48bb78' :
-                                log.action.includes('UPDATE') ? '#ed8936' : '#667eea',
+                                log.action.includes('ADD') || log.action.includes('COMPLETE') ? 'var(--accent-success)' :
+                                log.action.includes('UPDATE') ? 'var(--accent-warning)' : 'var(--accent-primary)',
                               color: 'white',
                               padding: '4px 8px',
                               borderRadius: '4px',
@@ -5224,7 +5224,7 @@ export default function App(){
                                 {log.details.oldQuantity !== undefined && (
                                   <span> | Stock: {log.details.oldQuantity} → {log.details.newQuantity} 
                                     <span style={{
-                                      color: log.details.change > 0 ? '#48bb78' : '#f56565',
+                                      color: log.details.change > 0 ? 'var(--accent-success)' : 'var(--accent-danger)',
                                       fontWeight: 'bold'
                                     }}>
                                       ({log.details.change > 0 ? '+' : ''}{log.details.change})
@@ -5423,13 +5423,13 @@ export default function App(){
               </div>
               <div style={{marginTop: '15px', display: 'flex', gap: '20px', justifyContent: 'center'}}>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
-                  <div style={{fontSize: '24px', fontWeight: 'bold', color: '#667eea'}}>
+                  <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-primary)'}}>
                     {customerPurchases.length}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Total Purchases</div>
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
-                  <div style={{fontSize: '24px', fontWeight: 'bold', color: '#48bb78'}}>
+                  <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-success)'}}>
                     ₹{customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0).toFixed(1)}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Total Spent</div>
@@ -5463,7 +5463,7 @@ export default function App(){
                         <td>{new Date(inv.created_at).toLocaleDateString('en-IN')}</td>
                         <td>{inv.items?.length || 0} items</td>
                         <td>{inv.discountPercent || 0}%</td>
-                        <td style={{fontWeight: 'bold', color: '#667eea'}}>₹{inv.total}</td>
+                        <td style={{fontWeight: 'bold', color: 'var(--accent-primary)'}}>₹{inv.total}</td>
                         <td>{inv.paymentMode || 'Cash'}</td>
                       </tr>
                     ))}
@@ -5559,7 +5559,7 @@ export default function App(){
                   sendInvoiceWhatsApp(lastBill);
                 }}
                 className="btn-primary"
-                style={{background:'#25D366', marginLeft:'8px'}}
+                style={{background:'var(--accent-success)', marginLeft:'8px'}}
               >
                 <Icon name="whatsapp"/> <span className="label">Send via WhatsApp</span>
               </button>
@@ -5614,8 +5614,8 @@ export default function App(){
           <div className="modal-content" style={{maxWidth: '600px'}} onClick={(e) => e.stopPropagation()}>
             <h2><Icon name="analytics" size={24} /> Product Barcode & QR Code</h2>
             
-            <div style={{
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              <div style={{
+              background: 'var(--accent-gradient)',
               padding: '20px',
               borderRadius: '12px',
               color: 'white',
@@ -5729,7 +5729,7 @@ export default function App(){
                   link.click();
                 }}
                 className="btn-primary btn-icon"
-                style={{background: '#10b981'}}
+                style={{background: 'var(--accent-success)'}}
                 disabled={!barcodeImage}
               >
                 <Icon name="download"/> <span className="label">Download Barcode</span>
@@ -5742,7 +5742,7 @@ export default function App(){
                   link.click();
                 }}
                 className="btn-primary btn-icon"
-                style={{background: '#8b5cf6'}}
+                style={{background: 'var(--accent-secondary)'}}
                 disabled={!qrCodeImage}
               >
                 <Icon name="download"/> <span className="label">Download QR</span>
