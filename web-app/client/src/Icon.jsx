@@ -193,6 +193,22 @@ export default function Icon({ name, size = 18, className = '', stroke = 'curren
             <circle cx="12" cy="12" r="3" />
           </svg>
         )
+      case 'camera':
+        return (
+          <svg {...common} className={className}>
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2v12z" />
+            <circle cx="12" cy="13" r="3" />
+          </svg>
+        )
+      case 'door':
+        return (
+          <svg {...common} className={className}>
+            <path d="M3 21h18" />
+            <path d="M9 21V10" />
+            <path d="M7 21V4a1 1 0 0 1 1-1h8a1 1 0 0 1 1 1v17" />
+            <circle cx="15" cy="14" r="1" />
+          </svg>
+        )
     default:
       return null
   }

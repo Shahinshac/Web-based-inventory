@@ -2340,9 +2340,9 @@ export default function App(){
                 ${lastBill.items.map((item, idx) => {
                   const product = products.find(p => p._id === item.productId);
                   return `
-                    <tr>
+                                    <div style={{display:'flex',gap:'8px',flexWrap:'nowrap',overflowX:'auto'}}>
                       <td class="text-center">${idx + 1}</td>
-                      <td>${item.name}</td>
+                                      <button 
                       <td>${product?.hsnCode || 'N/A'}</td>
                       <td class="text-center">${item.quantity}</td>
                       <td class="text-right">₹${item.price.toFixed(2)}</td>
@@ -3614,10 +3614,13 @@ export default function App(){
                 if (el) el.click()
               }}>
               {profilePhoto ? <img src={profilePhoto} alt="profile" /> : <div className="header-avatar-initials">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
+              <button className="camera-overlay" aria-label="Set profile photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>
+                <Icon name="camera" size={14} />
+              </button>
             </div>
             <span className="auth-badge authenticated">✓ {isAdmin ? 'Admin' : (currentUser?.username || 'Guest')}</span>
           </div>
-          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}><Icon name="lock" size={16} /> Logout</button>
+          <button onClick={handleLogout} className="logout-btn" style={{background:'var(--accent-success)'}}><Icon name="lock" size={16} /> <Icon name="door" size={16} style={{marginLeft:6}}/> Logout</button>
         </div>
       </header>
       <main>
@@ -3649,6 +3652,7 @@ export default function App(){
               <div className="profile-area">
                 <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
                   {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
+                  <button className="camera-overlay" title="Set photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
                 </div>
                 <div className="profile-meta">
                   <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
@@ -3701,17 +3705,7 @@ export default function App(){
                   <p>Total Invoices</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.2s', cursor: stats.lowStockCount > 0 ? 'pointer' : 'default'}} onClick={() => {
-                if (stats.lowStockCount > 0) {
-                  setShowStockAlert(true);
-                }
-              }}>
-                <div className="stat-icon"><Icon name="analytics" size={24} /></div>
-                <div className="stat-info">
-                  <h3>{stats.lowStockCount || 0}</h3>
-                  <p>Low Stock Items</p>
-                </div>
-              </div>
+              {/* low-stock KPI removed (per user request) */}
               <div className="stat-card scale-in" style={{animationDelay: '0.3s'}}>
                 <div className="stat-icon"><Icon name="analytics" size={24} /></div>
                 <div className="stat-info">
@@ -3734,22 +3728,7 @@ export default function App(){
               <div className="mobile-sidebar-backdrop" onClick={()=>setMobileSidebarOpen(false)}></div>
             )}
 
-            <div className="recent-section">
-              <h3>Low Stock Alert</h3>
-              <table>
-                <thead><tr><th>Product</th><th>Current Stock</th><th>Status</th></tr></thead>
-                <tbody>
-                  {products.filter(p=>p.quantity<20).slice(0,5).map(p=>(
-                    <tr key={p.id}>
-                      <td>{p.name}</td>
-                      <td>{p.quantity}</td>
-                      <td><span className="badge danger">Low Stock</span></td>
-                    </tr>
-                  ))}
-                  {products.filter(p=>p.quantity<20).length===0 && <tr><td colSpan="3">All products well stocked!</td></tr>}
-                </tbody>
-              </table>
-            </div>
+            {/* Removed Low Stock alert section from dashboard */}
           </div>
         )}
 
@@ -3796,7 +3775,7 @@ export default function App(){
                   >
                     <Icon name="analytics" size={16} /> Barcode
                   </button>
-                  <button
+                            <button 
                     onClick={() => {
                       setScannerMode('pos');
                       setShowBarcodeScanner(true);
@@ -4992,12 +4971,13 @@ export default function App(){
                       <tr key={user._id}>
                         <td style={{display:'flex',alignItems:'center',gap:10}}>
                           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
-                            <div style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center'}}>
+                            <div className="user-photo-wrapper" style={{width:38,height:38,borderRadius:8,overflow:'hidden',border:'1px solid #eef2f7',display:'flex',alignItems:'center',justifyContent:'center',position:'relative'}}>
                               {user.photo ? (
                                 <img src={(user.photo||'').startsWith('http') ? user.photo : API(user.photo)} alt={user.username} style={{maxWidth:'100%',maxHeight:'100%',objectFit:'contain',display:'block'}}/>
                               ) : (
-                                <div style={{fontWeight:700,color:'#065f46',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+                                <div style={{fontWeight:700,color:'var(--accent-secondary)',padding:'6px',fontSize:12}}>{String(user.username||'U').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
                               )}
+                              <button className="camera-overlay" title="Set user photo" onClick={(e)=>{ e.stopPropagation(); document.getElementById(`user-photo-${user._id}`).click(); }} style={{position:'absolute',right:-6,bottom:-6}}><Icon name="camera" size={12} /></button>
                             </div>
                             <div style={{display:'flex',flexDirection:'column'}}>
                               <strong>{user.username}</strong>
@@ -5006,10 +4986,10 @@ export default function App(){
                           </div>
 
                           {/* admin upload/delete controls for user photo */}
-                          <div style={{marginLeft:'auto',display:'inline-flex',gap:6}}>
+                          <div style={{marginLeft:'auto',display:'inline-flex',gap:6,flexWrap:'nowrap'}}>
                             <input id={`user-photo-${user._id}`} type="file" accept="image/*" style={{display:'none'}} onChange={(e)=>{ const f = e.target.files && e.target.files[0]; if(f) uploadUserPhoto(user._id, f); }} />
-                            <button title="Upload" onClick={()=>document.getElementById(`user-photo-${user._id}`).click()} style={{padding:'6px',borderRadius:8,border:'none',background:'#eef2f7',cursor:'pointer'}}><Icon name="upload" size={14}/></button>
-                            <button title="Remove" onClick={()=>deleteUserPhoto(user._id)} style={{padding:'6px',borderRadius:8,border:'none',background:'#fff5f5',cursor:'pointer'}}><Icon name="close" size={14}/></button>
+                            <button title="Upload" onClick={()=>document.getElementById(`user-photo-${user._id}`).click()} style={{padding:'6px',borderRadius:8,border:'none',background: 'var(--card-2)',cursor:'pointer'}}><Icon name="upload" size={14}/></button>
+                            <button title="Remove" onClick={()=>deleteUserPhoto(user._id)} style={{padding:'6px',borderRadius:8,border:'none',background:'var(--card)',cursor:'pointer',color:'var(--muted)'}}><Icon name="close" size={14}/></button>
                           </div>
                         </td>
                         <td>{user.email || '—'}</td>
@@ -5087,14 +5067,14 @@ export default function App(){
                                 style={{
                                   padding: '6px 12px',
                                   fontSize: '12px',
-                                  background: 'var(--accent-warning)',
+                                  background: 'var(--card-2)',
                                   color: 'white',
                                   border: 'none',
                                   borderRadius: '4px',
                                   cursor: 'pointer'
                                 }}
                               >
-                                Revoke Access
+                                <Icon name="lock" size={12} /> Revoke Access
                               </button>
                             )}
                             <button 
@@ -5107,7 +5087,7 @@ export default function App(){
                               style={{
                                 padding: '6px 12px',
                                 fontSize: '12px',
-                                background: '#f56565',
+                                background: 'var(--accent-danger)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',
@@ -5121,7 +5101,7 @@ export default function App(){
                               style={{
                                 padding: '6px 12px',
                                 fontSize: '12px',
-                                background: '#9f7aea',
+                                background: 'var(--card-2)',
                                 color: 'white',
                                 border: 'none',
                                 borderRadius: '4px',

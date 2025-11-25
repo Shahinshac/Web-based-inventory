@@ -28,17 +28,17 @@ body {
   --card-2: #0f0f0f;
   --border: rgba(255,255,255,0.06);
 
-  /* Primary accent palette tuned for dark backgrounds */
-  --accent-primary: #2ea6ff; /* bright blue */
-  --accent-secondary: #8a5cf6; /* vivid purple */
-  --accent-success: #20c997; /* green */
-  --accent-danger: #ff6b6b; /* red/pink */
-  --accent-warning: #ffb020; /* amber */
+  /* Monochrome accent palette (strict black/white/gray) */
+  --accent-primary: #d1d1d1; /* light gray */
+  --accent-secondary: #9a9a9a; /* medium gray */
+  --accent-success: #bfbfbf; /* neutral gray (used for positive states) */
+  --accent-danger: #8f8f8f; /* darker gray for 'danger' states */
+  --accent-warning: #cfcfcf; /* soft gray */
 
   /* Gradients / helpers */
   --accent-gradient: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-  --accent-success-gradient: linear-gradient(135deg, var(--accent-success), #17b589);
-  --accent-danger-gradient: linear-gradient(135deg, var(--accent-danger), #e84a4a);
+  --accent-success-gradient: linear-gradient(135deg, var(--accent-success), #bfbfbf);
+  --accent-danger-gradient: linear-gradient(135deg, var(--accent-danger), #8f8f8f);
   --header-bg: linear-gradient(135deg,#000000,#111111);
 }
 
@@ -177,7 +177,7 @@ html, body, .app, .left, .products, .cart, .right {
 .profile-area { display:flex; align-items:center; gap:12px; padding:12px; border-radius:12px; background:#fff; border:1px solid rgba(100,116,139,0.06); box-shadow: 0 6px 18px rgba(14,22,36,0.06); }
 .avatar-wrapper { width:56px; height:auto; overflow:visible; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff; background:linear-gradient(135deg,#f5f5f5,#ffffff); border-radius:8px }
 .avatar-wrapper img { max-width:100%; height:auto; object-fit:contain; display:block }
-.avatar-fallback { font-weight:700; color:#065f46; font-size:18px }
+.avatar-fallback { font-weight:700; color:var(--accent-secondary); font-size:18px }
 .profile-meta { flex:1; min-width:0 }
 .profile-name { font-weight:800; font-size:14px; color:#0f172a }
 .profile-role { font-size:12px; color:#6b7280; margin-top:4px }
@@ -188,6 +188,16 @@ html, body, .app, .left, .products, .cart, .right {
 /* Small header avatar (top right) */
 .header-avatar { width:36px; height:auto; overflow:visible; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:3px }
 .header-avatar img{max-width:100%; height:auto; object-fit:contain}
+
+/* Camera overlay button on avatars */
+.avatar-wrapper { position: relative; }
+.avatar-wrapper .camera-overlay { position: absolute; right: -6px; bottom: -6px; width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items:center; justify-content:center; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,0.4); }
+.avatar-wrapper .camera-overlay:hover { transform: translateY(-2px); background: rgba(255,255,255,0.09); }
+.avatar-wrapper .camera-overlay svg { width:18px; height:18px; color: var(--text); stroke: currentColor; }
+
+/* Small avatar overlay for user list rows */
+.user-photo-wrapper { position: relative; display: inline-block; }
+.user-photo-wrapper .camera-overlay { right: -6px; bottom: -6px; width:24px; height:24px; }
 .header-avatar-initials { font-weight:700; color:white }
 
 /* Responsive: hide sidebar on smaller screens and keep header nav */
@@ -3402,6 +3412,17 @@ table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform:
 
 /* Inputs placeholder color */
 ::placeholder { color: rgba(255,255,255,0.45); }
+
+/* Protect profile / avatar / product images from any theme filters
+   — ensure user photos and product photos remain full-color and are never grayscaled. */
+img.user-photo,
+img.admin-photo,
+img.avatar,
+.product-image,
+.product-photo {
+  filter: none !important;
+  -webkit-filter: none !important;
+}
 
 /* End of dark theme overrides */
 
