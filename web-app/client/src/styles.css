@@ -358,6 +358,36 @@ h2 {
   h2 { font-size: 18px; padding-bottom: 8px; }
 }
 
+/* Flow diagram for top products */
+.flow-diagram {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px;
+}
+.flow-card {
+  width: 100%;
+  max-width: 740px;
+  background: linear-gradient(180deg,#ffffff,#fbfdff);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 10px 40px rgba(15,23,42,0.06);
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.flow-title { font-weight: 800; color: var(--text); display:flex; justify-content:space-between; align-items:center; gap:8px }
+.flow-svg { width: 100%; height: auto; display:block; margin-top: 12px }
+.flow-node { transition: transform 0.18s; cursor: pointer }
+.flow-node:hover { transform: scale(1.05); }
+.flow-label { font-size: 12px; text-align: center; color: var(--muted); }
+.flow-node .badge { display:block; font-size: 11px; margin-top: 6px; background: var(--card-2); padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(0,0,0,0.06); }
+
+/* small screen adjustments */
+@media (max-width: 480px) {
+  .flow-card { padding: 12px; }
+  .flow-svg { max-height: 260px }
+}
+
 /* Dashboard hero and stat cards */
 .dashboard > div:first-child { background: transparent; display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px }
 .dashboard .hero { padding:12px 0 24px 0; display:flex; justify-content:space-between; align-items:center; gap:12px }

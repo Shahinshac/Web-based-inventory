@@ -3795,6 +3795,74 @@ export default function App(){
                 </div>
               </div>
 
+              {/* Flow Diagram (circular) */}
+              <div className="flow-diagram">
+                <div className="flow-card">
+                  <div className="flow-title">
+                    <div style={{display:'flex', alignItems:'center', gap:10}}>
+                      <strong>Top-selling flow</strong>
+                      <span style={{color:'var(--muted)', fontSize:12}}>Visual view of top products & details</span>
+                    </div>
+                    <div style={{fontSize:12,color:varToString => 'var(--muted)'}}>Top { (analyticsData?.topProducts||[]).length || Math.min(5, products.length)}</div>
+                  </div>
+                  <svg className="flow-svg" viewBox="0 0 520 520" preserveAspectRatio="xMidYMid meet">
+                    {/* background rings */}
+                    <defs>
+                      <linearGradient id="flowGrad" x1="0" x2="1">
+                        <stop offset="0" stopColor="#0b5cff" stopOpacity="0.12" />
+                        <stop offset="1" stopColor="#1e90ff" stopOpacity="0.08" />
+                      </linearGradient>
+                    </defs>
+                    <g transform="translate(260,260)">
+                      <circle r="180" fill="url(#flowGrad)" stroke="rgba(0,0,0,0.03)" strokeWidth="1" />
+                      <circle r="120" fill="transparent" stroke="rgba(0,0,0,0.02)" strokeWidth="1" />
+                      {/* dynamic nodes */}
+                      {
+                        ((analyticsData && analyticsData.topProducts && analyticsData.topProducts.length > 0) ? analyticsData.topProducts : products
+                        .slice().sort((a,b)=> (b.sold || b.sales || 0) - (a.sold || a.sales || 0)).slice(0,6))
+                        .slice(0,8)
+                        .map((p, i, arr) => {
+                          const N = Math.max(1, arr.length);
+                          const angle = (i / N) * Math.PI * 2 - Math.PI / 2; // start top
+                          const radius = 160;
+                          const x = Math.round(Math.cos(angle) * radius);
+                          const y = Math.round(Math.sin(angle) * radius);
+                          const small = Math.max(20, Math.min(46, 46 - (i * 4)));
+                          const sold = p.sold || p.count || p.unitsSold || 0;
+                          const revenue = (p.revenue || p.total || (p.price && sold ? p.price * sold : 0)) || 0;
+
+                          return (
+                            <g key={(p._id||p.id||p.name||i)} className="flow-node" transform={`translate(${x}, ${y})`}>
+                              {/* connector line to center */}
+                              <line x1={-x} y1={-y} x2={0} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+                              {/* node circle */}
+                              <g>
+                                <circle r={small} fill="#fff" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
+                                <circle r={small-6} fill={i % 2 === 0 ? 'rgba(11,92,255,0.95)' : 'rgba(30,144,255,0.95)'} stroke="#ffffff" strokeWidth="1" />
+                                <text x="0" y="4" fontSize="10" fontWeight="700" fill="#fff" textAnchor="middle">{ (p.name||p.productName||p.title||'Product').slice(0,8) }</text>
+                              </g>
+                              {/* label box */}
+                              <foreignObject x={-60} y={small+10} width={120} height={54}>
+                                <div xmlns="http://www.w3.org/1999/xhtml" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
+                                  <div style={{fontSize:12,fontWeight:700,color:'#0f172a'}}>{(p.name||p.productName||'Unnamed')}</div>
+                                  <div style={{fontSize:12,color:'#666'}}>{sold} sold • ₹{(revenue || 0).toFixed(1)}</div>
+                                </div>
+                              </foreignObject>
+                            </g>
+                          )
+                        })
+                      }
+                      {/* center card */}
+                      <g>
+                        <circle r="60" fill="#fff" stroke="#e6eefc" strokeWidth="1" />
+                        <text x="0" y="-6" fontSize="16" fontWeight={800} textAnchor="middle" fill="#0f172a">Top Products</text>
+                        <text x="0" y="14" fontSize="12" fill="#6b7280" textAnchor="middle">Quick summary</text>
+                      </g>
+                    </g>
+                  </svg>
+                </div>
+              </div>
+
               <div style={{padding:14, borderRadius:12, border:'1px solid rgba(0,0,0,0.06)', background:'#fff'}}>
                 <strong>Recent Activity</strong>
                 <div style={{marginTop:12}}>
