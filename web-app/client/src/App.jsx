@@ -133,6 +133,11 @@ export default function App(){
   const [splitPayment, setSplitPayment] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [showMobileMore, setShowMobileMore] = useState(false);
+  // Sidebar collapse and mobile overlay
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch(e) { return false }
+  })
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -3569,6 +3574,8 @@ export default function App(){
         </div>
         {/* Header controls (auth / quick actions) - primary navigation moved to left sidebar */}
         <div className="header-controls" style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto',position:'absolute',right:20,top:20}}>
+          {/* Mobile menu to open sidebar overlay on small screens */}
+          <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
           <div style={{display:'inline-flex',alignItems:'center',gap:8}}>
             <div className="header-avatar" title={(currentUser && currentUser.username) || 'User'} onClick={() => {
                 if (profilePhoto) {
@@ -3592,7 +3599,7 @@ export default function App(){
       </header>
       <main>
         {/* Sidebar - left navigation and profile */}
-        <aside className="sidebar" aria-label="Main navigation">
+        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileSidebarOpen ? 'mobile-open' : ''}`} aria-label="Main navigation">
           <div className="sidebar-inner">
             <div className="sidebar-top">
               <div className="sidebar-logo">
@@ -3611,6 +3618,13 @@ export default function App(){
                 {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''}`}><Icon name="users"/> <span>Users</span></button>}
                 {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''}`}><Icon name="audit"/> <span>Audit Logs</span></button>}
               </nav>
+            </div>
+            
+            {/* Collapse / Expand toggle */}
+            <div style={{display:'flex', justifyContent: 'center', marginTop: 10}}>
+              <button className="sidebar-toggle" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => {
+                setSidebarCollapsed(s => { const next = !s; try{ localStorage.setItem('sidebarCollapsed', String(next)) } catch(e){}; return next })
+              }}>{sidebarCollapsed ? '➤' : '◀'}</button>
             </div>
 
             <div className="sidebar-bottom">
@@ -3695,6 +3709,11 @@ export default function App(){
                 </div>
               </div>
             </div>
+
+            {/* Mobile sidebar overlay backdrop - only used when sidebar opened via mobile button */}
+            {mobileSidebarOpen && (
+              <div className="mobile-sidebar-backdrop" onClick={()=>setMobileSidebarOpen(false)}></div>
+            )}
 
             <div className="recent-section">
               <h3>Low Stock Alert</h3>
