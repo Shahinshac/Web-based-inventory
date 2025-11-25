@@ -42,7 +42,10 @@ export default function App(){
   const [showAddCustomer, setShowAddCustomer] = useState(false)
   const [newProduct, setNewProduct] = useState({name:'', quantity:0, price:0, costPrice:0, hsnCode:'9999', minStock:10, serialNo:'', barcode:''})
   const [newCustomer, setNewCustomer] = useState({name:'', phone:'', address:'', gstin:''})
-  const [loading, setLoading] = useState(true)
+  // Disable the full-screen loading overlay by default so users enter the app
+  // immediately. The app will still fetch data in background and show localized
+  // loading indicators where appropriate.
+  const [loading, setLoading] = useState(false)
   const [discount, setDiscount] = useState(0)
   const [paymentMode, setPaymentMode] = useState(PAYMENT_MODES.CASH)
   const [showBill, setShowBill] = useState(false)
@@ -355,10 +358,20 @@ export default function App(){
 
   // Online/Offline Status Handler
   useEffect(() => {
-    const handleOnline = () => {
+    const handleOnline = async () => {
       setIsOnline(true)
-      showNotification('🌐 Back online! Syncing data...', 'success')
-      syncOfflineData()
+      try {
+        // Only notify & try to sync if there's something to sync
+        if (window.offlineStorage) {
+          const tx = await window.offlineStorage.getOfflineTransactions()
+          if (tx && tx.length > 0) {
+            showNotification('🌐 Back online! Syncing data...', 'success')
+            syncOfflineData()
+          }
+        }
+      } catch (e) {
+        console.error('Error while checking for offline transactions on online event:', e)
+      }
     }
 
     const handleOffline = () => {
@@ -892,9 +905,20 @@ export default function App(){
   const syncOfflineData = async () => {
     if (!isOnline || !window.offlineStorage) return
 
+    // Only attempt to sync if there are offline transactions to avoid
+    // showing spurious 'sync failed' notifications on initial load.
+    let transactions = []
+    try {
+      transactions = await window.offlineStorage.getOfflineTransactions()
+    } catch (err) {
+      console.error('Error checking offline transactions:', err)
+      return
+    }
+
+    if (!transactions || transactions.length === 0) return
+
     setIsSyncing(true)
     try {
-      const transactions = await window.offlineStorage.getOfflineTransactions()
       
       for (const transaction of transactions) {
         try {
@@ -925,6 +949,8 @@ export default function App(){
       showNotification('✅ Offline data synced successfully!', 'success')
     } catch (error) {
       console.error('❌ Sync failed:', error)
+      // Only show the failure notification when there were actually
+      // pending offline transactions (we already checked for length > 0)
       showNotification('❌ Failed to sync offline data', 'error')
     } finally {
       setIsSyncing(false)
