@@ -3415,6 +3415,11 @@ table tbody tr:hover { background: rgba(255,255,255,0.02) !important; transform:
 /* WhatsApp invoice button — preserve green and ensure it sits above table rows */
 .whatsapp-btn { background: var(--whatsapp-green) !important; color: white !important; border: none; border-radius: 6px; padding: 6px 10px; cursor: pointer; margin-right: 6px; position: relative; z-index: 6000; box-shadow: 0 6px 18px rgba(0,0,0,0.28); }
 .actions-cell { overflow: visible !important; position: relative; z-index: 1; }
+
+/* Ensure WhatsApp button stays on top in table cells and modals */
+.table-container td.actions-cell .whatsapp-btn,
+.modal-content .whatsapp-btn { z-index: 9999 !important; position: relative !important; }
+.whatsapp-btn svg { fill: white; stroke: none; }
 .total { background: linear-gradient(135deg, var(--accent), #0b86ff) !important; }
 
 /* Mobile bottom nav background */
