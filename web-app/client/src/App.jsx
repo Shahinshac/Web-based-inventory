@@ -3722,7 +3722,7 @@ export default function App(){
               <button className="btn-primary" onClick={()=>{ setShowAddProduct(true); handleTabChange('products') }}><Icon name="add"/> Add Product</button>
               <button className="btn-primary" onClick={()=>{ setShowAddCustomer(true); handleTabChange('customers') }}><Icon name="customers"/> Add Customer</button>
               <button className="btn-primary" onClick={()=>{ handleTabChange('pos') }}><Icon name="invoices"/> New Sale</button>
-              <button className="btn-secondary" onClick={()=>{ handleTabChange('reports') }}><Icon name="reports"/> Reports</button>
+              <button className="btn-primary" onClick={()=>{ handleTabChange('reports') }} style={{background: 'var(--brand-blue-1)'}}><Icon name="reports"/> Reports</button>
             </div>
             <div className="stats-grid">
               <div className="stat-card scale-in" style={{animationDelay: '0s'}}>
@@ -4299,7 +4299,6 @@ export default function App(){
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
               <h2>Product Inventory</h2>
-              <button onClick={()=>requireAuth(()=>setShowAddProduct(true))} className="btn-primary btn-icon important-btn"><Icon name="add"/> <span className="label">Add Product</span></button>
             </div>
             
             {/* Filter and Sort Controls */}
@@ -4646,7 +4645,6 @@ export default function App(){
           <div>
             <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:'20px'}}>
               <h2>Customers</h2>
-              <button onClick={()=>requireAuth(()=>setShowAddCustomer(true))} className="btn-primary">+ Add Customer</button>
             </div>
             <table>
               <thead>
