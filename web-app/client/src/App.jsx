@@ -136,10 +136,7 @@ export default function App(){
   const [splitPayment, setSplitPayment] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [showMobileMore, setShowMobileMore] = useState(false);
-  // Sidebar collapse and mobile overlay
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
-    try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch(e) { return false }
-  })
+  // Mobile sidebar overlay (no collapse toggle — sidebar is always expanded)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
@@ -3625,7 +3622,7 @@ export default function App(){
       </header>
       <main>
         {/* Sidebar - left navigation and profile */}
-        <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''} ${mobileSidebarOpen ? 'mobile-open' : ''}`} aria-label="Main navigation">
+        <aside className={`sidebar ${mobileSidebarOpen ? 'mobile-open' : ''}`} aria-label="Main navigation">
           <div className="sidebar-inner">
             <div className="sidebar-top">
               <div className="sidebar-logo">
@@ -3646,12 +3643,7 @@ export default function App(){
               </nav>
             </div>
             
-            {/* Collapse / Expand toggle */}
-            <div style={{display:'flex', justifyContent: 'center', marginTop: 10}}>
-              <button className="sidebar-toggle" title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} onClick={() => {
-                setSidebarCollapsed(s => { const next = !s; try{ localStorage.setItem('sidebarCollapsed', String(next)) } catch(e){}; return next })
-              }}>{sidebarCollapsed ? '➤' : '◀'}</button>
-            </div>
+            {/* fixed sidebar - collapse toggle removed per user request */}
 
             <div className="sidebar-bottom">
               <div className="profile-area">
