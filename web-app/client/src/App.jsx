@@ -473,8 +473,18 @@ export default function App(){
       if (localUserPhotos && localUserPhotos[uid]) {
         setProfilePhoto(localUserPhotos[uid])
       } else {
-        // default to server path for user's image (server will 404 if not available)
-        setProfilePhoto(API(`/api/users/${uid}/photo`))
+        // try server path only when online to avoid broken image URLs
+        if (isOnline) {
+          (async () => {
+            try {
+              const resp = await fetch(API(`/api/users/${uid}/photo`), { method: 'GET' })
+              if (resp.ok) setProfilePhoto(API(`/api/users/${uid}/photo`))
+              else setProfilePhoto(null)
+            } catch (e) { setProfilePhoto(null) }
+          })()
+        } else {
+          setProfilePhoto(null)
+        }
       }
     } catch (e) {
       console.error('Failed to initialize profilePhoto for user', e)
