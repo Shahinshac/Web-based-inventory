@@ -2178,7 +2178,7 @@ export default function App(){
               text-align: center;
               font-size: 18px;
               font-weight: bold;
-              background: #000;
+              background: #0b5cff;
               color: #fff;
               padding: 8px;
               margin: 15px 0;
@@ -3249,8 +3249,8 @@ export default function App(){
           position: 'fixed',
           top: '80px',
           right: '20px',
-          background: 'linear-gradient(135deg,#111,#444)',
-          color: 'white',
+          background: 'var(--card-2)',
+          color: 'var(--text)',
           padding: '15px 20px',
           borderRadius: '12px',
           boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
@@ -3268,8 +3268,8 @@ export default function App(){
             <button 
               onClick={installPWA}
               style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: '1px solid rgba(255,255,255,0.3)',
+                background: 'var(--brand-blue-1)',
+                border: '1px solid rgba(0,0,0,0.06)',
                 color: 'white',
                 padding: '8px 16px',
                 borderRadius: '6px',
@@ -3282,9 +3282,9 @@ export default function App(){
             <button 
               onClick={() => setShowInstallPrompt(false)}
               style={{
-                background: 'rgba(255,255,255,0.1)',
-                border: '1px solid rgba(255,255,255,0.2)',
-                color: 'white',
+                background: 'var(--card)',
+                border: '1px solid var(--border)',
+                color: 'var(--text)',
                 padding: '8px 16px',
                 borderRadius: '6px',
                 cursor: 'pointer',
@@ -3305,8 +3305,8 @@ export default function App(){
           left: '20px',
           display: 'flex',
           flexDirection: 'column',
-          background: '#444',
-          color: 'white',
+          background: 'var(--card-2)',
+          color: 'var(--text)',
           padding: '8px 16px',
           borderRadius: '20px',
           fontSize: '14px',
@@ -3332,8 +3332,8 @@ export default function App(){
                 showNotification('🔄 Offline data refreshed!', 'info')
               }}
               style={{
-                background: 'rgba(255,255,255,0.2)',
-                border: '1px solid rgba(255,255,255,0.3)',
+                background: 'var(--brand-blue-1)',
+                border: '1px solid rgba(0,0,0,0.06)',
                 color: 'white',
                 padding: '4px 8px',
                 borderRadius: '10px',
