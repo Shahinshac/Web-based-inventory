@@ -105,6 +105,9 @@ html, body, .app, .left, .products, .cart, .right {
   text-align: right;
   color: rgba(255,255,255,0.95);
   line-height: 1;
+  display: flex; /* ensure clock is visible by default */
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 @media (max-width: 800px) {
@@ -218,8 +221,8 @@ html, body, .app, .left, .products, .cart, .right {
 
 @media (min-width: 981px) {
   /* header-nav removed */
-  /* Prefer left sidebar layout on larger screens — hide the top header for a clean dashboard canvas */
-  .app header { display: none; }
+  /* Keep header visible on large screens (user requested login/time visible) */
+  .app header { display: block; }
   /* keep main centered visually with room for sidebar */
   .app { padding-top: 20px; }
     /* expand main content to fill remaining viewport width to the right of the fixed sidebar
@@ -800,7 +803,8 @@ ul:not(.products):not(.cart) li:hover {
   box-shadow: 0 4px 15px rgba(0,0,0,0.1);
   transition: all 0.3s ease;
   animation: fadeInUp 0.5s ease;
-  overflow: hidden;
+  /* allow stat content (long numbers) to overflow so they remain visible */
+  overflow: visible;
   min-width: 0;
   min-height: 110px;
 }
@@ -840,6 +844,7 @@ ul:not(.products):not(.cart) li:hover {
   overflow-wrap: break-word;
   line-height: 1.05;
   white-space: nowrap; /* keep stat numbers on a single line */
+  overflow: visible; /* ensure gradient/text isn't clipped */
 }
 
 .stat-info p {
@@ -3123,6 +3128,14 @@ table tbody tr:last-child td {
   background: var(--accent-gradient);
   border-radius: 10px;
 }
+
+/* Allow actions column cells to show overflowing buttons (e.g., WhatsApp & View buttons) */
+.table-container td.actions-cell { overflow: visible !important; white-space: nowrap !important; }
+.table-container td.actions-cell button { white-space: nowrap !important; position: relative; z-index: 50; }
+
+/* WhatsApp button styling */
+.whatsapp-btn { background: #25D366 !important; color: white !important; }
+.whatsapp-btn:hover { background: #1fae5a !important; }
 
 
 /* Enhanced Button Styles */

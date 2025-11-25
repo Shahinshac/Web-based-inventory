@@ -4907,16 +4907,16 @@ export default function App(){
                             </span>
                           )}
                         </td>
-                        <td style={{whiteSpace:'nowrap'}}>
-                          <button
-                            onClick={() => sendInvoiceWhatsApp(inv)}
-                            title="Send invoice via WhatsApp"
-                            className="fancy-btn"
-                            style={{padding:'6px 10px', background:'#25D366', color:'white', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
-                          >
+                        <td className="actions-cell" style={{whiteSpace:'nowrap'}}>
+                            <button
+                              onClick={() => sendInvoiceWhatsApp(inv)}
+                              title="Send invoice via WhatsApp"
+                              className="fancy-btn whatsapp-btn"
+                              style={{padding:'6px 10px', border:'none', borderRadius:'6px', cursor:'pointer', marginRight:'6px'}}
+                            >
                             <Icon name="whatsapp"/> <span className="label">WhatsApp</span>
                           </button>
-                          <button
+                            <button
                             onClick={() => { setLastBill(inv); setShowBill(true); }}
                             style={{padding:'6px 10px', background:'var(--accent-primary)', color:'white', border:'none', borderRadius:'6px', cursor:'pointer'}}
                             className="btn-icon"
@@ -5536,8 +5536,8 @@ export default function App(){
                   if (!lastBill) return;
                   sendInvoiceWhatsApp(lastBill);
                 }}
-                className="btn-primary"
-                style={{background:'var(--accent-success)', marginLeft:'8px'}}
+                className="btn-primary whatsapp-btn"
+                style={{ marginLeft:'8px' }}
               >
                 <Icon name="whatsapp"/> <span className="label">Send via WhatsApp</span>
               </button>
