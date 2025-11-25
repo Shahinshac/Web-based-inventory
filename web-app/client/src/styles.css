@@ -9,12 +9,14 @@ html {
   scroll-behavior: smooth;
 }
 
-body {
+html, body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   margin: 0;
   /* Dark theme defaults (black background with light text) */
-  background: var(--bg, #000000);
-  color: var(--text, #ffffff);
+  /* Use a white fallback by default so we don't flash to an unexpected dark theme
+     or white background while CSS variables load.  Keep variables authoritative. */
+  background: var(--bg, #ffffff);
+  color: var(--text, #000000);
   min-height: 100vh;
   /* Prevent horizontal overflow globally */
   overflow-x: hidden;
@@ -82,6 +84,10 @@ html, body, .app, .left, .products, .cart, .right {
   height: 100vh; /* ensure layout consumes viewport so content scrolling remains inside the content area */
   overflow: hidden; /* avoid page-level horizontal scroll */
 }
+
+/* Keep the HTML element background in sync with CSS variables; ensures no flash when
+  components mount, and the page always respects the chosen --bg value. */
+html { background: var(--bg, #ffffff); }
 
 @keyframes fadeIn {
   from { opacity: 0; }

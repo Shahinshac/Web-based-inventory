@@ -2436,15 +2436,20 @@ export default function App(){
               </thead>
               <tbody>
                 ${lastBill.items.map((item, idx) => {
-                  const product = products.find(p => p._id === item.productId);
+                  const product = products.find(p => (p._id || p.id) === (item.productId || item.productId?.toString()));
+                  const name = (item.productName || item.name || product?.name || 'Item').toString().replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                  const hsn = (product?.hsnCode || item.hsnCode || 'N/A');
+                  const qty = Number(item.quantity || item.qty || 0);
+                  const rate = Number(item.unitPrice || item.price || item.rate || 0);
+                  const amount = (rate * qty) || 0;
                   return `
-                                    <div style={{display:'flex',gap:'8px',flexWrap:'nowrap',overflowX:'auto'}}>
+                    <tr>
                       <td class="text-center">${idx + 1}</td>
-                                      <button 
-                      <td>${product?.hsnCode || 'N/A'}</td>
-                      <td class="text-center">${item.quantity}</td>
-                      <td class="text-right">₹${item.price.toFixed(2)}</td>
-                      <td class="text-right">₹${(item.price * item.quantity).toFixed(2)}</td>
+                      <td>${name}</td>
+                      <td>${hsn}</td>
+                      <td class="text-center">${qty}</td>
+                      <td class="text-right">₹${rate.toFixed(2)}</td>
+                      <td class="text-right">₹${amount.toFixed(2)}</td>
                     </tr>
                   `;
                 }).join('')}
