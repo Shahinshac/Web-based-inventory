@@ -4190,7 +4190,7 @@ export default function App(){
                 <div style={{display:'flex', alignItems:'center', gap:10}}>
                   <div style={{fontSize:12, color:'#666'}}>{cartCount} items</div>
                   <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
-                  <button onClick={()=>setCartOpen(o=>!o)} className="btn-secondary" title={cartOpen ? 'Collapse' : 'Expand'}>{cartOpen ? '▾' : '▴'}</button>
+                  <button onClick={()=>setCartOpen(true)} className="btn-secondary" title={'Open cart drawer'}>Open Cart</button>
                 </div>
               </div>
               
@@ -4211,52 +4211,21 @@ export default function App(){
                   {loyaltyFetchError && <small style={{color:'#e74c3c', display:'block', marginTop:8}}>{loyaltyFetchError}</small>}
               </div>
 
-              {/* Cart Items */}
-              {cartOpen ? (
-              <ul className="cart">
-                {cart.map(it=> (
-                  <li key={it.productId} className="cart-item">
-                    <div style={{flex:1}}>
-                      <strong>{it.name}</strong>
-                      <div style={{fontSize:'12px', color:'#666'}}>₹{it.price} each</div>
-                    </div>
-                    <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
-                      <button 
-                        onClick={()=>decreaseCartQty(it.productId)} 
-                        className="qty-btn qty-dec"
-                        title="Decrease quantity"
-                      >
-                        <Icon name="close" size={16} />
-                      </button>
-                      <input type="number" min="1" value={it.quantity} onChange={(e)=> setCartQty(it.productId, parseInt(e.target.value || '1'))} style={{width:56, textAlign:'center', fontWeight:'700', fontSize:15, padding:'6px 8px', borderRadius:6, border:'1px solid #e6e8f0'}} />
-                      <button 
-                        onClick={()=>increaseCartQty(it.productId)} 
-                        className="qty-btn qty-inc"
-                        title="Increase quantity"
-                      >
-                        <Icon name="add" size={16} />
-                      </button>
-                      <button 
-                        onClick={()=>removeFromCart(it.productId)} 
-                        className="qty-btn remove-btn"
-                        title="Remove item"
-                      >
-                        <Icon name="trash" size={16} />
-                      </button>
-                      <span style={{minWidth:'70px', textAlign:'right', fontWeight:'bold'}}>{formatCurrency0(it.price * it.quantity)}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-              ) : (
-                <div className="cart-collapsed" style={{padding:'10px 0'}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div>{cartCount} items</div>
+              {/* Cart Items now shown in sliding drawer; this section contains a short preview */}
+              <div style={{padding: '8px 0'}}>
+                {cart.length === 0 ? (
+                  <div style={{color:'#666'}}>Your cart is empty. Use the products list to add items.</div>
+                ) : (
+                  <div style={{display:'flex', alignItems:'center', gap:8}}>
+                    <div style={{fontWeight:700}}>{cartCount} items</div>
                     <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
+                    <div style={{flex:1}}></div>
+                    <button className="btn-primary" onClick={()=>setCartOpen(true)}>Open Cart</button>
                   </div>
-                  <div style={{fontSize:12, color:'#666', marginTop:8}}>Cart hidden to save space — click '▴' to expand</div>
-                </div>
-              )}
+                )}
+              </div>
+              {/* Items are now shown in the Cart Drawer (Open Cart) */}
+              
 
               {/* Discount Section */}
               <div className="form-group">
@@ -6110,6 +6079,79 @@ export default function App(){
         <button className="cart-toggle" onClick={() => setCartOpen(o => !o)} title={cartOpen ? 'Hide cart' : 'Show cart'}>
           {cartOpen ? '🧾' : '🧾'}
         </button>
+      )}
+
+      {/* Cart Drawer overlay */}
+      {cartOpen && (
+        <>
+          <div className="cart-sidebar-backdrop" onClick={() => setCartOpen(false)} />
+          <aside className={`cart-sidebar ${cartOpen ? 'open' : 'closed'}`} role="dialog" aria-label="Shopping cart drawer">
+            <div className="cart-sidebar-header">
+              <div style={{display:'flex', alignItems:'center', gap:8}}>
+                <h3 style={{margin:0}}>Cart</h3>
+                <small style={{color:'#666'}}>{cartCount} items</small>
+              </div>
+              <div style={{display:'flex', alignItems:'center', gap:8}}>
+                <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
+                <button className="btn-secondary" onClick={() => setCartOpen(false)}>Close</button>
+              </div>
+            </div>
+            <div className="cart-sidebar-content">
+              <ul className="cart-panel-list">
+                {cart.map(it => {
+                  const prod = products.find(p => String(p._id || p.id) === String(it.productId));
+                  return (
+                    <li key={String(it.productId)} className="cart-panel-item">
+                      <div className="cart-thumb">
+                        {prod?.photo ? (
+                          <img src={(prod.photo || prod.photoUrl || '').startsWith('http') ? (prod.photo || prod.photoUrl) : API(prod.photo || prod.photoUrl || '')} alt={it.name} />
+                        ) : (
+                          <div style={{display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%', color:'#888'}}>No Image</div>
+                        )}
+                      </div>
+                      <div style={{flex:1, minWidth:0}}>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                          <strong style={{fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{it.name}</strong>
+                          <small>{formatCurrency0(it.price)}</small>
+                        </div>
+                        <div style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
+                          <button className="qty-btn qty-dec" onClick={() => decreaseCartQty(it.productId)}>-</button>
+                          <input type="number" min={1} value={it.quantity} onChange={(e)=>setCartQty(it.productId, parseInt(e.target.value || '1'))} style={{width:54, padding:'4px 6px', border:'1px solid #e6e8f0', borderRadius:6, textAlign:'center'}} />
+                          <button className="qty-btn qty-inc" onClick={() => increaseCartQty(it.productId)}>+</button>
+                          <button className="qty-btn remove-btn" onClick={() => removeFromCart(it.productId)} style={{marginLeft:'auto'}}><Icon name="trash" size={14}/></button>
+                        </div>
+                      </div>
+                      <div style={{marginLeft:12}}>{formatCurrency0(it.price * it.quantity)}</div>
+                    </li>
+                  )
+                })}
+              </ul>
+            </div>
+            <div className="cart-sidebar-footer">
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>Subtotal</div>
+                <div>{formatCurrency0(cartTotal)}</div>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>Discount ({discount}%)</div>
+                <div>{formatCurrency0((cartTotal * (discount/100)) || 0)}</div>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                <div>GST ({taxRate}%)</div>
+                <div>{formatCurrency0(((cartTotal - (cartTotal * (discount/100))) * (taxRate/100)) || 0)}</div>
+              </div>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:10, fontWeight:700}}>
+                <div>Grand Total</div>
+                <div>{formatCurrency0(Math.round((cartTotal - (cartTotal * (discount/100))) + ((cartTotal - (cartTotal * (discount/100))) * (taxRate/100))))}</div>
+              </div>
+              <div style={{marginTop:12, display:'flex', gap:8}}>
+                <button className="btn-primary" onClick={checkout} disabled={cart.length === 0}>Complete Sale</button>
+                <button className="btn-secondary" onClick={() => { setCart([]); }}>Clear Cart</button>
+                <button className="btn-primary" style={{background:'#25D366'}} onClick={()=> sendInvoiceWhatsApp({ id: lastBill?.id, billNumber: lastBill?.billNumber, items: cart, total: cartTotal })} disabled={cart.length===0}>WhatsApp</button>
+              </div>
+            </div>
+          </aside>
+        </>
       )}
     </div>
   );
