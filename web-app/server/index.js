@@ -380,7 +380,7 @@ app.post('/api/checkout', async (req, res) => {
     let discountAmount = (subtotal * discountPercent) / 100;
     let afterDiscount = subtotal - discountAmount;
 
-    // Loyalty logic: issue a card when a customer makes their first qualifying purchase (>= 100000)
+    // Loyalty logic: issue a card when a customer makes their first qualifying purchase (>= 150000)
     // and apply a flat ₹3,000 discount on subsequent qualifying purchases.
     // This implementation treats the loyalty card as a single-use discount (remainingUses = 1).
     let loyaltyDiscount = 0;
