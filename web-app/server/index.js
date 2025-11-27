@@ -273,6 +273,7 @@ app.post('/api/checkout', async (req, res) => {
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customerId = payload.customerId || null;
     const applyLoyalty = !!payload.applyLoyalty;
+    const referralNumber = String(payload.referralNumber || '').trim() || null;
     const discountPercent = parseFloat(payload.discountPercent) || 0;
     const customerState = payload.customerState || 'Same'; // 'Same' or 'Other'
     
@@ -394,8 +395,8 @@ app.post('/api/checkout', async (req, res) => {
           // Ensure loyalty default structure
           if (!cust.loyalty) cust.loyalty = { cardIssued: false, remainingUses: 0, discountAmount: 3000 };
 
-          // Issue card on first qualifying purchase
-          if (!cust.loyalty.cardIssued && subtotal >= 100000) {
+          // Issue card on first qualifying purchase (or create a card if missing) - threshold 150000
+          if (!cust.loyalty.cardIssued && subtotal >= 150000) {
             const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
             const issuedAt = new Date();
             loyaltyCardData = { cardIssued: true, cardNumber, discountAmount: 3000, remainingUses: 1, issuedAt };
@@ -408,8 +409,9 @@ app.post('/api/checkout', async (req, res) => {
             loyaltyIssued = true;
           } else {
             // If customer already has a card with remaining uses and this purchase qualifies
-            // applyLoyalty allows the client to request application even if subtotal < threshold
-            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && (subtotal >= 100000 || applyLoyalty)) {
+            // To apply discount now, the client must provide a referralNumber matching the customer's loyalty card
+            // and the subtotal must be >= 150000. Previous `applyLoyalty` override is deprecated for discount application.
+            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && subtotal >= 150000 && referralNumber && String(cust.loyalty.cardNumber) === referralNumber) {
               loyaltyDiscount = cust.loyalty.discountAmount || 3000;
               const newRemaining = Math.max(0, (cust.loyalty.remainingUses || 1) - 1);
               await db.collection('customers').updateOne(
@@ -424,8 +426,8 @@ app.post('/api/checkout', async (req, res) => {
               );
             }
 
-            // If client requested to apply loyalty but it wasn't applied, record for traceability
-            if (applyLoyalty && (!cust.loyalty || !cust.loyalty.cardIssued || (cust.loyalty.remainingUses || 0) <= 0) ) {
+            // If client requested to apply loyalty or provided a referral but it wasn't applied, record for traceability
+            if ((applyLoyalty || referralNumber) && (!cust.loyalty || !cust.loyalty.cardIssued || (cust.loyalty.remainingUses || 0) <= 0 || String(cust.loyalty.cardNumber) !== referralNumber || subtotal < 150000) ) {
               logger.info(`Apply loyalty requested but not applied for customer ${customerId} (cardIssued=${!!(cust.loyalty && cust.loyalty.cardIssued)}, remainingUses=${cust.loyalty?.remainingUses || 0})`);
               try {
                 await logAudit(db, 'LOYALTY_APPLY_REQUEST_FAILED', userId, username, { customerId, subtotal, cardIssued: !!(cust.loyalty && cust.loyalty.cardIssued), remainingUses: cust.loyalty?.remainingUses || 0 });
@@ -493,7 +495,8 @@ app.post('/api/checkout', async (req, res) => {
       paymentMode
     , loyaltyApplied: bill.loyaltyApplied || 0,
       loyaltyIssued: bill.loyaltyIssued || false,
-      applyLoyalty: applyLoyalty || false
+      applyLoyalty: applyLoyalty || false,
+      referralNumber: referralNumber || null
     });
     
     // Invoice email sending is disabled/removed in this deployment. If you
@@ -973,6 +976,7 @@ app.post('/api/customers', async (req, res) => {
     
     const db = getDB();
     
+    const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
     const customer = {
       name: sanitizeObject(name),
       phone: phone ? sanitizeObject(phone) : '',
@@ -980,11 +984,11 @@ app.post('/api/customers', async (req, res) => {
       gstin: gstin ? sanitizeObject(gstin) : '',
       // Loyalty fields: default values for newly created customers
       loyalty: {
-        cardIssued: false,
-        cardNumber: null,
-        discountAmount: 0,
-        remainingUses: 0,
-        issuedAt: null
+        cardIssued: true,
+        cardNumber: cardNumber,
+        discountAmount: 3000,
+        remainingUses: 1,
+        issuedAt: new Date()
       },
       purchasesCount: 0,
       totalPurchases: 0,
@@ -2087,6 +2091,36 @@ app.post('/api/admin/migrate-photo-urls', async (req, res) => {
   } catch (e) {
     logger.error('Migrate photo URLs error:', e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: Issue loyalty card to all customers (idempotent) - requires admin credentials
+app.post('/api/admin/issue-loyalty-to-all', async (req, res) => {
+  try {
+    const { adminUsername, adminPassword } = req.body;
+    if (!adminUsername || !adminPassword) return res.status(400).json({ error: 'Admin credentials required' });
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+    const match = await bcrypt.compare(adminPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
+
+    const customers = await db.collection('customers').find({}).toArray();
+    let updated = 0;
+    for (const c of customers) {
+      if (!c.loyalty || !c.loyalty.cardNumber) {
+        const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
+        const loyaltyData = { cardIssued: true, cardNumber, discountAmount: 3000, remainingUses: 1, issuedAt: new Date() };
+        await db.collection('customers').updateOne({ _id: c._id }, { $set: { loyalty: loyaltyData } });
+        updated++;
+      }
+    }
+
+    await logAudit(db, 'ADMIN_ISSUE_LOYALTY_ALL', admin._id, adminUsername, { issuedCount: updated });
+    res.json({ ok: true, issued: updated });
+  } catch (e) {
+    logger.error('Issue loyalty to all error', e);
+    res.status(500).json({ error: 'Failed to issue loyalty cards' });
   }
 });
 

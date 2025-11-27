@@ -137,6 +137,7 @@ export default function App(){
   const [previewLoyaltyDiscount, setPreviewLoyaltyDiscount] = useState(0)
   const [isLoyaltyPreviewed, setIsLoyaltyPreviewed] = useState(false)
   const [applyLoyaltyToCheckout, setApplyLoyaltyToCheckout] = useState(false)
+  const [referralNumber, setReferralNumber] = useState('')
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -2223,6 +2224,7 @@ export default function App(){
       }
       // Include the loyalty apply flag so server can force-apply if allowed
       if (applyLoyaltyToCheckout) payload.applyLoyalty = true;
+      if (referralNumber) payload.referralNumber = String(referralNumber).trim();
 
       // Handle online checkout
       if (isOnline) {
@@ -6212,12 +6214,21 @@ export default function App(){
                         const pctDiscountAmount = Math.round(subtotal * (percentDiscount / 100));
                         const afterDiscount = subtotal - pctDiscountAmount;
                         const cardAmount = (selectedCustomer.loyalty && selectedCustomer.loyalty.discountAmount) ? selectedCustomer.loyalty.discountAmount : 3000;
+                                                // require referral number match and subtotal >= 150000
+                                                if (!referralNumber || String(referralNumber).trim() === '') return showNotification('Enter referral number to apply loyalty preview', 'warning');
+                                                if (!selectedCustomer.loyalty || String(selectedCustomer.loyalty.cardNumber) !== String(referralNumber)) return showNotification('Referral number does not match customer loyalty card', 'error');
+                                                if ((selectedCustomer.loyalty && (selectedCustomer.loyalty.remainingUses || 0) <= 0)) return showNotification('This loyalty card has no remaining uses', 'error');
+                                                if (subtotal < 150000) return showNotification('Subtotal must be ₹150,000 or more to apply loyalty discount', 'error');
                         const discountToApply = Math.min(cardAmount, Math.round(afterDiscount));
                         setPreviewLoyaltyDiscount(discountToApply);
                         setIsLoyaltyPreviewed(true);
                         showNotification('Loyalty discount preview applied', 'success');
-                      }} disabled={!cart || cart.length===0}>Preview Loyalty</button>
+                      }} disabled={!cart || cart.length===0 || cartTotal < 150000 || !referralNumber}>Preview Loyalty</button>
                       <button className="btn-secondary" onClick={() => { setPreviewLoyaltyDiscount(0); setIsLoyaltyPreviewed(false); setApplyLoyaltyToCheckout(false); }} disabled={!isLoyaltyPreviewed}>Clear Preview</button>
+                                            <div style={{marginLeft:8, display:'flex', gap:8, alignItems:'center', flexDirection:'column'}}>
+                                              <input placeholder="Referral number" style={{padding:6, borderRadius:6, border:'1px solid var(--border)'}} value={referralNumber} onChange={(e)=>setReferralNumber(e.target.value)} />
+                                              <small style={{fontSize:11, color:'#666', marginTop:6}}>Referral required and subtotal must be ₹150,000 or more for discount</small>
+                                            </div>
                       <label style={{display:'inline-flex', alignItems:'center', gap:6, marginLeft:8}}>
                         <input type="checkbox" checked={applyLoyaltyToCheckout} onChange={(e) => setApplyLoyaltyToCheckout(e.target.checked)} />
                         <small style={{fontSize:12}}>Apply on checkout</small>
