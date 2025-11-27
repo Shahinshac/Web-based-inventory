@@ -83,8 +83,14 @@ html, body, .app, .left, .products, .cart, .right {
   min-height: 100vh;
   height: 100vh; /* ensure layout consumes viewport so content scrolling remains inside the content area */
   overflow: hidden; /* avoid page-level horizontal scroll */
+.cart-panel-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 10px; }
+.cart-panel-item { display: flex; align-items: center; gap: 12px; padding: 8px; border-radius: 8px; background: var(--card-2); border: 1px solid var(--border); }
+.cart-thumb img { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; }
+.cart-collapsed { padding: 12px; border-radius: 8px; background: var(--card-2); border: 1px solid var(--border); }
 }
 
+.cart-toggle { position: fixed; right: 24px; bottom: 24px; z-index: 9999; background: var(--accent-gradient); color: #fff; border: none; width: 56px; height: 56px; border-radius: 28px; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 18px rgba(0,0,0,0.18); cursor: pointer; }
+.cart-toggle:active { transform: translateY(1px); }
 /* Keep the HTML element background in sync with CSS variables; ensures no flash when
   components mount, and the page always respects the chosen --bg value. */
 html { background: var(--bg, #ffffff); }

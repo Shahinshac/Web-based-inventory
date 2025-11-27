@@ -128,6 +128,11 @@ export default function App(){
   const [showLoyaltyCardModal, setShowLoyaltyCardModal] = useState(false)
   const [loyaltyCardHtml, setLoyaltyCardHtml] = useState(null)
   const [loyaltyCardData, setLoyaltyCardData] = useState(null)
+  const [loyaltyFetchLoading, setLoyaltyFetchLoading] = useState(false)
+  const [cartOpen, setCartOpen] = useState(true)
+  const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
+  const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
+  const [loyaltyFetchError, setLoyaltyFetchError] = useState(null)
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -372,11 +377,22 @@ export default function App(){
   // Loyalty card: fetch and show ATM-style loyalty card for a customer
   async function fetchLoyaltyCardForCustomer(customerId) {
     if (!customerId) return showNotification('No customer selected', 'warning')
+    setLoyaltyFetchLoading(true)
+    setLoyaltyFetchError(null)
     try {
       const res = await fetch(API(`/api/customers/${customerId}/loyalty-card`))
       if (!res.ok) {
-        const j = await res.json().catch(()=>({}));
-        return showNotification(j.error || 'Failed to fetch loyalty card', 'error')
+        // Attach additional debugging details for developer
+        const text = await res.text().catch(()=> '')
+        console.error('Loyalty fetch failed', res.status, text)
+        setLoyaltyCardHtml(null)
+        setLoyaltyCardData(null)
+        if (res.status === 404) {
+          setLoyaltyFetchError('No loyalty card found for this customer')
+          return showNotification('No loyalty card available for this customer', 'warning')
+        }
+        setLoyaltyFetchError(`Failed to fetch loyalty card (status ${res.status})`)
+        return showNotification(`Failed to fetch loyalty card (${res.status})`, 'error')
       }
       const j = await res.json()
       setLoyaltyCardHtml(j.cardHtml || null)
@@ -384,7 +400,10 @@ export default function App(){
       setShowLoyaltyCardModal(true)
     } catch (e) {
       console.error('Failed to fetch loyalty card:', e)
-      showNotification('Failed to fetch loyalty card', 'error')
+      setLoyaltyFetchError('Network or server error while fetching loyalty card')
+      showNotification('Failed to fetch loyalty card: ' + (e?.message || ''), 'error')
+    } finally {
+      setLoyaltyFetchLoading(false)
     }
   }
 
@@ -4166,7 +4185,14 @@ export default function App(){
               </ul>
             </div>
             <div className="right">
-              <h2>Cart</h2>
+              <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap: 8}}>
+                <h2 style={{margin:0}}>Cart</h2>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <div style={{fontSize:12, color:'#666'}}>{cartCount} items</div>
+                  <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
+                  <button onClick={()=>setCartOpen(o=>!o)} className="btn-secondary" title={cartOpen ? 'Collapse' : 'Expand'}>{cartOpen ? '▾' : '▴'}</button>
+                </div>
+              </div>
               
               {/* Customer Selection */}
               <div className="form-group">
@@ -4180,11 +4206,13 @@ export default function App(){
                   {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                     <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
-                    <button onClick={()=>{ if(selectedCustomer && selectedCustomer.id) fetchLoyaltyCardForCustomer(selectedCustomer.id); }} type="button" className="customer-add-btn" title="View Loyalty Card">🏷️ Card</button>
+                    <button onClick={()=>{ if(selectedCustomer && selectedCustomer.id) fetchLoyaltyCardForCustomer(selectedCustomer.id); }} type="button" className="customer-add-btn" title="View Loyalty Card" disabled={loyaltyFetchLoading}>{loyaltyFetchLoading ? 'Loading...' : '🏷️ Card'}</button>
                 </div>
+                  {loyaltyFetchError && <small style={{color:'#e74c3c', display:'block', marginTop:8}}>{loyaltyFetchError}</small>}
               </div>
 
               {/* Cart Items */}
+              {cartOpen ? (
               <ul className="cart">
                 {cart.map(it=> (
                   <li key={it.productId} className="cart-item">
@@ -4215,11 +4243,20 @@ export default function App(){
                       >
                         <Icon name="trash" size={16} />
                       </button>
-                      <span style={{minWidth:'70px', textAlign:'right', fontWeight:'bold'}}>₹{(it.price*it.quantity).toFixed(1)}</span>
+                      <span style={{minWidth:'70px', textAlign:'right', fontWeight:'bold'}}>{formatCurrency0(it.price * it.quantity)}</span>
                     </div>
                   </li>
                 ))}
               </ul>
+              ) : (
+                <div className="cart-collapsed" style={{padding:'10px 0'}}>
+                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                    <div>{cartCount} items</div>
+                    <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
+                  </div>
+                  <div style={{fontSize:12, color:'#666', marginTop:8}}>Cart hidden to save space — click '▴' to expand</div>
+                </div>
+              )}
 
               {/* Discount Section */}
               <div className="form-group">
@@ -5788,7 +5825,7 @@ export default function App(){
                 <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
                 <p><strong>Customer:</strong> {lastBill.customerName}</p>
                 {lastBill.customerId && (
-                  <button style={{marginLeft:8}} onClick={() => fetchLoyaltyCardForCustomer(lastBill.customerId)} className="btn-secondary">View Loyalty Card</button>
+                  <button style={{marginLeft:8}} onClick={() => fetchLoyaltyCardForCustomer(lastBill.customerId)} className="btn-secondary" disabled={loyaltyFetchLoading}>{loyaltyFetchLoading ? 'Loading...' : 'View Loyalty Card'}</button>
                 )}
                 {lastBill.customerPhone && <p><strong>Phone:</strong> {lastBill.customerPhone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
@@ -6068,6 +6105,12 @@ export default function App(){
       )}
 
       {/* Copyright Footer removed as requested */}
+      {/* Floating Cart Toggle */}
+      {cart.length > 0 && (
+        <button className="cart-toggle" onClick={() => setCartOpen(o => !o)} title={cartOpen ? 'Hide cart' : 'Show cart'}>
+          {cartOpen ? '🧾' : '🧾'}
+        </button>
+      )}
     </div>
   );
 
