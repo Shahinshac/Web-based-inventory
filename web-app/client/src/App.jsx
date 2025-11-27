@@ -3735,31 +3735,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Quick Actions Floating Button */}
-      <div className="quick-actions-wrapper">
-        <button 
-          className="quick-actions-btn bounce"
-          onClick={() => setShowQuickActions(!showQuickActions)}
-          title="Quick Actions"
-        >
-          <Icon name="add" size={20} />
-        </button>
-        {showQuickActions && (
-            <div className="quick-actions-menu fade-in">
-            <button onClick={() => { setTab('pos'); setShowQuickActions(false); }}>
-              <Icon name="pos" size={16} /> New Sale
-            </button>
-            <button onClick={() => { setTab('products'); setShowQuickActions(false); }}>
-              <Icon name="add" size={16} /> Add Product
-            </button>
-            <button onClick={() => { setTab('reports'); setShowQuickActions(false); }}>
-              <Icon name="reports" size={16} /> Reports
-            </button>
-            {/* Stock Alert and Low Stock quick actions removed per request */}
-            {/* Low Stock quick-action removed */}
-          </div>
-        )}
-      </div>
+      {/* Quick Actions removed per request */}
 
       {/* Stock Alert Modal removed */}
 
@@ -6044,11 +6020,9 @@ export default function App(){
           <aside className={`cart-sidebar ${cartOpen ? 'open' : 'closed'}`} role="dialog" aria-label="Shopping cart drawer">
             <div className="cart-sidebar-header">
               <div style={{display:'flex', alignItems:'center', gap:8}}>
-                <h3 style={{margin:0}}>Cart</h3>
-                <small style={{color:'#666'}}>{cartCount} items</small>
+                <h3 style={{margin:0, fontSize: '18px'}}>Cart</h3>
               </div>
               <div style={{display:'flex', alignItems:'center', gap:8}}>
-                <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
                 <button className="btn-secondary" onClick={() => setCartOpen(false)}>Close</button>
               </div>
             </div>
