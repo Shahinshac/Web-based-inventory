@@ -1202,7 +1202,7 @@ app.get('/public/invoice/:token', async (req, res) => {
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Discount ${invoice.discountPercent ? '(' + invoice.discountPercent + '%)' : ''}</div><div>- ₹${Number(invoice.discountAmount || 0).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">After Discount</div><div>₹${Number(invoice.afterDiscount || ((invoice.subtotal || invoice.totalBeforeTax || 0) - (invoice.discountAmount || 0))).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">GST (${invoice.taxRate || 18}%):</div><div>₹${Number(invoice.gstAmount || invoice.taxAmount || 0).toFixed(2)}</div></div>
-                <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(0)}</div></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(2)}</div></div>
               </div>
             </div>
 

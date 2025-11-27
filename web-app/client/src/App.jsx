@@ -3728,18 +3728,7 @@ export default function App(){
               <Icon name="reports" size={16} /> Reports
             </button>
             {/* Stock Alert and Low Stock quick actions removed per request */}
-            <button onClick={() => { 
-              const lowStock = products.filter(p => p.quantity < 10);
-              if (lowStock.length > 0) {
-                setProductFilter('low-stock');
-                setTab('products');
-              } else {
-                showNotification('No low stock items!', 'info');
-              }
-              setShowQuickActions(false);
-            }}>
-              <Icon name="analytics" size={16} /> Low Stock
-            </button>
+            {/* Low Stock quick-action removed */}
           </div>
         )}
       </div>
