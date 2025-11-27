@@ -133,6 +133,7 @@ export default function App(){
   const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
   const [loyaltyFetchError, setLoyaltyFetchError] = useState(null)
+  const [transactionsView, setTransactionsView] = useState('cards')
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -5062,6 +5063,10 @@ export default function App(){
                   <option value="month">Last 30 Days</option>
                   <option value="custom">Custom Range</option>
                 </select>
+                <div style={{display:'flex', gap: 8, alignItems: 'center'}}>
+                  <button className={`btn-secondary ${transactionsView === 'table' ? 'active' : ''}`} onClick={() => setTransactionsView('table')} title="Table view">Table</button>
+                  <button className={`btn-secondary ${transactionsView === 'cards' ? 'active' : ''}`} onClick={() => setTransactionsView('cards')} title="Card grid view">Cards</button>
+                </div>
                 {invoiceDateFilter === 'custom' && (
                   <>
                     <input 
@@ -5117,9 +5122,10 @@ export default function App(){
               </div>
             </div>
 
-            {/* Invoices Table */}
-            <div className="table-container">
-              <table>
+            {/* Invoices List (alternate views) */}
+            {transactionsView === 'table' ? (
+              <div className="table-container">
+                <table>
                 <thead>
                   <tr>
                     <th>Invoice #</th>
@@ -5237,8 +5243,45 @@ export default function App(){
                     )})
                   }
                 </tbody>
-              </table>
-            </div>
+                </table>
+              </div>
+            ) : (
+              <div className="transactions-grid">
+                {getFilteredInvoices().length === 0 && (
+                  <div className="empty-placeholder">No invoices found for selected period</div>
+                )}
+                {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
+                  const profit = typeof inv.totalProfit === 'number'
+                        ? inv.totalProfit
+                        : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
+
+                  return (
+                    <div className="transaction-card" key={inv.id || inv._id}>
+                      <div className="transaction-card-header">
+                        <div><strong>#{inv.id || inv.billNumber}</strong></div>
+                        <div style={{fontSize:12,color:'#666'}}>{new Date(inv.created_at || inv.date).toLocaleString()}</div>
+                      </div>
+                      <div className="transaction-card-body">
+                        <div className="tc-left">
+                          <div style={{fontWeight:700}}>{inv.customer_name || inv.customerName || 'Walk-in'}</div>
+                          <div style={{fontSize:12,color:'#666'}}>{(inv.items || []).length} items • {inv.paymentMode || 'Cash'}</div>
+                        </div>
+                        <div className="tc-right">
+                          <div style={{fontWeight:700}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</div>
+                          <div style={{fontSize:12,color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>{formatCurrency0(profit || 0)}</div>
+                        </div>
+                      </div>
+                      <div className="transaction-card-footer">
+                        <div className="transaction-actions">
+                          <button onClick={() => sendInvoiceWhatsApp(inv)} className="icon-only whatsapp-btn" title="Send WhatsApp"><Icon name="whatsapp" size={16} /></button>
+                          <button onClick={() => { setLastBill(inv); setShowBill(true); }} className="icon-only" title="View"><Icon name="eye" size={16} /></button>
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -3306,6 +3306,19 @@ table tbody tr:last-child td {
   max-width: 700px;
 }
 
+/* Transactions Grid & Card View */
+.transactions-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+.transaction-card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 12px; display:flex; flex-direction:column; gap:8px; }
+.transaction-card-header { display:flex; justify-content:space-between; align-items:center; }
+.transaction-card-body { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.transaction-card .tc-left { min-width:0; overflow:hidden; }
+.transaction-card .tc-right { text-align:right; }
+.transaction-card-footer { display:flex; justify-content:flex-end; gap:8px; }
+.transaction-card .icon-only { background: transparent; border: none; cursor:pointer; padding:6px; border-radius:6px }
+.transaction-card .whatsapp-btn { color: #25D366 }
+.transaction-card .icon-only:hover { background: rgba(0,0,0,0.04) }
+.empty-placeholder { padding: 24px; text-align:center; color:#777; }
+
 /* WhatsApp button styling */
 .whatsapp-btn { background: #25D366 !important; color: white !important; }
 .whatsapp-btn:hover { background: #1fae5a !important; }
