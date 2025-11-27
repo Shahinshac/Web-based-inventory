@@ -461,7 +461,8 @@ app.post('/api/checkout', async (req, res) => {
     bill.sgst = parseFloat(sgst.toFixed(2));
     bill.igst = parseFloat(igst.toFixed(2));
     bill.gstAmount = parseFloat(gstAmount.toFixed(2));
-    bill.grandTotal = parseFloat(grandTotal.toFixed(2));
+    // Round grand total to nearest integer for invoices & dashboard clarity
+    bill.grandTotal = Math.round(grandTotal);
     bill.totalCost = parseFloat(totalCost.toFixed(2));
     bill.totalProfit = parseFloat(totalProfit.toFixed(2));
 
@@ -1201,7 +1202,7 @@ app.get('/public/invoice/:token', async (req, res) => {
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">Discount ${invoice.discountPercent ? '(' + invoice.discountPercent + '%)' : ''}</div><div>- ₹${Number(invoice.discountAmount || 0).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">After Discount</div><div>₹${Number(invoice.afterDiscount || ((invoice.subtotal || invoice.totalBeforeTax || 0) - (invoice.discountAmount || 0))).toFixed(2)}</div></div>
                 <div style="display:flex;justify-content:space-between;margin-bottom:6px"><div class="small">GST (${invoice.taxRate || 18}%):</div><div>₹${Number(invoice.gstAmount || invoice.taxAmount || 0).toFixed(2)}</div></div>
-                <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(2)}</div></div>
+                <div style="display:flex;justify-content:space-between;border-top:1px dashed #ddd;padding-top:8px;margin-top:8px; font-weight:700"><div>Grand Total</div><div>₹${Number(invoice.grandTotal || invoice.total || 0).toFixed(0)}</div></div>
               </div>
             </div>
 
@@ -2196,12 +2197,12 @@ app.get('/api/analytics/revenue-profit', async (req, res) => {
     const totalBills = bills.length;
     
     res.json({
-      totalRevenue: parseFloat(totalRevenue.toFixed(2)),
-      totalProfit: parseFloat(totalProfit.toFixed(2)),
-      totalCost: parseFloat(totalCost.toFixed(2)),
+      totalRevenue: Math.round(totalRevenue),
+      totalProfit: Math.round(totalProfit),
+      totalCost: Math.round(totalCost),
       profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : 0,
       totalBills,
-      averageOrderValue: totalBills > 0 ? (totalRevenue / totalBills).toFixed(2) : 0
+      averageOrderValue: totalBills > 0 ? Math.round(totalRevenue / totalBills) : 0
     });
   } catch (e) {
     logger.error(e);

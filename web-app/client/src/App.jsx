@@ -5,7 +5,7 @@ import Login from './Login'
 import Icon from './Icon'
 import jsPDF from 'jspdf'
 import 'jspdf-autotable'
-import { DEFAULT_GST, GST_PERCENT, fmt1, formatCurrency, PAYMENT_MODES, PAYMENT_MODE_LABELS, validateSplitPayment } from './constants'
+import { DEFAULT_GST, GST_PERCENT, fmt1, fmt0, formatCurrency, formatCurrency0, PAYMENT_MODES, PAYMENT_MODE_LABELS, validateSplitPayment } from './constants'
 
 // 26:07 Electronics - Inventory Management System
 const API = (path) => {
@@ -1651,7 +1651,7 @@ export default function App(){
     const tableData = getFilteredInvoices().map(inv => [
       `#${inv.id}`,
       inv.customer_name || 'Walk-in',
-      `₹${(inv.total || 0).toFixed(1)}`,
+      formatCurrency0(inv.total || 0),
       inv.paymentMode || 'Cash',
       new Date(inv.created_at).toLocaleDateString()
     ]);
@@ -1669,7 +1669,7 @@ export default function App(){
     const total = getFilteredInvoices().reduce((sum, inv) => sum + inv.total, 0);
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total Revenue: ₹${total.toFixed(1)}`, 150, finalY);
+    doc.text(`Total Revenue: ${formatCurrency0(total)}`, 150, finalY);
     
     doc.save('Transactions-Report.pdf');
     showNotification('✅ Transactions PDF downloaded!', 'success');
@@ -1842,7 +1842,7 @@ export default function App(){
       new Date(inv.created_at || inv.date).toLocaleDateString(),
       inv.customer_name || inv.customerName || 'Walk-in',
       (inv.items?.length || 0).toString(),
-      `₹${(inv.total || inv.grandTotal || 0).toFixed(1)}`,
+      formatCurrency0(inv.total || inv.grandTotal || 0),
       inv.paymentMode || 'Cash',
       `₹${(inv.totalProfit || 0).toFixed(1)}`
     ]);
@@ -1863,8 +1863,8 @@ export default function App(){
     
     doc.setFontSize(12);
     doc.setFont(undefined, 'bold');
-    doc.text(`Total Revenue: ₹${totalRevenue.toFixed(1)}`, 20, finalY);
-    doc.text(`Total Profit: ₹${totalProfit.toFixed(1)}`, 20, finalY + 8);
+    doc.text(`Total Revenue: ${formatCurrency0(totalRevenue)}`, 20, finalY);
+    doc.text(`Total Profit: ${formatCurrency0(totalProfit)}`, 20, finalY + 8);
     
     doc.save(`Sales-Report-${new Date().toISOString().split('T')[0]}.pdf`);
     showNotification('✅ Sales Report PDF downloaded!', 'success');
@@ -1977,7 +1977,7 @@ export default function App(){
       new Date(inv.created_at || inv.date || Date.now()).toLocaleString(),
       inv.customer_name || inv.customerName || 'Walk-in',
       inv.items?.length || 0,
-      (inv.total || inv.grandTotal || 0).toFixed(2),
+      fmt0(inv.total || inv.grandTotal || 0),
       inv.paymentMode || 'Cash',
       (inv.totalProfit || 0).toFixed(2),
       (inv.taxAmount || 0).toFixed(2)
@@ -2192,7 +2192,7 @@ export default function App(){
           showNotification(`✓ Sale completed! Bill #${j.billId}`, 'success');
           
           // Track activity
-          addActivity('Sale Completed', `Bill #${j.billId} - ₹${fmt1(grandTotal)}`);
+          addActivity('Sale Completed', `Bill #${j.billId} - ₹${fmt0(grandTotal)}`);
           
           // Clear cart and reset form
           setCart([]); 
@@ -2264,7 +2264,7 @@ export default function App(){
           showNotification(`📴 Sale saved offline! Will sync when connected.`, 'warning');
           
           // Track activity
-          addActivity('Sale Completed (Offline)', `Bill #${offlineId} - ₹${grandTotal.toFixed(1)}`);
+          addActivity('Sale Completed (Offline)', `Bill #${offlineId} - ₹${fmt0(grandTotal)}`);
           
           // Clear cart and reset form
           setCart([]); 
@@ -2562,7 +2562,7 @@ export default function App(){
                 </tr>
                 <tr class="grand-total">
                   <td><strong>GRAND TOTAL:</strong></td>
-                  <td class="text-right"><strong>₹${grandTotal.toFixed(2)}</strong></td>
+                  <td class="text-right"><strong>${formatCurrency0(grandTotal)}</strong></td>
                 </tr>
               </table>
             </div>
@@ -2649,7 +2649,7 @@ export default function App(){
     const due = invoice.dueDate || '';
     const itemsSummary = (invoice.items || []).slice(0,5).map(it => `${it.quantity}× ${it.name || it.productName || ''}`).join(', ');
     const url = publicUrl || `${window.location.origin}/invoices/${id}`;
-    let msg = `Hello ${customer},\nHere is your invoice #${id} for ₹${fmt1(total)}.\n`;
+    let msg = `Hello ${customer},\nHere is your invoice #${id} for ${formatCurrency0(total)}.\n`;
     if (itemsSummary) msg += `Items: ${itemsSummary}\n`;
     if (due) msg += `Due: ${due}\n`;
     msg += `View invoice: ${url}\n`;
@@ -3717,19 +3717,17 @@ export default function App(){
           <Icon name="add" size={20} />
         </button>
         {showQuickActions && (
-          <div className="quick-actions-menu fade-in">
+            <div className="quick-actions-menu fade-in">
             <button onClick={() => { setTab('pos'); setShowQuickActions(false); }}>
               <Icon name="pos" size={16} /> New Sale
             </button>
             <button onClick={() => { setTab('products'); setShowQuickActions(false); }}>
               <Icon name="add" size={16} /> Add Product
             </button>
-            <button onClick={() => { setShowStockAlert(true); setShowQuickActions(false); }}>
-              <Icon name="analytics" size={16} /> Stock Alert
-            </button>
             <button onClick={() => { setTab('reports'); setShowQuickActions(false); }}>
               <Icon name="reports" size={16} /> Reports
             </button>
+            {/* Stock Alert and Low Stock quick actions removed per request */}
             <button onClick={() => { 
               const lowStock = products.filter(p => p.quantity < 10);
               if (lowStock.length > 0) {
@@ -3746,36 +3744,7 @@ export default function App(){
         )}
       </div>
 
-      {/* Stock Alert Modal */}
-      {showStockAlert && (
-        <div className="modal-overlay" onClick={() => setShowStockAlert(false)}>
-          <div className="modal slide-in" onClick={e => e.stopPropagation()}>
-            <h2><Icon name="analytics" size={20} /> Stock Alerts</h2>
-            <div className="stock-alerts">
-              <h3 style={{color: 'var(--accent-danger)'}}><Icon name="analytics" size={16} /> Out of Stock ({products.filter(p => p.quantity === 0).length})</h3>
-              <div className="alert-list">
-                {products.filter(p => p.quantity === 0).map(p => (
-                  <div key={p._id} className="alert-item out-of-stock">
-                    <span className="alert-product">{p.name}</span>
-                    <span className="alert-status">Out of Stock</span>
-                  </div>
-                ))}
-              </div>
-              
-              <h3 style={{color: '#f39c12', marginTop: '20px'}}><Icon name="analytics" size={16} /> Low Stock ({products.filter(p => p.quantity > 0 && p.quantity < 10).length})</h3>
-              <div className="alert-list">
-                {products.filter(p => p.quantity > 0 && p.quantity < 10).map(p => (
-                  <div key={p._id} className="alert-item low-stock">
-                    <span className="alert-product">{p.name}</span>
-                    <span className="alert-quantity">{p.quantity} / 10</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <button onClick={() => setShowStockAlert(false)} className="btn-secondary">Close</button>
-          </div>
-        </div>
-      )}
+      {/* Stock Alert Modal removed */}
 
       {/* Product Details Modal */}
       {showProductDetails && selectedProduct && (
@@ -3952,7 +3921,7 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0s'}}>
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.totalRevenue || 0).toFixed(2))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.totalRevenue || 0)}</h3>
                   <p>Total Revenue</p>
                 </div>
               </div>
@@ -3967,7 +3936,7 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0.3s'}}>
                 <div className="stat-icon"><Icon name="analytics" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.todaySales || 0).toFixed(2))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.todaySales || 0)}</h3>
                   <p>Today's Sales</p>
                 </div>
               </div>
@@ -3975,134 +3944,13 @@ export default function App(){
               <div className="stat-card scale-in" style={{animationDelay: '0.4s'}}>
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>₹{((stats.todayProfit || 0).toFixed(2))}</h3>
+                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.todayProfit || 0)}</h3>
                   <p>Today's Profit</p>
                 </div>
               </div>
             </div>
 
-            {/* Extra widgets: Low stock / Top products */}
-            <div style={{display:'grid', gridTemplateColumns: '1fr 320px', gap: 18, marginTop: 18}}>
-              <div style={{display:'flex', flexDirection:'column', gap:12}}>
-                {/* Low stock alert */}
-                <div style={{padding:14, borderRadius:12, border: '1px dashed #f1b0b0', background: '#fff6f6', color:'#992b2b'}}>
-                  <strong>Low stock alert</strong>
-                  <div style={{marginTop:8, fontSize:13, color:'#333'}}>
-                    { (analyticsData && analyticsData.lowStock && analyticsData.lowStock.length > 0) ? (
-                      `You have ${analyticsData.lowStock.length} items low on stock. Check Inventory tab.`
-                    ) : (
-                      `${products.filter(p=> typeof p.quantity === 'number' && p.quantity < (p.minStock || 10)).length} products below their minimum stocks.`
-                    ) }
-                  </div>
-                </div>
-
-                {/* Top selling products */}
-                <div style={{padding:14, borderRadius:12, border:'1px solid rgba(0,0,0,0.06)', background:'#fff'}}>
-                  <strong>Top selling products</strong>
-                  <div style={{marginTop:12}}>
-                    {(analyticsData && analyticsData.topProducts && analyticsData.topProducts.length > 0) ? (
-                      analyticsData.topProducts.slice(0,5).map((t, i) => (
-                        <div key={t.id || t.name} style={{display:'flex', justifyContent:'space-between', padding:'6px 0', borderBottom: i < 4 ? '1px dashed rgba(0,0,0,0.06)' : 'none'}}>
-                          <div style={{display:'flex',gap:8, alignItems:'center'}}>
-                            <div style={{width:36, height:36, borderRadius:8, overflow:'hidden', background:'#f2f6fb', display:'flex', alignItems:'center',justifyContent:'center'}}>{/* optional image */}
-                              <span style={{fontWeight:700, color:'#0b5cff'}}>{(i+1)}</span>
-                            </div>
-                            <div style={{fontSize:13}}>{t.name || t.productName}</div>
-                          </div>
-                          <div style={{fontSize:13, color:'#0b5cff'}}>₹{(t.revenue || t.total || 0).toFixed ? (t.revenue || t.total).toFixed(1) : (t.revenue || t.total)}</div>
-                        </div>
-                      ))
-                    ) : (
-                      <div style={{color:'#666'}}>Not enough data yet — sell a few items to build analytics.</div>
-                    ) }
-                  </div>
-                </div>
-              </div>
-
-              {/* Flow Diagram (circular) */}
-              <div className="flow-diagram">
-                <div className="flow-card">
-                  <div className="flow-title">
-                    <div style={{display:'flex', alignItems:'center', gap:10}}>
-                      <strong>Top-selling flow</strong>
-                      <span style={{color:'var(--muted)', fontSize:12}}>Visual view of top products & details</span>
-                    </div>
-                    <div style={{fontSize:12,color:varToString => 'var(--muted)'}}>Top { (analyticsData?.topProducts||[]).length || Math.min(5, products.length)}</div>
-                  </div>
-                  <svg className="flow-svg" viewBox="0 0 520 520" preserveAspectRatio="xMidYMid meet">
-                    {/* background rings */}
-                    <defs>
-                      <linearGradient id="flowGrad" x1="0" x2="1">
-                        <stop offset="0" stopColor="#0b5cff" stopOpacity="0.12" />
-                        <stop offset="1" stopColor="#1e90ff" stopOpacity="0.08" />
-                      </linearGradient>
-                    </defs>
-                    <g transform="translate(260,260)">
-                      <circle r="180" fill="url(#flowGrad)" stroke="rgba(0,0,0,0.03)" strokeWidth="1" />
-                      <circle r="120" fill="transparent" stroke="rgba(0,0,0,0.02)" strokeWidth="1" />
-                      {/* dynamic nodes */}
-                      {
-                        ((analyticsData && analyticsData.topProducts && analyticsData.topProducts.length > 0) ? analyticsData.topProducts : products
-                        .slice().sort((a,b)=> (b.sold || b.sales || 0) - (a.sold || a.sales || 0)).slice(0,6))
-                        .slice(0,8)
-                        .map((p, i, arr) => {
-                          const N = Math.max(1, arr.length);
-                          const angle = (i / N) * Math.PI * 2 - Math.PI / 2; // start top
-                          const radius = 160;
-                          const x = Math.round(Math.cos(angle) * radius);
-                          const y = Math.round(Math.sin(angle) * radius);
-                          const small = Math.max(20, Math.min(46, 46 - (i * 4)));
-                          const sold = p.sold || p.count || p.unitsSold || 0;
-                          const revenue = (p.revenue || p.total || (p.price && sold ? p.price * sold : 0)) || 0;
-
-                          return (
-                            <g key={(p._id||p.id||p.name||i)} className="flow-node" transform={`translate(${x}, ${y})`}>
-                              {/* connector line to center */}
-                              <line x1={-x} y1={-y} x2={0} y2={0} stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-                              {/* node circle */}
-                              <g>
-                                <circle r={small} fill="#fff" stroke="rgba(0,0,0,0.06)" strokeWidth="1" />
-                                <circle r={small-6} fill={i % 2 === 0 ? 'rgba(11,92,255,0.95)' : 'rgba(30,144,255,0.95)'} stroke="#ffffff" strokeWidth="1" />
-                                <text x="0" y="4" fontSize="10" fontWeight="700" fill="#fff" textAnchor="middle">{ (p.name||p.productName||p.title||'Product').slice(0,8) }</text>
-                              </g>
-                              {/* label box */}
-                              <foreignObject x={-60} y={small+10} width={120} height={54}>
-                                <div xmlns="http://www.w3.org/1999/xhtml" style={{display:'flex',flexDirection:'column',alignItems:'center',justifyContent:'center',gap:4}}>
-                                  <div style={{fontSize:12,fontWeight:700,color:'#0f172a'}}>{(p.name||p.productName||'Unnamed')}</div>
-                                  <div style={{fontSize:12,color:'#666'}}>{sold} sold • ₹{(revenue || 0).toFixed(1)}</div>
-                                </div>
-                              </foreignObject>
-                            </g>
-                          )
-                        })
-                      }
-                      {/* center card */}
-                      <g>
-                        <circle r="60" fill="#fff" stroke="#e6eefc" strokeWidth="1" />
-                        <text x="0" y="-6" fontSize="16" fontWeight={800} textAnchor="middle" fill="#0f172a">Top Products</text>
-                        <text x="0" y="14" fontSize="12" fill="#6b7280" textAnchor="middle">Quick summary</text>
-                      </g>
-                    </g>
-                  </svg>
-                </div>
-              </div>
-
-              <div style={{padding:14, borderRadius:12, border:'1px solid rgba(0,0,0,0.06)', background:'#fff'}}>
-                <strong>Recent Activity</strong>
-                <div style={{marginTop:12}}>
-                  {recentActivity.length === 0 ? (
-                    <div style={{padding:'24px 0', color:'#777'}}>No recent activity yet</div>
-                  ) : (
-                    recentActivity.slice(0,6).map((a, idx) => (
-                      <div key={idx} style={{padding:'8px 0', borderBottom: idx < recentActivity.length - 1 ? '1px dotted rgba(0,0,0,0.06)' : 'none', fontSize:13}}>
-                        <div style={{fontWeight:700}}>{a.title}</div>
-                        <div style={{color:'#666', fontSize:12}}>{a.detail}</div>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
+            {/* Dashboard widgets removed: Low Stock, Top Selling, Flow diagram, and Recent Activity */}
 
             {/* Mobile sidebar overlay backdrop - only used when sidebar opened via mobile button */}
             {mobileSidebarOpen && (
@@ -4386,7 +4234,7 @@ export default function App(){
                       <span>Split Payment - Total: {formatCurrency(grandTotal)}</span>
                       <button 
                         onClick={() => {
-                          setCashAmount(grandTotal.toFixed(1));
+                          setCashAmount(fmt0(grandTotal));
                           setUpiAmount('0');
                           setCardAmount('0');
                         }}
@@ -5195,14 +5043,14 @@ export default function App(){
               <div className="stat-card">
                 <div className="stat-icon"><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3>₹{getFilteredInvoices().reduce((sum, inv) => sum + (inv.total || 0), 0).toFixed(1)}</h3>
+                  <h3>{formatCurrency0(getFilteredInvoices().reduce((sum, inv) => sum + (inv.total || 0), 0))}</h3>
                   <p>Total Revenue</p>
                 </div>
               </div>
               <div className="stat-card">
                 <div className="stat-icon"><Icon name="analytics" size={24} /></div>
                 <div className="stat-info">
-                  <h3>₹{getFilteredInvoices().length > 0 ? (getFilteredInvoices().reduce((sum, inv) => sum + (inv.total || 0), 0) / getFilteredInvoices().length).toFixed(1) : 0}</h3>
+                  <h3>{formatCurrency0(getFilteredInvoices().length > 0 ? Math.round(getFilteredInvoices().reduce((sum, inv) => sum + (inv.total || 0), 0) / getFilteredInvoices().length) : 0)}</h3>
                   <p>Average Sale</p>
                 </div>
               </div>
@@ -5246,7 +5094,7 @@ export default function App(){
                         <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
                         <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
                         <td>{inv.items?.length || 0} items</td>
-                        <td>₹{(inv.subtotal || 0).toFixed(1)}</td>
+                        <td>₹{(inv.subtotal || 0).toFixed(2)}</td>
                         <td>
                           <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
                             -{inv.discountPercent || 0}%
@@ -5254,6 +5102,14 @@ export default function App(){
                             <small style={{color:'#888'}}>₹{(inv.discountAmount || 0).toFixed(1)}</small>
                           </span>
                         </td>
+                        <td>
+                          <span style={{color:'#27ae60',fontSize:'13px'}}>
+                            +{inv.taxRate || 0}%
+                            <br/>
+                            <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
+                          </span>
+                        </td>
+                        <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
                         {/* removed duplicated Actions column (was misaligned under GST) */}
                         <td>
                           <span style={{color:'#27ae60',fontSize:'13px'}}>
@@ -5262,7 +5118,7 @@ export default function App(){
                             <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
                           </span>
                         </td>
-                        <td><strong style={{color:'#2c3e50'}}>₹{(inv.total || inv.grandTotal || 0).toFixed(1)}</strong></td>
+                        <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
                         <td>
                           <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
                             ₹{(profit || 0).toFixed(1)}
@@ -5274,13 +5130,13 @@ export default function App(){
                               <span className="badge info" style={{fontSize:'11px'}}><Icon name="cash" size={10} /> Split Payment</span>
                               <div style={{fontSize:'10px',color:'#666',display:'flex',flexDirection:'column',gap:'2px'}}>
                                 {inv.splitPaymentDetails.cashAmount > 0 && (
-                                  <span><Icon name="cash" size={10} /> Cash: ₹{inv.splitPaymentDetails.cashAmount.toFixed(1)}</span>
+                                  <span><Icon name="cash" size={10} /> Cash: ₹{formatCurrency0(inv.splitPaymentDetails.cashAmount)}</span>
                                 )}
                                 {inv.splitPaymentDetails.upiAmount > 0 && (
-                                  <span><Icon name="rupee" size={10} /> UPI: ₹{inv.splitPaymentDetails.upiAmount.toFixed(1)}</span>
+                                  <span><Icon name="rupee" size={10} /> UPI: ₹{formatCurrency0(inv.splitPaymentDetails.upiAmount)}</span>
                                 )}
                                 {inv.splitPaymentDetails.cardAmount > 0 && (
-                                  <span><Icon name="card" size={10} /> Card: ₹{inv.splitPaymentDetails.cardAmount.toFixed(1)}</span>
+                                  <span><Icon name="card" size={10} /> Card: ₹{formatCurrency0(inv.splitPaymentDetails.cardAmount)}</span>
                                 )}
                               </div>
                             </div>
@@ -5801,13 +5657,13 @@ export default function App(){
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
                   <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-success)'}}>
-                    ₹{customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0).toFixed(1)}
+                    {formatCurrency0(customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0))}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Total Spent</div>
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
                   <div style={{fontSize: '24px', fontWeight: 'bold', color: '#f6ad55'}}>
-                    ₹{customerPurchases.length > 0 ? (customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0) / customerPurchases.length).toFixed(1) : '0.00'}
+                    {customerPurchases.length > 0 ? formatCurrency0(Math.round(customerPurchases.reduce((sum, inv) => sum + parseFloat(inv.total || 0), 0) / customerPurchases.length)) : formatCurrency0(0)}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Avg Purchase</div>
                 </div>
@@ -5935,7 +5791,7 @@ export default function App(){
                 <div><span>GST ({lastBill.taxRate}%):</span><span>₹{lastBill.taxAmount.toFixed(1)}</span></div>
                 <div className="grand-total">
                   <span><strong>Grand Total:</strong></span>
-                  <span><strong>₹{lastBill.total.toFixed(1)}</strong></span>
+                  <span><strong>{formatCurrency0(lastBill.total)}</strong></span>
                 </div>
               </div>
 
