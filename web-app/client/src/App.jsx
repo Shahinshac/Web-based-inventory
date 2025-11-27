@@ -88,7 +88,6 @@ export default function App(){
   const [customerPurchases, setCustomerPurchases] = useState([])
   
   // New advanced features
-  const [showQuickActions, setShowQuickActions] = useState(false)
   const [notification, setNotification] = useState(null)
   const [showStockAlert, setShowStockAlert] = useState(false)
   const [showSalesChart, setShowSalesChart] = useState(false)

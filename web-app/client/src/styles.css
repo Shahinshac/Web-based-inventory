@@ -2658,21 +2658,7 @@ button, .products li, .stat-card {
     max-width: none;
   }
 
-  .quick-actions-wrapper {
-    bottom: 20px;
-    right: 20px;
-  }
-
-  .quick-actions-btn {
-    width: 50px;
-    height: 50px;
-    font-size: 24px;
-  }
-
-  .quick-actions-menu {
-    right: 0;
-    min-width: 180px;
-  }
+  /* Floating quick actions FAB removed to simplify UI */
 
   .product-controls {
     flex-direction: column;
@@ -2873,18 +2859,7 @@ button, .products li, .stat-card {
     max-width: 100% !important;
   }
 
-  /* Quick actions fab */
-  .quick-actions-wrapper {
-    bottom: 15px !important;
-    right: 15px !important;
-    z-index: 1000;
-  }
-
-  .quick-actions-btn {
-    width: 56px !important;
-    height: 56px !important;
-    font-size: 28px !important;
-  }
+  /* Floating quick actions FAB and menu rules removed per UX request */
 
   /* Login/Register forms */
   .login-container {
