@@ -126,7 +126,7 @@ export default function App(){
   })
   const [photoPreview, setPhotoPreview] = useState(null)
   // Loyalty UI removed
-  const [cartOpen, setCartOpen] = useState(true)
+  const [cartOpen, setCartOpen] = useState(false)
   const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
   const [loyaltyFetchError, setLoyaltyFetchError] = useState(null) // left for compatibility but currently unused
@@ -6005,11 +6005,7 @@ export default function App(){
 
       {/* Copyright Footer removed as requested */}
       {/* Floating Cart Toggle */}
-      {cart.length > 0 && (
-        <button className="cart-toggle" onClick={() => setCartOpen(o => !o)} title={cartOpen ? 'Hide cart' : 'Show cart'}>
-          {cartOpen ? '🧾' : '🧾'}
-        </button>
-      )}
+      {/* Floating cart toggle removed; use 'Open Cart' button inline instead to control cart */}
 
       {/* Cart Drawer overlay */}
       {cartOpen && (
