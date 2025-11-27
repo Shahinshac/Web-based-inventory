@@ -196,14 +196,7 @@ app.get('/api/customers', async (req, res) => {
       state: c.state || 'Same',
       gstin: c.gstin || ''
       ,
-      // expose essential loyalty summary to the client
-      loyalty: c.loyalty ? {
-        cardIssued: !!c.loyalty.cardIssued,
-        cardNumber: c.loyalty.cardNumber || null,
-        discountAmount: c.loyalty.discountAmount || 0,
-        remainingUses: c.loyalty.remainingUses || 0,
-        issuedAt: c.loyalty.issuedAt || null
-      } : { cardIssued: false, remainingUses: 0 }
+      // loyalty removed from client summary per config
     }));
     
     res.json(formatted);
@@ -213,52 +206,7 @@ app.get('/api/customers', async (req, res) => {
   }
 });
 
-// Loyalty card render endpoint
-app.get('/api/customers/:id/loyalty-card', async (req, res) => {
-  try {
-    const { id } = req.params;
-    const db = getDB();
-
-    let customer = null;
-    try {
-      customer = await db.collection('customers').findOne({ _id: new ObjectId(id) });
-    } catch (e) {
-      return res.status(404).json({ error: 'Customer not found' });
-    }
-
-    if (!customer) return res.status(404).json({ error: 'Customer not found' });
-    if (!customer.loyalty || !customer.loyalty.cardNumber) return res.status(404).json({ error: 'No loyalty card available for this customer' });
-
-    const card = customer.loyalty;
-
-    // Simple ATM-card-like HTML snippet (safe, embeddable) — callers may include this in WhatsApp text or display
-    const cardHtml = `
-      <div style="border-radius:12px;padding:18px;background:linear-gradient(135deg,#0b5cff,#667eea);color:#fff;max-width:520px;font-family:Segoe UI,Arial,sans-serif;">
-        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-          <div style="font-weight:700;font-size:18px;">${(process.env.COMPANY_NAME || 'My Shop').toUpperCase()}</div>
-          <div style="font-size:12px;opacity:.85">Loyalty Card</div>
-        </div>
-        <div style="font-size:24px;font-weight:800;letter-spacing:1px;margin:10px 0">${card.cardNumber}</div>
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px;font-size:14px">
-          <div>
-            <div style="font-size:11px;opacity:.9">Holder</div>
-            <div style="font-weight:700">${customer.name || 'Valued Customer'}</div>
-          </div>
-          <div style="text-align:right">
-            <div style="font-size:11px;opacity:.9">BENEFIT</div>
-            <div style="font-weight:800;font-size:18px">₹${(card.discountAmount||3000).toLocaleString()}</div>
-            <div style="font-size:11px;opacity:.85">Remaining uses: ${card.remainingUses || 0}</div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    res.json({ ok: true, card: { cardNumber: card.cardNumber, discountAmount: card.discountAmount, remainingUses: card.remainingUses, issuedAt: card.issuedAt }, cardHtml });
-  } catch (e) {
-    logger.error('Failed to fetch loyalty card', e);
-    res.status(500).json({ error: 'Failed to fetch loyalty card' });
-  }
-});
+// Loyalty feature removed: endpoint deleted per request
 
 // Checkout: Enhanced with discount, state GST, profit tracking
 app.post('/api/checkout', async (req, res) => {
@@ -272,8 +220,8 @@ app.post('/api/checkout', async (req, res) => {
     const payload = req.body;
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customerId = payload.customerId || null;
-    const applyLoyalty = !!payload.applyLoyalty;
-    const referralNumber = String(payload.referralNumber || '').trim() || null;
+    // applyLoyalty removed; loyalty functionality deprecated
+    // referralNumber removed; loyalty functionality deprecated
     const discountPercent = parseFloat(payload.discountPercent) || 0;
     const customerState = payload.customerState || 'Same'; // 'Same' or 'Other'
     
@@ -383,62 +331,9 @@ app.post('/api/checkout', async (req, res) => {
     // Loyalty logic: issue a card when a customer makes their first qualifying purchase (>= 150000)
     // and apply a flat ₹3,000 discount on subsequent qualifying purchases.
     // This implementation treats the loyalty card as a single-use discount (remainingUses = 1).
-    let loyaltyDiscount = 0;
-    let loyaltyIssued = false;
-    let loyaltyCardData = null;
+    // Loyalty removed — no loyalty discounts applied or issued
 
-    try {
-      if (customerId) {
-        // Re-fetch customer record (we need up-to-date loyalty info)
-        const cust = await db.collection('customers').findOne({ _id: new ObjectId(customerId) });
-        if (cust) {
-          // Ensure loyalty default structure
-          if (!cust.loyalty) cust.loyalty = { cardIssued: false, remainingUses: 0, discountAmount: 3000 };
-
-          // Issue card on first qualifying purchase (or create a card if missing) - threshold 150000
-          if (!cust.loyalty.cardIssued && subtotal >= 150000) {
-            const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
-            const issuedAt = new Date();
-            loyaltyCardData = { cardIssued: true, cardNumber, discountAmount: 3000, remainingUses: 1, issuedAt };
-
-            await db.collection('customers').updateOne(
-              { _id: new ObjectId(customerId) },
-              { $set: { loyalty: loyaltyCardData }, $inc: { purchasesCount: 1, totalPurchases: subtotal } }
-            );
-
-            loyaltyIssued = true;
-          } else {
-            // If customer already has a card with remaining uses and this purchase qualifies
-            // To apply discount now, the client must provide a referralNumber matching the customer's loyalty card
-            // and the subtotal must be >= 150000. Previous `applyLoyalty` override is deprecated for discount application.
-            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && subtotal >= 150000 && referralNumber && String(cust.loyalty.cardNumber) === referralNumber) {
-              loyaltyDiscount = cust.loyalty.discountAmount || 3000;
-              const newRemaining = Math.max(0, (cust.loyalty.remainingUses || 1) - 1);
-              await db.collection('customers').updateOne(
-                { _id: new ObjectId(customerId) },
-                { $set: { 'loyalty.remainingUses': newRemaining }, $inc: { purchasesCount: 1, totalPurchases: subtotal } }
-              );
-            } else {
-              // Count the purchase even if no loyalty activity
-              await db.collection('customers').updateOne(
-                { _id: new ObjectId(customerId) },
-                { $inc: { purchasesCount: 1, totalPurchases: subtotal } }
-              );
-            }
-
-            // If client requested to apply loyalty or provided a referral but it wasn't applied, record for traceability
-            if ((applyLoyalty || referralNumber) && (!cust.loyalty || !cust.loyalty.cardIssued || (cust.loyalty.remainingUses || 0) <= 0 || String(cust.loyalty.cardNumber) !== referralNumber || subtotal < 150000) ) {
-              logger.info(`Apply loyalty requested but not applied for customer ${customerId} (cardIssued=${!!(cust.loyalty && cust.loyalty.cardIssued)}, remainingUses=${cust.loyalty?.remainingUses || 0})`);
-              try {
-                await logAudit(db, 'LOYALTY_APPLY_REQUEST_FAILED', userId, username, { customerId, subtotal, cardIssued: !!(cust.loyalty && cust.loyalty.cardIssued), remainingUses: cust.loyalty?.remainingUses || 0 });
-              } catch (e) { logger.warn('Failed to log failed loyalty apply request'); }
-            }
-          }
-        }
-      }
-    } catch (err) {
-      logger.warn('Loyalty processing failed: ' + (err && err.message ? err.message : String(err)));
-    }
+    // Previous loyalty logic removed: we no longer issue or apply loyalty at checkout
 
     // Apply loyaltyDiscount (flat) after percentage discount
     if (loyaltyDiscount > 0) {
@@ -480,8 +375,7 @@ app.post('/api/checkout', async (req, res) => {
 
     // Insert bill
     // Attach loyalty info to bill if present
-    if (loyaltyDiscount > 0) bill.loyaltyApplied = loyaltyDiscount;
-    if (loyaltyIssued && loyaltyCardData) bill.loyaltyIssued = loyaltyCardData;
+    // Loyalty fields removed from bill
 
     const result = await db.collection('bills').insertOne(bill);
     
@@ -493,10 +387,7 @@ app.post('/api/checkout', async (req, res) => {
       grandTotal: bill.grandTotal,
       itemCount: bill.items.length,
       paymentMode
-    , loyaltyApplied: bill.loyaltyApplied || 0,
-      loyaltyIssued: bill.loyaltyIssued || false,
-      applyLoyalty: applyLoyalty || false,
-      referralNumber: referralNumber || null
+    // Loyalty and referral fields removed from audit
     });
     
     // Invoice email sending is disabled/removed in this deployment. If you
@@ -522,10 +413,7 @@ app.post('/api/checkout', async (req, res) => {
       gstAmount: bill.gstAmount,
       grandTotal: bill.grandTotal,
       profit: bill.totalProfit,
-      // Return loyalty metadata to the client so UI can display and send the ATM-style card where applicable
-      loyaltyIssued: loyaltyIssued ? true : false,
-      loyaltyCard: loyaltyIssued ? loyaltyCardData : null,
-      loyaltyApplied: loyaltyDiscount > 0 ? loyaltyDiscount : 0
+      // Loyalty removed - not returned in API
     });
   } catch (e) {
     logger.error(e);
@@ -982,14 +870,7 @@ app.post('/api/customers', async (req, res) => {
       phone: phone ? sanitizeObject(phone) : '',
       address: address ? sanitizeObject(address) : '',
       gstin: gstin ? sanitizeObject(gstin) : '',
-      // Loyalty fields: default values for newly created customers
-      loyalty: {
-        cardIssued: true,
-        cardNumber: cardNumber,
-        discountAmount: 3000,
-        remainingUses: 1,
-        issuedAt: new Date()
-      },
+      // Loyalty functionality removed — do not set loyalty defaults
       purchasesCount: 0,
       totalPurchases: 0,
       createdAt: new Date(),
@@ -1041,8 +922,7 @@ app.get('/api/invoices', async (req, res) => {
       igst: bill.igst || 0,
       total: bill.grandTotal || 0,
       totalProfit: bill.totalProfit || 0,
-      loyaltyApplied: bill.loyaltyApplied || 0,
-      loyaltyIssued: bill.loyaltyIssued || false,
+      // loyaltyApplied and loyaltyIssued removed from invoice mapping
       paymentMode: bill.paymentMode || 'Cash',
       splitPaymentDetails: bill.splitPaymentDetails || null,
       items: bill.items ? bill.items.map(item => ({
@@ -2094,35 +1974,7 @@ app.post('/api/admin/migrate-photo-urls', async (req, res) => {
   }
 });
 
-// Admin: Issue loyalty card to all customers (idempotent) - requires admin credentials
-app.post('/api/admin/issue-loyalty-to-all', async (req, res) => {
-  try {
-    const { adminUsername, adminPassword } = req.body;
-    if (!adminUsername || !adminPassword) return res.status(400).json({ error: 'Admin credentials required' });
-    const db = getDB();
-    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
-    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
-    const match = await bcrypt.compare(adminPassword, admin.password);
-    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
-
-    const customers = await db.collection('customers').find({}).toArray();
-    let updated = 0;
-    for (const c of customers) {
-      if (!c.loyalty || !c.loyalty.cardNumber) {
-        const cardNumber = `LC${Math.floor(100000000000 + Math.random() * 899999999999)}`;
-        const loyaltyData = { cardIssued: true, cardNumber, discountAmount: 3000, remainingUses: 1, issuedAt: new Date() };
-        await db.collection('customers').updateOne({ _id: c._id }, { $set: { loyalty: loyaltyData } });
-        updated++;
-      }
-    }
-
-    await logAudit(db, 'ADMIN_ISSUE_LOYALTY_ALL', admin._id, adminUsername, { issuedCount: updated });
-    res.json({ ok: true, issued: updated });
-  } catch (e) {
-    logger.error('Issue loyalty to all error', e);
-    res.status(500).json({ error: 'Failed to issue loyalty cards' });
-  }
-});
+// Admin: Issue loyalty cards endpoint removed per request
 
 // ==================== ANALYTICS ENDPOINTS ====================
 

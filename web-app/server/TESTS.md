@@ -1,7 +1,7 @@
-Test Plan for Checkout & Loyalty Apply
+Test Plan for Checkout
 
 Overview:
-This document outlines how to test the `applyLoyalty` flag server-side and add automated tests. The server does not currently include a testing framework; adding tests requires creating a test database or using an in-memory MongoDB setup like `mongodb-memory-server`.
+This document outlines how to test checkout behavior and add automated tests. The server does not currently include a testing framework; adding tests requires creating a test database or using an in-memory MongoDB setup like `mongodb-memory-server`.
 
 Recommended Test Setup:
 1. Add dev dependencies: mocha, chai, supertest, mongodb-memory-server
@@ -12,20 +12,15 @@ Recommended Test Setup:
 Suggested Tests:
 - Server /api/checkout unit tests
   1. It should return 400 when required checkout fields are missing.
-  2. It should accept `applyLoyalty` and not 500 even when the customer or product doesn't exist.
-  3. It should apply loyalty discount when a customer has a card, remaining uses, and the payload includes a valid `referralNumber` matching the customer's card; subtotal must be >= 150000.
-  4. It should reduce remainingUses when applied and include `loyaltyApplied` in the invoice response.
-  5. It should not apply loyalty when the card has no remaining uses and return `loyaltyApplied: 0`.
-  6. It should log an audit entry for `SALE_COMPLETED` that includes `loyaltyApplied`, `loyaltyIssued`, `applyLoyalty`, and `referralNumber`.
+  2. It should accept a normal checkout request and return a bill object with expected totals and items.
+  3. It should update product stocks and increment customer purchasesCount and totalPurchases.
+  4. It should store grandTotal as an integer and include expected tax/profit fields.
 
-- Admin endpoint: Issue loyalty cards to all customers
-  1. `POST /api/admin/issue-loyalty-to-all` should require admin credentials.
-  2. It should assign `cardNumber` and set `cardIssued: true` and `remainingUses: 1` for any customer missing a card.
-  3. It should return the count of issued cards and log an `ADMIN_ISSUE_LOYALTY_ALL` audit entry.
+Note: Admin endpoints related to loyalty were removed as part of this change. Keep admin endpoints coverage limited to user management, migration endpoints, and audit checks.
 
 - Client E2E tests (recommended when a UI test framework is in place)
-  1. Render the cart, preview loyalty discount, toggle "Apply on checkout" and ensure the payload includes `applyLoyalty` flag.
-  2. Ensure that when applyLoyalty is true, the UI displays a success message or updated bill if the server applies the loyalty.
+  1. Render the cart, add items, select a customer, complete a sale, and ensure the server returns a proper bill and the UI shows it.
+  2. Validate that the invoice content is consistent between the client and the server response.
 
 Notes:
 - To make the unit tests robust, either:

@@ -125,19 +125,13 @@ export default function App(){
     try { return JSON.parse(localStorage.getItem('localUserPhotos') || '{}') } catch(e) { return {} }
   })
   const [photoPreview, setPhotoPreview] = useState(null)
-  const [showLoyaltyCardModal, setShowLoyaltyCardModal] = useState(false)
-  const [loyaltyCardHtml, setLoyaltyCardHtml] = useState(null)
-  const [loyaltyCardData, setLoyaltyCardData] = useState(null)
-  const [loyaltyFetchLoading, setLoyaltyFetchLoading] = useState(false)
+  // Loyalty UI removed
   const [cartOpen, setCartOpen] = useState(true)
   const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
-  const [loyaltyFetchError, setLoyaltyFetchError] = useState(null)
+  const [loyaltyFetchError, setLoyaltyFetchError] = useState(null) // left for compatibility but currently unused
   const [transactionsView, setTransactionsView] = useState('cards')
-  const [previewLoyaltyDiscount, setPreviewLoyaltyDiscount] = useState(0)
-  const [isLoyaltyPreviewed, setIsLoyaltyPreviewed] = useState(false)
-  const [applyLoyaltyToCheckout, setApplyLoyaltyToCheckout] = useState(false)
-  const [referralNumber, setReferralNumber] = useState('')
+  // Loyalty preview and referral removed
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -380,51 +374,7 @@ export default function App(){
   }, [profilePhoto, currentUser])
 
   // Loyalty card: fetch and show ATM-style loyalty card for a customer
-  async function fetchLoyaltyCardForCustomer(customerId) {
-    if (!customerId) return showNotification('No customer selected', 'warning')
-    setLoyaltyFetchLoading(true)
-    setLoyaltyFetchError(null)
-    try {
-      const res = await fetch(API(`/api/customers/${customerId}/loyalty-card`))
-      if (!res.ok) {
-        // Attach additional debugging details for developer
-        const text = await res.text().catch(()=> '')
-        console.error('Loyalty fetch failed', res.status, text)
-        setLoyaltyCardHtml(null)
-        setLoyaltyCardData(null)
-        if (res.status === 404) {
-          setLoyaltyFetchError('No loyalty card found for this customer')
-          // Refresh customers list and inspect the local customer's loyalty summary
-          try {
-            await fetchCustomers();
-            const refreshed = customers.find(c => String(c.id) === String(customerId) || String(c._id) === String(customerId));
-            if (refreshed && refreshed.loyalty && refreshed.loyalty.cardIssued) {
-              console.warn('Loyalty mismatch: customer has loyalty cardIssued but card endpoint returned 404', refreshed)
-              setLoyaltyFetchError('Customer indicates a loyalty card exists, but the card details are missing. Please contact admin.')
-            }
-          } catch (e) {
-            console.warn('Failed to refresh customers list', e)
-          }
-          return showNotification('No loyalty card available for this customer', 'warning')
-        }
-        setLoyaltyFetchError(`Failed to fetch loyalty card (status ${res.status})`)
-        return showNotification(`Failed to fetch loyalty card (${res.status})`, 'error')
-      }
-      const j = await res.json()
-      setLoyaltyCardHtml(j.cardHtml || null)
-      setLoyaltyCardData(j.card || null)
-      // reset any preview if we fetched new card data
-      setPreviewLoyaltyDiscount(0)
-      setIsLoyaltyPreviewed(false)
-      setShowLoyaltyCardModal(true)
-    } catch (e) {
-      console.error('Failed to fetch loyalty card:', e)
-      setLoyaltyFetchError('Network or server error while fetching loyalty card')
-      showNotification('Failed to fetch loyalty card: ' + (e?.message || ''), 'error')
-    } finally {
-      setLoyaltyFetchLoading(false)
-    }
-  }
+  // Loyalty fetch function removed
 
   // persist local photo caches and pending uploads
   useEffect(() => { try { localStorage.setItem('pendingUploads', JSON.stringify(pendingUploads || [])) } catch(e) {} }, [pendingUploads])
@@ -2222,9 +2172,7 @@ export default function App(){
         userId: currentUser?.id || null,
         username: selectedSeller || (isAdmin ? 'admin' : currentUser?.username || 'Unknown')
       }
-      // Include the loyalty apply flag so server can force-apply if allowed
-      if (applyLoyaltyToCheckout) payload.applyLoyalty = true;
-      if (referralNumber) payload.referralNumber = String(referralNumber).trim();
+      // Loyalty removed: do not add referral/applyLoyalty flags
 
       // Handle online checkout
       if (isOnline) {
@@ -2264,10 +2212,7 @@ export default function App(){
             date: new Date().toISOString(),
             createdByUsername: selectedSeller || (isAdmin ? 'admin' : currentUser?.username || 'Unknown')
           ,
-            // Loyalty metadata from server
-            loyaltyIssued: j.loyaltyIssued || false,
-            loyaltyCard: j.loyaltyCard || null,
-            loyaltyApplied: j.loyaltyApplied || 0
+            // Loyalty removed: server no longer returns loyalty metadata
           });
           setShowBill(true);
           
@@ -2741,13 +2686,7 @@ export default function App(){
     if (due) msg += `Due: ${due}\n`;
     msg += `View invoice: ${url}\n`;
 
-    // Loyalty messages
-    if (invoice.loyaltyIssued && invoice.loyaltyCard) {
-      msg += `\n🎉 Congratulations! You've been issued a loyalty card: ${invoice.loyaltyCard.cardNumber} — ${formatCurrency0(invoice.loyaltyCard.discountAmount||3000)} off on your next qualifying purchase.`;
-    }
-    if (invoice.loyaltyApplied && Number(invoice.loyaltyApplied) > 0) {
-      msg += `\n\n✅ Loyalty discount applied: ${formatCurrency0(invoice.loyaltyApplied)} on this purchase.`;
-    }
+    // Loyalty messages removed
 
     msg += `\n\nThank you!\n${companyInfo.name}`;
     return encodeURIComponent(msg);
@@ -3576,24 +3515,7 @@ export default function App(){
         </div>
       )}
 
-      {/* Loyalty Card Modal */}
-      {showLoyaltyCardModal && (
-        <div className="modal-overlay" onClick={() => setShowLoyaltyCardModal(false)}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth:'520px', width:'100%', padding:0}}>
-            <div style={{padding:12, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-              <h2>Customer Loyalty Card</h2>
-              <button onClick={() => setShowLoyaltyCardModal(false)} className="btn-secondary">Close</button>
-            </div>
-            <div style={{padding:12}}>
-              {loyaltyCardHtml ? (
-                <div dangerouslySetInnerHTML={{__html: loyaltyCardHtml}} />
-              ) : (
-                <div style={{padding:12}}>No loyalty card available for this customer.</div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Loyalty card modal removed */}
       {/* PWA Install Prompt */}
       {showInstallPrompt && (
         <div style={{
@@ -4209,10 +4131,10 @@ export default function App(){
             <div className="right">
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap: 8}}>
                 <h2 style={{margin:0}}>Cart</h2>
-                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <div style={{display:'flex', alignItems:'center', gap:10}}>
                   <div style={{fontSize:12, color:'#666'}}>{cartCount} items</div>
                   <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
-                  <button onClick={()=>setCartOpen(true)} className="btn-secondary" title={'Open cart drawer'}>Open Cart</button>
+                  {/* Open Cart button removed (duplicate) */}
                 </div>
               </div>
               
@@ -4228,9 +4150,9 @@ export default function App(){
                   {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
                     <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
-                    <button onClick={()=>{ if(selectedCustomer && selectedCustomer.id) fetchLoyaltyCardForCustomer(selectedCustomer.id); }} type="button" className="customer-add-btn" title="View Loyalty Card" disabled={loyaltyFetchLoading}>{loyaltyFetchLoading ? 'Loading...' : '🏷️ Card'}</button>
+                    {/* Loyalty card view removed */}
                 </div>
-                  {loyaltyFetchError && <small style={{color:'#e74c3c', display:'block', marginTop:8}}>{loyaltyFetchError}</small>}
+                  {/* Loyalty feature removed */}
               </div>
 
               {/* Cart Items now shown in sliding drawer; this section contains a short preview */}
@@ -4809,7 +4731,7 @@ export default function App(){
                   <th>Phone</th>
                   <th>GSTIN</th>
                   <th>Address</th>
-                  <th>Loyalty</th>
+                  {/* Loyalty column removed */}
                   <th>Actions</th>
                 </tr>
               </thead>
@@ -4821,16 +4743,7 @@ export default function App(){
                     <td>{c.phone}</td>
                     <td style={{fontFamily:'monospace', fontSize:'0.9em'}}>{c.gstin || 'N/A'}</td>
                     <td style={{maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis'}}>{c.address}</td>
-                    <td>
-                      {c.loyalty && c.loyalty.cardIssued ? (
-                        <div style={{display:'flex',flexDirection:'column',gap:4}}>
-                          <div style={{fontWeight:700}}>{c.loyalty.cardNumber || 'Card'}</div>
-                          <div style={{fontSize:11,color:'#444'}}>₹{(c.loyalty.discountAmount||3000)} off · {c.loyalty.remainingUses || 0} uses</div>
-                        </div>
-                      ) : (
-                        <div style={{color:'#999'}}>—</div>
-                      )}
-                    </td>
+                    {/* Loyalty column removed */}
                     <td>
                       <button 
                         onClick={async () => {
@@ -5858,34 +5771,13 @@ export default function App(){
                 <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
                 <p><strong>Customer:</strong> {lastBill.customerName}</p>
                 {lastBill.customerId && (
-                  <button style={{marginLeft:8}} onClick={() => fetchLoyaltyCardForCustomer(lastBill.customerId)} className="btn-secondary" disabled={loyaltyFetchLoading}>{loyaltyFetchLoading ? 'Loading...' : 'View Loyalty Card'}</button>
+                  {/* Loyalty feature removed */}
                 )}
                 {lastBill.customerPhone && <p><strong>Phone:</strong> {lastBill.customerPhone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>
 
-              {/* Loyalty card / discount summary */}
-              {lastBill.loyaltyIssued && lastBill.loyaltyCard && (
-                <div style={{marginTop:12, padding:12, borderRadius:8, background:'linear-gradient(90deg,#0b5cff,#6c7be0)', color:'white'}}>
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <div>
-                      <div style={{fontSize:12, opacity:0.9}}>🎉 Loyalty Card Issued</div>
-                      <div style={{fontWeight:800, fontSize:18}}>{lastBill.loyaltyCard.cardNumber}</div>
-                      <div style={{fontSize:12, opacity:0.9}}>₹{(lastBill.loyaltyCard.discountAmount||3000)} off on next qualifying purchase</div>
-                    </div>
-                    <div style={{textAlign:'right'}}>
-                      <div style={{fontSize:12}}>Remaining uses</div>
-                      <div style={{fontWeight:700, fontSize:18}}>{lastBill.loyaltyCard.remainingUses || 0}</div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {lastBill.loyaltyApplied > 0 && (
-                <div style={{marginTop:12, padding:12, borderRadius:8, background:'#e8f8ef', color:'#065f46', border:'1px solid #c6f6d5'}}>
-                  <div style={{fontWeight:700}}>✅ Loyalty discount applied: {formatCurrency0(lastBill.loyaltyApplied)}</div>
-                </div>
-              )}
+              {/* Loyalty card and discount removed from bill display */}
 
               <table>
                 <thead>
@@ -6196,49 +6088,7 @@ export default function App(){
                 <div>Subtotal</div>
                 <div>{formatCurrency0(cartTotal)}</div>
               </div>
-              {/* Loyalty preview */}
-              <div style={{marginTop:8, borderTop:'1px dashed var(--border)', paddingTop:8}}>
-                {selectedCustomer && selectedCustomer.loyalty && selectedCustomer.loyalty.cardIssued ? (
-                  <div>
-                    <div style={{display:'flex', justifyContent:'space-between', gap:8}}>
-                      <div>
-                        <strong>{selectedCustomer.loyalty.cardNumber || 'Loyalty Card'}</strong>
-                        <div style={{fontSize:12,color:'#666'}}>{selectedCustomer.loyalty.remainingUses || 0} uses left</div>
-                      </div>
-                      <div style={{textAlign:'right'}}>{formatCurrency0(selectedCustomer.loyalty.discountAmount || 3000)}</div>
-                    </div>
-                      <div style={{marginTop:8, display:'flex', gap:8, alignItems:'center'}}>
-                      <button className="btn-primary" onClick={() => {
-                        const subtotal = cartTotal;
-                        const percentDiscount = discount || 0;
-                        const pctDiscountAmount = Math.round(subtotal * (percentDiscount / 100));
-                        const afterDiscount = subtotal - pctDiscountAmount;
-                        const cardAmount = (selectedCustomer.loyalty && selectedCustomer.loyalty.discountAmount) ? selectedCustomer.loyalty.discountAmount : 3000;
-                                                // require referral number match and subtotal >= 150000
-                                                if (!referralNumber || String(referralNumber).trim() === '') return showNotification('Enter referral number to apply loyalty preview', 'warning');
-                                                if (!selectedCustomer.loyalty || String(selectedCustomer.loyalty.cardNumber) !== String(referralNumber)) return showNotification('Referral number does not match customer loyalty card', 'error');
-                                                if ((selectedCustomer.loyalty && (selectedCustomer.loyalty.remainingUses || 0) <= 0)) return showNotification('This loyalty card has no remaining uses', 'error');
-                                                if (subtotal < 150000) return showNotification('Subtotal must be ₹150,000 or more to apply loyalty discount', 'error');
-                        const discountToApply = Math.min(cardAmount, Math.round(afterDiscount));
-                        setPreviewLoyaltyDiscount(discountToApply);
-                        setIsLoyaltyPreviewed(true);
-                        showNotification('Loyalty discount preview applied', 'success');
-                      }} disabled={!cart || cart.length===0 || cartTotal < 150000 || !referralNumber}>Preview Loyalty</button>
-                      <button className="btn-secondary" onClick={() => { setPreviewLoyaltyDiscount(0); setIsLoyaltyPreviewed(false); setApplyLoyaltyToCheckout(false); }} disabled={!isLoyaltyPreviewed}>Clear Preview</button>
-                                            <div style={{marginLeft:8, display:'flex', gap:8, alignItems:'center', flexDirection:'column'}}>
-                                              <input placeholder="Referral number" style={{padding:6, borderRadius:6, border:'1px solid var(--border)'}} value={referralNumber} onChange={(e)=>setReferralNumber(e.target.value)} />
-                                              <small style={{fontSize:11, color:'#666', marginTop:6}}>Referral required and subtotal must be ₹150,000 or more for discount</small>
-                                            </div>
-                      <label style={{display:'inline-flex', alignItems:'center', gap:6, marginLeft:8}}>
-                        <input type="checkbox" checked={applyLoyaltyToCheckout} onChange={(e) => setApplyLoyaltyToCheckout(e.target.checked)} />
-                        <small style={{fontSize:12}}>Apply on checkout</small>
-                      </label>
-                    </div>
-                  </div>
-                ) : (
-                  <div style={{color:'#666'}}>No loyalty card available for selected customer</div>
-                )}
-              </div>
+              {/* Loyalty feature removed */}
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <div>Discount ({discount}%)</div>
                 <div>{formatCurrency0((cartTotal * (discount/100)) || 0)}</div>
@@ -6255,8 +6105,7 @@ export default function App(){
                   const afterDiscount = subtotal - discountAmount;
                   const tax = afterDiscount * (taxRate / 100);
                   const grand = Math.round(afterDiscount + tax);
-                  const previewTotal = isLoyaltyPreviewed ? Math.max(0, grand - (previewLoyaltyDiscount || 0)) : grand;
-                  return isLoyaltyPreviewed ? (<div><span style={{textDecoration:'line-through', color:'#888', marginRight:8}}>{formatCurrency0(grand)}</span><span>{formatCurrency0(previewTotal)}</span></div>) : (<div>{formatCurrency0(grand)}</div>)
+                  return (<div>{formatCurrency0(grand)}</div>)
                 })()}
               </div>
               <div style={{marginTop:12, display:'flex', gap:8}}>
