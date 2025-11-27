@@ -4106,11 +4106,9 @@ export default function App(){
             </div>
             <div className="right">
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap: 8}}>
-                <h2 style={{margin:0}}>Cart</h2>
-                  <div style={{display:'flex', alignItems:'center', gap:10}}>
-                  <div style={{fontSize:12, color:'#666'}}>{cartCount} items</div>
-                  <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
-                  {/* Open Cart button removed (duplicate) */}
+                <h2 style={{margin:0, fontSize: '18px'}}>Cart</h2>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <button className="btn-primary" onClick={()=>setCartOpen(true)}>Open Cart</button>
                 </div>
               </div>
               
