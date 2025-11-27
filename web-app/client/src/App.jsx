@@ -125,6 +125,9 @@ export default function App(){
     try { return JSON.parse(localStorage.getItem('localUserPhotos') || '{}') } catch(e) { return {} }
   })
   const [photoPreview, setPhotoPreview] = useState(null)
+  const [showLoyaltyCardModal, setShowLoyaltyCardModal] = useState(false)
+  const [loyaltyCardHtml, setLoyaltyCardHtml] = useState(null)
+  const [loyaltyCardData, setLoyaltyCardData] = useState(null)
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -365,6 +368,25 @@ export default function App(){
       }
     } catch(e) { console.error('Failed to persist profilePhoto to user cache', e) }
   }, [profilePhoto, currentUser])
+
+  // Loyalty card: fetch and show ATM-style loyalty card for a customer
+  async function fetchLoyaltyCardForCustomer(customerId) {
+    if (!customerId) return showNotification('No customer selected', 'warning')
+    try {
+      const res = await fetch(API(`/api/customers/${customerId}/loyalty-card`))
+      if (!res.ok) {
+        const j = await res.json().catch(()=>({}));
+        return showNotification(j.error || 'Failed to fetch loyalty card', 'error')
+      }
+      const j = await res.json()
+      setLoyaltyCardHtml(j.cardHtml || null)
+      setLoyaltyCardData(j.card || null)
+      setShowLoyaltyCardModal(true)
+    } catch (e) {
+      console.error('Failed to fetch loyalty card:', e)
+      showNotification('Failed to fetch loyalty card', 'error')
+    }
+  }
 
   // persist local photo caches and pending uploads
   useEffect(() => { try { localStorage.setItem('pendingUploads', JSON.stringify(pendingUploads || [])) } catch(e) {} }, [pendingUploads])
@@ -1786,7 +1808,7 @@ export default function App(){
         setExpenseDate(new Date().toISOString().split('T')[0]);
         setShowAddExpense(false);
         fetchExpenses();
-        addActivity('Expense Added', `₹${expenseAmount} - ${expenseCategory}`);
+        addActivity('Expense Added', `${formatCurrency0(expenseAmount)} - ${expenseCategory}`);
       } else {
         showNotification('❌ Failed to add expense', 'error');
       }
@@ -1979,8 +2001,8 @@ export default function App(){
       inv.items?.length || 0,
       fmt0(inv.total || inv.grandTotal || 0),
       inv.paymentMode || 'Cash',
-      (inv.totalProfit || 0).toFixed(2),
-      (inv.taxAmount || 0).toFixed(2)
+      fmt0(inv.totalProfit || 0),
+      fmt0(inv.taxAmount || 0)
     ]);
     downloadCSV([headers, ...rows], 'Sales_Report');
   }
@@ -2035,7 +2057,7 @@ export default function App(){
     
     console.log('Adding to cart:', p.name, 'ID:', productId);
     setCart(c=>{
-      const existing = c.find(x=>x.productId===productId)
+      const existing = c.find(x=>String(x.productId)===String(productId))
       if (existing) {
         // Check if we have enough stock
         if (existing.quantity + 1 > p.quantity) {
@@ -2043,7 +2065,7 @@ export default function App(){
           return c;
         }
         console.log('Increasing quantity for:', p.name);
-        return c.map(x=> x.productId===productId ? {...x, quantity: x.quantity+1} : x)
+        return c.map(x=> String(x.productId)===String(productId) ? {...x, quantity: x.quantity+1} : x)
       }
       console.log('Adding new item to cart:', p.name);
       return [...c, {
@@ -2060,27 +2082,51 @@ export default function App(){
   }
 
   function increaseCartQty(productId){
-    setCart(c=> c.map(x=> x.productId===productId ? {...x, quantity: x.quantity+1} : x))
+    // Check stock first
+    try {
+      const pId = String(productId)
+      const productObj = products.find(p => String(p._id || p.id) === pId)
+      if (productObj && typeof productObj.quantity === 'number') {
+        if (productObj.quantity <= 0) {
+          showNotification(`❌ ${productObj.name} is out of stock`, 'error')
+          return
+        }
+        setCart(c => c.map(x => {
+          if (String(x.productId) === pId) {
+            const newQty = (x.quantity || 0) + 1
+            if (newQty > productObj.quantity) {
+              showNotification(`❌ Only ${productObj.quantity} units available for ${productObj.name}`, 'error')
+              return x
+            }
+            return {...x, quantity: newQty }
+          }
+          return x
+        }))
+      } else {
+        // fallback if product not found
+        setCart(c=> c.map(x=> String(x.productId)===pId ? {...x, quantity: x.quantity+1} : x))
+      }
+    } catch(e) { console.error('increaseCartQty error', e) }
   }
 
   function decreaseCartQty(productId){
-    setCart(c=> c.map(x=> x.productId===productId ? {...x, quantity: Math.max(1, x.quantity-1)} : x))
+    setCart(c=> c.map(x=> String(x.productId)===String(productId) ? {...x, quantity: Math.max(1, x.quantity-1)} : x))
   }
 
   function removeFromCart(productId){
-    setCart(c=> c.filter(x=> x.productId !== productId))
+    setCart(c=> c.filter(x=> String(x.productId) !== String(productId)))
   }
 
   function setCartQty(productId, newQty){
     if (typeof newQty !== 'number') newQty = parseInt(newQty || '0') || 0
     if (newQty < 1) newQty = 1
     // try to respect stock limits
-    const productObj = products.find(p => (p._id || p.id) === productId)
+    const productObj = products.find(p => String(p._id || p.id) === String(productId))
     if (productObj && typeof productObj.quantity === 'number' && newQty > productObj.quantity) {
       showNotification(`Only ${productObj.quantity} units available for ${productObj.name}`, 'error')
       newQty = productObj.quantity
     }
-    setCart(c => c.map(x => x.productId === productId ? {...x, quantity: newQty} : x))
+    setCart(c => c.map(x => String(x.productId) === String(productId) ? {...x, quantity: newQty} : x))
   }
 
   async function checkout(){
@@ -2544,21 +2590,21 @@ export default function App(){
               <table class="totals-table">
                 <tr>
                   <td>Subtotal:</td>
-                  <td class="text-right">₹${subtotal.toFixed(2)}</td>
+                      <td class="text-right">${formatCurrency0(subtotal)}</td>
                 </tr>
                 ${discountAmount > 0 ? `
                   <tr>
                     <td>Discount (${discountPercent}%):</td>
-                    <td class="text-right">- ₹${discountAmount.toFixed(2)}</td>
+                    <td class="text-right">- ${formatCurrency0(discountAmount)}</td>
                   </tr>
                   <tr>
                     <td>After Discount:</td>
-                    <td class="text-right">₹${afterDiscount.toFixed(2)}</td>
+                    <td class="text-right">${formatCurrency0(afterDiscount)}</td>
                   </tr>
                 ` : ''}
                 <tr>
                   <td>GST (${taxRate}%):</td>
-                  <td class="text-right">₹${taxAmount.toFixed(2)}</td>
+                  <td class="text-right">${formatCurrency0(taxAmount)}</td>
                 </tr>
                 <tr class="grand-total">
                   <td><strong>GRAND TOTAL:</strong></td>
@@ -2656,10 +2702,10 @@ export default function App(){
 
     // Loyalty messages
     if (invoice.loyaltyIssued && invoice.loyaltyCard) {
-      msg += `\n🎉 Congratulations! You've been issued a loyalty card: ${invoice.loyaltyCard.cardNumber} — ₹${(invoice.loyaltyCard.discountAmount||3000)} off on your next qualifying purchase.`;
+      msg += `\n🎉 Congratulations! You've been issued a loyalty card: ${invoice.loyaltyCard.cardNumber} — ${formatCurrency0(invoice.loyaltyCard.discountAmount||3000)} off on your next qualifying purchase.`;
     }
     if (invoice.loyaltyApplied && Number(invoice.loyaltyApplied) > 0) {
-      msg += `\n\n✅ Loyalty discount applied: ₹${invoice.loyaltyApplied} on this purchase.`;
+      msg += `\n\n✅ Loyalty discount applied: ${formatCurrency0(invoice.loyaltyApplied)} on this purchase.`;
     }
 
     msg += `\n\nThank you!\n${companyInfo.name}`;
@@ -3488,6 +3534,25 @@ export default function App(){
           </div>
         </div>
       )}
+
+      {/* Loyalty Card Modal */}
+      {showLoyaltyCardModal && (
+        <div className="modal-overlay" onClick={() => setShowLoyaltyCardModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{maxWidth:'520px', width:'100%', padding:0}}>
+            <div style={{padding:12, display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+              <h2>Customer Loyalty Card</h2>
+              <button onClick={() => setShowLoyaltyCardModal(false)} className="btn-secondary">Close</button>
+            </div>
+            <div style={{padding:12}}>
+              {loyaltyCardHtml ? (
+                <div dangerouslySetInnerHTML={{__html: loyaltyCardHtml}} />
+              ) : (
+                <div style={{padding:12}}>No loyalty card available for this customer.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
       {/* PWA Install Prompt */}
       {showInstallPrompt && (
         <div style={{
@@ -4114,7 +4179,8 @@ export default function App(){
                   <option value="">Walk-in Customer</option>
                   {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
                   </select>
-                  <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
+                    <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
+                    <button onClick={()=>{ if(selectedCustomer && selectedCustomer.id) fetchLoyaltyCardForCustomer(selectedCustomer.id); }} type="button" className="customer-add-btn" title="View Loyalty Card">🏷️ Card</button>
                 </div>
               </div>
 
@@ -4805,13 +4871,13 @@ export default function App(){
               <div className="stats" style={{marginBottom:'30px'}}>
                 <div className="stat-card">
                   <h3>Total Revenue</h3>
-                  <p>₹{analyticsData.revenueSummary.totalRevenue?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
+                  <p>{formatCurrency0(analyticsData.revenueSummary.totalRevenue || 0)}</p>
                 </div>
                 {canViewProfit() && (
                   <>
                     <div className="stat-card">
                       <h3>Total Profit</h3>
-                      <p>₹{analyticsData.revenueSummary.totalProfit?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
+                      <p>{formatCurrency0(analyticsData.revenueSummary.totalProfit || 0)}</p>
                     </div>
                     <div className="stat-card">
                       <h3>Profit Margin</h3>
@@ -4825,7 +4891,7 @@ export default function App(){
                 </div>
                 <div className="stat-card">
                   <h3>Avg Order Value</h3>
-                  <p>₹{analyticsData.revenueSummary.averageOrderValue?.toLocaleString('en-IN', {minimumFractionDigits:2, maximumFractionDigits:2}) || '0.00'}</p>
+                  <p>{formatCurrency0(analyticsData.revenueSummary.averageOrderValue || 0)}</p>
                 </div>
               </div>
             )}
@@ -4948,7 +5014,7 @@ export default function App(){
             <div className="reports-grid" style={{marginTop:'30px'}}>
               <div className="report-card">
                 <h3><Icon name="analytics" size={20} /> Sales Summary</h3>
-                <p>Total Revenue: ₹{(stats.totalRevenue || 0).toFixed(2)}</p>
+                <p>Total Revenue: {formatCurrency0(stats.totalRevenue || 0)}</p>
                 <p>Total Invoices: {stats.totalInvoices || 0}</p>
                 <p>Average Sale: ₹{stats.totalInvoices > 0 ? Math.round(stats.totalRevenue / stats.totalInvoices) : 0}</p>
               </div>
@@ -4961,7 +5027,7 @@ export default function App(){
               <div className="report-card">
                 <h3><Icon name="customers" size={20} /> Customer Insights</h3>
                 <p>Total Customers: {stats.totalCustomers || 0}</p>
-                <p>Today's Sales: ₹{stats.todaySales || 0}</p>
+                <p>Today's Sales: {formatCurrency0(stats.todaySales || 0)}</p>
               </div>
             </div>
           </div>
@@ -5083,19 +5149,19 @@ export default function App(){
                         <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
                         <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
                         <td>{inv.items?.length || 0} items</td>
-                        <td>₹{(inv.subtotal || 0).toFixed(2)}</td>
+                        <td>{formatCurrency0(inv.subtotal || 0)}</td>
                         <td>
                           <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
                             -{inv.discountPercent || 0}%
                             <br/>
-                            <small style={{color:'#888'}}>₹{(inv.discountAmount || 0).toFixed(1)}</small>
+                            <small style={{color:'#888'}}>{formatCurrency0(inv.discountAmount || 0)}</small>
                           </span>
                         </td>
                         <td>
                           <span style={{color:'#27ae60',fontSize:'13px'}}>
                             +{inv.taxRate || 0}%
                             <br/>
-                            <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
+                            <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
                           </span>
                         </td>
                         <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
@@ -5104,13 +5170,13 @@ export default function App(){
                           <span style={{color:'#27ae60',fontSize:'13px'}}>
                             +{inv.taxRate || 0}%
                             <br/>
-                            <small style={{color:'#888'}}>₹{(inv.taxAmount || 0).toFixed(1)}</small>
+                            <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
                           </span>
                         </td>
                         <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
                         <td>
                           <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
-                            ₹{(profit || 0).toFixed(1)}
+                            {formatCurrency0(profit || 0)}
                           </strong>
                         </td>
                         <td>
@@ -5721,6 +5787,9 @@ export default function App(){
                 <p><strong>Bill No:</strong> {lastBill.billNumber}</p>
                 <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
                 <p><strong>Customer:</strong> {lastBill.customerName}</p>
+                {lastBill.customerId && (
+                  <button style={{marginLeft:8}} onClick={() => fetchLoyaltyCardForCustomer(lastBill.customerId)} className="btn-secondary">View Loyalty Card</button>
+                )}
                 {lastBill.customerPhone && <p><strong>Phone:</strong> {lastBill.customerPhone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>
@@ -5744,7 +5813,7 @@ export default function App(){
 
               {lastBill.loyaltyApplied > 0 && (
                 <div style={{marginTop:12, padding:12, borderRadius:8, background:'#e8f8ef', color:'#065f46', border:'1px solid #c6f6d5'}}>
-                  <div style={{fontWeight:700}}>✅ Loyalty discount applied: ₹{lastBill.loyaltyApplied}</div>
+                  <div style={{fontWeight:700}}>✅ Loyalty discount applied: {formatCurrency0(lastBill.loyaltyApplied)}</div>
                 </div>
               )}
 
@@ -5770,14 +5839,14 @@ export default function App(){
               </table>
 
               <div className="bill-summary">
-                <div><span>Subtotal:</span><span>₹{lastBill.subtotal.toFixed(1)}</span></div>
+                <div><span>Subtotal:</span><span>{formatCurrency0(lastBill.subtotal)}</span></div>
                 {lastBill.discountAmount > 0 && (
                   <>
-                    <div><span>Discount ({lastBill.discountPercent || lastBill.discountValue}%):</span><span>-₹{lastBill.discountAmount.toFixed(1)}</span></div>
-                    <div><span>After Discount:</span><span>₹{(lastBill.subtotal - lastBill.discountAmount).toFixed(1)}</span></div>
+                    <div><span>Discount ({lastBill.discountPercent || lastBill.discountValue}%):</span><span>- {formatCurrency0(lastBill.discountAmount)}</span></div>
+                    <div><span>After Discount:</span><span>{formatCurrency0(lastBill.subtotal - lastBill.discountAmount)}</span></div>
                   </>
                 )}
-                <div><span>GST ({lastBill.taxRate}%):</span><span>₹{lastBill.taxAmount.toFixed(1)}</span></div>
+                <div><span>GST ({lastBill.taxRate}%):</span><span>{formatCurrency0(lastBill.taxAmount)}</span></div>
                 <div className="grand-total">
                   <span><strong>Grand Total:</strong></span>
                   <span><strong>{formatCurrency0(lastBill.total)}</strong></span>

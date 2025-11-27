@@ -6,13 +6,11 @@ export const GST_PERCENT = 18;
 
 // Number Formatting
 // Format number to exactly 1 decimal place
-export const fmt1 = (n) => Number.isFinite(n) ? parseFloat(n).toFixed(1) : '0.0';
+export const fmt1 = (n) => Number.isFinite(Number(n)) ? parseFloat(n).toFixed(1) : '0.0';
 // Format number to integer (no decimals)
-export const fmt0 = (n) => Number.isFinite(n) ? Math.round(parseFloat(n)).toFixed(0) : '0';
-
-// Format currency with 1 decimal
+export const fmt0 = (n) => (n === null || typeof n === 'undefined' || n === '') ? '' : String(Math.round(Number(n)));
 export const formatCurrency = (n) => `₹${fmt1(n)}`;
-export const formatCurrency0 = (n) => `₹${fmt0(n)}`;
+export const formatCurrency0 = (n) => (n === null || typeof n === 'undefined' || n === '') ? '' : `₹${fmt0(n)}`;
 
 // Payment Modes
 export const PAYMENT_MODES = {
