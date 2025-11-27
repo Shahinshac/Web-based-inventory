@@ -207,3 +207,13 @@ VITE_ADMIN_PASSWORD=YourSecurePasswordHere
 - Consider upgrading to paid plan for always-on service
 - Vercel free tier is generous and doesn't spin down
 
+## Photo URL migration
+
+If you have existing user or product photos saved as relative paths or DB-backed 'db:<id>' entries, you can convert them into fully-qualified server-backed URLs by calling the admin migration endpoint. This will rewrite the `photo` field on existing users and products to use the stable API endpoints.
+
+POST /api/admin/migrate-photo-urls
+- Body (JSON): { "adminUsername": "admin", "adminPassword": "your_admin_password" }
+- Response: { success: true, usersUpdated: <n>, productsUpdated: <m> }
+
+Run this once on the backend after deploying to ensure old images are consistently referenced by the frontend across devices.
+

@@ -764,8 +764,9 @@ app.post('/api/products/:id/photo', upload.single('photo'), async (req, res) => 
       }
     }
     
-    // Use a consistent API path so client can request the product image through the server
-    let photoUrl = `/api/products/${id}/photo`;
+    // Build fully-qualified photo URL so clients can use it directly
+    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
+    let photoUrl = `${base}/api/products/${id}/photo`;
 
     if (String(req.query.storage || '').toLowerCase() === 'db') {
       // Read file into buffer, insert into product_images collection
@@ -799,7 +800,7 @@ app.post('/api/products/:id/photo', upload.single('photo'), async (req, res) => 
 
     } else {
       // filesystem-backed - keep a reference to the filename while exposing a stable API URL
-      photoUrl = `/api/products/${id}/photo`;
+      photoUrl = `${base}/api/products/${id}/photo`;
       await db.collection('products').updateOne(
         { _id: new ObjectId(id) },
         {
@@ -1629,6 +1630,7 @@ app.post('/api/users/login', async (req, res) => {
       { $set: { lastLogin: new Date() } }
     );
     
+    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     res.json({
       success: true,
       user: {
@@ -1637,7 +1639,8 @@ app.post('/api/users/login', async (req, res) => {
         email: user.email,
         role: user.role,
         approved: user.approved,
-        sessionVersion: user.sessionVersion || 1
+        sessionVersion: user.sessionVersion || 1,
+        photo: (user.photo && typeof user.photo === 'string') ? (user.photo.startsWith('http') ? user.photo : `${base}/api/users/${user._id.toString()}/photo`) : null
       }
     });
   } catch (e) {
@@ -1652,6 +1655,7 @@ app.post('/api/users/login', async (req, res) => {
 app.get('/api/users', async (req, res) => {
   try {
     const db = getDB();
+    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     
     const users = await db.collection('users')
       .find({})
@@ -1665,7 +1669,7 @@ app.get('/api/users', async (req, res) => {
       role: u.role,
       // Expose a stable server-backed avatar endpoint when a photo exists
       photo: (u.photo && typeof u.photo === 'string')
-        ? (u.photo.startsWith('http') ? u.photo : `/api/users/${u._id.toString()}/photo`)
+        ? (u.photo.startsWith('http') ? u.photo : `${base}/api/users/${u._id.toString()}/photo`)
         : null,
       approved: u.approved,
       sessionVersion: u.sessionVersion || 1,
@@ -1908,8 +1912,9 @@ app.post('/api/users/:id/photo', upload.single('photo'), async (req, res) => {
     // Ensure upload dir exists
     await fs.mkdir(path.join(__dirname, 'uploads', 'users'), { recursive: true });
 
-    // Choose DB storage when ?storage=db is set
-    let photoUrl = `/api/users/${id}/photo`;
+    // Build fully-qualified photo URL so clients can use it directly
+    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
+    let photoUrl = `${base}/api/users/${id}/photo`;
     if (String(req.query.storage || '').toLowerCase() === 'db') {
       const buffer = await fs.readFile(req.file.path);
       const imgDoc = {
@@ -2003,6 +2008,70 @@ app.get('/api/users/:id/photo', async (req, res) => {
     });
   } catch (e) {
     logger.error('Serve user photo error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin: Migrate existing user/product photo fields to fully-qualified URLs
+app.post('/api/admin/migrate-photo-urls', async (req, res) => {
+  try {
+    const { adminUsername, adminPassword } = req.body;
+    if (!adminUsername || !adminPassword) return res.status(400).json({ error: 'Admin credentials required' });
+
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+    const match = await bcrypt.compare(adminPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
+
+    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
+
+    // Migrate users
+    const users = await db.collection('users').find({}).toArray();
+    let usersUpdated = 0;
+    for (const u of users) {
+      try {
+        if (!u.photo) continue;
+        // db: or db-backed: resolve to fully-qualified endpoint
+        if (u.photoStorage === 'db' || u.photoDbId || String(u.photo).startsWith('db:') || String(u.photo).startsWith('http')) {
+          // if it's already a fully-qualified URL, skip
+          if (String(u.photo).startsWith('http')) continue;
+          await db.collection('users').updateOne({ _id: u._id }, { $set: { photo: `${base}/api/users/${u._id.toString()}/photo` } });
+          usersUpdated++;
+        } else {
+          // filesystem or relative local path - rewrite to the API endpoint
+          if (!String(u.photo).startsWith('http')) {
+            await db.collection('users').updateOne({ _id: u._id }, { $set: { photo: `${base}/api/users/${u._id.toString()}/photo` } });
+            usersUpdated++;
+          }
+        }
+      } catch (e) { logger.warn('Failed to migrate user photo for', u._id, e.message) }
+    }
+
+    // Migrate products
+    const products = await db.collection('products').find({}).toArray();
+    let productsUpdated = 0;
+    for (const p of products) {
+      try {
+        if (!p.photo) continue;
+        if (p.photoStorage === 'db' || p.photoDbId || String(p.photo).startsWith('db:') || String(p.photo).startsWith('http')) {
+          if (String(p.photo).startsWith('http')) continue;
+          await db.collection('products').updateOne({ _id: p._id }, { $set: { photo: `${base}/api/products/${p._id.toString()}/photo` } });
+          productsUpdated++;
+        } else {
+          if (!String(p.photo).startsWith('http')) {
+            await db.collection('products').updateOne({ _id: p._id }, { $set: { photo: `${base}/api/products/${p._id.toString()}/photo` } });
+            productsUpdated++;
+          }
+        }
+      } catch (e) { logger.warn('Failed to migrate product photo for', p._id, e.message) }
+    }
+
+    await logAudit(db, 'MIGRATE_PHOTO_URLS', admin._id.toString(), admin.username, { usersUpdated, productsUpdated });
+
+    res.json({ success: true, usersUpdated, productsUpdated, message: `Migrated ${usersUpdated} user photos and ${productsUpdated} product photos.` });
+  } catch (e) {
+    logger.error('Migrate photo URLs error:', e);
     res.status(500).json({ error: e.message });
   }
 });

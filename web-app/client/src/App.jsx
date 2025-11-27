@@ -330,7 +330,16 @@ export default function App(){
         }
       } catch(e) {}
       setIsAuthenticated(true)
-      setCurrentUser(JSON.parse(storedUser))
+      const parsed = JSON.parse(storedUser)
+      setCurrentUser(parsed)
+      // if login response contained an absolute/photo URL, prefer it
+      try {
+        const uid = parsed && (parsed.id || parsed._id || parsed.userId)
+        if (parsed.photo && uid) {
+          setProfilePhoto(parsed.photo)
+          setLocalUserPhotos(u => ({ ...(u || {}), [uid]: parsed.photo }))
+        }
+      } catch(e) {}
       const isAdminStored = (storedIsAdmin === 'true') || (storedRole === 'admin')
       setIsAdmin(isAdminStored)
       setUserRole(storedRole || 'cashier') // Default to cashier if no role stored
