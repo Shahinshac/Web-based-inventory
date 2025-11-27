@@ -272,6 +272,7 @@ app.post('/api/checkout', async (req, res) => {
     const payload = req.body;
     const items = Array.isArray(payload.items) ? payload.items : [];
     const customerId = payload.customerId || null;
+    const applyLoyalty = !!payload.applyLoyalty;
     const discountPercent = parseFloat(payload.discountPercent) || 0;
     const customerState = payload.customerState || 'Same'; // 'Same' or 'Other'
     
@@ -407,7 +408,8 @@ app.post('/api/checkout', async (req, res) => {
             loyaltyIssued = true;
           } else {
             // If customer already has a card with remaining uses and this purchase qualifies
-            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && subtotal >= 100000) {
+            // applyLoyalty allows the client to request application even if subtotal < threshold
+            if (cust.loyalty && cust.loyalty.cardIssued && (cust.loyalty.remainingUses || 0) > 0 && (subtotal >= 100000 || applyLoyalty)) {
               loyaltyDiscount = cust.loyalty.discountAmount || 3000;
               const newRemaining = Math.max(0, (cust.loyalty.remainingUses || 1) - 1);
               await db.collection('customers').updateOne(
@@ -420,6 +422,14 @@ app.post('/api/checkout', async (req, res) => {
                 { _id: new ObjectId(customerId) },
                 { $inc: { purchasesCount: 1, totalPurchases: subtotal } }
               );
+            }
+
+            // If client requested to apply loyalty but it wasn't applied, record for traceability
+            if (applyLoyalty && (!cust.loyalty || !cust.loyalty.cardIssued || (cust.loyalty.remainingUses || 0) <= 0) ) {
+              logger.info(`Apply loyalty requested but not applied for customer ${customerId} (cardIssued=${!!(cust.loyalty && cust.loyalty.cardIssued)}, remainingUses=${cust.loyalty?.remainingUses || 0})`);
+              try {
+                await logAudit(db, 'LOYALTY_APPLY_REQUEST_FAILED', userId, username, { customerId, subtotal, cardIssued: !!(cust.loyalty && cust.loyalty.cardIssued), remainingUses: cust.loyalty?.remainingUses || 0 });
+              } catch (e) { logger.warn('Failed to log failed loyalty apply request'); }
             }
           }
         }
@@ -481,6 +491,9 @@ app.post('/api/checkout', async (req, res) => {
       grandTotal: bill.grandTotal,
       itemCount: bill.items.length,
       paymentMode
+    , loyaltyApplied: bill.loyaltyApplied || 0,
+      loyaltyIssued: bill.loyaltyIssued || false,
+      applyLoyalty: applyLoyalty || false
     });
     
     // Invoice email sending is disabled/removed in this deployment. If you

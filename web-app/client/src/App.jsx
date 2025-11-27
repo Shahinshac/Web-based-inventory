@@ -134,6 +134,9 @@ export default function App(){
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
   const [loyaltyFetchError, setLoyaltyFetchError] = useState(null)
   const [transactionsView, setTransactionsView] = useState('cards')
+  const [previewLoyaltyDiscount, setPreviewLoyaltyDiscount] = useState(0)
+  const [isLoyaltyPreviewed, setIsLoyaltyPreviewed] = useState(false)
+  const [applyLoyaltyToCheckout, setApplyLoyaltyToCheckout] = useState(false)
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -390,6 +393,17 @@ export default function App(){
         setLoyaltyCardData(null)
         if (res.status === 404) {
           setLoyaltyFetchError('No loyalty card found for this customer')
+          // Refresh customers list and inspect the local customer's loyalty summary
+          try {
+            await fetchCustomers();
+            const refreshed = customers.find(c => String(c.id) === String(customerId) || String(c._id) === String(customerId));
+            if (refreshed && refreshed.loyalty && refreshed.loyalty.cardIssued) {
+              console.warn('Loyalty mismatch: customer has loyalty cardIssued but card endpoint returned 404', refreshed)
+              setLoyaltyFetchError('Customer indicates a loyalty card exists, but the card details are missing. Please contact admin.')
+            }
+          } catch (e) {
+            console.warn('Failed to refresh customers list', e)
+          }
           return showNotification('No loyalty card available for this customer', 'warning')
         }
         setLoyaltyFetchError(`Failed to fetch loyalty card (status ${res.status})`)
@@ -398,6 +412,9 @@ export default function App(){
       const j = await res.json()
       setLoyaltyCardHtml(j.cardHtml || null)
       setLoyaltyCardData(j.card || null)
+      // reset any preview if we fetched new card data
+      setPreviewLoyaltyDiscount(0)
+      setIsLoyaltyPreviewed(false)
       setShowLoyaltyCardModal(true)
     } catch (e) {
       console.error('Failed to fetch loyalty card:', e)
@@ -2204,6 +2221,8 @@ export default function App(){
         userId: currentUser?.id || null,
         username: selectedSeller || (isAdmin ? 'admin' : currentUser?.username || 'Unknown')
       }
+      // Include the loyalty apply flag so server can force-apply if allowed
+      if (applyLoyaltyToCheckout) payload.applyLoyalty = true;
 
       // Handle online checkout
       if (isOnline) {
@@ -6175,6 +6194,40 @@ export default function App(){
                 <div>Subtotal</div>
                 <div>{formatCurrency0(cartTotal)}</div>
               </div>
+              {/* Loyalty preview */}
+              <div style={{marginTop:8, borderTop:'1px dashed var(--border)', paddingTop:8}}>
+                {selectedCustomer && selectedCustomer.loyalty && selectedCustomer.loyalty.cardIssued ? (
+                  <div>
+                    <div style={{display:'flex', justifyContent:'space-between', gap:8}}>
+                      <div>
+                        <strong>{selectedCustomer.loyalty.cardNumber || 'Loyalty Card'}</strong>
+                        <div style={{fontSize:12,color:'#666'}}>{selectedCustomer.loyalty.remainingUses || 0} uses left</div>
+                      </div>
+                      <div style={{textAlign:'right'}}>{formatCurrency0(selectedCustomer.loyalty.discountAmount || 3000)}</div>
+                    </div>
+                      <div style={{marginTop:8, display:'flex', gap:8, alignItems:'center'}}>
+                      <button className="btn-primary" onClick={() => {
+                        const subtotal = cartTotal;
+                        const percentDiscount = discount || 0;
+                        const pctDiscountAmount = Math.round(subtotal * (percentDiscount / 100));
+                        const afterDiscount = subtotal - pctDiscountAmount;
+                        const cardAmount = (selectedCustomer.loyalty && selectedCustomer.loyalty.discountAmount) ? selectedCustomer.loyalty.discountAmount : 3000;
+                        const discountToApply = Math.min(cardAmount, Math.round(afterDiscount));
+                        setPreviewLoyaltyDiscount(discountToApply);
+                        setIsLoyaltyPreviewed(true);
+                        showNotification('Loyalty discount preview applied', 'success');
+                      }} disabled={!cart || cart.length===0}>Preview Loyalty</button>
+                      <button className="btn-secondary" onClick={() => { setPreviewLoyaltyDiscount(0); setIsLoyaltyPreviewed(false); setApplyLoyaltyToCheckout(false); }} disabled={!isLoyaltyPreviewed}>Clear Preview</button>
+                      <label style={{display:'inline-flex', alignItems:'center', gap:6, marginLeft:8}}>
+                        <input type="checkbox" checked={applyLoyaltyToCheckout} onChange={(e) => setApplyLoyaltyToCheckout(e.target.checked)} />
+                        <small style={{fontSize:12}}>Apply on checkout</small>
+                      </label>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{color:'#666'}}>No loyalty card available for selected customer</div>
+                )}
+              </div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
                 <div>Discount ({discount}%)</div>
                 <div>{formatCurrency0((cartTotal * (discount/100)) || 0)}</div>
@@ -6185,7 +6238,15 @@ export default function App(){
               </div>
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginTop:10, fontWeight:700}}>
                 <div>Grand Total</div>
-                <div>{formatCurrency0(Math.round((cartTotal - (cartTotal * (discount/100))) + ((cartTotal - (cartTotal * (discount/100))) * (taxRate/100))))}</div>
+                {(() => {
+                  const subtotal = cartTotal;
+                  const discountAmount = subtotal * (discount / 100);
+                  const afterDiscount = subtotal - discountAmount;
+                  const tax = afterDiscount * (taxRate / 100);
+                  const grand = Math.round(afterDiscount + tax);
+                  const previewTotal = isLoyaltyPreviewed ? Math.max(0, grand - (previewLoyaltyDiscount || 0)) : grand;
+                  return isLoyaltyPreviewed ? (<div><span style={{textDecoration:'line-through', color:'#888', marginRight:8}}>{formatCurrency0(grand)}</span><span>{formatCurrency0(previewTotal)}</span></div>) : (<div>{formatCurrency0(grand)}</div>)
+                })()}
               </div>
               <div style={{marginTop:12, display:'flex', gap:8}}>
                 <button className="btn-primary" onClick={checkout} disabled={cart.length === 0}>Complete Sale</button>
