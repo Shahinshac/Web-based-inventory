@@ -861,7 +861,7 @@ app.post('/api/customers', async (req, res) => {
     const { name, phone, address, gstin, place, userId, username } = req.body;
     
     // Validate customer data
-    const customerData = { name, phone, address, gstin };
+    const customerData = { name, phone, address, gstin, place };
     const validationErrors = validateCustomer(customerData);
     if (validationErrors.length > 0) {
       return res.status(400).json({ error: validationErrors.join(', ') });
