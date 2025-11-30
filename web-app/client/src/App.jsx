@@ -4171,7 +4171,7 @@ export default function App(){
                   setSelectedCustomer(cust);
                   }}>
                   <option value="">Walk-in Customer</option>
-                  {customers.map(c=> <option key={c.id} value={c.id}>{c.name}</option>)}
+                  {customers.map(c=> <option key={c.id} value={c.id}>{c.name}{c.place ? ` — ${c.place}` : ''}</option>)}
                   </select>
                     <button onClick={()=>{ setShowAddCustomer(true); }} type="button" className="customer-add-btn">➕ Add</button>
                     {/* Loyalty card view removed */}
