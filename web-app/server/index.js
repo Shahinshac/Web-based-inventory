@@ -409,7 +409,9 @@ app.post('/api/checkout', async (req, res) => {
       subtotal: bill.subtotal,
       discountPercent: bill.discountPercent,
       discountAmount: bill.discountAmount,
-      afterDiscount: bill.afterDiscount,
+      // Attach company phone to bill (use env fallback)
+      bill.companyPhone = process.env.COMPANY_PHONE || '7594012761';
+
       gstAmount: bill.gstAmount,
       grandTotal: bill.grandTotal,
       profit: bill.totalProfit,
@@ -938,6 +940,7 @@ app.get('/api/invoices', async (req, res) => {
       created_at: bill.billDate,
       date: bill.billDate,
       createdByUsername: bill.createdByUsername || 'Unknown',
+      companyPhone: bill.companyPhone || process.env.COMPANY_PHONE || '7594012761',
       billNumber: bill.billNumber || bill._id.toString()
     }));
     
@@ -945,6 +948,32 @@ app.get('/api/invoices', async (req, res) => {
   } catch (e) {
     logger.error(e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin endpoint: Update company phone in all invoices
+app.post('/api/admin/update-company-phone', async (req, res) => {
+  try {
+    const { adminUsername, adminPassword, companyPhone } = req.body;
+    if (!adminUsername || !adminPassword || !companyPhone) return res.status(400).json({ error: 'adminUsername, adminPassword and companyPhone are required' });
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+    const match = await bcrypt.compare(adminPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
+
+    // Validate phone format (basic validation)
+    const normalizedPhone = String(companyPhone).trim();
+    const phoneRegex = /^[0-9+\-()\s]{6,30}$/;
+    if (!phoneRegex.test(normalizedPhone)) return res.status(400).json({ error: 'Invalid phone number format' });
+
+    // Update all bills
+    const result = await db.collection('bills').updateMany({}, { $set: { companyPhone: normalizedPhone } });
+    await logAudit(db, 'ADMIN_UPDATE_COMPANY_PHONE', admin._id.toString(), admin.username, { companyPhone, matched: result.matchedCount, modified: result.modifiedCount });
+    res.json({ success: true, message: `Updated ${result.modifiedCount} invoices with companyPhone ${companyPhone}` });
+  } catch (e) {
+    logger.error('Update company phone failed', e);
+    res.status(500).json({ error: 'Failed to update companyPhone', details: e.message });
   }
 });
 
@@ -1015,7 +1044,7 @@ app.get('/public/invoice/:token', async (req, res) => {
     res.set('Content-Type', 'text/html');
     const companySnapshot = entry.companySnapshot || {};
     const companyName = companySnapshot.name || invoice.companyName || process.env.COMPANY_NAME || 'My Shop';
-    const companyPhone = companySnapshot.phone || invoice.companyPhone || process.env.COMPANY_PHONE || '';
+    const companyPhone = companySnapshot.phone || invoice.companyPhone || process.env.COMPANY_PHONE || '7594012761';
     const companyAddress = companySnapshot.address || invoice.companyAddress || process.env.COMPANY_ADDRESS || '';
     const companyEmail = companySnapshot.email || invoice.companyEmail || process.env.COMPANY_EMAIL || '';
     const companyGSTIN = companySnapshot.gstin || invoice.companyGst || process.env.COMPANY_GSTIN || '';
@@ -1068,9 +1097,9 @@ app.get('/public/invoice/:token', async (req, res) => {
             <div class="customer">
               <div>
                 <div><strong>Customer</strong></div>
-                <div>${invoice.customerName || invoice.customer || 'Walk-in'}</div>
-                ${invoice.customerPhone ? `<div class="small">Phone: ${invoice.customerPhone}</div>` : ''}
-                ${invoice.customerAddress ? `<div class="small">${invoice.customerAddress}</div>` : ''}
+                <div>${invoice.customerName || invoice.customer || invoice.customer_name || 'Walk-in'}</div>
+                ${ (invoice.customerPhone || invoice.customer_phone) ? `<div class="small">Phone: ${invoice.customerPhone || invoice.customer_phone}</div>` : '' }
+                ${ (invoice.customerAddress || invoice.customer_address) ? `<div class="small">${invoice.customerAddress || invoice.customer_address}</div>` : '' }
               </div>
               <div style="text-align:right">
                 <div><strong class="small">Salesperson</strong></div>

@@ -212,6 +212,12 @@ VITE_ADMIN_PASSWORD=YourSecurePasswordHere
 If you have existing user or product photos saved as relative paths or DB-backed 'db:<id>' entries, you can convert them into fully-qualified server-backed URLs by calling the admin migration endpoint. This will rewrite the `photo` field on existing users and products to use the stable API endpoints.
 
 POST /api/admin/migrate-photo-urls
+
+POST /api/admin/update-company-phone
+   - Description: Update the `companyPhone` field across all existing bills/invoices in the database.
+   - Request Body: { adminUsername, adminPassword, companyPhone }
+   - Response: { success: true, message: 'Updated X invoices with companyPhone Y' }
+   - Notes: Requires admin credentials (username and password). The endpoint will audit the change.
 - Body (JSON): { "adminUsername": "admin", "adminPassword": "your_admin_password" }
 - Response: { success: true, usersUpdated: <n>, productsUpdated: <m> }
 

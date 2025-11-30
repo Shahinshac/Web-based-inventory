@@ -42,6 +42,10 @@
 3. **Deploy frontend to Vercel** (see DEPLOYMENT.md)
 4. **Test your deployment**
 5. **Update admin password** (important for security!)
+6. **(Optional) Update historical invoices company phone number**
+   - You can update all existing invoices in the database to use a new `companyPhone` via either:
+     - the admin API: `POST /api/admin/update-company-phone` with JSON { adminUsername, adminPassword, companyPhone }
+     - or using the server script locally: `npm run update-company-phone -- 7594012761` (ensure MONGODB_URI and DB_NAME are set in environment if required)
 
 ## Need Help?
 

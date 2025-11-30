@@ -55,7 +55,7 @@ export default function App(){
   const [companyInfo, setCompanyInfo] = useState({
     name: '26:07 Electronics',
     address: 'Electronics Plaza, Tech Street, City - 560001',
-    phone: '+91 9876543210',
+    phone: '7594012761',
     email: 'support@2607electronics.com',
     gstin: '29AABCU9603R1ZX',
     logo: '⚡'
@@ -5761,11 +5761,11 @@ export default function App(){
               <div className="bill-info">
                 <p><strong>Bill No:</strong> {lastBill.billNumber}</p>
                 <p><strong>Date:</strong> {new Date().toLocaleString()}</p>
-                <p><strong>Customer:</strong> {lastBill.customerName}</p>
+                <p><strong>Customer:</strong> {lastBill.customer_name || lastBill.customerName || 'Walk-in'}</p>
                 {lastBill.customerId && (
                   {/* Loyalty feature removed */}
                 )}
-                {lastBill.customerPhone && <p><strong>Phone:</strong> {lastBill.customerPhone}</p>}
+                {(lastBill.customerPhone || lastBill.customer_phone) && <p><strong>Phone:</strong> {lastBill.customerPhone || lastBill.customer_phone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>
 
@@ -6031,11 +6031,19 @@ export default function App(){
           <div className="cart-sidebar-backdrop" onClick={() => setCartOpen(false)} />
           <aside className={`cart-sidebar ${cartOpen ? 'open' : 'closed'}`} role="dialog" aria-label="Shopping cart drawer">
             <div className="cart-sidebar-header">
-              <div style={{display:'flex', alignItems:'center', gap:8}}>
-                <h3 style={{margin:0, fontSize: '18px'}}>Cart</h3>
+              <div style={{display:'flex', flexDirection:'column', gap:6}}>
+                <div style={{display:'flex', alignItems:'center', gap:10}}>
+                  <h3 style={{margin:0, fontSize: '18px'}}>Cart</h3>
+                  <div style={{color:'#6b7280', fontSize:13}}>• {cart.length} items</div>
+                </div>
+                <div style={{display:'flex', alignItems:'center', gap:12, color:'#6b7280', fontSize:13}}>
+                  <div>Customer: <strong style={{color:'#111'}}>{selectedCustomer?.name || 'Walk-in'}</strong></div>
+                  <div>Sales: <strong style={{color:'#111'}}>{selectedSeller || currentUser?.name || currentUser?.username || '—'}</strong></div>
+                </div>
               </div>
               <div style={{display:'flex', alignItems:'center', gap:8}}>
                 <button className="btn-secondary" onClick={() => setCartOpen(false)}>Close</button>
+                <button className="btn-secondary" onClick={() => { setCart([]); }}>Clear</button>
               </div>
             </div>
             <div className="cart-sidebar-content">
@@ -6052,9 +6060,15 @@ export default function App(){
                         )}
                       </div>
                       <div style={{flex:1, minWidth:0}}>
-                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                          <strong style={{fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{it.name}</strong>
-                          <small>{formatCurrency0(it.price)}</small>
+                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
+                          <div style={{flex:1, minWidth:0}}>
+                            <strong style={{fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{it.name}</strong>
+                            <div style={{color:'#6b7280', fontSize:12}}>{prod?.hsnCode || ''}</div>
+                          </div>
+                          <div style={{textAlign:'right'}}>
+                            <div style={{fontWeight:700}}>{formatCurrency0(it.price)}</div>
+                            <div style={{color:'#6b7280', fontSize:12}}>{formatCurrency0(it.price * it.quantity)}</div>
+                          </div>
                         </div>
                         <div style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
                           <button className="qty-btn qty-dec" onClick={() => decreaseCartQty(it.productId)}>-</button>
@@ -6063,7 +6077,6 @@ export default function App(){
                           <button className="qty-btn remove-btn" onClick={() => removeFromCart(it.productId)} style={{marginLeft:'auto'}}><Icon name="trash" size={14}/></button>
                         </div>
                       </div>
-                      <div style={{marginLeft:12}}>{formatCurrency0(it.price * it.quantity)}</div>
                     </li>
                   )
                 })}
