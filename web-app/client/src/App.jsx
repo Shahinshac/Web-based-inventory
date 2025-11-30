@@ -177,7 +177,9 @@ export default function App(){
   const [showMobileMore, setShowMobileMore] = useState(false);
   // Mobile sidebar overlay (no collapse toggle — sidebar is always expanded)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(()=>{ try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch(e){ return false } })
+  // Force the sidebar to be expanded by default. We persist this expansion by
+  // clearing any legacy `sidebarCollapsed` localStorage entry and not reading it.
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -210,6 +212,10 @@ export default function App(){
 
   // Update body class when collapsing sidebar so CSS can react to layout changes
   useEffect(() => {
+    // Ensure any legacy collapsed state is removed from localStorage so new
+    // default is always expanded for all users after this change.
+    try { localStorage.removeItem('sidebarCollapsed') } catch (e) {}
+
     try {
       if (sidebarCollapsed) document.body.classList.add('sidebar-collapsed')
       else document.body.classList.remove('sidebar-collapsed')
@@ -222,6 +228,11 @@ export default function App(){
     trackUserInteraction('navigation', `tab_${newTab}`);
     trackPageView(`${newTab} Tab`);
   };
+
+  // Ensure legacy body class is removed on first mount so the sidebar is visible
+  useEffect(() => {
+    try { document.body.classList.remove('sidebar-collapsed') } catch (e) {}
+  }, []);
 
   // Permission helper functions
   const canViewProfit = () => {

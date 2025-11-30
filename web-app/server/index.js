@@ -5,6 +5,15 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const bcrypt = require('bcrypt');
+const fs = require('fs').promises;
+const fsSync = require('fs');
+const http = require('http');
+const https = require('https');
+const crypto = require('crypto');
+// DB connector & utility
+const { connectDB, getDB, closeDB } = require('./db');
+const { ObjectId } = require('mongodb');
+const logger = require('./logger');
 // OTP functionality and email-sending helpers are no longer used in this
 // deployment. The previous OTP endpoints, the email-send flow and related
 // helpers have been removed to keep the server lean and avoid unused code.
@@ -678,7 +687,10 @@ app.post('/api/products/:id/photo', upload.single('photo'), async (req, res) => 
     const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     let photoUrl = `${base}/api/products/${id}/photo`;
 
-    if (String(req.query.storage || '').toLowerCase() === 'db') {
+    // Default photo storage: DB unless explicitly requested 'fs'
+    const storageMode = String(req.query.storage || '').toLowerCase();
+    const useDbStorage = (storageMode !== 'fs');
+    if (useDbStorage) {
       // Read file into buffer, insert into product_images collection
       const buffer = await fs.readFile(req.file.path);
       const imgDoc = {
@@ -1848,7 +1860,9 @@ app.post('/api/users/:id/photo', upload.single('photo'), async (req, res) => {
     // Build fully-qualified photo URL so clients can use it directly
     const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     let photoUrl = `${base}/api/users/${id}/photo`;
-    if (String(req.query.storage || '').toLowerCase() === 'db') {
+    const storageMode = String(req.query.storage || '').toLowerCase();
+    const useDbStorage = (storageMode !== 'fs'); // default to DB
+    if (useDbStorage) {
       const buffer = await fs.readFile(req.file.path);
       const imgDoc = {
         userId: new ObjectId(id),
@@ -2006,6 +2020,61 @@ app.post('/api/admin/migrate-photo-urls', async (req, res) => {
   } catch (e) {
     logger.error('Migrate photo URLs error:', e);
     res.status(500).json({ error: e.message });
+  }
+});
+
+// Admin endpoint: Migrate filesystem-backed photos into DB storage
+app.post('/api/admin/migrate-photos-to-db', async (req, res) => {
+  try {
+    const { adminUsername, adminPassword, deleteFiles } = req.body;
+    if (!adminUsername || !adminPassword) return res.status(400).json({ error: 'Admin credentials required' });
+    const db = getDB();
+    const admin = await db.collection('users').findOne({ username: adminUsername.toLowerCase(), role: 'admin' });
+    if (!admin) return res.status(403).json({ error: 'Admin user not found' });
+    const match = await bcrypt.compare(adminPassword, admin.password);
+    if (!match) return res.status(401).json({ error: 'Invalid admin password' });
+
+    const base = process.env.PUBLIC_BASE_URL || `http://localhost:${process.env.PORT || 4000}`;
+
+    let productsUpdated = 0;
+    const products = await db.collection('products').find({ $or: [ { photoStorage: { $ne: 'db' } }, { photoFilename: { $exists: true } } ] }).toArray();
+    for (const p of products) {
+      try {
+        const filename = p.photoFilename || (p.photo && path.basename(p.photo));
+        if (!filename) continue;
+        const photoPath = path.join(__dirname, 'uploads', 'products', filename);
+        if (!fsSync.existsSync(photoPath)) continue;
+        const buffer = await fs.readFile(photoPath);
+        const imgDoc = { productId: p._id, filename, contentType: 'image/jpeg', data: buffer, uploadedAt: new Date() };
+        const imgRes = await db.collection('product_images').insertOne(imgDoc);
+        await db.collection('products').updateOne({ _id: p._id }, { $set: { photo: `${base}/api/products/${p._id.toString()}/photo`, photoStorage: 'db', photoDbId: imgRes.insertedId.toString() } });
+        if (deleteFiles) try { await fs.unlink(photoPath); } catch (e) { /* ignore */ }
+        productsUpdated++;
+      } catch (e) { logger.warn('Failed to migrate product photo:', e.message); continue; }
+    }
+
+    let usersUpdated = 0;
+    const users = await db.collection('users').find({ $or: [ { photoStorage: { $ne: 'db' } }, { photoFilename: { $exists: true } } ] }).toArray();
+    for (const u of users) {
+      try {
+        const filename = u.photoFilename || (u.photo && path.basename(u.photo));
+        if (!filename) continue;
+        const photoPath = path.join(__dirname, 'uploads', 'users', filename);
+        if (!fsSync.existsSync(photoPath)) continue;
+        const buffer = await fs.readFile(photoPath);
+        const imgDoc = { userId: u._id, filename, contentType: 'image/jpeg', data: buffer, uploadedAt: new Date() };
+        const imgRes = await db.collection('user_images').insertOne(imgDoc);
+        await db.collection('users').updateOne({ _id: u._id }, { $set: { photo: `${base}/api/users/${u._id.toString()}/photo`, photoStorage: 'db', photoDbId: imgRes.insertedId.toString() } });
+        if (deleteFiles) try { await fs.unlink(photoPath); } catch (e) { /* ignore */ }
+        usersUpdated++;
+      } catch (e) { logger.warn('Failed to migrate user photo:', e.message); continue; }
+    }
+
+    await logAudit(db, 'ADMIN_MIGRATE_PHOTOS_TO_DB', admin._id.toString(), admin.username, { productsUpdated, usersUpdated, deleteFiles: !!deleteFiles });
+    res.json({ success: true, message: `Migrated ${productsUpdated} product photos and ${usersUpdated} user photos to DB` });
+  } catch (e) {
+    logger.error('Migrate photos to DB failed', e);
+    res.status(500).json({ error: 'Failed to migrate photos to DB', details: e.message });
   }
 });
 

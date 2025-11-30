@@ -221,5 +221,14 @@ POST /api/admin/update-company-phone
 - Body (JSON): { "adminUsername": "admin", "adminPassword": "your_admin_password" }
 - Response: { success: true, usersUpdated: <n>, productsUpdated: <m> }
 
-Run this once on the backend after deploying to ensure old images are consistently referenced by the frontend across devices.
+   Run this once on the backend after deploying to ensure old images are consistently referenced by the frontend across devices.
+
+   If you want to fully migrate filesystem-backed photos into DB storage (recommended), use the new CLI:
+
+   ```
+   cd web-app/server
+   npm run migrate-photos-to-db -- --delete-files
+   ```
+
+   This will insert images into `product_images` and `user_images` collections, update `photo`, `photoDbId` and `photoStorage` fields, and optionally delete filesystem copies when `--delete-files` is used. Use `--dry-run` to preview changes.
 
