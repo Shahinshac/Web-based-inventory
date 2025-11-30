@@ -1014,7 +1014,7 @@ app.get('/public/invoice/:token', async (req, res) => {
     // Public printable invoice page (styling similar to printable bill)
     res.set('Content-Type', 'text/html');
     const companySnapshot = entry.companySnapshot || {};
-    const companyName = companySnapshot.name || invoice.companyName || process.env.COMPANY_NAME || 'My Inventory';
+    const companyName = companySnapshot.name || invoice.companyName || process.env.COMPANY_NAME || 'My Shop';
     const companyPhone = companySnapshot.phone || invoice.companyPhone || process.env.COMPANY_PHONE || '';
     const companyAddress = companySnapshot.address || invoice.companyAddress || process.env.COMPANY_ADDRESS || '';
     const companyEmail = companySnapshot.email || invoice.companyEmail || process.env.COMPANY_EMAIL || '';

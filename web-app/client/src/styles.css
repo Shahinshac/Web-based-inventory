@@ -66,6 +66,20 @@ html, body {
   --header-height: 64px; /* smaller header so content below is visible */
 }
 
+/* Collapse sidebar globally when the body has the sidebar-collapsed class */
+body.sidebar-collapsed { --sidebar-width: 72px; }
+
+.sidebar.collapsed .logo-text { display: none; opacity: 0; width: 0; height: 0; overflow: hidden }
+.sidebar.collapsed .sidebar-nav button { justify-content: center; padding-left: 0; padding-right: 0 }
+.sidebar.collapsed .sidebar-nav button span { display: none }
+.sidebar.collapsed .sidebar-bottom .profile-meta { display: none }
+.sidebar.collapsed .sidebar-logo .logo-mark { margin-right: 0 }
+
+/* Header cart button */
+.header-cart-btn { border: none; background: transparent; color: var(--header-text); display: inline-flex; align-items: center; gap: 8px; position: relative; padding: 6px 8px; border-radius: 8px }
+.header-cart-btn:hover { background: rgba(255,255,255,0.05) }
+.header-cart-btn .cart-badge { position: absolute; top: -6px; right: -6px; background: var(--accent-danger); color: white; border-radius: 999px; padding: 3px 6px; font-size: 12px; font-weight: 800 }
+
 /* Hide visible scrollbars (keep natural scroll behavior) - cleaner UI while preserving scrolling */
 /* This prevents ugly thin scrollbars from showing but doesn't disable scrolling. */
 html, body, .app, .left, .products, .cart, .right {

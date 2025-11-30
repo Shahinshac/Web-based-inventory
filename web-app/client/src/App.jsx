@@ -174,6 +174,7 @@ export default function App(){
   const [showMobileMore, setShowMobileMore] = useState(false);
   // Mobile sidebar overlay (no collapse toggle — sidebar is always expanded)
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false)
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(()=>{ try { return localStorage.getItem('sidebarCollapsed') === 'true' } catch(e){ return false } })
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [selectedSeller, setSelectedSeller] = useState(null);
@@ -203,6 +204,14 @@ export default function App(){
       console.warn('VITE_ADMIN_PASSWORD is not set — local admin fallback is disabled. Use server-auth or set VITE_ADMIN_PASSWORD for local testing.');
     }
   }, []);
+
+  // Update body class when collapsing sidebar so CSS can react to layout changes
+  useEffect(() => {
+    try {
+      if (sidebarCollapsed) document.body.classList.add('sidebar-collapsed')
+      else document.body.classList.remove('sidebar-collapsed')
+    } catch(e) {}
+  }, [sidebarCollapsed])
 
   // Helper function to track tab changes
   const handleTabChange = (newTab) => {
@@ -2688,6 +2697,9 @@ export default function App(){
     // Loyalty messages removed
 
     msg += `\n\nThank you!\n${companyInfo.name}`;
+    // Include salesperson name for reference
+    const salespersonName = selectedSeller || currentUser?.name || currentUser?.username || 'Salesperson';
+    if (salespersonName) msg += `\nSalesperson: ${salespersonName}`;
     return encodeURIComponent(msg);
   }
 
@@ -3823,6 +3835,16 @@ export default function App(){
           {/* Mobile menu to open sidebar overlay on small screens */}
           <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
           <div style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto'}}>
+            {/* Sidebar collapse toggle */}
+            <button aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              className="icon-btn" onClick={() => { setSidebarCollapsed(s => { const nb = !s; try { localStorage.setItem('sidebarCollapsed', nb ? 'true' : 'false'); } catch(e){}; return nb }) }} style={{marginLeft: 8}}>
+              {sidebarCollapsed ? '☰' : '≡'}
+            </button>
+            {/* Cart toggle (header) */}
+            <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{marginLeft:8}}>
+              <Icon name="cart" />
+              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+            </button>
             {/* Show time prominently here (replacing header user controls) */}
             <div className="header-time" aria-hidden={!indiaTime}>
               <div className="header-time-clock">{indiaTime}</div>
@@ -3837,7 +3859,7 @@ export default function App(){
       </header>
       <main>
         {/* Sidebar - left navigation and profile */}
-        <aside className={`sidebar ${mobileSidebarOpen ? 'mobile-open' : ''}`} aria-label="Main navigation">
+        <aside className={`sidebar ${mobileSidebarOpen ? 'mobile-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Main navigation">
           <div className="sidebar-inner">
             <div className="sidebar-top">
               <div className="sidebar-logo">
@@ -3858,7 +3880,7 @@ export default function App(){
               </nav>
             </div>
             
-            {/* fixed sidebar - collapse toggle removed per user request */}
+            {/* Sidebar is collapsable — toggle from header or mobile menu */}
 
             <div className="sidebar-bottom">
               <div className="profile-area">
@@ -4107,7 +4129,7 @@ export default function App(){
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap: 8}}>
                 <h2 style={{margin:0, fontSize: '18px'}}>Cart</h2>
                 <div style={{display:'flex', alignItems:'center', gap:10}}>
-                  <button className="btn-primary" onClick={()=>setCartOpen(true)}>Open Cart</button>
+                  {/* Cart is toggled from header; removed duplicate open button from POS */}
                 </div>
               </div>
               
@@ -4133,12 +4155,9 @@ export default function App(){
                 {cart.length === 0 ? (
                   <div style={{color:'#666'}}>Your cart is empty. Use the products list to add items.</div>
                 ) : (
-                  <div style={{display:'flex', alignItems:'center', gap:8}}>
-                    <div style={{fontWeight:700}}>{cartCount} items</div>
-                    <div style={{fontWeight:700}}>{formatCurrency0(cartTotal)}</div>
-                    <div style={{flex:1}}></div>
-                    <button className="btn-primary" onClick={()=>setCartOpen(true)}>Open Cart</button>
-                  </div>
+                    <div style={{display:'flex', alignItems:'center', gap:8}}>
+                      {/* compact cart preview removed — open full cart via header */}
+                    </div>
                 )}
               </div>
               {/* Items are now shown in the Cart Drawer (Open Cart) */}
@@ -6004,7 +6023,7 @@ export default function App(){
 
       {/* Copyright Footer removed as requested */}
       {/* Floating Cart Toggle */}
-      {/* Floating cart toggle removed; use 'Open Cart' button inline instead to control cart */}
+      {/* Floating cart toggle removed; use header cart toggle to open/close cart */}
 
       {/* Cart Drawer overlay */}
       {cartOpen && (
