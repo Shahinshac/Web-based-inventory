@@ -863,6 +863,11 @@ ul:not(.products):not(.cart) li:hover {
   box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
 }
 
+/* Place suggestions dropdown */
+.place-suggestions { border-radius: 6px; overflow: hidden; }
+.place-suggestions div { padding: 8px 12px; cursor: pointer; color: #222; font-size: 13px; }
+.place-suggestions div:hover { background: #f3f4f6; }
+
 .modal-actions {
   display: flex;
   gap: 10px;

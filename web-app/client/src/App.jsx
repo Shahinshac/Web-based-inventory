@@ -41,7 +41,10 @@ export default function App(){
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [showAddCustomer, setShowAddCustomer] = useState(false)
   const [newProduct, setNewProduct] = useState({name:'', quantity:0, price:0, costPrice:0, hsnCode:'9999', minStock:10, serialNo:'', barcode:''})
-  const [newCustomer, setNewCustomer] = useState({name:'', phone:'', address:'', gstin:''})
+  const [newCustomer, setNewCustomer] = useState({name:'', phone:'', address:'', place:'', gstin:''})
+  const [placeSuggestions, setPlaceSuggestions] = useState([]);
+  const [placeLoading, setPlaceLoading] = useState(false);
+  const placeDebounceRef = useRef(null);
   // Disable the full-screen loading overlay by default so users enter the app
   // immediately. The app will still fetch data in background and show localized
   // loading indicators where appropriate.
@@ -2852,7 +2855,7 @@ export default function App(){
         showNotification(`✓ Customer "${newCustomer.name}" added successfully!`, 'success');
         addActivity('Customer Added', newCustomer.name);
         setShowAddCustomer(false); 
-        setNewCustomer({name:'', phone:'', address:'', state:'Same', gstin:''}); 
+        setNewCustomer({name:'', phone:'', address:'', place:'', state:'Same', gstin:''}); 
         // Refresh customer list and auto-select the newly created customer so
         // users can continue the checkout flow without manually searching.
         await fetchCustomers(); 
@@ -2873,6 +2876,36 @@ export default function App(){
       console.error('Add customer error:', e)
       showNotification('Failed to add customer. Please try again.', 'error');
     }
+  }
+
+  // Handle place autocomplete for Add Customer modal
+  async function fetchPlaceOptions(query) {
+    if (!query || query.trim().length < 2) { setPlaceSuggestions([]); return; }
+    try {
+      setPlaceLoading(true);
+      const q = encodeURIComponent(query);
+      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${q}&limit=8`;
+      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      if (!res.ok) { setPlaceSuggestions([]); setPlaceLoading(false); return; }
+      const arr = await res.json();
+      const suggestions = (arr || []).map(a => ({ display_name: a.display_name || (a.address && a.address.city) || '', lat: a.lat, lon: a.lon }));
+      setPlaceSuggestions(suggestions);
+    } catch (e) {
+      console.warn('Place lookup failed', e);
+      setPlaceSuggestions([]);
+    } finally {
+      setPlaceLoading(false);
+    }
+  }
+
+  function handlePlaceChange(value) {
+    setNewCustomer({...newCustomer, place: value});
+    if (placeDebounceRef.current) clearTimeout(placeDebounceRef.current);
+    if (!value || value.trim().length < 2) {
+      setPlaceSuggestions([]);
+      return;
+    }
+    placeDebounceRef.current = setTimeout(() => fetchPlaceOptions(value.trim()), 400);
   }
 
   // Handle barcode scan result
@@ -3835,11 +3868,7 @@ export default function App(){
           {/* Mobile menu to open sidebar overlay on small screens */}
           <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
           <div style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto'}}>
-            {/* Sidebar collapse toggle */}
-            <button aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'} title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-              className="icon-btn" onClick={() => { setSidebarCollapsed(s => { const nb = !s; try { localStorage.setItem('sidebarCollapsed', nb ? 'true' : 'false'); } catch(e){}; return nb }) }} style={{marginLeft: 8}}>
-              {sidebarCollapsed ? '☰' : '≡'}
-            </button>
+            {/* Sidebar collapse toggle removed per request */}
             {/* Cart toggle (header) */}
             <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{marginLeft:8}}>
               <Icon name="cart" />
@@ -4722,6 +4751,7 @@ export default function App(){
                   <th>Name</th>
                   <th>Phone</th>
                   <th>GSTIN</th>
+                  <th>Place</th>
                   <th>Address</th>
                   {/* Loyalty column removed */}
                   <th>Actions</th>
@@ -4734,6 +4764,7 @@ export default function App(){
                     <td>{c.name}</td>
                     <td>{c.phone}</td>
                     <td style={{fontFamily:'monospace', fontSize:'0.9em'}}>{c.gstin || 'N/A'}</td>
+                    <td style={{maxWidth:'200px', color:'#444', fontSize:13}}>{c.place || '—'}</td>
                     <td style={{maxWidth:'200px', overflow:'hidden', textOverflow:'ellipsis'}}>{c.address}</td>
                     {/* Loyalty column removed */}
                     <td>
@@ -5658,6 +5689,25 @@ export default function App(){
                   maxLength="15"
                 />
               </div>
+              <div className="form-group" style={{position:'relative'}}>
+                <label>Place</label>
+                <input
+                  type="text"
+                  value={newCustomer.place || ''}
+                  onChange={(e)=>handlePlaceChange(e.target.value)}
+                  placeholder="City, State, Country"
+                />
+                {placeLoading && <div style={{position:'absolute', right:12, top:38, fontSize:12, color:'#666'}}>Loading…</div>}
+                {placeSuggestions && placeSuggestions.length > 0 && (
+                  <div className="place-suggestions" style={{position:'absolute', left:0, right:0, zIndex:50, background:'#fff', border:'1px solid #e6e6e6', borderRadius:6, maxHeight:'220px', overflowY:'auto', boxShadow:'0 6px 20px rgba(0,0,0,0.08)'}}>
+                    {placeSuggestions.map((p, i) => (
+                      <div key={i} onClick={() => { setNewCustomer({...newCustomer, place: p.display_name}); setPlaceSuggestions([]); }} style={{padding:'8px 12px', cursor:'pointer', borderBottom:'1px solid #f5f5f5'}}>
+                        <div style={{fontSize:13}}>{p.display_name}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
               <div className="modal-actions">
                 <button type="submit" className="btn-primary">Add Customer</button>
                 <button type="button" onClick={()=>setShowAddCustomer(false)} className="btn-secondary">Cancel</button>
@@ -5675,6 +5725,7 @@ export default function App(){
             <div style={{marginBottom: '20px', padding: '15px', background: '#f7fafc', borderRadius: '8px'}}>
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                 <p><strong>Phone:</strong> {selectedCustomerHistory.phone}</p>
+                <p><strong>Place:</strong> {selectedCustomerHistory.place || '—'}</p>
                 <p><strong>GSTIN:</strong> {selectedCustomerHistory.gstin || 'N/A'}</p>
                 <p style={{gridColumn: '1 / -1'}}><strong>Address:</strong> {selectedCustomerHistory.address}</p>
               </div>
@@ -5765,6 +5816,7 @@ export default function App(){
                 {lastBill.customerId && (
                   {/* Loyalty feature removed */}
                 )}
+                {(lastBill.customerPlace || lastBill.customer_place) && <p><strong>Place:</strong> {lastBill.customerPlace || lastBill.customer_place}</p>}
                 {(lastBill.customerPhone || lastBill.customer_phone) && <p><strong>Phone:</strong> {lastBill.customerPhone || lastBill.customer_phone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>
