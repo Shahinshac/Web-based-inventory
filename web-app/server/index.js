@@ -409,9 +409,7 @@ app.post('/api/checkout', async (req, res) => {
       subtotal: bill.subtotal,
       discountPercent: bill.discountPercent,
       discountAmount: bill.discountAmount,
-      // Attach company phone to bill (use env fallback)
-      bill.companyPhone = process.env.COMPANY_PHONE || '7594012761';
-
+      companyPhone: bill.companyPhone || process.env.COMPANY_PHONE || '7594012761',
       gstAmount: bill.gstAmount,
       grandTotal: bill.grandTotal,
       profit: bill.totalProfit,
