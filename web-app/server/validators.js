@@ -86,6 +86,9 @@ function validateCustomer(customer) {
   if (customer.address && customer.address.length > 500) {
     errors.push('Address must be less than 500 characters');
   }
+  if (customer.place && customer.place.length > 200) {
+    errors.push('Place must be less than 200 characters');
+  }
   
   return errors;
 }
