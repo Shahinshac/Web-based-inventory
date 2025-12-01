@@ -361,14 +361,34 @@ export default function App(){
       setIsAuthenticated(true)
       const parsed = JSON.parse(storedUser)
       setCurrentUser(parsed)
-      // if login response contained an absolute/photo URL, prefer it
+      
+      // Load user photo from cache or server
       try {
         const uid = parsed && (parsed.id || parsed._id || parsed.userId)
-        if (parsed.photo && uid) {
-          setProfilePhoto(parsed.photo)
-          setLocalUserPhotos(u => ({ ...(u || {}), [uid]: parsed.photo }))
+        if (uid) {
+          // First check local cache
+          const cachedPhoto = localUserPhotos && localUserPhotos[uid]
+          if (cachedPhoto) {
+            setProfilePhoto(cachedPhoto)
+          } else if (parsed.photo) {
+            // Use photo from login response
+            setProfilePhoto(parsed.photo)
+            setLocalUserPhotos(u => ({ ...(u || {}), [uid]: parsed.photo }))
+          } else {
+            // Try to fetch from server
+            fetch(API(`/api/users/${uid}/photo`))
+              .then(res => {
+                if (res.ok) {
+                  const photoUrl = API(`/api/users/${uid}/photo`)
+                  setProfilePhoto(photoUrl)
+                  setLocalUserPhotos(u => ({ ...(u || {}), [uid]: photoUrl }))
+                }
+              })
+              .catch(e => console.log('No profile photo on server'))
+          }
         }
-      } catch(e) {}
+      } catch(e) { console.error('Profile photo load error:', e) }
+      
       const isAdminStored = (storedIsAdmin === 'true') || (storedRole === 'admin')
       setIsAdmin(isAdminStored)
       setUserRole(storedRole || 'cashier') // Default to cashier if no role stored
@@ -952,11 +972,14 @@ export default function App(){
         const res = await fetch(API('/api/stats'))
         if (res.ok) {
           const data = await res.json()
+          console.log('Stats fetched from server:', data)
           setStats(data)
           // Cache stats data
           if (window.offlineStorage) {
             await window.offlineStorage.saveSetting('stats', data)
           }
+        } else {
+          console.error('Failed to fetch stats, status:', res.status)
         }
       } else {
         // Load cached stats when offline
