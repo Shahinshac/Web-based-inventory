@@ -201,6 +201,7 @@ app.get('/api/customers', async (req, res) => {
       id: c._id.toString(),
       name: c.name,
       phone: c.phone,
+      pincode: c.pincode || '',
       place: c.place || '',
       address: c.address,
       state: c.state || 'Same',
@@ -258,6 +259,7 @@ app.post('/api/checkout', async (req, res) => {
     let customerPhone = null;
     let customerAddress = '';
     let customerPlace = '';
+    let customerPincode = '';
     if (customerId) {
       const customer = await db.collection('customers').findOne({ _id: new ObjectId(customerId) });
       if (customer) {
@@ -265,6 +267,7 @@ app.post('/api/checkout', async (req, res) => {
         customerPhone = customer.phone;
         customerAddress = customer.address || '';
         customerPlace = customer.place || '';
+        customerPincode = customer.pincode || '';
       }
     }
     
@@ -287,6 +290,7 @@ app.post('/api/checkout', async (req, res) => {
       customerAddress,
       customerState,
       customerPlace,
+      customerPincode,
       isSameState,
       discountPercent,
       paymentMode,
@@ -413,6 +417,7 @@ app.post('/api/checkout', async (req, res) => {
       customerName: bill.customerName,
       customerPhone: bill.customerPhone,
       customerPlace: bill.customerPlace || null,
+      customerPincode: bill.customerPincode || null,
       paymentMode: bill.paymentMode,
       items: bill.items.map(item => ({
         productName: item.productName,
@@ -870,7 +875,7 @@ app.get('/api/products/:id/photo', async (req, res) => {
 // Add Customer
 app.post('/api/customers', async (req, res) => {
   try {
-    const { name, phone, address, gstin, place, userId, username } = req.body;
+    const { name, phone, address, gstin, place, pincode, userId, username } = req.body;
     
     // Validate customer data
     const customerData = { name, phone, address, gstin, place };
@@ -887,6 +892,7 @@ app.post('/api/customers', async (req, res) => {
       phone: phone ? sanitizeObject(phone) : '',
       address: address ? sanitizeObject(address) : '',
       place: place ? sanitizeObject(place) : '',
+      pincode: pincode ? sanitizeObject(pincode) : '',
       gstin: gstin ? sanitizeObject(gstin) : '',
       // Loyalty functionality removed — do not set loyalty defaults
       purchasesCount: 0,
@@ -928,6 +934,7 @@ app.get('/api/invoices', async (req, res) => {
       customer_name: bill.customerName || 'Walk-in',
       customerPhone: bill.customerPhone || null,
       customerPlace: bill.customerPlace || bill.customer_place || null,
+      customerPincode: bill.customerPincode || bill.customer_pincode || null,
       customerAddress: bill.customerAddress || null,
       subtotal: bill.subtotal || 0,
       discountPercent: bill.discountPercent || 0,
@@ -1116,6 +1123,7 @@ app.get('/public/invoice/:token', async (req, res) => {
                 <div><strong>Customer</strong></div>
                 <div>${invoice.customerName || invoice.customer || invoice.customer_name || 'Walk-in'}</div>
                 ${ (invoice.customerPlace || invoice.customer_place) ? `<div class="small">Place: ${invoice.customerPlace || invoice.customer_place}</div>` : '' }
+                ${ (invoice.customerPincode || invoice.customer_pincode) ? `<div class="small">PIN: ${invoice.customerPincode || invoice.customer_pincode}</div>` : '' }
                 ${ (invoice.customerPhone || invoice.customer_phone) ? `<div class="small">Phone: ${invoice.customerPhone || invoice.customer_phone}</div>` : '' }
                 ${ (invoice.customerAddress || invoice.customer_address) ? `<div class="small">${invoice.customerAddress || invoice.customer_address}</div>` : '' }
               </div>

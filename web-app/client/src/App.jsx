@@ -41,7 +41,7 @@ export default function App(){
   const [showAddProduct, setShowAddProduct] = useState(false)
   const [showAddCustomer, setShowAddCustomer] = useState(false)
   const [newProduct, setNewProduct] = useState({name:'', quantity:0, price:0, costPrice:0, hsnCode:'9999', minStock:10, serialNo:'', barcode:''})
-  const [newCustomer, setNewCustomer] = useState({name:'', phone:'', address:'', place:'', gstin:''})
+  const [newCustomer, setNewCustomer] = useState({name:'', phone:'', address:'', place:'', pincode:'', gstin:''})
   const [placeSuggestions, setPlaceSuggestions] = useState([]);
   const [placeLoading, setPlaceLoading] = useState(false);
   const placeDebounceRef = useRef(null);
@@ -2866,7 +2866,7 @@ export default function App(){
         showNotification(`✓ Customer "${newCustomer.name}" added successfully!`, 'success');
         addActivity('Customer Added', newCustomer.name);
         setShowAddCustomer(false); 
-        setNewCustomer({name:'', phone:'', address:'', place:'', state:'Same', gstin:''}); 
+        setNewCustomer({name:'', phone:'', address:'', place:'', pincode:'', state:'Same', gstin:''}); 
         // Refresh customer list and auto-select the newly created customer so
         // users can continue the checkout flow without manually searching.
         await fetchCustomers(); 
@@ -2899,7 +2899,7 @@ export default function App(){
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) { setPlaceSuggestions([]); setPlaceLoading(false); return; }
       const arr = await res.json();
-      const suggestions = (arr || []).map(a => ({ display_name: a.display_name || (a.address && a.address.city) || '', lat: a.lat, lon: a.lon }));
+      const suggestions = (arr || []).map(a => ({ display_name: a.display_name || (a.address && a.address.city) || '', lat: a.lat, lon: a.lon, postcode: (a.address && (a.address.postcode || a.address.postcode)) || '' }));
       setPlaceSuggestions(suggestions);
     } catch (e) {
       console.warn('Place lookup failed', e);
@@ -5712,7 +5712,7 @@ export default function App(){
                 {placeSuggestions && placeSuggestions.length > 0 && (
                   <div className="place-suggestions" style={{position:'absolute', left:0, right:0, zIndex:50, background:'#fff', border:'1px solid #e6e6e6', borderRadius:6, maxHeight:'220px', overflowY:'auto', boxShadow:'0 6px 20px rgba(0,0,0,0.08)'}}>
                     {placeSuggestions.map((p, i) => (
-                      <div key={i} onClick={() => { setNewCustomer({...newCustomer, place: p.display_name}); setPlaceSuggestions([]); }} style={{padding:'8px 12px', cursor:'pointer', borderBottom:'1px solid #f5f5f5'}}>
+                      <div key={i} onClick={() => { setNewCustomer({...newCustomer, place: p.display_name, pincode: p.postcode || newCustomer.pincode}); setPlaceSuggestions([]); }} style={{padding:'8px 12px', cursor:'pointer', borderBottom:'1px solid #f5f5f5'}}>
                         <div style={{fontSize:13}}>{p.display_name}</div>
                       </div>
                     ))}
@@ -5737,6 +5737,7 @@ export default function App(){
               <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px'}}>
                 <p><strong>Phone:</strong> {selectedCustomerHistory.phone}</p>
                 <p><strong>Place:</strong> {selectedCustomerHistory.place || '—'}</p>
+                {selectedCustomerHistory.pincode && <p><strong>PIN:</strong> {selectedCustomerHistory.pincode}</p>}
                 <p><strong>GSTIN:</strong> {selectedCustomerHistory.gstin || 'N/A'}</p>
                 <p style={{gridColumn: '1 / -1'}}><strong>Address:</strong> {selectedCustomerHistory.address}</p>
               </div>
@@ -5746,6 +5747,10 @@ export default function App(){
                     {customerPurchases.length}
                   </div>
                   <div style={{fontSize: '12px', color: '#666'}}>Total Purchases</div>
+                </div>
+                <div className="form-group">
+                  <label>Pin / Postal Code</label>
+                  <input type="text" maxLength={10} placeholder="Enter Postal Code / PIN" value={newCustomer.pincode || ''} onChange={(e)=>setNewCustomer({...newCustomer, pincode: e.target.value})} />
                 </div>
                 <div style={{textAlign: 'center', padding: '10px', background: 'white', borderRadius: '8px', flex: 1}}>
                   <div style={{fontSize: '24px', fontWeight: 'bold', color: 'var(--accent-success)'}}>
@@ -5828,6 +5833,7 @@ export default function App(){
                   {/* Loyalty feature removed */}
                 )}
                 {(lastBill.customerPlace || lastBill.customer_place) && <p><strong>Place:</strong> {lastBill.customerPlace || lastBill.customer_place}</p>}
+                {(lastBill.customerPincode || lastBill.customer_pincode) && <p><strong>PIN:</strong> {lastBill.customerPincode || lastBill.customer_pincode}</p>}
                 {(lastBill.customerPhone || lastBill.customer_phone) && <p><strong>Phone:</strong> {lastBill.customerPhone || lastBill.customer_phone}</p>}
                 <p><strong>Payment Mode:</strong> {lastBill.paymentMode}</p>
               </div>

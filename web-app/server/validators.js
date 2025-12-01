@@ -89,6 +89,9 @@ function validateCustomer(customer) {
   if (customer.place && customer.place.length > 200) {
     errors.push('Place must be less than 200 characters');
   }
+  if (customer.pincode && !/^\d{6}$/.test(String(customer.pincode).trim())) {
+    errors.push('Invalid pincode format (expected 6 digits for India)');
+  }
   
   return errors;
 }
