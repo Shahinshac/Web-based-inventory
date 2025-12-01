@@ -2912,18 +2912,52 @@ export default function App(){
     }
   }
 
-  // Handle place autocomplete for Add Customer modal
+  // Handle place autocomplete for Add Customer modal using Google Maps Geocoding API
   async function fetchPlaceOptions(query) {
     if (!query || query.trim().length < 2) { setPlaceSuggestions([]); return; }
     try {
       setPlaceLoading(true);
-      const q = encodeURIComponent(query);
-      const url = `https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${q}&limit=8`;
-      const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+      const q = encodeURIComponent(query + ', India'); // Add India to get better results
+      
+      // Using Google Maps Geocoding API for more accurate Indian addresses and pincodes
+      const apiKey = 'AIzaSyBqWaIL0bWQlópez4B8ZVFfCIBJCQA0NU'; // Replace with your actual Google Maps API key
+      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${q}&key=${apiKey}&region=in&components=country:IN`;
+      
+      const res = await fetch(url);
       if (!res.ok) { setPlaceSuggestions([]); setPlaceLoading(false); return; }
-      const arr = await res.json();
-      const suggestions = (arr || []).map(a => ({ display_name: a.display_name || (a.address && a.address.city) || '', lat: a.lat, lon: a.lon, postcode: (a.address && (a.address.postcode || a.address.postcode)) || '' }));
-      setPlaceSuggestions(suggestions);
+      
+      const data = await res.json();
+      
+      if (data.status === 'OK' && data.results) {
+        const suggestions = data.results.slice(0, 8).map(result => {
+          // Extract pincode from address components
+          const postalCodeComponent = result.address_components.find(
+            comp => comp.types.includes('postal_code')
+          );
+          const pincode = postalCodeComponent ? postalCodeComponent.long_name : '';
+          
+          // Extract city/locality
+          const locality = result.address_components.find(
+            comp => comp.types.includes('locality') || comp.types.includes('administrative_area_level_2')
+          );
+          const city = locality ? locality.long_name : '';
+          
+          return {
+            display_name: result.formatted_address,
+            place: city || result.formatted_address.split(',')[0],
+            lat: result.geometry.location.lat,
+            lon: result.geometry.location.lng,
+            postcode: pincode,
+            full_address: result.formatted_address
+          };
+        });
+        
+        setPlaceSuggestions(suggestions);
+      } else {
+        // Fallback to simple geocoding if API fails or no results
+        console.warn('Google Maps API returned no results, status:', data.status);
+        setPlaceSuggestions([]);
+      }
     } catch (e) {
       console.warn('Place lookup failed', e);
       setPlaceSuggestions([]);
@@ -5760,8 +5794,31 @@ export default function App(){
                 {placeSuggestions && placeSuggestions.length > 0 && (
                   <div className="place-suggestions" style={{position:'absolute', left:0, right:0, zIndex:50, background:'#fff', border:'1px solid #e6e6e6', borderRadius:6, maxHeight:'220px', overflowY:'auto', boxShadow:'0 6px 20px rgba(0,0,0,0.08)'}}>
                     {placeSuggestions.map((p, i) => (
-                      <div key={i} onClick={() => { setNewCustomer({...newCustomer, place: p.display_name, pincode: p.postcode || newCustomer.pincode}); setPlaceSuggestions([]); }} style={{padding:'8px 12px', cursor:'pointer', borderBottom:'1px solid #f5f5f5'}}>
-                        <div style={{fontSize:13}}>{p.display_name}</div>
+                      <div 
+                        key={i} 
+                        onClick={() => { 
+                          setNewCustomer({
+                            ...newCustomer, 
+                            place: p.place || p.display_name, 
+                            address: p.full_address || p.display_name,
+                            pincode: p.postcode || newCustomer.pincode
+                          }); 
+                          setPlaceSuggestions([]); 
+                        }} 
+                        style={{
+                          padding:'10px 12px', 
+                          cursor:'pointer', 
+                          borderBottom:'1px solid #f5f5f5',
+                          transition: 'background 0.2s'
+                        }}
+                        onMouseEnter={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                      >
+                        <div style={{fontSize:13, fontWeight:500, marginBottom:4}}>{p.place || p.display_name}</div>
+                        <div style={{fontSize:11, color:'#666', display:'flex', justifyContent:'space-between', alignItems:'center'}}>
+                          <span>{p.full_address || p.display_name}</span>
+                          {p.postcode && <span style={{background:'#e3f2fd', color:'#1976d2', padding:'2px 6px', borderRadius:4, fontSize:10, fontWeight:600, marginLeft:8}}>PIN: {p.postcode}</span>}
+                        </div>
                       </div>
                     ))}
                   </div>
