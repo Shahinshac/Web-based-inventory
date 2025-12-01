@@ -2333,38 +2333,202 @@ async function initializeAdminUser() {
   }
 }
 
-// ADMIN ONLY - Clear all database collections
+// ==================== DATABASE MANAGEMENT ENDPOINTS ====================
+
+// ADMIN ONLY - Clear all database collections with photo cleanup
 app.delete('/api/admin/clear-all-data', async (req, res) => {
   try {
     const db = getDB();
     
-    // Clear all collections
-    await db.collection('products').deleteMany({});
-    await db.collection('customers').deleteMany({});
-    await db.collection('bills').deleteMany({});
-    await db.collection('expenses').deleteMany({});
-    await db.collection('audit_logs').deleteMany({});
+    logger.info('🗑️  Starting database clear operation...');
+    
+    const results = {
+      products: 0,
+      customers: 0,
+      bills: 0,
+      invoices: 0,
+      expenses: 0,
+      audit_logs: 0,
+      users: 0,
+      product_images: 0,
+      user_images: 0,
+      photos: 0
+    };
+    
+    // Clear all collections with counts
+    const productsResult = await db.collection('products').deleteMany({});
+    results.products = productsResult.deletedCount;
+    
+    const customersResult = await db.collection('customers').deleteMany({});
+    results.customers = customersResult.deletedCount;
+    
+    const billsResult = await db.collection('bills').deleteMany({});
+    results.bills = billsResult.deletedCount;
+    
+    const invoicesResult = await db.collection('invoices').deleteMany({});
+    results.invoices = invoicesResult.deletedCount;
+    
+    const expensesResult = await db.collection('expenses').deleteMany({});
+    results.expenses = expensesResult.deletedCount;
+    
+    const auditResult = await db.collection('audit_logs').deleteMany({});
+    results.audit_logs = auditResult.deletedCount;
+    
+    // Clear image collections
+    const productImagesResult = await db.collection('product_images').deleteMany({});
+    results.product_images = productImagesResult.deletedCount;
+    
+    const userImagesResult = await db.collection('user_images').deleteMany({});
+    results.user_images = userImagesResult.deletedCount;
     
     // Keep users collection but delete all except admin
-    await db.collection('users').deleteMany({ role: { $ne: 'admin' } });
+    const usersResult = await db.collection('users').deleteMany({ role: { $ne: 'admin' } });
+    results.users = usersResult.deletedCount;
     
-    logger.info('🗑️  All database data cleared successfully');
+    // Clear uploaded photo files from filesystem
+    try {
+      const uploadsDir = path.join(__dirname, 'uploads');
+      if (fsSync.existsSync(uploadsDir)) {
+        const subdirs = ['products', 'users', 'profiles'];
+        
+        for (const subdir of subdirs) {
+          const dirPath = path.join(uploadsDir, subdir);
+          if (fsSync.existsSync(dirPath)) {
+            const files = fsSync.readdirSync(dirPath);
+            for (const file of files) {
+              try {
+                fsSync.unlinkSync(path.join(dirPath, file));
+                results.photos++;
+              } catch (err) {
+                logger.warn(`Failed to delete photo ${file}:`, err.message);
+              }
+            }
+          }
+        }
+      }
+    } catch (photoError) {
+      logger.warn('Photo cleanup error:', photoError.message);
+    }
+    
+    const total = Object.values(results).reduce((sum, count) => sum + count, 0);
+    
+    logger.info('✅ Database cleared successfully');
+    logger.info(`📊 Total items deleted: ${total}`);
+    logger.info(`   Products: ${results.products}`);
+    logger.info(`   Customers: ${results.customers}`);
+    logger.info(`   Bills: ${results.bills}`);
+    logger.info(`   Invoices: ${results.invoices}`);
+    logger.info(`   Expenses: ${results.expenses}`);
+    logger.info(`   Audit Logs: ${results.audit_logs}`);
+    logger.info(`   Users (non-admin): ${results.users}`);
+    logger.info(`   Product Images: ${results.product_images}`);
+    logger.info(`   User Images: ${results.user_images}`);
+    logger.info(`   Photo Files: ${results.photos}`);
     
     res.json({ 
       success: true, 
       message: 'All data cleared successfully',
-      cleared: {
-        products: true,
-        customers: true,
-        bills: true,
-        expenses: true,
-        audit_logs: true,
-        users: 'All non-admin users deleted'
-      }
+      results: results,
+      total: total,
+      timestamp: new Date().toISOString()
     });
   } catch (error) {
     logger.error('Error clearing database:', error);
-    res.status(500).json({ error: 'Failed to clear database', details: error.message });
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to clear database', 
+      details: error.message 
+    });
+  }
+});
+
+// ADMIN ONLY - Reset database and reinitialize with defaults
+app.post('/api/admin/reset-database', async (req, res) => {
+  try {
+    const db = getDB();
+    
+    logger.info('🔄 Starting database reset...');
+    
+    // First clear all data
+    await db.collection('products').deleteMany({});
+    await db.collection('customers').deleteMany({});
+    await db.collection('bills').deleteMany({});
+    await db.collection('invoices').deleteMany({});
+    await db.collection('expenses').deleteMany({});
+    await db.collection('audit_logs').deleteMany({});
+    await db.collection('product_images').deleteMany({});
+    await db.collection('user_images').deleteMany({});
+    await db.collection('users').deleteMany({ role: { $ne: 'admin' } });
+    
+    // Reinitialize indexes
+    try {
+      await db.collection('products').createIndex({ name: 1 });
+      await db.collection('products').createIndex({ sku: 1 }, { unique: true, sparse: true });
+      await db.collection('customers').createIndex({ name: 1 });
+      await db.collection('customers').createIndex({ phone: 1 }, { sparse: true });
+      await db.collection('invoices').createIndex({ created_at: -1 });
+      await db.collection('users').createIndex({ username: 1 }, { unique: true });
+      logger.info('✅ Database indexes recreated');
+    } catch (indexError) {
+      logger.warn('Index creation warning:', indexError.message);
+    }
+    
+    logger.info('✅ Database reset completed successfully');
+    
+    res.json({ 
+      success: true, 
+      message: 'Database reset and reinitialized successfully',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logger.error('Error resetting database:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to reset database', 
+      details: error.message 
+    });
+  }
+});
+
+// ADMIN ONLY - Get database statistics
+app.get('/api/admin/database-stats', async (req, res) => {
+  try {
+    const db = getDB();
+    
+    const stats = {
+      products: await db.collection('products').countDocuments(),
+      customers: await db.collection('customers').countDocuments(),
+      bills: await db.collection('bills').countDocuments(),
+      invoices: await db.collection('invoices').countDocuments(),
+      expenses: await db.collection('expenses').countDocuments(),
+      audit_logs: await db.collection('audit_logs').countDocuments(),
+      users: {
+        total: await db.collection('users').countDocuments(),
+        admins: await db.collection('users').countDocuments({ role: 'admin' }),
+        managers: await db.collection('users').countDocuments({ role: 'manager' }),
+        cashiers: await db.collection('users').countDocuments({ role: 'cashier' })
+      },
+      product_images: await db.collection('product_images').countDocuments(),
+      user_images: await db.collection('user_images').countDocuments()
+    };
+    
+    // Get database size info
+    const dbStats = await db.stats();
+    stats.database = {
+      size: dbStats.dataSize,
+      storageSize: dbStats.storageSize,
+      collections: dbStats.collections,
+      indexes: dbStats.indexes
+    };
+    
+    res.json({ success: true, stats });
+  } catch (error) {
+    logger.error('Error fetching database stats:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch database statistics', 
+      details: error.message 
+    });
   }
 });
 
