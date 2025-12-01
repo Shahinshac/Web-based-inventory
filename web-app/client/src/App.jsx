@@ -3132,12 +3132,19 @@ export default function App(){
     if (!file) return;
     
     setUploadingPhoto(true);
-    const formData = new FormData();
-    formData.append('photo', file);
-    formData.append('userId', currentUser?.id || '');
-    formData.append('username', isAdmin ? 'admin' : currentUser?.username || '');
     
     try {
+      // First, create a local preview immediately
+      const dataUrl = await readFileAsDataURL(file);
+      setLocalProductPhotos(lp => ({ ...lp, [productId]: dataUrl }));
+      setPhotoPreview(dataUrl);
+      
+      // Then try to upload to server
+      const formData = new FormData();
+      formData.append('photo', file);
+      formData.append('userId', currentUser?.id || currentUser?._id || '');
+      formData.append('username', isAdmin ? 'admin' : currentUser?.username || '');
+      
       const res = await fetch(API(`/api/products/${productId}/photo`), {
         method: 'POST',
         body: formData
@@ -3151,18 +3158,20 @@ export default function App(){
         setPhotoPreview(null);
       } else {
         // server rejected; save to pending queue and local cache so UI retains image
-        showNotification('Server rejected upload. Saved locally and will retry when online.', 'warning');
-        try {
-          const dataUrl = await readFileAsDataURL(file)
-          setLocalProductPhotos(lp => ({ ...lp, [productId]: dataUrl }))
-          setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
-        } catch(e) {
-          console.error('Failed to save locally after upload fail', e)
-        }
+        showNotification('Photo saved locally. Will upload when server is available.', 'warning');
+        setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]));
       }
     } catch (e) {
       console.error('Photo upload error:', e);
-      showNotification('Failed to upload photo. Please try again.', 'error');
+      // Even on error, keep the local preview
+      showNotification('Photo saved locally. Will sync when online.', 'warning');
+      try {
+        const dataUrl = await readFileAsDataURL(file);
+        setLocalProductPhotos(lp => ({ ...lp, [productId]: dataUrl }));
+        setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]));
+      } catch(err) {
+        console.error('Failed to save locally:', err);
+      }
     } finally {
       setUploadingPhoto(false);
     }
@@ -3172,7 +3181,13 @@ export default function App(){
   async function uploadUserPhoto(userId, file) {
     if (!file) return
     setUploadingPhoto(true)
+    
     try {
+      // First create local preview
+      const dataUrl = await readFileAsDataURL(file);
+      setLocalUserPhotos(u => ({ ...(u||{}), [userId]: dataUrl }));
+      
+      // Then upload to server
       const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
       const fd = new FormData()
       fd.append('photo', file)
@@ -3181,17 +3196,22 @@ export default function App(){
 
       const res = await fetch(API(`/api/users/${userId}/photo`), { method: 'POST', body: fd })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'Upload failed')
-      showNotification('✅ User photo uploaded', 'success')
-      // update local cache so UI immediately reflects the server photo
-      setLocalUserPhotos(u => ({ ...(u||{}), [userId]: API(`/api/users/${userId}/photo`) }))
-      fetchUsers()
+      
+      if (res.ok) {
+        showNotification('✅ User photo uploaded', 'success')
+        // update local cache with server URL
+        setLocalUserPhotos(u => ({ ...(u||{}), [userId]: API(`/api/users/${userId}/photo`) }))
+        fetchUsers()
+      } else {
+        // Keep local preview even if server fails
+        showNotification('Photo saved locally. Will upload when server is available.', 'warning')
+        setPendingUploads(p => ([...p, { type: 'user', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+      }
     } catch (e) {
       console.error('Upload user photo failed:', e)
-      showNotification('Server error — saved locally and will retry when online', 'warning')
+      showNotification('Photo saved locally. Will sync when online.', 'warning')
       try {
         const dataUrl = await readFileAsDataURL(file)
-        // Save to local cache so UI persists
         setLocalUserPhotos(u => ({ ...u, [userId]: dataUrl }))
         setPendingUploads(p => ([...p, { type: 'user', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
       } catch(err) { console.error('Failed to store user photo locally:', err) }
@@ -3863,22 +3883,27 @@ export default function App(){
       )}
 
       <header>
-        <h1>
-          <span style={{
-            background: 'var(--accent-gradient)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            fontWeight: 'bold',
-            fontSize: '32px'
-          }}><Icon name="dashboard" size={32} /> 26:07</span>
-          <span style={{marginLeft: '8px'}}>Electronics</span>
-        </h1>
+        <div style={{display:'flex', alignItems:'center', gap:'16px', flex:1}}>
+          <h1 style={{margin:0, display:'flex', alignItems:'center', gap:'10px'}}>
+            <span style={{
+              background: 'var(--accent-gradient)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              fontWeight: 'bold',
+              fontSize: '28px',
+              display:'flex',
+              alignItems:'center',
+              gap:'8px'
+            }}><Icon name="dashboard" size={28} /> 26:07</span>
+            <span style={{marginLeft: '4px', fontSize:'24px'}}>Electronics</span>
+          </h1>
+        </div>
         {/* header-clock removed from here; time will be shown in header-controls */}
         {/* Header controls (auth / quick actions) - primary navigation moved to left sidebar */}
         <div className="header-controls">
           {/* Mobile menu to open sidebar overlay on small screens */}
           <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
-          <div style={{display:'flex',alignItems:'center',gap:12,marginLeft:'auto'}}>
+          <div style={{display:'flex',alignItems:'center',gap:16}}>
             {/* Sidebar collapse toggle removed per request */}
             {/* Cart toggle (header) */}
             <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{marginLeft:8}}>
@@ -6116,40 +6141,53 @@ export default function App(){
               </div>
             </div>
             <div className="cart-sidebar-content">
-              <ul className="cart-panel-list">
-                {cart.map(it => {
-                  const prod = products.find(p => String(p._id || p.id) === String(it.productId));
-                  return (
-                    <li key={String(it.productId)} className="cart-panel-item">
-                      <div className="cart-thumb">
-                        {prod?.photo ? (
-                          <img src={(prod.photo || prod.photoUrl || '').startsWith('http') ? (prod.photo || prod.photoUrl) : API(prod.photo || prod.photoUrl || '')} alt={it.name} />
-                        ) : (
-                          <div style={{display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%', color:'#888'}}>No Image</div>
-                        )}
-                      </div>
-                      <div style={{flex:1, minWidth:0}}>
-                        <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
-                          <div style={{flex:1, minWidth:0}}>
-                            <strong style={{fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{it.name}</strong>
-                            <div style={{color:'#6b7280', fontSize:12}}>{prod?.hsnCode || ''}</div>
+              {cart.length === 0 ? (
+                <div style={{padding:'40px 20px', textAlign:'center', color:'#6b7280'}}>
+                  <Icon name="cart" size={48} />
+                  <div style={{marginTop:'12px', fontSize:'14px'}}>Your cart is empty</div>
+                  <div style={{marginTop:'6px', fontSize:'12px'}}>Add products from the POS to get started</div>
+                </div>
+              ) : (
+                <ul className="cart-panel-list">
+                  {cart.slice().reverse().map(it => {
+                    const prod = products.find(p => String(p._id || p.id) === String(it.productId));
+                    return (
+                      <li key={String(it.productId)} className="cart-panel-item">
+                        <div className="cart-thumb">
+                          {(prod?.photo || prod?.photoUrl || localProductPhotos[prod?.id || prod?._id]) ? (
+                            <img src={(() => {
+                              const localPhoto = localProductPhotos[prod?.id || prod?._id];
+                              if (localPhoto) return localPhoto;
+                              const photoUrl = prod.photo || prod.photoUrl || '';
+                              return photoUrl.startsWith('http') ? photoUrl : API(photoUrl);
+                            })()} alt={it.name} onError={(e) => { e.target.style.display = 'none'; }} />
+                          ) : (
+                            <div style={{display:'flex', alignItems:'center', justifyContent:'center', width:'100%', height:'100%', color:'#888', fontSize:'10px'}}>No Image</div>
+                          )}
+                        </div>
+                        <div style={{flex:1, minWidth:0}}>
+                          <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:8}}>
+                            <div style={{flex:1, minWidth:0}}>
+                              <strong style={{fontSize:14, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', display:'block'}}>{it.name}</strong>
+                              <div style={{color:'#6b7280', fontSize:12}}>{prod?.hsnCode || ''}</div>
+                            </div>
+                            <div style={{textAlign:'right', minWidth:'80px'}}>
+                              <div style={{fontWeight:700, fontSize:14}}>{formatCurrency0(it.price)}</div>
+                              <div style={{color:'#6b7280', fontSize:12}}>{formatCurrency0(it.price * it.quantity)}</div>
+                            </div>
                           </div>
-                          <div style={{textAlign:'right'}}>
-                            <div style={{fontWeight:700}}>{formatCurrency0(it.price)}</div>
-                            <div style={{color:'#6b7280', fontSize:12}}>{formatCurrency0(it.price * it.quantity)}</div>
+                          <div style={{display:'flex', gap:8, alignItems:'center', marginTop:10}}>
+                            <button className="qty-btn qty-dec" onClick={() => decreaseCartQty(it.productId)} title="Decrease quantity">-</button>
+                            <input type="number" min={1} value={it.quantity} onChange={(e)=>setCartQty(it.productId, parseInt(e.target.value || '1'))} style={{width:60, padding:'6px 8px', border:'1px solid #e6e8f0', borderRadius:6, textAlign:'center', fontSize:13}} />
+                            <button className="qty-btn qty-inc" onClick={() => increaseCartQty(it.productId)} title="Increase quantity">+</button>
+                            <button className="qty-btn remove-btn" onClick={() => removeFromCart(it.productId)} style={{marginLeft:'auto'}} title="Remove from cart"><Icon name="trash" size={14}/></button>
                           </div>
                         </div>
-                        <div style={{display:'flex', gap:8, alignItems:'center', marginTop:8}}>
-                          <button className="qty-btn qty-dec" onClick={() => decreaseCartQty(it.productId)}>-</button>
-                          <input type="number" min={1} value={it.quantity} onChange={(e)=>setCartQty(it.productId, parseInt(e.target.value || '1'))} style={{width:54, padding:'4px 6px', border:'1px solid #e6e8f0', borderRadius:6, textAlign:'center'}} />
-                          <button className="qty-btn qty-inc" onClick={() => increaseCartQty(it.productId)}>+</button>
-                          <button className="qty-btn remove-btn" onClick={() => removeFromCart(it.productId)} style={{marginLeft:'auto'}}><Icon name="trash" size={14}/></button>
-                        </div>
-                      </div>
-                    </li>
-                  )
-                })}
-              </ul>
+                      </li>
+                    )
+                  })}
+                </ul>
+              )}
             </div>
             <div className="cart-sidebar-footer">
               <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
