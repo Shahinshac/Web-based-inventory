@@ -206,7 +206,7 @@ export default function App(){
   // requiring a password will fall back to server auth only.
   useEffect(() => {
     if (!ADMIN_PASSWORD) {
-      console.warn('VITE_ADMIN_PASSWORD is not set — local admin fallback is disabled. Use server-auth or set VITE_ADMIN_PASSWORD for local testing.');
+      // Local admin fallback is disabled. Use server-auth or set VITE_ADMIN_PASSWORD for local testing.
     }
   }, []);
 
@@ -384,10 +384,10 @@ export default function App(){
                   setLocalUserPhotos(u => ({ ...(u || {}), [uid]: photoUrl }))
                 }
               })
-              .catch(e => console.log('No profile photo on server'))
+              .catch(e => {})
           }
         }
-      } catch(e) { console.error('Profile photo load error:', e) }
+      } catch(e) {}
       
       const isAdminStored = (storedIsAdmin === 'true') || (storedRole === 'admin')
       setIsAdmin(isAdminStored)
@@ -412,7 +412,7 @@ export default function App(){
       } else {
         setLocalUserPhotos(u => { const copy = { ...(u || {}) }; delete copy[uid]; return copy })
       }
-    } catch(e) { console.error('Failed to persist profilePhoto to user cache', e) }
+    } catch(e) {}
   }, [profilePhoto, currentUser])
 
   // Loyalty card: fetch and show ATM-style loyalty card for a customer
@@ -457,7 +457,7 @@ export default function App(){
           await uploadProfilePhoto(new File([blob], `avatar-${Date.now()}.png`, { type: blob.type }))
         } catch (e) {
           // ignore sync errors — we already persist to localStorage
-          console.error('Profile photo sync failed:', e)
+          // Profile photo sync failed
         }
       }
     }
@@ -515,7 +515,7 @@ export default function App(){
             }
           }
         } catch (e) {
-          console.error('Failed to process pending upload', item, e)
+          // Failed to process pending upload
           // keep item so it will retry later
         }
       }
@@ -548,7 +548,7 @@ export default function App(){
         }
       }
     } catch (e) {
-      console.error('Failed to initialize profilePhoto for user', e)
+      // Failed to initialize profilePhoto for user
     }
   }, [currentUser, localUserPhotos])
 
@@ -581,7 +581,7 @@ export default function App(){
           }
         }
       } catch (e) {
-        console.error('Error while checking for offline transactions on online event:', e)
+        // Error while checking for offline transactions
       }
     }
 
@@ -616,7 +616,7 @@ export default function App(){
     if (!isOnline) {
       // When offline, refresh cached data every 30 seconds
       refreshInterval = setInterval(async () => {
-        console.log('🔄 Refreshing offline data from cache...')
+        // Refreshing offline data from cache
         await Promise.all([
           fetchProducts(),
           fetchCustomers(), 
@@ -643,13 +643,12 @@ export default function App(){
   // Auto-refresh data when coming back online
   useEffect(() => {
     if (isOnline && isAuthenticated) {
-      console.log('🌐 Back online - refreshing all data...')
       Promise.all([fetchProducts(), fetchCustomers(), fetchInvoices(), fetchStats()])
         .then(() => {
-          console.log('✅ Data refreshed successfully')
+          // Data refreshed successfully
         })
         .catch(error => {
-          console.error('❌ Failed to refresh data:', error)
+          // Failed to refresh data
         })
     }
   }, [isOnline, isAuthenticated])
@@ -747,7 +746,7 @@ export default function App(){
         setUsers(data)
       }
     } catch(e) {
-      console.error('Error fetching users:', e)
+      // Error fetching users
     }
   }
 
@@ -759,7 +758,7 @@ export default function App(){
         setAuditLogs(data)
       }
     } catch(e) {
-      console.error('Error fetching audit logs:', e)
+      // Error fetching audit logs
     }
   }
 
@@ -800,7 +799,6 @@ export default function App(){
       
       return true
     } catch(e) {
-      console.error('User validity check error:', e)
       return true // Don't interrupt user on network errors
     }
   }
@@ -834,18 +832,15 @@ export default function App(){
           const cachedProducts = await window.offlineStorage.getCachedProducts()
           if (cachedProducts.length > 0) {
             setProducts(cachedProducts)
-            console.log('Loaded products from cache')
           }
         }
       }
     } catch(e) { 
-      console.error('Error fetching products:', e)
       // Fallback to cached data on error
       if (window.offlineStorage) {
         const cachedProducts = await window.offlineStorage.getCachedProducts()
         if (cachedProducts.length > 0) {
           setProducts(cachedProducts)
-          console.log('Loaded products from cache (fallback)')
         }
       }
     }
@@ -868,18 +863,15 @@ export default function App(){
           const cachedCustomers = await window.offlineStorage.getCachedCustomers()
           if (cachedCustomers.length > 0) {
             setCustomers(cachedCustomers)
-            console.log('Loaded customers from cache')
           }
         }
       }
     } catch(e) { 
-      console.error('Error fetching customers:', e)
       // Fallback to cached data on error
       if (window.offlineStorage) {
         const cachedCustomers = await window.offlineStorage.getCachedCustomers()
         if (cachedCustomers.length > 0) {
           setCustomers(cachedCustomers)
-          console.log('Loaded customers from cache (fallback)')
         }
       }
     }
@@ -921,7 +913,6 @@ export default function App(){
                 } catch (e) {
                   // If anything goes wrong during the merge, fall back to a
                   // full replace to keep data consistent.
-                  console.warn('Invoice merge failed, falling back to full replace', e);
                   return data;
                 }
               })
@@ -929,8 +920,7 @@ export default function App(){
               setInvoices(data)
             }
           } else {
-            // Log that we skipped an automatic refresh to avoid surprise live-updates
-            console.debug('Skipped auto-refresh of invoices while user is viewing the invoices tab')
+            // Skipped auto-refresh of invoices while user is viewing the invoices tab
           }
 
           // Cache fresh data regardless — caching shouldn't affect visible UI
@@ -947,21 +937,18 @@ export default function App(){
             // on the invoices tab unless the operation is forced to update.
             if (tab !== 'invoices' || force) {
               setInvoices(cachedBills)
-              console.log('Loaded invoices from cache')
             } else {
-              console.debug('Skipped loading cached invoices to avoid replacing user view')
+              // Skipped loading cached invoices to avoid replacing user view
             }
           }
         }
       }
     } catch(e) { 
-      console.error('Error fetching invoices:', e)
       // Fallback to cached data on error
       if (window.offlineStorage) {
         const cachedBills = await window.offlineStorage.getCachedBills()
         if (cachedBills.length > 0) {
           setInvoices(cachedBills)
-          console.log('Loaded invoices from cache (fallback)')
         }
       }
     }
@@ -972,14 +959,13 @@ export default function App(){
         const res = await fetch(API('/api/stats'))
         if (res.ok) {
           const data = await res.json()
-          console.log('Stats fetched from server:', data)
           setStats(data)
           // Cache stats data
           if (window.offlineStorage) {
             await window.offlineStorage.saveSetting('stats', data)
           }
         } else {
-          console.error('Failed to fetch stats, status:', res.status)
+          // Failed to fetch stats
         }
       } else {
         // Load cached stats when offline
@@ -987,7 +973,6 @@ export default function App(){
           const cachedStats = await window.offlineStorage.getSetting('stats')
           if (cachedStats) {
             setStats(cachedStats)
-            console.log('Loaded stats from cache')
           } else {
             // Fallback stats when no cache available
             setStats({
@@ -996,18 +981,15 @@ export default function App(){
               totalSales: invoices.length,
               totalRevenue: invoices.reduce((sum, inv) => sum + (inv.total || 0), 0)
             })
-            console.log('Generated fallback stats from cached data')
           }
         }
       }
     } catch(e) { 
-      console.error('Error fetching stats:', e)
       // Fallback to cached stats on error
       if (window.offlineStorage) {
         const cachedStats = await window.offlineStorage.getSetting('stats')
         if (cachedStats) {
           setStats(cachedStats)
-          console.log('Loaded stats from cache (fallback)')
         }
       }
     }
@@ -1029,7 +1011,7 @@ export default function App(){
       
       setAnalyticsData(data);
     } catch(e) { 
-      console.error('Error fetching analytics:', e);
+      // Error fetching analytics
     }
   }
 
@@ -1101,7 +1083,7 @@ export default function App(){
         }
       }
     } catch (error) {
-      console.error('Error loading cached data:', error)
+      // Error loading cached data
     }
   }
 
@@ -1112,7 +1094,7 @@ export default function App(){
       const transactions = await window.offlineStorage.getOfflineTransactions()
       setOfflineTransactions(transactions)
     } catch (error) {
-      console.error('Error loading offline transactions:', error)
+      // Error loading offline transactions
     }
   }
 
@@ -1125,7 +1107,7 @@ export default function App(){
     try {
       transactions = await window.offlineStorage.getOfflineTransactions()
     } catch (err) {
-      console.error('Error checking offline transactions:', err)
+      // Error checking offline transactions
       return
     }
 
@@ -1148,10 +1130,8 @@ export default function App(){
 
           if (response.ok) {
             await window.offlineStorage.removeOfflineTransaction(transaction.id)
-            console.log('✅ Synced offline transaction:', transaction.id)
           }
         } catch (error) {
-          console.error('❌ Failed to sync transaction:', transaction.id, error)
           await window.offlineStorage.updateOfflineTransactionStatus(transaction.id, 'failed')
         }
       }
@@ -1162,7 +1142,6 @@ export default function App(){
       
       showNotification('✅ Offline data synced successfully!', 'success')
     } catch (error) {
-      console.error('❌ Sync failed:', error)
       // Only show the failure notification when there were actually
       // pending offline transactions (we already checked for length > 0)
       showNotification('❌ Failed to sync offline data', 'error')
@@ -1242,7 +1221,6 @@ export default function App(){
           }
         } catch (err) {
           // server auth failed; we'll fall back to client password below
-          console.warn('Admin server auth failed, will check local ADMIN_PASSWORD fallback', err)
         }
       }
 
@@ -1330,7 +1308,6 @@ export default function App(){
         setAuthPassword('')
       }
     } catch(e) {
-      console.error('Login error:', e)
       setAuthError('Login failed. Please try again.')
       setAuthPassword('')
     }
@@ -1414,7 +1391,6 @@ export default function App(){
         }
       }
     } catch(e) {
-      console.error('Registration error:', e)
       setRegisterError('Network error. Please check your connection and try again.')
     }
   }
@@ -1438,7 +1414,6 @@ export default function App(){
         alert('Failed to approve user.')
       }
     } catch(e) {
-      console.error('Approve error:', e)
       alert('Failed to approve user.')
     }
   }
@@ -1474,7 +1449,6 @@ export default function App(){
         alert('Failed to delete user.')
       }
     } catch(e) {
-      console.error('Delete error:', e)
       alert('Failed to delete user.')
     }
   }
@@ -1505,7 +1479,6 @@ export default function App(){
           alert(data.error || 'Failed to invalidate user session')
         }
       } catch (e) {
-        console.error('Invalidate session error:', e)
         alert('Failed to invalidate user session')
       }
     })()
@@ -1530,7 +1503,6 @@ export default function App(){
         alert('Failed to revoke access.')
       }
     } catch(e) {
-      console.error('Revoke access error:', e)
       alert('Failed to revoke access.')
     }
   }
@@ -1559,7 +1531,6 @@ export default function App(){
         alert(data.error || 'Failed to update role.')
       }
     } catch(e) {
-      console.error('Change role error:', e)
       alert('Failed to update role.')
     }
   }
@@ -1794,7 +1765,6 @@ export default function App(){
         trackEvent('backup_restored', 'data_management');
       }
     } catch (error) {
-      console.error('Restore error:', error);
       showNotification('❌ Failed to restore backup: ' + error.message, 'error');
     }
   }
@@ -1808,7 +1778,7 @@ export default function App(){
         setExpenses(data.expenses || []);
       }
     } catch (error) {
-      console.error('Error fetching expenses:', error);
+      // Error fetching expenses
     }
   }
 
@@ -1846,7 +1816,6 @@ export default function App(){
         showNotification('❌ Failed to add expense', 'error');
       }
     } catch (error) {
-      console.error('Error adding expense:', error);
       showNotification('❌ Error adding expense', 'error');
     }
   }
@@ -1866,7 +1835,6 @@ export default function App(){
         showNotification('❌ Failed to delete expense', 'error');
       }
     } catch (error) {
-      console.error('Error deleting expense:', error);
       showNotification('❌ Error deleting expense', 'error');
     }
   }
@@ -2019,7 +1987,6 @@ export default function App(){
       URL.revokeObjectURL(url);
       showNotification(`✅ ${filename} CSV downloaded`, 'success');
     } catch (e) {
-      console.error('CSV export error', e);
       showNotification('❌ Failed to export CSV', 'error');
     }
   }
@@ -2069,7 +2036,6 @@ export default function App(){
 
   function addToCart(p){
     if (!p || !p.id) {
-      console.error('Invalid product:', p);
       showNotification('Error: Invalid product', 'error');
       return;
     }
@@ -2077,7 +2043,6 @@ export default function App(){
     // Ensure product has valid ID for database operations
     const productId = p._id || p.id;
     if (!productId) {
-      console.error('Product missing ID:', p);
       showNotification('Error: Product missing ID', 'error');
       return;
     }
@@ -2088,7 +2053,6 @@ export default function App(){
       return;
     }
     
-    console.log('Adding to cart:', p.name, 'ID:', productId);
     setCart(c=>{
       const existing = c.find(x=>String(x.productId)===String(productId))
       if (existing) {
@@ -2097,10 +2061,8 @@ export default function App(){
           showNotification(`❌ Only ${p.quantity} units available for ${p.name}`, 'error');
           return c;
         }
-        console.log('Increasing quantity for:', p.name);
         return c.map(x=> String(x.productId)===String(productId) ? {...x, quantity: x.quantity+1} : x)
       }
-      console.log('Adding new item to cart:', p.name);
       return [...c, {
         productId: productId, 
         name: p.name, 
@@ -2139,7 +2101,7 @@ export default function App(){
         // fallback if product not found
         setCart(c=> c.map(x=> String(x.productId)===pId ? {...x, quantity: x.quantity+1} : x))
       }
-    } catch(e) { console.error('increaseCartQty error', e) }
+    } catch(e) { }
   }
 
   function decreaseCartQty(productId){
@@ -2177,7 +2139,6 @@ export default function App(){
       const invalidItems = cart.filter(item => !item.productId || !item.price || !item.quantity);
       if (invalidItems.length > 0) {
         showNotification('❌ Some cart items are invalid. Please remove and re-add them.', 'error');
-        console.error('Invalid cart items:', invalidItems);
         setCheckoutLoading(false);
         return;
       }
@@ -2363,7 +2324,6 @@ export default function App(){
       
       setCheckoutLoading(false);
     } catch(e) {
-      console.error('Checkout error:', e);
       setCheckoutLoading(false);
       if (isOnline) {
         showNotification('Checkout failed. Please try again.', 'error');
@@ -2713,7 +2673,6 @@ export default function App(){
       const j = await res.json();
       return j.publicUrl || null;
     } catch (e) {
-      console.debug('Public invoice fetch failed', e);
       return null;
     }
   }
@@ -2847,7 +2806,6 @@ export default function App(){
         showNotification('Failed to add product: ' + (err.error || 'Unknown error'), 'error');
       }
     } catch(e) {
-      console.error('Add product error:', e)
       
       // Check if it's a network error (backend not available)
       if (e.message === 'Failed to fetch' || !navigator.onLine) {
@@ -2907,59 +2865,57 @@ export default function App(){
         showNotification('Failed to add customer: ' + (err.error || 'Unknown error'), 'error');
       }
     } catch(e) {
-      console.error('Add customer error:', e)
       showNotification('Failed to add customer. Please try again.', 'error');
     }
   }
 
-  // Handle place autocomplete for Add Customer modal using Google Maps Geocoding API
+  // Handle place autocomplete for Add Customer modal using free OpenStreetMap Nominatim API
   async function fetchPlaceOptions(query) {
     if (!query || query.trim().length < 2) { setPlaceSuggestions([]); return; }
     try {
       setPlaceLoading(true);
-      const q = encodeURIComponent(query + ', India'); // Add India to get better results
+      const q = encodeURIComponent(query + ', India');
       
-      // Using Google Maps Geocoding API for more accurate Indian addresses and pincodes
-      const apiKey = 'AIzaSyBqWaIL0bWQlópez4B8ZVFfCIBJCQA0NU'; // Replace with your actual Google Maps API key
-      const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${q}&key=${apiKey}&region=in&components=country:IN`;
+      // Using free OpenStreetMap Nominatim API for Indian addresses and pincodes
+      const url = `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=8&countrycodes=in`;
       
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'InventoryManagementApp/1.0' // Required by Nominatim usage policy
+        }
+      });
+      
       if (!res.ok) { setPlaceSuggestions([]); setPlaceLoading(false); return; }
       
       const data = await res.json();
       
-      if (data.status === 'OK' && data.results) {
-        const suggestions = data.results.slice(0, 8).map(result => {
-          // Extract pincode from address components
-          const postalCodeComponent = result.address_components.find(
-            comp => comp.types.includes('postal_code')
-          );
-          const pincode = postalCodeComponent ? postalCodeComponent.long_name : '';
+      if (data && data.length > 0) {
+        const suggestions = data.map(result => {
+          // Extract pincode from address object
+          const pincode = result.address?.postcode || '';
           
           // Extract city/locality
-          const locality = result.address_components.find(
-            comp => comp.types.includes('locality') || comp.types.includes('administrative_area_level_2')
-          );
-          const city = locality ? locality.long_name : '';
+          const city = result.address?.city || 
+                      result.address?.town || 
+                      result.address?.village || 
+                      result.address?.state_district || 
+                      result.display_name.split(',')[0];
           
           return {
-            display_name: result.formatted_address,
-            place: city || result.formatted_address.split(',')[0],
-            lat: result.geometry.location.lat,
-            lon: result.geometry.location.lng,
+            display_name: result.display_name,
+            place: city,
+            lat: parseFloat(result.lat),
+            lon: parseFloat(result.lon),
             postcode: pincode,
-            full_address: result.formatted_address
+            full_address: result.display_name
           };
         });
         
         setPlaceSuggestions(suggestions);
       } else {
-        // Fallback to simple geocoding if API fails or no results
-        console.warn('Google Maps API returned no results, status:', data.status);
         setPlaceSuggestions([]);
       }
     } catch (e) {
-      console.warn('Place lookup failed', e);
       setPlaceSuggestions([]);
     } finally {
       setPlaceLoading(false);
@@ -3039,7 +2995,6 @@ export default function App(){
         showNotification(`❌ No product found with code: ${barcode}`, 'error');
       }
     } catch (e) {
-      console.error('Barcode search error:', e);
       showNotification(`❌ Search failed. Please try again or use manual entry.`, 'error');
       // Don't close scanner on error, let user try again
     }
@@ -3057,7 +3012,6 @@ export default function App(){
         // Check if element exists
         const scannerElement = document.getElementById("qr-reader");
         if (!scannerElement) {
-          console.error('Scanner element not found');
           return;
         }
 
@@ -3084,11 +3038,10 @@ export default function App(){
               aspectRatio: 1.0
             },
             (decodedText) => {
-              console.log('🔍 Barcode scanned:', decodedText);
               if (html5QrCode) {
                 html5QrCode.stop().then(() => {
                   handleBarcodeResult(decodedText);
-                }).catch(err => console.error("Scanner stop error:", err));
+                }).catch(err => {});
               }
             },
             (errorMessage) => {
@@ -3096,15 +3049,12 @@ export default function App(){
               if (errorMessage.includes('No QR code found')) {
                 return; // Ignore "no code found" messages
               }
-              console.debug('Scanner error:', errorMessage);
             }
           );
         } else {
-          console.warn('No cameras found');
           showNotification('📷 No cameras found. Please use manual entry.', 'warning');
         }
       } catch (err) {
-        console.error("Scanner initialization error:", err);
         showNotification('📷 Camera access failed. Please use manual entry or check permissions.', 'warning');
       }
     };
@@ -3117,7 +3067,7 @@ export default function App(){
         clearTimeout(timeoutId);
       }
       if (html5QrCode) {
-        html5QrCode.stop().catch(e => console.error("Scanner stop error:", e));
+        html5QrCode.stop().catch(e => {});
       }
     };
   }, [showBarcodeScanner]);
@@ -3141,7 +3091,6 @@ export default function App(){
         alert('Failed to update stock: ' + (err.error || 'Unknown error'))
       }
     } catch(e) {
-      console.error('Update stock error:', e)
       alert('Failed to update stock. Please try again.')
     }
   }
@@ -3160,7 +3109,6 @@ export default function App(){
         alert('Failed to delete product: ' + (err.error || 'Unknown error'))
       }
     } catch(e) {
-      console.error('Delete product error:', e)
       alert('Failed to delete product. Please try again.')
     }
   }
@@ -3180,7 +3128,6 @@ export default function App(){
       const qrData = await qrRes.json();
       setQrCodeImage(qrData.qrCode);
     } catch (e) {
-      console.error('Barcode fetch error:', e);
       showNotification('Failed to generate barcode', 'error');
     }
   }
@@ -3219,7 +3166,6 @@ export default function App(){
         setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]));
       }
     } catch (e) {
-      console.error('Photo upload error:', e);
       // Even on error, keep the local preview
       showNotification('Photo saved locally. Will sync when online.', 'warning');
       try {
@@ -3227,7 +3173,6 @@ export default function App(){
         setLocalProductPhotos(lp => ({ ...lp, [productId]: dataUrl }));
         setPendingUploads(p => ([...p, { type: 'product', id: productId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]));
       } catch(err) {
-        console.error('Failed to save locally:', err);
       }
     } finally {
       setUploadingPhoto(false);
@@ -3265,13 +3210,12 @@ export default function App(){
         setPendingUploads(p => ([...p, { type: 'user', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
       }
     } catch (e) {
-      console.error('Upload user photo failed:', e)
       showNotification('Photo saved locally. Will sync when online.', 'warning')
       try {
         const dataUrl = await readFileAsDataURL(file)
         setLocalUserPhotos(u => ({ ...u, [userId]: dataUrl }))
         setPendingUploads(p => ([...p, { type: 'user', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
-      } catch(err) { console.error('Failed to store user photo locally:', err) }
+      } catch(err) { }
     } finally {
       setUploadingPhoto(false)
     }
@@ -3301,7 +3245,6 @@ export default function App(){
       setLocalUserPhotos(u => { const copy = { ...(u||{}) }; delete copy[userId]; return copy })
       fetchUsers()
     } catch (e) {
-      console.error('Delete user photo failed:', e)
       showNotification('Failed to delete user photo', 'error')
     }
   }
@@ -3339,12 +3282,11 @@ export default function App(){
       setLocalUserPhotos(u => ({ ...(u||{}), [userId]: serverPath }))
       showNotification('✅ Profile photo saved to server', 'success')
     } catch (e) {
-      console.error('Failed to upload profile photo:', e)
       showNotification('Failed to sync photo to server. Saved locally and will retry when online.', 'warning')
       try {
         const dataUrl = await readFileAsDataURL(file)
         setPendingUploads(p => ([...p, { type: 'profile', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
-      } catch(err) { console.error('Failed to queue profile photo locally', err) }
+      } catch(err) { }
     } finally {
       setUploadingPhoto(false)
     }
@@ -3368,7 +3310,6 @@ export default function App(){
         showNotification('Failed to delete photo: ' + (err.error || 'Unknown error'), 'error');
       }
     } catch (e) {
-      console.error('Photo delete error:', e);
       showNotification('Failed to delete photo. Please try again.', 'error');
     }
   }
@@ -3399,7 +3340,6 @@ export default function App(){
         showNotification(`❌ ${error.error || 'Product not found'}`, 'error');
       }
     } catch (e) {
-      console.error('Barcode scan error:', e);
       showNotification('❌ Barcode scan failed. Please try again.', 'error');
     }
   }
@@ -3740,7 +3680,6 @@ export default function App(){
             <Icon name="close" /> Offline Mode
             <button
               onClick={async () => {
-                console.log('🔄 Manual refresh requested...')
                 await Promise.all([
                   fetchProducts(),
                   fetchCustomers(), 
@@ -4223,7 +4162,6 @@ export default function App(){
                               objectFit: 'contain'
                             }}
                             onError={(e) => {
-                              console.error('Image load error for product:', p.name, 'URL:', e.target.src);
                               e.target.style.display = 'none';
                             }}
                           />
@@ -4545,7 +4483,6 @@ export default function App(){
                               background:'#f8f9fa'
                             }}
                             onError={(e) => {
-                              console.error('Image load error for product:', prod.name, 'URL:', e.target.src);
                               e.target.style.display = 'none';
                               const fallback = document.createElement('div');
                               fallback.style.cssText = 'width:60px;height:60px;background:linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9ca3af;';
@@ -4680,7 +4617,6 @@ export default function App(){
                               background:'#f8f9fa'
                             }}
                             onError={(e) => {
-                              console.error('Image load error for product:', prod.name, 'URL:', e.target.src);
                               e.target.style.display = 'none';
                               const fallback = document.createElement('div');
                               fallback.style.cssText = 'width:60px;height:60px;background:linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#9ca3af;';
