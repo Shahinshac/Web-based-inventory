@@ -3391,6 +3391,9 @@ export default function App(){
     printWindow.document.close();
   }
 
+  // Debug log to track rendering
+  console.log('App render state:', { loading, isAuthenticated, globalError: !!globalError });
+
   if (loading) {
     return (
       <div style={{
@@ -3572,7 +3575,7 @@ export default function App(){
   }
 
   return (
-    <div className={`app`}>
+    <div className={`app`} style={{minHeight:'100vh', background: 'var(--bg, #f8f9fa)'}}>
       {globalError && (
         <div className="error-overlay">
           <div className="panel">
