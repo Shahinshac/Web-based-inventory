@@ -187,8 +187,11 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  background: var(--bg);
+  background: var(--bg, #f8f9fa);
+  color: var(--text, #0f172a);
   animation: fadeIn 0.4s ease-out;
+  visibility: visible !important;
+  opacity: 1 !important;
 }
 
 /* Animations */
@@ -239,17 +242,17 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
    ============================================ */
 
 header {
-  height: var(--header-height);
-  background: var(--header-bg);
-  border-bottom: 1px solid var(--border);
-  box-shadow: var(--header-shadow);
+  height: var(--header-height, 70px);
+  background: var(--header-bg, #ffffff);
+  border-bottom: 1px solid var(--border, #e2e8f0);
+  box-shadow: var(--header-shadow, 0 1px 3px rgba(0,0,0,0.1));
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 32px;
   position: sticky;
   top: 0;
-  z-index: var(--z-sticky);
+  z-index: var(--z-sticky, 100);
   animation: slideIn 0.3s ease-out;
 }
 
