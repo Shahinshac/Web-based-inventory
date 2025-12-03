@@ -19,133 +19,33 @@ const logger = require('./logger');
 // helpers have been removed to keep the server lean and avoid unused code.
 // Registration remains "direct" (username + password) and email fields are
 // optional on user records.
-      'keyboard': 'mechanical keyboard gaming',
-      'phone': 'smartphone mobile phone',
-      'charger': 'usb charger power adapter',
-      'cable': 'usb cable charging cord'
-    };
-    
-    // Enhance search term based on product category
-    for (const [keyword, enhanced] of Object.entries(categoryMappings)) {
-      if (cleanName.includes(keyword)) {
-        searchQuery = enhanced;
-        break;
-      }
-    }
-    
-    const encodedQuery = encodeURIComponent(searchQuery);
-    const unsplashAccessKey = process.env.UNSPLASH_ACCESS_KEY;
-    
-    if (unsplashAccessKey && unsplashAccessKey !== 'your-unsplash-access-key-here') {
-      console.log(`🌐 Trying Unsplash API with query: ${searchQuery}`);
-      try {
-        const unsplashUrl = `https://api.unsplash.com/search/photos?query=${encodedQuery}&per_page=1&orientation=portrait&category=technology`;
-        
-        const response = await fetch(unsplashUrl, {
-          headers: {
-            'Authorization': `Client-ID ${unsplashAccessKey}`
-          }
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.results && data.results.length > 0) {
-            const imageUrl = data.results[0].urls.regular;
-            const downloadedImage = await downloadAndSaveImage(imageUrl, productName);
-            if (downloadedImage) {
-              console.log(`✅ Unsplash image fetched for: ${productName}`);
-              logger.info(`✅ Auto-fetched image for product: ${productName}`);
-              return downloadedImage;
-            }
-          } else {
-            console.log(`ℹ️ No Unsplash results for: ${searchQuery}`);
-          }
-        } else {
-          console.log(`⚠️ Unsplash API error: ${response.status}`);
-        }
-      } catch (error) {
-        console.log('⚠️ Unsplash API error:', error.message);
-        logger.warn('Unsplash API error:', error.message);
-      }
-    } else {
-      console.log('⚠️ Unsplash API key not configured');
-    }
-    
-    // Try multiple fallback image services with professional-looking images
-    const fallbackServices = [
-      // Picsum with technology seed for consistent professional look
-      `https://picsum.photos/seed/${encodeURIComponent(productName)}/400/400`,
-      // Via.placeholder with better styling
-      `https://via.placeholder.com/400x400/f8f9fa/495057?text=${encodeURIComponent(productName.substring(0, 15))}`,
-      // DummyImage with modern design
-      `https://dummyimage.com/400x400/667eea/ffffff&text=${encodeURIComponent(productName.substring(0, 12))}`
-    ];
-    
-    console.log('📷 Trying fallback image services...');
-    for (const fallbackUrl of fallbackServices) {
-      try {
-        const fallbackImage = await downloadAndSaveImage(fallbackUrl, productName, true);
-        if (fallbackImage) {
-          console.log(`📷 Fallback image generated for: ${productName}`);
-          logger.info(`📷 Generated fallback image for product: ${productName}`);
-          return fallbackImage;
-        }
-      } catch (error) {
-        console.log(`⚠️ Fallback service failed:`, error.message);
-        continue;
-      }
-    }
-    
-    console.log(`❌ All image services failed for: ${productName}`);
-    return null;
-  } catch (error) {
-    console.error('❌ Product image fetch error:', error);
-    logger.error('Product image fetch error:', error);
-    return null;
-  }
+
+const app = express();
+
+// Middleware
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// Multer for file uploads
+const multer = require('multer');
+const storage = multer.memoryStorage();
+const upload = multer({ 
+  storage: storage,
+  limits: { fileSize: 10 * 1024 * 1024 } // 10MB limit
+});
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+// Sanitization helpers
+function sanitizeString(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[<>]/g, '').trim();
 }
 
-// Utility: Download and save image
-async function downloadAndSaveImage(imageUrl, productName, isPlaceholder = false) {
-  try {
-    const timestamp = Date.now();
-    const sanitizedName = productName.toLowerCase().replace(/[^a-z0-9]/g, '-');
-    const fileName = `${sanitizedName}-${timestamp}.jpg`;
-    const uploadDir = path.join(__dirname, 'uploads', 'products');
-    const filePath = path.join(uploadDir, fileName);
-    
-    // Ensure upload directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
-    
-    return new Promise((resolve, reject) => {
-      const protocol = imageUrl.startsWith('https:') ? https : http;
-      
-      protocol.get(imageUrl, (response) => {
-        if (response.statusCode === 200) {
-          const fileStream = require('fs').createWriteStream(filePath);
-          response.pipe(fileStream);
-          
-          fileStream.on('finish', () => {
-            fileStream.close();
-            const relativePath = `/uploads/products/${fileName}`;
-            resolve(relativePath);
-          });
-          
-          fileStream.on('error', (err) => {
-            reject(err);
-          });
-        } else {
-          reject(new Error(`HTTP ${response.statusCode}: ${response.statusMessage}`));
-        }
-      }).on('error', (err) => {
-        reject(err);
-      });
-    });
-  } catch (error) {
-    logger.error('Image download error:', error);
-    return null;
-  }
-}
+// Import validators
+const { validateCheckout, validateProduct, validateCustomer } = require('./validators');
 
 // HTTP request logging middleware
 app.use(logger.httpLogger);
