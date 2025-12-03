@@ -137,7 +137,29 @@ export default function App(){
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
-  // Dark mode removed — UI will always use the default (light) theme.
+  // Dark mode theme state
+  const [theme, setTheme] = useState(() => {
+    try {
+      return localStorage.getItem('theme') || 'light'
+    } catch(e) {
+      return 'light'
+    }
+  })
+  
+  // Apply theme to document
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-theme', theme)
+      localStorage.setItem('theme', theme)
+    } catch(e) {
+      console.error('Failed to apply theme:', e)
+    }
+  }, [theme])
+  
+  // Toggle theme function
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light')
+  }
 
   // Install global error handlers so the app doesn't drop into a blank page
   useEffect(() => {
@@ -3391,8 +3413,39 @@ export default function App(){
     printWindow.document.close();
   }
 
-  // Debug log to track rendering
-  console.log('App render state:', { loading, isAuthenticated, globalError: !!globalError });
+  // Debug log to track rendering - helps diagnose white screen issues
+  console.log('App render state:', { 
+    loading, 
+    isAuthenticated, 
+    globalError: !!globalError,
+    isOnline,
+    theme,
+    tab,
+    hasProducts: products?.length > 0,
+    hasCustomers: customers?.length > 0
+  });
+
+  // Safety check - if all states are undefined, show emergency fallback
+  if (typeof isAuthenticated === 'undefined' && typeof loading === 'undefined') {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        background: '#f8f9fa',
+        color: '#0f172a',
+        fontFamily: 'system-ui, sans-serif'
+      }}>
+        <h1>Loading...</h1>
+        <p>Please wait while the app initializes.</p>
+        <button onClick={() => window.location.reload()} style={{marginTop: 20, padding: '10px 20px', cursor: 'pointer'}}>
+          Reload App
+        </button>
+      </div>
+    )
+  }
 
   if (loading) {
     return (
@@ -3575,7 +3628,7 @@ export default function App(){
   }
 
   return (
-    <div className={`app`} style={{minHeight:'100vh', background: 'var(--bg, #f8f9fa)'}}>
+    <div className={`app`} style={{minHeight:'100vh', background: theme === 'dark' ? '#0f172a' : '#f8f9fa', color: theme === 'dark' ? '#f1f5f9' : '#0f172a'}}>
       {globalError && (
         <div className="error-overlay">
           <div className="panel">
@@ -3978,6 +4031,11 @@ export default function App(){
                   <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>Upload</button>
                 </div>
               </div>
+              {/* Theme Toggle Button */}
+              <button className="theme-toggle-btn" onClick={toggleTheme} title={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}>
+                <Icon name={theme === 'light' ? 'moon' : 'sun'} size={16} />
+                <span>{theme === 'light' ? 'Dark Mode' : 'Light Mode'}</span>
+              </button>
             </div>
           </div>
         </aside>
