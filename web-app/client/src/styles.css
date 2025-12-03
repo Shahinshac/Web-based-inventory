@@ -6419,13 +6419,15 @@ textarea:focus-visible {
 /* Login Root Container */
 .login-root-new {
   min-height: 100vh;
+  max-height: 100vh;
   display: flex;
   align-items: center;
   justify-content: center;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
   position: relative;
-  overflow: hidden;
-  padding: 20px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 15px;
 }
 
 /* Animated Background Particles */
@@ -6490,12 +6492,13 @@ textarea:focus-visible {
 /* Main Login Container */
 .login-container-new {
   width: 100%;
-  max-width: 1200px;
+  max-width: 1000px;
+  max-height: 90vh;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0;
   background: white;
-  border-radius: 24px;
+  border-radius: 20px;
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.3), 0 10px 30px rgba(0, 0, 0, 0.2);
   overflow: hidden;
   position: relative;
@@ -6517,7 +6520,7 @@ textarea:focus-visible {
 /* Left Side - Branding */
 .login-branding-section {
   background: linear-gradient(135deg, #1a1f36 0%, #2d3561 100%);
-  padding: 60px 50px;
+  padding: 40px 35px;
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -6552,14 +6555,14 @@ textarea:focus-visible {
 }
 
 .brand-logo-new {
-  width: 100px;
-  height: 100px;
+  width: 70px;
+  height: 70px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border-radius: 24px;
+  border-radius: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 30px;
+  margin: 0 auto 20px;
   box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
   animation: pulse 2s infinite;
 }
@@ -6575,9 +6578,9 @@ textarea:focus-visible {
 }
 
 .brand-title-new {
-  font-size: 36px;
+  font-size: 28px;
   font-weight: 800;
-  margin: 0 0 12px;
+  margin: 0 0 10px;
   background: linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -6586,9 +6589,9 @@ textarea:focus-visible {
 }
 
 .brand-subtitle-new {
-  font-size: 16px;
+  font-size: 15px;
   opacity: 0.9;
-  margin: 0 0 40px;
+  margin: 0 0 28px;
   color: #cbd5e1;
   font-weight: 500;
 }
@@ -6596,20 +6599,21 @@ textarea:focus-visible {
 .brand-features {
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  margin-top: 40px;
+  gap: 12px;
+  margin-top: 24px;
 }
 
 .feature-item {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 10px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 12px;
+  border-radius: 10px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
   transition: all 0.3s ease;
+  font-size: 14px;
 }
 
 .feature-item:hover {
@@ -6630,11 +6634,12 @@ textarea:focus-visible {
 
 /* Right Side - Form */
 .login-form-section {
-  padding: 50px;
+  padding: 35px 40px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
   background: #ffffff;
+  overflow-y: auto;
 }
 
 .login-card-new {
@@ -6646,21 +6651,21 @@ textarea:focus-visible {
 /* Auth Tabs */
 .auth-tabs {
   display: flex;
-  gap: 12px;
-  padding: 8px;
+  gap: 10px;
+  padding: 6px;
   background: #f1f5f9;
-  border-radius: 16px;
-  margin-bottom: 40px;
+  border-radius: 14px;
+  margin-bottom: 28px;
 }
 
 .auth-tab {
   flex: 1;
-  padding: 14px 24px;
+  padding: 11px 20px;
   background: transparent;
   border: none;
-  border-radius: 12px;
+  border-radius: 10px;
   font-weight: 600;
-  font-size: 15px;
+  font-size: 14px;
   color: #64748b;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -6727,18 +6732,18 @@ textarea:focus-visible {
 }
 
 .form-header {
-  margin-bottom: 32px;
+  margin-bottom: 24px;
 }
 
 .form-header h2 {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #0f172a;
-  margin: 0 0 8px;
+  margin: 0 0 6px;
 }
 
 .form-header p {
-  font-size: 15px;
+  font-size: 14px;
   color: #64748b;
   margin: 0;
 }
@@ -6747,13 +6752,13 @@ textarea:focus-visible {
 .login-form-container {
   display: flex;
   flex-direction: column;
-  gap: 24px;
+  gap: 18px;
 }
 
 .form-field {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 }
 
 .login-form-label {
@@ -6781,10 +6786,10 @@ textarea:focus-visible {
 
 .login-form-input {
   width: 100%;
-  padding: 14px 16px;
+  padding: 12px 14px;
   border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  font-size: 15px;
+  border-radius: 10px;
+  font-size: 14px;
   color: #0f172a;
   background: #f8fafc;
   transition: all 0.3s ease;
@@ -6952,23 +6957,23 @@ textarea:focus-visible {
 /* Submit Button */
 .login-submit-btn {
   width: 100%;
-  padding: 16px;
+  padding: 12px 20px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
   border: none;
-  border-radius: 12px;
-  font-size: 16px;
+  border-radius: 10px;
+  font-size: 15px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+  gap: 8px;
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
   position: relative;
   overflow: hidden;
-  min-height: 54px;
+  min-height: 44px;
 }
 
 .login-submit-btn::before {
@@ -7034,18 +7039,18 @@ textarea:focus-visible {
 
 /* Form Notice */
 .form-notice {
-  margin-top: 24px;
-  padding: 14px 16px;
+  margin-top: 18px;
+  padding: 11px 14px;
   background: #f0fdf4;
   border: 2px solid #bbf7d0;
   border-left: 4px solid #10b981;
-  border-radius: 12px;
+  border-radius: 10px;
   color: #047857;
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 500;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .form-notice svg {
@@ -7055,12 +7060,12 @@ textarea:focus-visible {
 
 /* Login Footer */
 .login-footer {
-  padding-top: 30px;
+  padding-top: 20px;
   text-align: center;
 }
 
 .login-footer p {
-  font-size: 13px;
+  font-size: 12px;
   color: #94a3b8;
   margin: 0;
 }
@@ -7083,15 +7088,16 @@ textarea:focus-visible {
 
 @media (max-width: 640px) {
   .login-root-new {
-    padding: 16px;
+    padding: 12px;
   }
 
   .login-container-new {
-    border-radius: 20px;
+    border-radius: 16px;
+    max-height: 95vh;
   }
 
   .login-form-section {
-    padding: 32px 24px;
+    padding: 28px 20px;
   }
 
   .auth-tabs {
@@ -7125,8 +7131,9 @@ textarea:focus-visible {
   }
 
   .login-submit-btn {
-    padding: 15px;
-    font-size: 15px;
+    padding: 11px 18px;
+    font-size: 14px;
+    min-height: 42px;
   }
 
   .brand-features {
@@ -7141,7 +7148,7 @@ textarea:focus-visible {
 
 @media (max-width: 480px) {
   .login-form-section {
-    padding: 24px 20px;
+    padding: 20px 16px;
   }
 
   .auth-tabs {
