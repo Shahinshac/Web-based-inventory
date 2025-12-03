@@ -311,7 +311,7 @@ export default function Login(props) {
   const currentYear = new Date().getFullYear()
 
   return (
-    <div className="app login-root-new">
+    <div className="login-root-new">
       {/* Animated background particles */}
       <div className="login-bg-particles">
         <div className="particle"></div>
