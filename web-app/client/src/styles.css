@@ -2346,10 +2346,11 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 /* ============================================
-   LOGIN & REGISTER - Professional Design
+   OLD LOGIN STYLES - DEPRECATED (Use .login-root-new instead)
    ============================================ */
 
-.login-root {
+/* Disabled old login-root to prevent conflicts with new design */
+.login-root-old-deprecated {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   min-height: 100vh;
   display: flex;
@@ -2360,7 +2361,7 @@ ul:not(.products):not(.cart) li:hover {
   overflow: hidden;
 }
 
-.login-root::before {
+.login-root-old-deprecated::before {
   content: '';
   position: absolute;
   inset: 0;
@@ -2368,7 +2369,7 @@ ul:not(.products):not(.cart) li:hover {
   opacity: 0.3;
 }
 
-.login-center {
+.login-center-old-deprecated {
   width: 100%;
   max-width: 480px;
   position: relative;
@@ -2378,12 +2379,12 @@ ul:not(.products):not(.cart) li:hover {
 
 /* Responsive login container */
 @media (max-width: 640px) {
-  .login-center {
+  .login-center-old-deprecated {
     max-width: 100%;
   }
 }
 
-.login-card {
+.login-card-old-deprecated {
   background: white;
   border-radius: var(--radius-xl);
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
@@ -2391,14 +2392,14 @@ ul:not(.products):not(.cart) li:hover {
   backdrop-filter: blur(10px);
 }
 
-/* Responsive login card */
+/* Responsive login card - DEPRECATED: Use .login-card-new instead */
 @media (max-width: 640px) {
-  .login-card {
+  .login-card-old-deprecated {
     border-radius: 16px;
   }
 }
 
-.login-brand {
+.login-brand-old-deprecated {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2409,14 +2410,14 @@ ul:not(.products):not(.cart) li:hover {
   gap: 16px;
 }
 
-/* Responsive brand section */
+/* Responsive brand section - DEPRECATED */
 @media (max-width: 640px) {
-  .login-brand {
+  .login-brand-old-deprecated {
     padding: 28px 20px 24px;
   }
 }
 
-.brand-icon {
+.brand-icon-old-deprecated {
   width: 72px;
   height: 72px;
   background: var(--gradient-primary);
@@ -2429,55 +2430,55 @@ ul:not(.products):not(.cart) li:hover {
   animation: bounceIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55);
 }
 
-/* Responsive brand icon */
+/* Responsive brand icon - DEPRECATED */
 @media (max-width: 640px) {
-  .brand-icon {
+  .brand-icon-old-deprecated {
     width: 60px;
     height: 60px;
     font-size: 30px;
   }
 }
 
-.brand-text h2 {
+.brand-text-old-deprecated h2 {
   margin: 0;
   font-size: 26px;
   font-weight: 800;
   letter-spacing: -0.5px;
 }
 
-.brand-text p {
+.brand-text-old-deprecated p {
   margin: 4px 0 0;
   font-size: 14px;
   opacity: 0.9;
   font-weight: 500;
 }
 
-/* Responsive brand text */
+/* Responsive brand text - DEPRECATED */
 @media (max-width: 640px) {
-  .brand-text h2 {
+  .brand-text-old-deprecated h2 {
     font-size: 22px;
   }
-  .brand-text p {
+  .brand-text-old-deprecated p {
     font-size: 13px;
   }
 }
 
-.tab-bar {
+.tab-bar-old-deprecated {
   display: flex;
   gap: 8px;
   padding: 16px;
   background: var(--bg-tertiary);
 }
 
-/* Responsive tab bar */
+/* Responsive tab bar - DEPRECATED */
 @media (max-width: 640px) {
-  .tab-bar {
+  .tab-bar-old-deprecated {
     padding: 12px;
     gap: 6px;
   }
 }
 
-.tab-btn {
+.tab-btn-old-deprecated {
   flex: 1;
   padding: 12px 20px;
   background: transparent;
@@ -2496,33 +2497,33 @@ ul:not(.products):not(.cart) li:hover {
   touch-action: manipulation;
 }
 
-/* Responsive tab buttons */
+/* Responsive tab buttons - DEPRECATED */
 @media (max-width: 640px) {
-  .tab-btn {
+  .tab-btn-old-deprecated {
     padding: 10px 12px;
     font-size: 13px;
     gap: 6px;
   }
 }
 
-.tab-btn:hover {
+.tab-btn-old-deprecated:hover {
   background: white;
   color: var(--text);
 }
 
-.tab-btn.active {
+.tab-btn-old-deprecated.active {
   background: var(--gradient-primary);
   color: white;
   box-shadow: var(--shadow-md);
 }
 
-.card-body {
+.card-body-login-old-deprecated {
   padding: 32px 40px;
 }
 
-/* Responsive card body */
+/* Responsive card body - DEPRECATED */
 @media (max-width: 640px) {
-  .card-body {
+  .card-body-login-old-deprecated {
     padding: 24px 20px;
   }
 }
