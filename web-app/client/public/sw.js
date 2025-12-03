@@ -146,6 +146,25 @@ async function handleNavigationRequest(request) {
 
 // Static asset handler - Cache first
 async function handleStaticAssetRequest(request) {
+  // Skip POST requests - they cannot be cached
+  if (request.method !== 'GET') {
+    try {
+      return await fetch(request);
+    } catch (error) {
+      return new Response('', { status: 204 });
+    }
+  }
+  
+  // Skip analytics and third-party requests
+  const url = new URL(request.url);
+  if (url.pathname.includes('_vercel') || url.pathname.includes('analytics') || url.pathname.includes('insights')) {
+    try {
+      return await fetch(request);
+    } catch (error) {
+      return new Response('', { status: 204 });
+    }
+  }
+  
   const cache = await caches.open(CACHE_NAME);
   
   // Try cache first
@@ -154,10 +173,10 @@ async function handleStaticAssetRequest(request) {
     return cachedResponse;
   }
   
-  // Try network and cache
+  // Try network and cache (only GET requests)
   try {
     const networkResponse = await fetch(request);
-    if (networkResponse.ok) {
+    if (networkResponse.ok && request.method === 'GET') {
       const responseClone = networkResponse.clone();
       await cache.put(request, responseClone);
     }

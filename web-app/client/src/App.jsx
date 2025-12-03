@@ -3956,7 +3956,54 @@ export default function App(){
           {/* Mobile menu to open sidebar overlay on small screens */}
           <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
           <div style={{display:'flex',alignItems:'center',gap:16}}>
-            {/* Sidebar collapse toggle removed per request */}
+            {/* Profile Photo in Header */}
+            {isAuthenticated && (
+              <div className="header-profile" style={{position:'relative', display:'flex', alignItems:'center', gap:8}}>
+                <div 
+                  className="header-avatar" 
+                  onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #3b82f6, #2563eb)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid rgba(255,255,255,0.3)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                  title="Click to change photo"
+                >
+                  {profilePhoto ? (
+                    <img src={profilePhoto} alt="Profile" style={{width:'100%',height:'100%',objectFit:'cover'}} />
+                  ) : (
+                    <span style={{color:'white',fontWeight:'bold',fontSize:14}}>
+                      {(currentUser?.name || currentUser?.username || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <input 
+                  id="header-photo-upload"
+                  type="file" 
+                  accept="image/*" 
+                  style={{display:'none'}} 
+                  onChange={async (e)=>{
+                    const f = e.target.files && e.target.files[0]
+                    if (!f) return
+                    const reader = new FileReader()
+                    reader.onload = () => setProfilePhoto(reader.result)
+                    reader.readAsDataURL(f)
+                    if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
+                      try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
+                    }
+                  }} 
+                />
+                <span style={{color:'white',fontWeight:600,fontSize:13}}>{currentUser?.username || 'User'}</span>
+              </div>
+            )}
             {/* Cart toggle (header) */}
             <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{marginLeft:8}}>
               <Icon name="cart" />
@@ -4000,35 +4047,10 @@ export default function App(){
             {/* Sidebar is collapsable — toggle from header or mobile menu */}
 
             <div className="sidebar-bottom">
-              <div className="profile-area">
-                <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
-                  {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-                  <button className="camera-overlay" title="Set photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
-                </div>
-                <div className="profile-meta">
-                  <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
-                  <div className="profile-role">{userRole ? `${userRole[0].toUpperCase() + userRole.slice(1)} • Sales` : 'Sales Manager'}</div>
-                </div>
-                <div className="profile-actions">
-                  <input className="upload-input" type="file" accept="image/*" style={{display:'none'}} onChange={async (e)=>{
-                    const f = e.target.files && e.target.files[0]
-                    if (!f) return
-
-                    // Preview immediately
-                    const reader = new FileReader()
-                    reader.onload = () => {
-                      setProfilePhoto(reader.result)
-                    }
-                    reader.readAsDataURL(f)
-
-                    // Try to upload to server if online and user logged in
-                    if (isOnline && isAuthenticated && currentUser && (currentUser.id || currentUser._id)) {
-                      await uploadProfilePhoto(f)
-                    } else {
-                      showNotification('Profile photo saved locally and will sync when you are online.', 'info')
-                    }
-                  }} />
-                  <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>Upload</button>
+              <div className="profile-area" style={{flexDirection:'column', textAlign:'center'}}>
+                <div className="profile-meta" style={{textAlign:'center'}}>
+                  <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'User'}</div>
+                  <div className="profile-role">{userRole ? `${userRole[0].toUpperCase() + userRole.slice(1)}` : 'Staff'}</div>
                 </div>
               </div>
               {/* Theme Toggle Button */}

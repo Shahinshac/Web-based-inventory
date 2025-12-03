@@ -216,6 +216,14 @@ export default function Icon({ name, size = 18, className = '', stroke = 'curren
             <circle cx="15" cy="14" r="1" />
           </svg>
         )
+      case 'cart':
+        return (
+          <svg {...common} className={className}>
+            <circle cx="9" cy="21" r="1" />
+            <circle cx="20" cy="21" r="1" />
+            <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6" />
+          </svg>
+        )
       case 'moon':
         return (
           <svg {...common} className={className}>
