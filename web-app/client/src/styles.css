@@ -300,30 +300,71 @@ html, body {
   padding: 12px 14px;
   margin-top: 12px;
   border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--bg-tertiary);
-  color: var(--text-secondary);
+  border: none;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
   cursor: pointer;
   font-weight: 600;
   font-size: 13px;
   transition: all 0.25s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
 }
 
 .theme-toggle-btn:hover {
-  background: var(--sidebar-hover);
-  color: var(--primary);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #818cf8 0%, #6366f1 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
 }
 
 [data-theme="dark"] .theme-toggle-btn {
-  background: #334155;
-  border-color: #475569;
-  color: #cbd5e1;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.35);
+  color: white;
 }
 
 [data-theme="dark"] .theme-toggle-btn:hover {
-  background: #475569;
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: white;
+  box-shadow: 0 6px 16px rgba(245, 158, 11, 0.45);
+}
+
+/* Dark theme - Additional button styles */
+[data-theme="dark"] .logout-btn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+[data-theme="dark"] .icon-btn {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .quick-actions button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35);
+}
+
+[data-theme="dark"] .sidebar-nav button {
+  color: #cbd5e1;
+  background: transparent;
+  box-shadow: none;
+}
+
+[data-theme="dark"] .sidebar-nav button:hover {
+  background: rgba(59, 130, 246, 0.15);
+  color: #f1f5f9;
+}
+
+[data-theme="dark"] .sidebar-nav button.active {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(37, 99, 235, 0.15));
   color: #60a5fa;
+  border-left-color: #60a5fa;
+}
+
+[data-theme="dark"] .profile-area {
+  background: linear-gradient(135deg, #334155, #1e293b);
+  border-color: #475569;
 }
 
 /* Scrollbar Styling - Modern, subtle */
@@ -933,6 +974,53 @@ header {
    BUTTONS - Professional Button System
    ============================================ */
 
+/* Global Button Base Styles - Ensure all buttons have colors */
+button {
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+button:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+}
+
+button:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.2);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background: #94a3b8;
+  box-shadow: none;
+}
+
+/* Dark theme button defaults */
+[data-theme="dark"] button {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+[data-theme="dark"] button:hover:not(:disabled) {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+}
+
 .btn {
   padding: 10px 20px;
   border-radius: var(--radius);
@@ -1504,7 +1592,8 @@ html { background: var(--bg, #ffffff); }
 .profile-name { font-weight:800; font-size:14px; color:#0f172a }
 .profile-role { font-size:12px; color:#475569; margin-top:4px }
 .profile-actions { display:flex; gap:8px; align-items:center }
-.icon-btn { background:#f5f5f5; border:none; padding:8px 10px; border-radius:8px; cursor:pointer }
+.icon-btn { background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); border:none; padding:8px 10px; border-radius:8px; cursor:pointer; color: white; font-weight: 600; box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25); }
+.icon-btn:hover { background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%); transform: translateY(-1px); }
 .logout-inline { background:#f8fafc; border:none; padding:8px 8px; border-radius:8px; cursor:pointer }
 
 /* Small header avatar (top right) */
@@ -1621,8 +1710,31 @@ h2 {
 }
 
 /* Quick Actions layout */
-.quick-actions button { padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer; background: var(--accent-primary); color: #fff; font-weight:700 }
-.quick-actions .btn-secondary { background: transparent; color: var(--text); border: 1px solid rgba(0,0,0,0.06); }
+.quick-actions button { 
+  padding: 10px 16px; 
+  border-radius: 10px; 
+  border: none; 
+  cursor: pointer; 
+  background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%); 
+  color: #fff; 
+  font-weight: 700;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+  transition: all 0.3s ease;
+}
+.quick-actions button:hover {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.35);
+}
+.quick-actions .btn-secondary { 
+  background: linear-gradient(135deg, #64748b 0%, #475569 100%); 
+  color: white; 
+  border: none;
+  box-shadow: 0 4px 12px rgba(100, 116, 139, 0.25);
+}
+.quick-actions .btn-secondary:hover {
+  background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+}
 
 /* Small responsive fixes to ensure H2 remains visible on small screens */
 @media (max-width: 768px) {
@@ -3527,22 +3639,23 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .logout-btn {
-  background: rgba(255, 255, 255, 0.2);
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
   color: white;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  padding: 10px 20px; /* match nav buttons */
-  border-radius: 25px; /* match nav buttons */
+  border: none;
+  padding: 10px 20px;
+  border-radius: 25px;
   cursor: pointer;
-  font-size: 14px; /* consistent with nav buttons */
+  font-size: 14px;
   font-weight: 600;
   transition: all 0.3s ease;
   animation: slideInRight 0.5s ease-out;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
 .logout-btn:hover {
-  background: rgba(255, 255, 255, 0.3);
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  box-shadow: 0 6px 16px rgba(239, 68, 68, 0.4);
 }
 
 .register-btn {
