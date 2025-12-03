@@ -5,6 +5,7 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+  const [isFocused, setIsFocused] = useState({ username: false, password: false })
 
   useEffect(() => {
     try {
@@ -13,79 +14,128 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
         setAuthUsername(remembered)
         setRememberMe(true)
       }
-    } catch (e) {}
+    } catch (e) {
+      console.error('Failed to load remembered user:', e)
+    }
   }, [setAuthUsername])
+
+  useEffect(() => {
+    if (rememberMe && authUsername) {
+      try {
+        localStorage.setItem('rememberedUser', authUsername)
+      } catch (e) {
+        console.error('Failed to save remembered user:', e)
+      }
+    } else if (!rememberMe) {
+      try {
+        localStorage.removeItem('rememberedUser')
+      } catch (e) {
+        console.error('Failed to remove remembered user:', e)
+      }
+    }
+  }, [rememberMe, authUsername])
 
   const onSubmit = async (e) => {
     e.preventDefault()
+    if (!authUsername || !authPassword) {
+      return
+    }
     setLoading(true)
     try {
       await handleAuth()
+    } catch (error) {
+      console.error('Login error:', error)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <div style={{marginBottom: '24px'}}>
-          <label className="login-label"><Icon name="customers" size={16} /> Username</label>
-          <input className="login-input"
-          type="text"
-          value={authUsername}
-          onChange={(e)=>setAuthUsername(e.target.value)}
-          placeholder="Enter your username"
-          required
-          autoFocus
-            style={{width: '100%', padding: '14px 16px', borderRadius: '12px'}}
-        />
-      </div>
-      <div style={{marginBottom: '28px'}}>
-        <div style={{position: 'relative'}}>
+    <form onSubmit={onSubmit} className="login-form-container">
+      <div className="form-field">
+        <label className="login-form-label">
+          <Icon name="customers" size={18} />
+          <span>Username</span>
+        </label>
+        <div className={`input-wrapper ${isFocused.username ? 'focused' : ''}`}>
           <input
+            className="login-form-input"
+            type="text"
+            value={authUsername}
+            onChange={(e) => setAuthUsername(e.target.value)}
+            onFocus={() => setIsFocused(prev => ({...prev, username: true}))}
+            onBlur={() => setIsFocused(prev => ({...prev, username: false}))}
+            placeholder="Enter your username"
+            required
+            autoFocus
+            autoComplete="username"
+          />
+        </div>
+      </div>
+
+      <div className="form-field">
+        <label className="login-form-label">
+          <Icon name="lock" size={18} />
+          <span>Password</span>
+        </label>
+        <div className={`input-wrapper password-wrapper ${isFocused.password ? 'focused' : ''}`}>
+          <input
+            className="login-form-input"
             type={showPassword ? "text" : "password"}
             value={authPassword}
-            onChange={(e)=>setAuthPassword(e.target.value)}
+            onChange={(e) => setAuthPassword(e.target.value)}
+            onFocus={() => setIsFocused(prev => ({...prev, password: true}))}
+            onBlur={() => setIsFocused(prev => ({...prev, password: false}))}
             placeholder="Enter your password"
             required
-              style={{width: '100%', padding: '14px 16px', borderRadius: '12px'}}
+            autoComplete="current-password"
           />
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: '#666'
-            }}
+            className="password-toggle"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex="-1"
           >
-            <Icon name={showPassword ? "lock" : "eye"} size={16} />
+            <Icon name={showPassword ? "lock" : "eye"} size={18} />
           </button>
         </div>
       </div>
-      <div style={{marginBottom: '24px'}}>
-        <label style={{display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer'}}>
+
+      <div className="form-extras">
+        <label className="remember-checkbox">
           <input
             type="checkbox"
             checked={rememberMe}
             onChange={(e) => setRememberMe(e.target.checked)}
           />
-          <span style={{fontSize: '14px', color: '#666'}}>Remember me</span>
+          <span className="checkbox-label">Remember me</span>
         </label>
       </div>
-      {authError && <div className="alert alert-error">{authError}</div>}
+
+      {authError && (
+        <div className="login-error-alert">
+          <Icon name="close" size={16} />
+          <span>{authError}</span>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={loading}
-        className="btn-primary important-btn btn-icon"
-        style={{width: '100%', padding: '16px', border: 'none'}}
+        disabled={loading || !authUsername || !authPassword}
+        className="login-submit-btn"
       >
-        {loading ? <span className="spinner-small"></span> : <><Icon name="dashboard" size={16} /> <span>Login to Dashboard</span></>}
+        {loading ? (
+          <>
+            <span className="spinner-login"></span>
+            <span>Logging in...</span>
+          </>
+        ) : (
+          <>
+            <Icon name="dashboard" size={18} />
+            <span>Login to Dashboard</span>
+          </>
+        )}
       </button>
     </form>
   )
@@ -93,63 +143,146 @@ function LoginForm({ authUsername, authPassword, setAuthUsername, setAuthPasswor
 
 function RegisterForm({ registerUsername, registerPassword, registerEmail, setRegisterUsername, setRegisterPassword, setRegisterEmail, registerError, handleRegister }) {
   const [loading, setLoading] = useState(false)
+  const [showPassword, setShowPassword] = useState(false)
+  const [isFocused, setIsFocused] = useState({ username: false, email: false, password: false })
+  const [passwordStrength, setPasswordStrength] = useState('')
+
+  const checkPasswordStrength = (pass) => {
+    if (!pass) return ''
+    if (pass.length < 6) return 'weak'
+    if (pass.length >= 6 && pass.length < 10) return 'medium'
+    if (pass.length >= 10 && /[A-Z]/.test(pass) && /[0-9]/.test(pass)) return 'strong'
+    return 'medium'
+  }
+
+  useEffect(() => {
+    setPasswordStrength(checkPasswordStrength(registerPassword))
+  }, [registerPassword])
 
   const onSubmit = async (e) => {
     e.preventDefault()
+    if (!registerUsername || !registerEmail || !registerPassword) {
+      return
+    }
     setLoading(true)
     try {
       await handleRegister()
+    } catch (error) {
+      console.error('Registration error:', error)
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <form onSubmit={onSubmit}>
-      <div style={{marginBottom:'24px'}}>
-        <label className="login-label"><Icon name="customers" size={16} /> Username</label>
-        <input className="login-input"
-          type="text"
-          value={registerUsername}
-          onChange={(e)=>setRegisterUsername(e.target.value)}
-          placeholder="Choose a unique username (min 3 characters)"
-          required
-          minLength="3"
-          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
-        />
+    <form onSubmit={onSubmit} className="login-form-container">
+      <div className="form-field">
+        <label className="login-form-label">
+          <Icon name="customers" size={18} />
+          <span>Username</span>
+        </label>
+        <div className={`input-wrapper ${isFocused.username ? 'focused' : ''}`}>
+          <input
+            className="login-form-input"
+            type="text"
+            value={registerUsername}
+            onChange={(e) => setRegisterUsername(e.target.value)}
+            onFocus={() => setIsFocused(prev => ({...prev, username: true}))}
+            onBlur={() => setIsFocused(prev => ({...prev, username: false}))}
+            placeholder="Choose a unique username (min 3 characters)"
+            required
+            minLength="3"
+            autoComplete="username"
+            autoFocus
+          />
+        </div>
       </div>
-      {/* Email required — ask user for email at registration */}
-      <div style={{marginBottom:'20px'}}>
-        <label className="login-label"><Icon name="mail" size={16} /> Email</label>
-        <input className="login-input"
-          type="email"
-          value={registerEmail}
-          onChange={(e)=>setRegisterEmail(e.target.value)}
-          placeholder="Enter your email address"
-          required
-          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
-        />
+
+      <div className="form-field">
+        <label className="login-form-label">
+          <Icon name="email" size={18} />
+          <span>Email Address</span>
+        </label>
+        <div className={`input-wrapper ${isFocused.email ? 'focused' : ''}`}>
+          <input
+            className="login-form-input"
+            type="email"
+            value={registerEmail}
+            onChange={(e) => setRegisterEmail(e.target.value)}
+            onFocus={() => setIsFocused(prev => ({...prev, email: true}))}
+            onBlur={() => setIsFocused(prev => ({...prev, email: false}))}
+            placeholder="Enter your email address"
+            required
+            autoComplete="email"
+          />
+        </div>
       </div>
-      <div style={{marginBottom:'28px'}}>
-        <label className="login-label"><Icon name="lock" size={16} /> Password</label>
-        <input className="login-input"
-          type="password"
-          value={registerPassword}
-          onChange={(e)=>setRegisterPassword(e.target.value)}
-          placeholder="Create a strong password (min 6 characters)"
-          required
-          minLength="6"
-          style={{width:'100%', padding:'14px 16px', borderRadius:'12px'}}
-        />
+
+      <div className="form-field">
+        <label className="login-form-label">
+          <Icon name="lock" size={18} />
+          <span>Password</span>
+        </label>
+        <div className={`input-wrapper password-wrapper ${isFocused.password ? 'focused' : ''}`}>
+          <input
+            className="login-form-input"
+            type={showPassword ? "text" : "password"}
+            value={registerPassword}
+            onChange={(e) => setRegisterPassword(e.target.value)}
+            onFocus={() => setIsFocused(prev => ({...prev, password: true}))}
+            onBlur={() => setIsFocused(prev => ({...prev, password: false}))}
+            placeholder="Create a strong password (min 6 characters)"
+            required
+            minLength="6"
+            autoComplete="new-password"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="password-toggle"
+            aria-label={showPassword ? "Hide password" : "Show password"}
+            tabIndex="-1"
+          >
+            <Icon name={showPassword ? "lock" : "eye"} size={18} />
+          </button>
+        </div>
+        {registerPassword && (
+          <div className={`password-strength password-strength-${passwordStrength}`}>
+            <div className="strength-bar">
+              <div className="strength-fill"></div>
+            </div>
+            <span className="strength-text">
+              {passwordStrength === 'weak' && 'Weak password'}
+              {passwordStrength === 'medium' && 'Medium password'}
+              {passwordStrength === 'strong' && 'Strong password'}
+            </span>
+          </div>
+        )}
       </div>
-      {registerError && <div className="alert alert-error">{registerError}</div>}
+
+      {registerError && (
+        <div className="login-error-alert">
+          <Icon name="close" size={16} />
+          <span>{registerError}</span>
+        </div>
+      )}
+
       <button
         type="submit"
-        disabled={loading}
-        className="btn-primary important-btn btn-icon"
-        style={{width:'100%', padding:'16px', border:'none'}}
+        disabled={loading || !registerUsername || !registerEmail || !registerPassword || registerPassword.length < 6}
+        className="login-submit-btn register-btn"
       >
-        {loading ? <span className="spinner-small"></span> : <><Icon name="add" size={16} /> <span>Create Your Account</span></>}
+        {loading ? (
+          <>
+            <span className="spinner-login"></span>
+            <span>Creating account...</span>
+          </>
+        ) : (
+          <>
+            <Icon name="add" size={18} />
+            <span>Create Your Account</span>
+          </>
+        )}
       </button>
     </form>
   )
@@ -175,57 +308,126 @@ export default function Login(props) {
     registerError
   } = props
 
+  const currentYear = new Date().getFullYear()
+
   return (
-    <div className="app login-root">
-      <div className="login-center">
-        <div className="login-card">
-          <div className="login-brand">
-            <div className="brand-icon"><Icon name="dashboard" size={36} /></div>
-            <div className="brand-text">
-              <h2>26:07 Electronics</h2>
-              <p>Premium Electronics & Smart Solutions</p>
+    <div className="app login-root-new">
+      {/* Animated background particles */}
+      <div className="login-bg-particles">
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+        <div className="particle"></div>
+      </div>
+
+      <div className="login-container-new">
+        {/* Left side - Branding */}
+        <div className="login-branding-section">
+          <div className="brand-content">
+            <div className="brand-logo-new">
+              <Icon name="spark" size={48} />
+            </div>
+            <h1 className="brand-title-new">26:07 Electronics</h1>
+            <p className="brand-subtitle-new">Premium Electronics & Smart Solutions</p>
+            
+            <div className="brand-features">
+              <div className="feature-item">
+                <Icon name="check" size={20} />
+                <span>Real-time Inventory Management</span>
+              </div>
+              <div className="feature-item">
+                <Icon name="check" size={20} />
+                <span>Advanced POS System</span>
+              </div>
+              <div className="feature-item">
+                <Icon name="check" size={20} />
+                <span>Comprehensive Analytics</span>
+              </div>
+              <div className="feature-item">
+                <Icon name="check" size={20} />
+                <span>Secure & Reliable</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Right side - Login/Register Form */}
+        <div className="login-form-section">
+          <div className="login-card-new">
+            {/* Tab Switcher */}
+            <div className="auth-tabs">
+              <button
+                className={`auth-tab ${showLoginPage ? 'active' : ''}`}
+                onClick={() => setShowLoginPage(true)}
+                type="button"
+              >
+                <Icon name="lock" size={18} />
+                <span>Login</span>
+              </button>
+              <button
+                className={`auth-tab ${!showLoginPage ? 'active' : ''}`}
+                onClick={() => setShowLoginPage(false)}
+                type="button"
+              >
+                <Icon name="add" size={18} />
+                <span>Register</span>
+              </button>
+            </div>
+
+            {/* Form Content */}
+            <div className="auth-form-content">
+              {showLoginPage ? (
+                <div className="form-section">
+                  <div className="form-header">
+                    <h2>Welcome Back!</h2>
+                    <p>Please login to continue to your account</p>
+                  </div>
+                  
+                  <LoginForm
+                    authUsername={authUsername}
+                    authPassword={authPassword}
+                    setAuthUsername={setAuthUsername}
+                    setAuthPassword={setAuthPassword}
+                    authError={authError}
+                    handleAuth={handleAuth}
+                  />
+
+                  <div className="form-notice">
+                    <Icon name="lock" size={16} />
+                    <span>Admin credentials required for owner access</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="form-section">
+                  <div className="form-header">
+                    <h2>Create Account</h2>
+                    <p>Sign up to start managing your inventory</p>
+                  </div>
+                  
+                  <RegisterForm
+                    registerUsername={registerUsername}
+                    registerPassword={registerPassword}
+                    registerEmail={registerEmail}
+                    setRegisterUsername={setRegisterUsername}
+                    setRegisterPassword={setRegisterPassword}
+                    setRegisterEmail={setRegisterEmail}
+                    registerError={registerError}
+                    handleRegister={handleRegister}
+                  />
+
+                  <div className="form-notice">
+                    <Icon name="check" size={16} />
+                    <span>Admin will review and approve your access</span>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="tab-bar">
-            <button className={`tab-btn ${showLoginPage ? 'active' : ''}`} onClick={() => setShowLoginPage(true)}><Icon name="lock" size={16} /> <span>Login</span></button>
-            <button className={`tab-btn ${!showLoginPage ? 'active' : ''}`} onClick={() => setShowLoginPage(false)}><Icon name="add" size={16} /> <span>Register</span></button>
-          </div>
-
-          <div className="card-body animated-panel">
-            {showLoginPage ? (
-              <div>
-                <h3><Icon name="dashboard" size={20} /> Welcome Back!</h3>
-                <p className="muted">Please login to continue to your account</p>
-                <LoginForm
-                  authUsername={authUsername}
-                  authPassword={authPassword}
-                  setAuthUsername={setAuthUsername}
-                  setAuthPassword={setAuthPassword}
-                  authError={authError}
-                  handleAuth={handleAuth}
-                />
-
-                <div className="info-box"><Icon name="lock" size={16} /> Admin credentials required for owner access</div>
-              </div>
-            ) : (
-              <div>
-                <h3><Icon name="dashboard" size={20} /> Create Account</h3>
-                <p className="muted">Sign up to start managing your inventory</p>
-                <RegisterForm
-                  registerUsername={registerUsername}
-                  registerPassword={registerPassword}
-                  registerEmail={registerEmail}
-                  setRegisterUsername={setRegisterUsername}
-                  setRegisterPassword={setRegisterPassword}
-                  setRegisterEmail={setRegisterEmail}
-                  registerError={registerError}
-                  handleRegister={handleRegister}
-                />
-
-                <div className="info-box"><Icon name="check" size={16} /> Admin will review and approve your access</div>
-              </div>
-            )}
+          {/* Footer */}
+          <div className="login-footer">
+            <p>&copy; {currentYear} 26:07 Electronics. All rights reserved.</p>
           </div>
         </div>
       </div>

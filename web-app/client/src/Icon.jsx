@@ -122,13 +122,20 @@ export default function Icon({ name, size = 18, className = '', stroke = 'curren
           </svg>
         )
       case 'email':
-        return (
-          <svg {...common} className={className}>
-            <path d="M3 8l9 6 9-6" />
-            <path d="M21 8v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8" />
-          </svg>
-        )
-      case 'close':
+      return (
+        <svg {...common} className={className}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 7l9 6 9-6" />
+        </svg>
+      )
+    case 'mail':
+      return (
+        <svg {...common} className={className}>
+          <rect x="3" y="5" width="18" height="14" rx="2" />
+          <path d="M3 7l9 6 9-6" />
+        </svg>
+      )
+    case 'close':
         return (
           <svg {...common} className={className}>
             <path d="M18 6L6 18" />
