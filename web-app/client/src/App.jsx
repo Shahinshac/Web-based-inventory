@@ -3883,104 +3883,128 @@ export default function App(){
 
       <header>
         <div style={{display:'flex', alignItems:'center', gap:'16px', flex:1}}>
-          <h1 style={{margin:0, display:'flex', alignItems:'center', gap:'10px'}}>
-            <span style={{
-              background: 'var(--accent-gradient)',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              fontWeight: 'bold',
-              fontSize: '28px',
-              display:'flex',
-              alignItems:'center',
-              gap:'8px'
-            }}><Icon name="dashboard" size={28} /> 26:07</span>
-            <span style={{marginLeft: '4px', fontSize:'24px'}}>Electronics</span>
+          <h1 style={{
+            margin:0, 
+            display:'flex', 
+            alignItems:'center', 
+            gap:'8px',
+            fontSize:'24px',
+            fontWeight:'bold',
+            color:'white'
+          }}>
+            <Icon name="dashboard" size={26} /> 26:07 Electronics
           </h1>
         </div>
-        {/* header-clock removed from here; time will be shown in header-controls */}
-        {/* Header controls (auth / quick actions) - primary navigation moved to left sidebar */}
         <div className="header-controls">
-          {/* Mobile menu to open sidebar overlay on small screens */}
-          <button aria-label="Open menu" className="mobile-menu-btn" onClick={()=>{ setMobileSidebarOpen(true) }} style={{display:'none'}}>☰</button>
           <div style={{display:'flex',alignItems:'center',gap:16}}>
-            {/* Sidebar collapse toggle removed per request */}
-            {/* Cart toggle (header) */}
-            <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{marginLeft:8}}>
-              <Icon name="cart" />
-              {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
-            </button>
-            {/* Show time prominently here (replacing header user controls) */}
-            <div className="header-time" aria-hidden={!indiaTime}>
-              <div className="header-time-clock">{indiaTime}</div>
-              <div className="header-time-date">{indiaDate}</div>
-            </div>
-            {/* Visible Logout button in header for convenience */}
+            {/* Profile Photo Circle */}
             {isAuthenticated && (
-              <button className="logout-btn" onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }} style={{marginLeft: 8}}>Logout</button>
+              <div style={{display:'flex', alignItems:'center', gap:12}}>
+                <div 
+                  onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
+                  style={{
+                    width: 40,
+                    height: 40,
+                    borderRadius: '50%',
+                    overflow: 'hidden',
+                    cursor: 'pointer',
+                    background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    border: '2px solid rgba(255,255,255,0.5)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                  title="Click to change photo"
+                >
+                  {profilePhoto ? (
+                    <img 
+                      src={profilePhoto} 
+                      alt="Profile" 
+                      style={{width:'100%',height:'100%',objectFit:'cover'}}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        setProfilePhoto(null);
+                      }}
+                    />
+                  ) : (
+                    <span style={{color:'#0b5cff',fontWeight:'bold',fontSize:16}}>
+                      {(currentUser?.name || currentUser?.username || 'U').charAt(0).toUpperCase()}
+                    </span>
+                  )}
+                </div>
+                <input 
+                  id="header-photo-upload"
+                  type="file" 
+                  accept="image/*" 
+                  style={{display:'none'}} 
+                  onChange={async (e)=>{
+                    const f = e.target.files && e.target.files[0]
+                    if (!f) return
+                    const reader = new FileReader()
+                    reader.onload = () => setProfilePhoto(reader.result)
+                    reader.readAsDataURL(f)
+                    if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
+                      try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
+                    }
+                  }} 
+                />
+                <span style={{color:'white',fontWeight:600,fontSize:14}}>{currentUser?.username || 'User'}</span>
+              </div>
+            )}
+            {/* Cart toggle */}
+            <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{
+              background: 'rgba(255,255,255,0.2)',
+              color: 'white',
+              border: 'none',
+              padding: '8px 12px',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              fontWeight: 600
+            }}>
+              <Icon name="cart" />
+              {cartCount > 0 && <span style={{
+                background: '#ef4444',
+                color: 'white',
+                borderRadius: '12px',
+                padding: '2px 8px',
+                fontSize: '12px',
+                fontWeight: 'bold'
+              }}>{cartCount}</span>}
+            </button>
+            {/* Time display */}
+            <div style={{color:'white',fontSize:13,textAlign:'right'}}>
+              <div style={{fontWeight:600}}>{indiaTime}</div>
+              <div style={{opacity:0.85,fontSize:11}}>{indiaDate}</div>
+            </div>
+            {/* Logout button */}
+            {isAuthenticated && (
+              <button className="logout-btn" onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }}>
+                Logout
+              </button>
             )}
           </div>
         </div>
       </header>
       <main>
-        {/* Sidebar - left navigation and profile */}
-        <aside className={`sidebar ${mobileSidebarOpen ? 'mobile-open' : ''} ${sidebarCollapsed ? 'collapsed' : ''}`} aria-label="Main navigation">
-          <div className="sidebar-inner">
-            <div className="sidebar-top">
-              <div className="sidebar-logo">
-                <div className="logo-mark">⚡</div>
-                <div className="logo-text">26:07 <span>Electronics</span></div>
-              </div>
-              <nav className="sidebar-nav">
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`${tab==='dashboard' ? 'active' : ''}`}><Icon name="dashboard"/> <span>Dashboard</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`${tab==='pos' ? 'active' : ''}`}><Icon name="pos"/> <span>Transactions</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`${tab==='products' ? 'active' : ''}`}><Icon name="products"/> <span>Products</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('inventory')}} className={`${tab==='inventory' ? 'active' : ''}`}><Icon name="analytics"/> <span>Inventory</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('customers')}} className={`${tab==='customers' ? 'active' : ''}`}><Icon name="customers"/> <span>Customers</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('invoices')}} className={`${tab==='invoices' ? 'active' : ''}`}><Icon name="invoices"/> <span>Invoices</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity()){handleTabChange('analytics');fetchAnalyticsData(analyticsDateRange);}}} className={`${tab==='analytics' ? 'active' : ''}`}><Icon name="analytics"/> <span>Analytics</span></button>
-                <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`${tab==='reports' ? 'active' : ''}`}><Icon name="reports"/> <span>Reports</span></button>
-                {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`${tab==='users'?'active':''}`}><Icon name="users"/> <span>Users</span></button>}
-                {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`${tab==='audit'?'active':''}`}><Icon name="audit"/> <span>Audit Logs</span></button>}
-              </nav>
-            </div>
-            
-            {/* Sidebar is collapsable — toggle from header or mobile menu */}
-
-            <div className="sidebar-bottom">
-              <div className="profile-area">
-                <div className="avatar-wrapper" tabIndex={0} onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }} onKeyDown={(e)=>{ if(e.key === 'Enter') { const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() } }}>
-                  {profilePhoto ? <img src={profilePhoto} alt="user photo"/> : <div className="avatar-fallback">{(currentUser && (currentUser.name || currentUser.username || '')).split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase() || 'U'}</div>}
-                  <button className="camera-overlay" title="Set photo" onClick={(e)=>{ e.stopPropagation(); const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}><Icon name="camera" size={14} /></button>
-                </div>
-                <div className="profile-meta">
-                  <div className="profile-name">{(currentUser && (currentUser.name || currentUser.username)) || 'Nora Watson'}</div>
-                  <div className="profile-role">{userRole ? `${userRole[0].toUpperCase() + userRole.slice(1)} • Sales` : 'Sales Manager'}</div>
-                </div>
-                <div className="profile-actions">
-                  <input className="upload-input" type="file" accept="image/*" style={{display:'none'}} onChange={async (e)=>{
-                    const f = e.target.files && e.target.files[0]
-                    if (!f) return
-
-                    // Preview immediately
-                    const reader = new FileReader()
-                    reader.onload = () => {
-                      setProfilePhoto(reader.result)
-                    }
-                    reader.readAsDataURL(f)
-
-                    // Try to upload to server if online and user logged in
-                    if (isOnline && isAuthenticated && currentUser && (currentUser.id || currentUser._id)) {
-                      await uploadProfilePhoto(f)
-                    } else {
-                      showNotification('Profile photo saved locally and will sync when you are online.', 'info')
-                    }
-                  }} />
-                  <button className="icon-btn" title="Upload photo" onClick={()=>{ const fi = document.querySelector('.sidebar .upload-input'); if(fi) fi.click() }}>Upload</button>
-                </div>
-              </div>
-            </div>
+        {/* Horizontal Navigation Bar */}
+        <nav className="horizontal-nav" aria-label="Main navigation">
+          <div className="horizontal-nav-inner">
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`nav-tab ${tab==='dashboard' ? 'active' : ''}`}><Icon name="dashboard"/> <span>Dashboard</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`nav-tab ${tab==='pos' ? 'active' : ''}`}><Icon name="pos"/> <span>Transactions</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`nav-tab ${tab==='products' ? 'active' : ''}`}><Icon name="products"/> <span>Products</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('inventory')}} className={`nav-tab ${tab==='inventory' ? 'active' : ''}`}><Icon name="analytics"/> <span>Inventory</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('customers')}} className={`nav-tab ${tab==='customers' ? 'active' : ''}`}><Icon name="customers"/> <span>Customers</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('invoices')}} className={`nav-tab ${tab==='invoices' ? 'active' : ''}`}><Icon name="invoices"/> <span>Invoices</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity()){handleTabChange('analytics');fetchAnalyticsData(analyticsDateRange);}}} className={`nav-tab ${tab==='analytics' ? 'active' : ''}`}><Icon name="analytics"/> <span>Analytics</span></button>
+            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`nav-tab ${tab==='reports' ? 'active' : ''}`}><Icon name="reports"/> <span>Reports</span></button>
+            {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`nav-tab ${tab==='users'?'active':''}`}><Icon name="users"/> <span>Users</span></button>}
+            {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`nav-tab ${tab==='audit'?'active':''}`}><Icon name="audit"/> <span>Audit</span></button>}
           </div>
-        </aside>
+        </nav>
         <div className="content">
         {tab==='dashboard' && (
           <div className="dashboard">
