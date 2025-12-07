@@ -3928,7 +3928,7 @@ export default function App(){
                       }}
                     />
                   ) : (
-                    <span style={{color:'#0b5cff',fontWeight:'bold',fontSize:16}}>
+                    <span style={{color:'#667eea',fontWeight:'bold',fontSize:16}}>
                       {(currentUser?.name || currentUser?.username || 'U').charAt(0).toUpperCase()}
                     </span>
                   )}
@@ -4020,34 +4020,39 @@ export default function App(){
               <button className="btn-primary" onClick={()=>{ handleTabChange('reports') }} style={{background: 'var(--brand-blue-1)'}}><Icon name="reports"/> Reports</button>
             </div>
             <div className="stats-grid">
-              <div className="stat-card scale-in" style={{animationDelay: '0s'}}>
-                <div className="stat-icon"><Icon name="cash" size={24} /></div>
+              <div className="stat-card scale-in" style={{animationDelay: '0s', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.totalRevenue || 0)}</h3>
-                  <p>Total Revenue</p>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.totalRevenue || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Revenue</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.1s'}}>
-                <div className="stat-icon"><Icon name="invoices" size={24} /></div>
+              <div className="stat-card scale-in" style={{animationDelay: '0.1s', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="invoices" size={24} /></div>
                 <div className="stat-info">
-                  <h3>{stats.totalInvoices || 0}</h3>
-                  <p>Total Invoices</p>
+                  <h3 style={{color: 'white'}}>{stats.totalInvoices || 0}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Invoices</p>
                 </div>
               </div>
-              {/* low-stock KPI removed (per user request) */}
-              <div className="stat-card scale-in" style={{animationDelay: '0.3s'}}>
-                <div className="stat-icon"><Icon name="analytics" size={24} /></div>
+              <div className="stat-card scale-in" style={{animationDelay: '0.2s', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="analytics" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.todaySales || 0)}</h3>
-                  <p>Today's Sales</p>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.todaySales || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Today's Sales</p>
                 </div>
               </div>
-
-              <div className="stat-card scale-in" style={{animationDelay: '0.4s'}}>
-                <div className="stat-icon"><Icon name="cash" size={24} /></div>
+              <div className="stat-card scale-in" style={{animationDelay: '0.3s', background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="cash" size={24} /></div>
                 <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap'}}>{formatCurrency0(stats.todayProfit || 0)}</h3>
-                  <p>Today's Profit</p>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.todayProfit || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Today's Profit</p>
+                </div>
+              </div>
+              <div className="stat-card scale-in" style={{animationDelay: '0.4s', background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="products" size={24} /></div>
+                <div className="stat-info">
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.totalInvestment || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Investment</p>
                 </div>
               </div>
             </div>
