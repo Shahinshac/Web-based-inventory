@@ -127,13 +127,10 @@ export default function App(){
     try { return JSON.parse(localStorage.getItem('localUserPhotos') || '{}') } catch(e) { return {} }
   })
   const [photoPreview, setPhotoPreview] = useState(null)
-  // Loyalty UI removed
   const [cartOpen, setCartOpen] = useState(false)
   const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
-  const [loyaltyFetchError, setLoyaltyFetchError] = useState(null) // left for compatibility but currently unused
   const [transactionsView, setTransactionsView] = useState('cards')
-  // Loyalty preview and referral removed
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   

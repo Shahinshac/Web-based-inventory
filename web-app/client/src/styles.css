@@ -658,8 +658,10 @@ header {
   overflow-y: auto;
   overflow-x: hidden;
   background: #f8f9fa;
-  padding: 32px;
+  padding: 24px;
   animation: slideUp 0.3s ease-out;
+  width: 100%;
+  min-width: 0;
 }
 
 /* Responsive content padding */
@@ -1377,38 +1379,25 @@ html { background: var(--bg, #ffffff); }
   max-width: 100%;
 }
 
-/* Content wrapper (right of the fixed sidebar) */
+/* Content wrapper fills remaining space after header and nav */
 .content {
-  display: flex;
-  flex-direction: column;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  height: 100%;
-  padding: 8px 16px;
-  /* allows nested flex children to shrink properly and avoid overflow */
+  padding: 32px;
+  background: #f8f9fa;
   min-width: 0;
-}
-
-/* Layout with a left sidebar and main content area */
-.app main {
-  display: flex;
-  gap: 28px;
-  align-items: flex-start;
+  min-height: 0;
 }
 
 .sidebar {
-  width: var(--sidebar-width); /* fixed, consistent width requested */
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-  transition: transform 0.25s ease, box-shadow 0.25s ease, width 0.22s ease, left 0.22s ease;
-  flex-shrink: 0;
-  position: sticky;
-  top: 20px;
-  border: 1px solid rgba(226, 232, 240, 0.8);
+  display: none !important;
+  width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  position: absolute;
+  left: -9999px;
 }
 
 /* Sidebar collapse removed — we keep a fixed-width expanded sidebar on desktop
