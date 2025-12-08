@@ -88,6 +88,7 @@ html, body {
   --header-bg: #ffffff;
   --header-text: #0f172a;
   --header-height: 70px;
+  --nav-height: 56px;
   --header-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
   
   /* Sidebar */
@@ -591,6 +592,10 @@ header {
   border-bottom: 2px solid rgba(255,255,255,0.2);
   flex-shrink: 0;
   z-index: 100;
+  /* Keep the nav under header and stick it to the top when scrolling */
+  position: sticky;
+  top: var(--header-height);
+  height: var(--nav-height);
 }
 
 .horizontal-nav::-webkit-scrollbar {
@@ -608,12 +613,14 @@ header {
   gap: 0;
   padding: 0;
   width: 100%;
+  height: 100%;
 }
 
 .nav-tab {
   flex: 1;
   min-width: fit-content;
-  padding: 16px 24px;
+  padding: 0 20px;
+  height: 100%;
   background: transparent;
   border: none;
   border-right: 1px solid rgba(255,255,255,0.15);
@@ -1377,6 +1384,8 @@ html { background: var(--bg, #ffffff); }
   overflow: hidden;
   width: 100%;
   max-width: 100%;
+  /* Place main content under header + nav to avoid being covered */
+  margin-top: calc(var(--header-height) + var(--nav-height));
 }
 
 /* Content wrapper fills remaining space after header and nav */
@@ -1535,9 +1544,9 @@ h2 {
   letter-spacing: -0.3px;
 }
 
-/* Ensure headings are not covered by the fixed header on very small screens */
+/* Ensure headings are not covered by the fixed header + nav on small screens */
 @media (max-width:1024px) {
-  .app main { margin-top: calc(var(--header-height) + 22px) !important; }
+  .app main { margin-top: calc(var(--header-height) + var(--nav-height)) !important; }
 }
 
 /* Quick Actions layout */
@@ -1546,7 +1555,8 @@ h2 {
 
 /* Small responsive fixes to ensure H2 remains visible on small screens */
 @media (max-width: 768px) {
-  .app main { margin-top: calc(var(--header-height) + 8px); }
+  /* Mobile nav may be taller (stacked); keep main content under header + nav */
+  .app main { margin-top: calc(var(--header-height) + var(--nav-height)); }
   h2 { font-size: 18px; padding-bottom: 8px; }
 }
 
