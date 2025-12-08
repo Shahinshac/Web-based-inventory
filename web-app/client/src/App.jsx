@@ -5155,101 +5155,74 @@ export default function App(){
                   {getFilteredInvoices().length === 0 && (
                     <tr>
                       <td colSpan="11" style={{textAlign:'center',padding:'40px',color:'#999'}}>
-                        </thead>
-                        <tbody>
-                          {getFilteredInvoices().length === 0 && (
-                            <tr>
-                              <td colSpan="11" style={{textAlign:'center',padding:'40px',color:'#999'}}>
-                                No invoices found for selected period
-                              </td>
-                            </tr>
-                          )}
-                          {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
-                              // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
-                              const profit = typeof inv.totalProfit === 'number'
-                                ? inv.totalProfit
-                                : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
+                        No invoices found for selected period
+                      </td>
+                    </tr>
+                  )}
+                  {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
+                      // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
+                      const profit = typeof inv.totalProfit === 'number'
+                        ? inv.totalProfit
+                        : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
 
-                              return (
-                              <tr key={inv.id || inv._id}>
-                                <td><strong>#{inv.id || inv.billNumber}</strong></td>
-                                <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
-                                <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
-                                <td>{inv.items?.length || 0} items</td>
-                                <td>{formatCurrency0(inv.subtotal || 0)}</td>
-                                <td>
-                                  <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
-                                    -{inv.discountPercent || 0}%
-                                    <br/>
-                                    <small style={{color:'#888'}}>{formatCurrency0(inv.discountAmount || 0)}</small>
-                                  </span>
-                                </td>
-                                <td>
-                                  <span style={{color:'#27ae60',fontSize:'13px'}}>
-                                    +{inv.taxRate || 0}%
-                                    <br/>
-                                    <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
-                                  </span>
-                                </td>
-                                <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
-                                <td>
-                                  <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
-                                    {formatCurrency0(profit || 0)}
-                                  </strong>
-                                </td>
-                                <td>
-                                  {(inv.paymentMode === 'split' || inv.paymentMode === 'Split') && inv.splitPaymentDetails ? (
-                                    <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
-                                      <span className="badge info" style={{fontSize:'11px'}}><Icon name="cash" size={10} /> Split Payment</span>
-                                      <div style={{fontSize:'10px',color:'#666',display:'flex',flexDirection:'column',gap:'2px'}}>
-                                        {inv.splitPaymentDetails.cashAmount > 0 && (
-                                          <span><Icon name="cash" size={10} /> Cash: ₹{formatCurrency0(inv.splitPaymentDetails.cashAmount)}</span>
-                                        )}
-                                        {inv.splitPaymentDetails.upiAmount > 0 && (
-                                          <span><Icon name="analytics" size={10} /> UPI: ₹{formatCurrency0(inv.splitPaymentDetails.upiAmount)}</span>
-                                        )}
-                                        {inv.splitPaymentDetails.cardAmount > 0 && (
-                                          <span><Icon name="card" size={10} /> Card: ₹{formatCurrency0(inv.splitPaymentDetails.cardAmount)}</span>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ) : (
-                                    <span className="badge" style={{fontSize:'11px'}}>{(inv.paymentMode || 'cash').toString().toUpperCase()}</span>
-                                  )}
-                                </td>
-                                <td style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-                                  <button className="btn-secondary" onClick={() => downloadInvoice(inv)}><Icon name="download" size={14} /> PDF</button>
-                                  <button className="btn-primary" onClick={() => viewInvoice(inv)}><Icon name="view" size={14} /> View</button>
-                                  <button className="btn-danger" onClick={() => deleteInvoice(inv)}><Icon name="delete" size={14} /> Delete</button>
-                                </td>
-                              </tr>
-                            );
-                          })}
-                        </tbody>
-                      </table>
-                    </div>
-                      </div>
-                      <div className="transaction-card-body">
-                        <div className="tc-left">
-                          <div style={{fontWeight:700}}>{inv.customer_name || inv.customerName || 'Walk-in'}</div>
-                          <div style={{fontSize:12,color:'#666'}}>{(inv.items || []).length} items • {inv.paymentMode || 'Cash'}</div>
-                        </div>
-                        <div className="tc-right">
-                          <div style={{fontWeight:700}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</div>
-                          <div style={{fontSize:12,color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>{formatCurrency0(profit || 0)}</div>
-                        </div>
-                      </div>
-                      <div className="transaction-card-footer">
-                        <div className="transaction-actions">
-                          <button onClick={() => sendInvoiceWhatsApp(inv)} className="icon-only whatsapp-btn" title="Send WhatsApp"><Icon name="whatsapp" size={16} /></button>
-                          <button onClick={() => { setLastBill(inv); setShowBill(true); }} className="icon-only" title="View"><Icon name="eye" size={16} /></button>
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
+                      return (
+                      <tr key={inv.id || inv._id}>
+                        <td><strong>#{inv.id || inv.billNumber}</strong></td>
+                        <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
+                        <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
+                        <td>{inv.items?.length || 0} items</td>
+                        <td>{formatCurrency0(inv.subtotal || 0)}</td>
+                        <td>
+                          <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
+                            -{inv.discountPercent || 0}%
+                            <br/>
+                            <small style={{color:'#888'}}>{formatCurrency0(inv.discountAmount || 0)}</small>
+                          </span>
+                        </td>
+                        <td>
+                          <span style={{color:'#27ae60',fontSize:'13px'}}>
+                            +{inv.taxRate || 0}%
+                            <br/>
+                            <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
+                          </span>
+                        </td>
+                        <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
+                        <td>
+                          <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
+                            {formatCurrency0(profit || 0)}
+                          </strong>
+                        </td>
+                        <td>
+                          {(inv.paymentMode === 'split' || inv.paymentMode === 'Split') && inv.splitPaymentDetails ? (
+                            <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
+                              <span className="badge info" style={{fontSize:'11px'}}><Icon name="cash" size={10} /> Split Payment</span>
+                              <div style={{fontSize:'10px',color:'#666',display:'flex',flexDirection:'column',gap:'2px'}}>
+                                {inv.splitPaymentDetails.cashAmount > 0 && (
+                                  <span><Icon name="cash" size={10} /> Cash: ₹{formatCurrency0(inv.splitPaymentDetails.cashAmount)}</span>
+                                )}
+                                {inv.splitPaymentDetails.upiAmount > 0 && (
+                                  <span><Icon name="analytics" size={10} /> UPI: ₹{formatCurrency0(inv.splitPaymentDetails.upiAmount)}</span>
+                                )}
+                                {inv.splitPaymentDetails.cardAmount > 0 && (
+                                  <span><Icon name="card" size={10} /> Card: ₹{formatCurrency0(inv.splitPaymentDetails.cardAmount)}</span>
+                                )}
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="badge" style={{fontSize:'11px'}}>{(inv.paymentMode || 'cash').toString().toUpperCase()}</span>
+                          )}
+                        </td>
+                        <td style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
+                          <button className="btn-secondary" onClick={() => downloadInvoice(inv)}><Icon name="download" size={14} /> PDF</button>
+                          <button className="btn-primary" onClick={() => viewInvoice(inv)}><Icon name="view" size={14} /> View</button>
+                          <button className="btn-danger" onClick={() => deleteInvoice(inv)}><Icon name="delete" size={14} /> Delete</button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
 
