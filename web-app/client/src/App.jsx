@@ -2329,6 +2329,36 @@ export default function App(){
     }
   }
   
+  function viewInvoice(invoice) {
+    setLastBill({
+      ...invoice,
+      billNumber: invoice.billNumber || invoice.id || invoice._id,
+      customerName: invoice.customer_name || invoice.customerName || 'Walk-in',
+      items: (invoice.items || []).map(item => ({
+        ...item,
+        productName: item.productName || item.name,
+        unitPrice: item.unitPrice || item.price || item.rate
+      }))
+    });
+    setShowBill(true);
+  }
+
+  async function deleteInvoice(invoice) {
+    if (!confirm(`Are you sure you want to delete invoice #${invoice.billId || invoice.id}?`)) return;
+    try {
+      const res = await fetch(API(`/api/invoices/${invoice.id || invoice._id}`), { method: 'DELETE' });
+      if (res.ok) {
+        showNotification('Invoice deleted successfully', 'success');
+        fetchInvoices(true);
+        fetchStats();
+      } else {
+        showNotification('Failed to delete invoice', 'error');
+      }
+    } catch (e) {
+      showNotification('Error deleting invoice', 'error');
+    }
+  }
+  
   function printBill() {
     if (!lastBill) return;
 
@@ -5213,7 +5243,6 @@ export default function App(){
                           )}
                         </td>
                         <td style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
-                          <button className="btn-secondary" onClick={() => downloadInvoice(inv)}><Icon name="download" size={14} /> PDF</button>
                           <button className="btn-primary" onClick={() => viewInvoice(inv)}><Icon name="view" size={14} /> View</button>
                           <button className="btn-danger" onClick={() => deleteInvoice(inv)}><Icon name="delete" size={14} /> Delete</button>
                         </td>

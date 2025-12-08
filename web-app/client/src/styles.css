@@ -7725,3 +7725,51 @@ textarea:focus-visible {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Fix header visibility */
+.header-controls {
+  z-index: 2000 !important;
+  position: relative !important;
+  right: auto !important;
+  top: auto !important;
+  transform: none !important;
+  display: flex !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.header-controls * {
+  color: white !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+/* Ensure logout button is visible */
+.logout-btn {
+  display: inline-block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  z-index: 2001 !important;
+}
+
+/* Fix navigation tab contrast on purple background */
+.horizontal-nav .nav-tab {
+  color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.horizontal-nav .nav-tab.active {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  font-weight: bold !important;
+}
+
+.horizontal-nav .nav-tab:hover {
+  color: white !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Ensure all buttons have good contrast */
+button {
+  cursor: pointer;
+}
+
