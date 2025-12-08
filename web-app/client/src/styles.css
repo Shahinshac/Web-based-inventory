@@ -1308,10 +1308,12 @@ html { background: var(--bg, #ffffff); }
   align-items: center;
   gap: 12px;
   margin-left: auto;
-  position: absolute;
-  right: 20px;
-  top: 50%;
-  transform: translateY(-50%);
+  position: relative;
+  right: auto;
+  top: auto;
+  transform: none;
+  z-index: 2000;
+  align-self: center;
 }
 
 .app header .header-time {
@@ -1320,11 +1322,17 @@ html { background: var(--bg, #ffffff); }
   align-items: flex-end;
   gap: 2px;
   margin-right: 8px;
-  color: var(--header-text);
+  color: white; /* ensure time text is visible on purple header */
 }
 
 .app header .header-time .header-time-clock { font-size: 14px; font-weight: 700; }
 .app header .header-time .header-time-date { font-size: 12px; opacity: 0.9; }
+
+/* Make sure header controls (icons & text) are readable on header background */
+.app header .header-controls, .app header .header-controls * {
+  color: white !important;
+  fill: white !important;
+}
 
 @media (max-width: 800px) {
   .app header { padding: 0 12px; }
