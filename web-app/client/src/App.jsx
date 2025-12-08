@@ -130,7 +130,6 @@ export default function App(){
   const [cartOpen, setCartOpen] = useState(false)
   const cartTotal = cart.reduce((s, it) => s + (Number(it.price) || 0) * (Number(it.quantity) || 0), 0)
   const cartCount = cart.reduce((s, it) => s + (Number(it.quantity) || 0), 0)
-  const [transactionsView, setTransactionsView] = useState('cards')
   // Profile photo (per-user). We'll prefer per-user `localUserPhotos[userId]` or server URL.
   const [profilePhoto, setProfilePhoto] = useState(null)
   
@@ -3894,61 +3893,6 @@ export default function App(){
         </div>
         <div className="header-controls">
           <div style={{display:'flex',alignItems:'center',gap:16}}>
-            {/* Profile Photo Circle */}
-            {isAuthenticated && (
-              <div style={{display:'flex', alignItems:'center', gap:12}}>
-                <div 
-                  onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
-                  style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: '50%',
-                    overflow: 'hidden',
-                    cursor: 'pointer',
-                    background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid rgba(255,255,255,0.5)',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                  }}
-                  title="Click to change photo"
-                >
-                  {profilePhoto ? (
-                    <img 
-                      src={profilePhoto} 
-                      alt="Profile" 
-                      style={{width:'100%',height:'100%',objectFit:'cover'}}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        setProfilePhoto(null);
-                      }}
-                    />
-                  ) : (
-                    <span style={{color:'#667eea',fontWeight:'bold',fontSize:16}}>
-                      {(currentUser?.name || currentUser?.username || 'U').charAt(0).toUpperCase()}
-                    </span>
-                  )}
-                </div>
-                <input 
-                  id="header-photo-upload"
-                  type="file" 
-                  accept="image/*" 
-                  style={{display:'none'}} 
-                  onChange={async (e)=>{
-                    const f = e.target.files && e.target.files[0]
-                    if (!f) return
-                    const reader = new FileReader()
-                    reader.onload = () => setProfilePhoto(reader.result)
-                    reader.readAsDataURL(f)
-                    if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
-                      try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
-                    }
-                  }} 
-                />
-                <span style={{color:'white',fontWeight:600,fontSize:14}}>{currentUser?.username || 'User'}</span>
-              </div>
-            )}
             {/* Cart toggle */}
             <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{
               background: 'rgba(255,255,255,0.2)',
@@ -3972,11 +3916,67 @@ export default function App(){
                 fontWeight: 'bold'
               }}>{cartCount}</span>}
             </button>
-            {/* Time display */}
-            <div style={{color:'white',fontSize:13,textAlign:'right'}}>
-              <div style={{fontWeight:600}}>{indiaTime}</div>
-              <div style={{opacity:0.85,fontSize:11}}>{indiaDate}</div>
+
+            {/* Time and date always visible */}
+            <div style={{color:'white',fontSize:13,textAlign:'right',lineHeight:1.2}}>
+              <div style={{fontWeight:700}}>{indiaTime}</div>
+              <div style={{opacity:0.9,fontSize:11}}>{indiaDate}</div>
             </div>
+
+            {/* Profile photo circle (shows Admin when not logged in) */}
+            <div style={{display:'flex', alignItems:'center', gap:12}}>
+              <div 
+                onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
+                style={{
+                  width: 42,
+                  height: 42,
+                  borderRadius: '50%',
+                  overflow: 'hidden',
+                  cursor: 'pointer',
+                  background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  border: '2px solid rgba(255,255,255,0.6)',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                }}
+                title="Click to change photo"
+              >
+                {profilePhoto ? (
+                  <img 
+                    src={profilePhoto} 
+                    alt="Profile" 
+                    style={{width:'100%',height:'100%',objectFit:'cover'}}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      setProfilePhoto(null);
+                    }}
+                  />
+                ) : (
+                  <span style={{color:'#667eea',fontWeight:'bold',fontSize:16}}>
+                    {(currentUser?.name || currentUser?.username || 'A').charAt(0).toUpperCase()}
+                  </span>
+                )}
+              </div>
+              <input 
+                id="header-photo-upload"
+                type="file" 
+                accept="image/*" 
+                style={{display:'none'}} 
+                onChange={async (e)=>{
+                  const f = e.target.files && e.target.files[0]
+                  if (!f) return
+                  const reader = new FileReader()
+                  reader.onload = () => setProfilePhoto(reader.result)
+                  reader.readAsDataURL(f)
+                  if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
+                    try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
+                  }
+                }} 
+              />
+              <span style={{color:'white',fontWeight:700,fontSize:14}}>{currentUser?.username || 'Admin'}</span>
+            </div>
+
             {/* Logout button */}
             {isAuthenticated && (
               <button className="logout-btn" onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }}>
@@ -4014,7 +4014,7 @@ export default function App(){
               <button className="btn-primary" onClick={()=>{ setShowAddProduct(true); handleTabChange('products') }}><Icon name="add"/> Add Product</button>
               <button className="btn-primary" onClick={()=>{ setShowAddCustomer(true); handleTabChange('customers') }}><Icon name="customers"/> Add Customer</button>
               <button className="btn-primary" onClick={()=>{ handleTabChange('pos') }}><Icon name="invoices"/> New Sale</button>
-              <button className="btn-primary" onClick={()=>{ handleTabChange('reports') }} style={{background: 'var(--brand-blue-1)'}}><Icon name="reports"/> Reports</button>
+              <button className="btn-primary" onClick={()=>{ handleTabChange('reports') }} style={{background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'}}><Icon name="reports"/> Reports</button>
             </div>
             <div className="stats-grid">
               <div className="stat-card scale-in" style={{animationDelay: '0s', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
@@ -5078,10 +5078,6 @@ export default function App(){
                   <option value="month">Last 30 Days</option>
                   <option value="custom">Custom Range</option>
                 </select>
-                <div style={{display:'flex', gap: 8, alignItems: 'center'}}>
-                  <button className={`btn-secondary ${transactionsView === 'table' ? 'active' : ''}`} onClick={() => setTransactionsView('table')} title="Table view">Table</button>
-                  <button className={`btn-secondary ${transactionsView === 'cards' ? 'active' : ''}`} onClick={() => setTransactionsView('cards')} title="Card grid view">Cards</button>
-                </div>
                 {invoiceDateFilter === 'custom' && (
                   <>
                     <input 
@@ -5137,10 +5133,9 @@ export default function App(){
               </div>
             </div>
 
-            {/* Invoices List (alternate views) */}
-            {transactionsView === 'table' ? (
-              <div className="table-container">
-                <table>
+            {/* Invoices List (table view only) */}
+            <div className="table-container">
+              <table>
                 <thead>
                   <tr>
                     <th>Invoice #</th>
@@ -5160,121 +5155,79 @@ export default function App(){
                   {getFilteredInvoices().length === 0 && (
                     <tr>
                       <td colSpan="11" style={{textAlign:'center',padding:'40px',color:'#999'}}>
-                        No invoices found for selected period
-                      </td>
-                    </tr>
-                  )}
-                  {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
-                      // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
-                      const profit = typeof inv.totalProfit === 'number'
-                        ? inv.totalProfit
-                        : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
-
-                      return (
-                      <tr key={inv.id || inv._id}>
-                        <td><strong>#{inv.id || inv.billNumber}</strong></td>
-                        <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
-                        <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
-                        <td>{inv.items?.length || 0} items</td>
-                        <td>{formatCurrency0(inv.subtotal || 0)}</td>
-                        <td>
-                          <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
-                            -{inv.discountPercent || 0}%
-                            <br/>
-                            <small style={{color:'#888'}}>{formatCurrency0(inv.discountAmount || 0)}</small>
-                          </span>
-                        </td>
-                        <td>
-                          <span style={{color:'#27ae60',fontSize:'13px'}}>
-                            +{inv.taxRate || 0}%
-                            <br/>
-                            <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
-                          </span>
-                        </td>
-                        <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
-                        {/* removed duplicated Actions column (was misaligned under GST) */}
-                        <td>
-                          <span style={{color:'#27ae60',fontSize:'13px'}}>
-                            +{inv.taxRate || 0}%
-                            <br/>
-                            <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
-                          </span>
-                        </td>
-                        <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
-                        <td>
-                          <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
-                            {formatCurrency0(profit || 0)}
-                          </strong>
-                        </td>
-                        <td>
-                          {(inv.paymentMode === 'split' || inv.paymentMode === 'Split') && inv.splitPaymentDetails ? (
-                            <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
-                              <span className="badge info" style={{fontSize:'11px'}}><Icon name="cash" size={10} /> Split Payment</span>
-                              <div style={{fontSize:'10px',color:'#666',display:'flex',flexDirection:'column',gap:'2px'}}>
-                                {inv.splitPaymentDetails.cashAmount > 0 && (
-                                  <span><Icon name="cash" size={10} /> Cash: ₹{formatCurrency0(inv.splitPaymentDetails.cashAmount)}</span>
-                                )}
-                                {inv.splitPaymentDetails.upiAmount > 0 && (
-                                  <span><Icon name="rupee" size={10} /> UPI: ₹{formatCurrency0(inv.splitPaymentDetails.upiAmount)}</span>
-                                )}
-                                {inv.splitPaymentDetails.cardAmount > 0 && (
-                                  <span><Icon name="card" size={10} /> Card: ₹{formatCurrency0(inv.splitPaymentDetails.cardAmount)}</span>
-                                )}
-                              </div>
-                            </div>
-                          ) : (
-                            <span className={`badge ${
-                              inv.paymentMode === 'Cash' || inv.paymentMode === 'cash' ? 'success' : 
-                              inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? 'primary' : 
-                              inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? 'info' : 
-                              'info'
-                            }`}>
-                              {inv.paymentMode === 'Cash' || inv.paymentMode === 'cash' ? <Icon name="cash" size={10} /> :
-                               inv.paymentMode === 'UPI' || inv.paymentMode === 'upi' ? <Icon name="rupee" size={10} /> :
-                               inv.paymentMode === 'Card' || inv.paymentMode === 'card' ? <Icon name="card" size={10} /> : null}
-                              {inv.paymentMode || 'Cash'}
-                            </span>
+                        </thead>
+                        <tbody>
+                          {getFilteredInvoices().length === 0 && (
+                            <tr>
+                              <td colSpan="11" style={{textAlign:'center',padding:'40px',color:'#999'}}>
+                                No invoices found for selected period
+                              </td>
+                            </tr>
                           )}
-                        </td>
-                        <td className="actions-cell" style={{whiteSpace:'nowrap'}}>
-                            <button
-                              onClick={() => sendInvoiceWhatsApp(inv)}
-                              title="Send invoice via WhatsApp"
-                              className="fancy-btn whatsapp-btn icon-only"
-                              style={{border:'none', cursor:'pointer', marginRight:'6px'}}
-                            >
-                              <Icon name="whatsapp" size={16} />
-                            </button>
-                            <button
-                              onClick={() => { setLastBill(inv); setShowBill(true); }}
-                              title="View invoice"
-                              className="btn-icon icon-only"
-                              style={{background:'var(--accent-primary)', color:'white', border:'none', cursor:'pointer', marginRight:4}}
-                            >
-                              <Icon name="eye" size={16} />
-                            </button>
-                        </td>
-                      </tr>
-                    )})
-                  }
-                </tbody>
-                </table>
-              </div>
-            ) : (
-              <div className="transactions-grid">
-                {getFilteredInvoices().length === 0 && (
-                  <div className="empty-placeholder">No invoices found for selected period</div>
-                )}
-                {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
-                  const profit = typeof inv.totalProfit === 'number'
-                        ? inv.totalProfit
-                        : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
+                          {getFilteredInvoices().length > 0 && [...getFilteredInvoices()].slice().sort((a,b)=> new Date(b.created_at || b.date) - new Date(a.created_at || a.date)).map(inv => {
+                              // Use server-provided totalProfit if present, otherwise compute a best-effort fallback from item prices/costs
+                              const profit = typeof inv.totalProfit === 'number'
+                                ? inv.totalProfit
+                                : ( (inv.items || []).reduce((s, it) => s + ((it.price || it.unitPrice || 0) - (it.costPrice || it.cost || 0)) * (it.quantity || 0), 0) - (inv.discountAmount || 0) );
 
-                  return (
-                    <div className="transaction-card" key={inv.id || inv._id}>
-                      <div className="transaction-card-header">
-                        <div><strong>#{inv.id || inv.billNumber}</strong></div>
-                        <div style={{fontSize:12,color:'#666'}}>{new Date(inv.created_at || inv.date).toLocaleString()}</div>
+                              return (
+                              <tr key={inv.id || inv._id}>
+                                <td><strong>#{inv.id || inv.billNumber}</strong></td>
+                                <td>{new Date(inv.created_at || inv.date).toLocaleDateString()}</td>
+                                <td>{inv.customer_name || inv.customerName || 'Walk-in'}</td>
+                                <td>{inv.items?.length || 0} items</td>
+                                <td>{formatCurrency0(inv.subtotal || 0)}</td>
+                                <td>
+                                  <span style={{color:'var(--accent-danger)',fontSize:'13px'}}>
+                                    -{inv.discountPercent || 0}%
+                                    <br/>
+                                    <small style={{color:'#888'}}>{formatCurrency0(inv.discountAmount || 0)}</small>
+                                  </span>
+                                </td>
+                                <td>
+                                  <span style={{color:'#27ae60',fontSize:'13px'}}>
+                                    +{inv.taxRate || 0}%
+                                    <br/>
+                                    <small style={{color:'#888'}}>{formatCurrency0(inv.taxAmount || 0)}</small>
+                                  </span>
+                                </td>
+                                <td><strong style={{color:'#2c3e50'}}>{formatCurrency0(inv.total || inv.grandTotal || 0)}</strong></td>
+                                <td>
+                                  <strong style={{color: profit < 0 ? 'var(--accent-danger)' : 'var(--accent-success)'}}>
+                                    {formatCurrency0(profit || 0)}
+                                  </strong>
+                                </td>
+                                <td>
+                                  {(inv.paymentMode === 'split' || inv.paymentMode === 'Split') && inv.splitPaymentDetails ? (
+                                    <div style={{display:'flex',flexDirection:'column',gap:'4px'}}>
+                                      <span className="badge info" style={{fontSize:'11px'}}><Icon name="cash" size={10} /> Split Payment</span>
+                                      <div style={{fontSize:'10px',color:'#666',display:'flex',flexDirection:'column',gap:'2px'}}>
+                                        {inv.splitPaymentDetails.cashAmount > 0 && (
+                                          <span><Icon name="cash" size={10} /> Cash: ₹{formatCurrency0(inv.splitPaymentDetails.cashAmount)}</span>
+                                        )}
+                                        {inv.splitPaymentDetails.upiAmount > 0 && (
+                                          <span><Icon name="analytics" size={10} /> UPI: ₹{formatCurrency0(inv.splitPaymentDetails.upiAmount)}</span>
+                                        )}
+                                        {inv.splitPaymentDetails.cardAmount > 0 && (
+                                          <span><Icon name="card" size={10} /> Card: ₹{formatCurrency0(inv.splitPaymentDetails.cardAmount)}</span>
+                                        )}
+                                      </div>
+                                    </div>
+                                  ) : (
+                                    <span className="badge" style={{fontSize:'11px'}}>{(inv.paymentMode || 'cash').toString().toUpperCase()}</span>
+                                  )}
+                                </td>
+                                <td style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
+                                  <button className="btn-secondary" onClick={() => downloadInvoice(inv)}><Icon name="download" size={14} /> PDF</button>
+                                  <button className="btn-primary" onClick={() => viewInvoice(inv)}><Icon name="view" size={14} /> View</button>
+                                  <button className="btn-danger" onClick={() => deleteInvoice(inv)}><Icon name="delete" size={14} /> Delete</button>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
                       </div>
                       <div className="transaction-card-body">
                         <div className="tc-left">
