@@ -7798,6 +7798,14 @@ textarea:focus-visible {
   color: #fff !important;
 }
 
+/* Ensure header buttons have white text for legibility on purple header */
+.app header .header-controls button,
+.app header .header-controls .logout-btn,
+.app header .header-controls .header-cart-btn,
+.app header .header-controls .header-avatar {
+  color: #fff !important;
+}
+
 /* Fix navigation tab contrast on purple background */
 .horizontal-nav .nav-tab {
   color: rgba(255, 255, 255, 0.8) !important;
