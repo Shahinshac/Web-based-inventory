@@ -1458,16 +1458,11 @@ html { background: var(--bg, #ffffff); }
 }
 
 @media (min-width: 981px) {
-  /* header-nav removed */
-  /* Keep header visible on large screens (user requested login/time visible) */
+  /* No sidebar on desktop; let content span full width */
+  .app { padding-top: 0; }
   .app header { display: block; }
-  /* keep main centered visually with room for sidebar */
-  .app { padding-top: 20px; }
-    /* expand main content to fill remaining viewport width to the right of the fixed sidebar
-      use a slightly narrower reserved gutter so main content uses more horizontal space */
-    /* use CSS variables so sidebar + content spacing remains consistent and avoids overflow */
-    .app main { max-width: none; margin-left: calc(var(--sidebar-width) + var(--content-gap)); width: calc(100% - (var(--sidebar-width) + var(--content-gap))); padding-right: 30px; }
-  .sidebar { position: fixed; left: 20px; top: calc(var(--header-height) + 12px); height: calc(100vh - (var(--header-height) + 40px)); }
+  .app main { max-width: 100%; width: 100%; margin: 0; padding-right: 0; }
+  .sidebar { display: none !important; position: absolute; left: -9999px; height: auto; }
 }
 
 @keyframes slideUp {

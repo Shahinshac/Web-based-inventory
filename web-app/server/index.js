@@ -245,19 +245,7 @@ app.post('/api/checkout', async (req, res) => {
     let discountAmount = (subtotal * discountPercent) / 100;
     let afterDiscount = subtotal - discountAmount;
 
-    // Loyalty logic: issue a card when a customer makes their first qualifying purchase (>= 150000)
-    // and apply a flat ₹3,000 discount on subsequent qualifying purchases.
-    // This implementation treats the loyalty card as a single-use discount (remainingUses = 1).
-    // Loyalty removed — no loyalty discounts applied or issued
-
-    // Previous loyalty logic removed: we no longer issue or apply loyalty at checkout
-
-    // Apply loyaltyDiscount (flat) after percentage discount
-    if (loyaltyDiscount > 0) {
-      const effectiveLoyalty = Math.min(loyaltyDiscount, afterDiscount);
-      afterDiscount = afterDiscount - effectiveLoyalty;
-      discountAmount = discountAmount + effectiveLoyalty;
-    }
+    // Loyalty fully removed: no loyalty issuance or discounts applied
     
     // Calculate GST
     let cgst = 0, sgst = 0, igst = 0;
