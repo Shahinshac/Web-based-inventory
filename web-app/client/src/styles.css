@@ -1295,7 +1295,7 @@ html { background: var(--bg, #ffffff); }
   right: 0;
   top: 0;
   text-align: right;
-  color: var(--header-text);
+  color: #fff !important;
   line-height: 1;
   display: flex; /* ensure clock is visible */
   flex-direction: column;
@@ -1307,12 +1307,13 @@ html { background: var(--bg, #ffffff); }
   display: flex;
   align-items: center;
   gap: 12px;
+  /* anchor header controls to top-right in header */
   margin-left: auto;
-  position: relative;
-  right: auto;
-  top: auto;
-  transform: none;
-  z-index: 2000;
+  position: absolute;
+  right: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 3000;
   align-self: center;
 }
 
@@ -1442,6 +1443,7 @@ html { background: var(--bg, #ffffff); }
 .avatar-wrapper { width:56px; height:56px; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid #fff; background:linear-gradient(135deg,#f5f5f5,#ffffff); border-radius:10px }
 .avatar-wrapper img { width:100%; height:100%; object-fit:cover; display:block }
 .avatar-fallback { font-weight:700; color:var(--accent-secondary); font-size:18px }
+.avatar-fallback { font-weight:700; color:white !important; font-size:18px }
 .profile-meta { flex:1; min-width:0 }
 .profile-name { font-weight:800; font-size:14px; color:#0f172a }
 .profile-role { font-size:12px; color:#475569; margin-top:4px }
@@ -1451,6 +1453,7 @@ html { background: var(--bg, #ffffff); }
 
 /* Small header avatar (top right) */
 .header-avatar { width:36px; height:36px; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.06); border-radius:8px }
+.header-avatar { width:36px; height:36px; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; cursor:pointer; border:2px solid rgba(255,255,255,0.22) !important; background: rgba(255,255,255,0.08) !important; border-radius:8px }
 .header-avatar img{width:100%; height:100%; object-fit:cover}
 
 /* Camera overlay button on avatars */
@@ -1463,6 +1466,7 @@ html { background: var(--bg, #ffffff); }
 .user-photo-wrapper { position: relative; display: inline-block; }
 .user-photo-wrapper .camera-overlay { right: -6px; bottom: -6px; width:24px; height:24px; }
 .header-avatar-initials { font-weight:700; color:white }
+.header-avatar-initials { font-weight:700; color:white !important }
 
 /* Responsive: hide sidebar on smaller screens and keep header nav */
 @media (max-width: 980px) {
@@ -7745,13 +7749,16 @@ textarea:focus-visible {
 }
 
 /* Fix header visibility */
+/* Header controls sit at the right corner of the header and are visible on purple background */
 .header-controls {
-  z-index: 2000 !important;
-  position: relative !important;
-  right: auto !important;
-  top: auto !important;
-  transform: none !important;
+  z-index: 3000 !important; /* ensure header-controls are above header and everything else */
+  position: absolute !important;
+  right: 20px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
   display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
   opacity: 1 !important;
   visibility: visible !important;
 }
@@ -7767,7 +7774,28 @@ textarea:focus-visible {
   display: inline-block !important;
   visibility: visible !important;
   opacity: 1 !important;
-  z-index: 2001 !important;
+  z-index: 3050 !important;
+  color: #fff !important;
+}
+
+/* Ensure header time/date and user name are readable on the purple header */
+.app header .header-time,
+.app header .header-clock,
+.app header .header-user-name,
+.app header .header-user-role {
+  color: #fff !important;
+}
+
+/* Header avatar styling to ensure initials or image are visible */
+.app header .header-avatar,
+.app header .header-user {
+  color: #fff !important;
+}
+
+/* Make sure avatar initials are white for contrast */
+.header-avatar-initials,
+.avatar-fallback {
+  color: #fff !important;
 }
 
 /* Fix navigation tab contrast on purple background */
