@@ -14,6 +14,9 @@ const API = (path) => {
 }
 
 export default function App(){
+  // Initial render logging for debugging blank screen
+  console.log('🚀 App component rendering...')
+  
   // PWA and Offline functionality
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [showInstallPrompt, setShowInstallPrompt] = useState(false)
@@ -255,13 +258,22 @@ export default function App(){
   useEffect(() => {
 
     const handleError = (event) => {
-      console.error('Global error caught:', event.error);
+      console.error('🔴 GLOBAL ERROR CAUGHT:', event.error);
+      console.error('Error details:', {
+        message: event.error?.message,
+        stack: event.error?.stack,
+        filename: event.filename,
+        lineno: event.lineno,
+        colno: event.colno
+      });
+      setGlobalError(event.error);
       showNotification('❌ An unexpected error occurred. Please refresh the page if problems persist.', 'error');
       event.preventDefault();
     };
 
     const handleRejection = (event) => {
-      console.error('Unhandled promise rejection:', event.reason);
+      console.error('🔴 UNHANDLED PROMISE REJECTION:', event.reason);
+      console.error('Rejection details:', event.reason);
       showNotification('❌ A background operation failed. The app should continue working normally.', 'warning');
       event.preventDefault();
     };
@@ -335,9 +347,12 @@ export default function App(){
 
   // Check authentication on mount (permanent session until logout)
   useEffect(() => {
+    console.log('🔐 Checking authentication state...')
     const storedUser = localStorage.getItem('currentUser')
     const storedIsAdmin = localStorage.getItem('isAdmin')
     const storedRole = localStorage.getItem('userRole')
+    
+    console.log('Auth check:', { hasStoredUser: !!storedUser, storedIsAdmin, storedRole })
     
     if (storedUser) {
       // migrate any legacy global profilePhoto from localStorage into per-user cache
@@ -3576,30 +3591,90 @@ export default function App(){
 
   // Show login/register as single page component when not authenticated
   if (!isAuthenticated) {
-    return (
-      <Login
-        showLoginPage={showLoginPage}
-        setShowLoginPage={setShowLoginPage}
-        authUsername={authUsername}
-        setAuthUsername={setAuthUsername}
-        authPassword={authPassword}
-        setAuthPassword={setAuthPassword}
-        authError={authError}
-        handleAuth={handleAuth}
-        registerUsername={registerUsername}
-        setRegisterUsername={setRegisterUsername}
-        
-        registerPassword={registerPassword}
-        setRegisterPassword={setRegisterPassword}
-        registerEmail={registerEmail}
-        setRegisterEmail={setRegisterEmail}
-        handleRegister={handleRegister}
-        
-        registerError={registerError}
-      />
-    )
+    console.log('🔓 Not authenticated - rendering Login page')
+    try {
+      return (
+        <div style={{minHeight: '100vh', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'}}>
+          <Login
+            showLoginPage={showLoginPage}
+            setShowLoginPage={setShowLoginPage}
+            authUsername={authUsername}
+            setAuthUsername={setAuthUsername}
+            authPassword={authPassword}
+            setAuthPassword={setAuthPassword}
+            authError={authError}
+            handleAuth={handleAuth}
+            registerUsername={registerUsername}
+            setRegisterUsername={setRegisterUsername}
+            
+            registerPassword={registerPassword}
+            setRegisterPassword={setRegisterPassword}
+            registerEmail={registerEmail}
+            setRegisterEmail={setRegisterEmail}
+            handleRegister={handleRegister}
+            
+            registerError={registerError}
+          />
+        </div>
+      )
+    } catch (error) {
+      console.error('Login component render error:', error)
+      // Fallback UI if Login component fails
+      return (
+        <div style={{
+          minHeight: '100vh',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          padding: '20px',
+          fontFamily: 'system-ui, -apple-system, sans-serif'
+        }}>
+          <div style={{
+            background: 'white',
+            padding: '40px',
+            borderRadius: '12px',
+            maxWidth: '400px',
+            width: '100%',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)'
+          }}>
+            <h2 style={{margin: '0 0 16px', color: '#1a1f36'}}>Welcome to 26:07 Electronics</h2>
+            <p style={{margin: '0 0 24px', color: '#64748b'}}>Login page failed to load. Please check the console for errors.</p>
+            <button
+              onClick={() => window.location.reload()}
+              style={{
+                width: '100%',
+                padding: '12px',
+                background: '#2563eb',
+                color: 'white',
+                border: 'none',
+                borderRadius: '8px',
+                fontSize: '16px',
+                fontWeight: '600',
+                cursor: 'pointer'
+              }}
+            >
+              Reload Page
+            </button>
+            <pre style={{
+              marginTop: '20px',
+              padding: '12px',
+              background: '#f8f9fa',
+              borderRadius: '6px',
+              fontSize: '12px',
+              overflow: 'auto',
+              color: '#ef4444'
+            }}>
+              {error.toString()}
+            </pre>
+          </div>
+        </div>
+      )
+    }
   }
 
+  console.log('✅ Authenticated - rendering main app UI')
+  
   return (
     <div className={`app`} style={{minHeight:'100vh', background: 'var(--bg, #f8f9fa)'}}>
       {globalError && (

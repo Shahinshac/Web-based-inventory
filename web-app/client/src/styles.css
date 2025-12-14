@@ -14,10 +14,18 @@ html, body {
   margin: 0;
   background: var(--bg, #f8f9fa);
   color: #0f172a !important;
-  min-height: 100vh;
+  min-height: 100vh !important;
+  height: 100%;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* Ensure root element takes full height */
+#root {
+  min-height: 100vh !important;
+  display: flex;
+  flex-direction: column;
 }
 
 /* Ensure images and embedded content never overflow their containers */

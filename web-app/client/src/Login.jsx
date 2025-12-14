@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react'
 import Icon from './Icon.jsx'
 
 export default function Login(props) {
+  console.log('🔐 Login component rendering...', props)
+  
   const {
     showLoginPage,
     setShowLoginPage,
@@ -76,6 +78,8 @@ export default function Login(props) {
   }
 
   const currentYear = new Date().getFullYear()
+
+  console.log('🎨 Login component about to render JSX', { showLoginPage, authError, registerError })
 
   return (
     <div className="login-page">
