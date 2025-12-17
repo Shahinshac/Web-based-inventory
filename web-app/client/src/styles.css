@@ -565,6 +565,13 @@ header {
 .sidebar-footer {
   padding: 20px;
   border-top: 1px solid var(--border);
+  background: var(--bg-tertiary);
+}
+
+.sidebar-footer p,
+.sidebar-footer span {
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 .sidebar-user-card {
@@ -589,18 +596,17 @@ header {
 
 /* Horizontal Navigation Bar */
 .horizontal-nav {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
   padding: 0;
   display: flex;
   align-items: center;
   justify-content: flex-start;
   overflow-x: auto;
   overflow-y: hidden;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  border-bottom: 2px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 15px rgba(90, 103, 216, 0.25);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   flex-shrink: 0;
-  z-index: 100;
-  /* Keep the nav under header and stick it to the top when scrolling */
+  z-index: 99;
   position: sticky;
   top: var(--header-height);
   height: var(--nav-height);
@@ -627,22 +633,23 @@ header {
 .nav-tab {
   flex: 1;
   min-width: fit-content;
-  padding: 0 20px;
+  padding: 0 24px;
   height: 100%;
   background: transparent;
   border: none;
-  border-right: 1px solid rgba(255,255,255,0.15);
-  color: rgba(255,255,255,0.85);
+  border-right: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.9) !important;
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.25s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
   white-space: nowrap;
   position: relative;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 .nav-tab:last-child {
@@ -650,22 +657,29 @@ header {
 }
 
 .nav-tab:hover {
-  background: rgba(255,255,255,0.12);
-  color: #ffffff;
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff !important;
 }
 
 .nav-tab.active {
-  background: rgba(255,255,255,0.2);
-  color: #ffffff;
-  box-shadow: inset 0 -3px 0 0 #ffffff;
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff !important;
+  font-weight: 700;
+  box-shadow: inset 0 -3px 0 0 #ffffff, 0 0 10px rgba(255, 255, 255, 0.1);
 }
 
 .nav-tab svg {
-  opacity: 0.9;
+  opacity: 0.95;
+  color: inherit !important;
+  stroke: currentColor !important;
 }
 
 .nav-tab.active svg {
   opacity: 1;
+}
+
+.nav-tab span {
+  color: inherit !important;
 }
 
 .content {
@@ -806,6 +820,18 @@ header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  background: var(--bg-tertiary);
+  margin-left: -24px;
+  margin-right: -24px;
+  margin-bottom: -24px;
+  padding: 16px 24px;
+  border-radius: 0 0 16px 16px;
+}
+
+.card-footer p,
+.card-footer span {
+  color: var(--text-secondary);
+  font-size: 13px;
 }
 
 /* ============================================
@@ -951,21 +977,28 @@ header {
 
 .logout-btn {
   background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-  color: white;
-  padding: 6px 12px;
-  border-radius: 6px;
-  border: none;
-  font-weight: 600;
-  font-size: 12px;
+  color: #ffffff !important;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-weight: 700;
+  font-size: 13px;
   cursor: pointer;
-  box-shadow: 0 2px 6px rgba(239, 68, 68, 0.25);
-  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.35);
+  transition: all 0.25s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .logout-btn:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 3px 8px rgba(239, 68, 68, 0.35);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.45);
   background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.logout-btn:active {
+  transform: translateY(0);
 }
 
 .btn-warning {
@@ -1277,9 +1310,21 @@ header {
 }
 
 .cart-sidebar-footer {
-  padding: 20px 24px;
+  padding: 24px;
   border-top: 1px solid var(--border);
-  background: var(--bg-tertiary);
+  background: linear-gradient(180deg, var(--bg-tertiary) 0%, #f1f5f9 100%);
+}
+
+.cart-sidebar-footer .cart-total {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 16px;
+}
+
+.cart-sidebar-footer p,
+.cart-sidebar-footer span {
+  color: var(--text-secondary);
 }
 .cart-sidebar .cart-panel-list { padding: 6px 0; }
 .cart-sidebar .cart-panel-item { padding: 10px; }
@@ -1297,10 +1342,10 @@ html { background: var(--bg, #ffffff); }
 .app header {
   /* Purple gradient header background for brand consistency */
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #fff;
+  color: #ffffff;
   /* Compact header with proper vertical centering */
   padding: 0 32px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.35);
   /* Fixed positioning at the top of viewport */
   position: fixed;
   top: 0;
@@ -1311,21 +1356,40 @@ html { background: var(--bg, #ffffff); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  z-index: 100;
+  z-index: 1000;
   gap: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+/* Ensure ALL header text is white and visible */
+.app header,
+.app header *,
+.app header h1,
+.app header span,
+.app header button,
+.app header a {
+  color: #ffffff !important;
+}
+
+.app header svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
 }
 
 .app header h1 {
   margin: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 24px; /* slightly smaller to keep header compact */
-  font-weight: 700;
+  gap: 10px;
+  font-size: 22px;
+  font-weight: 800;
   animation: slideInLeft 0.6s ease-out;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  color: #ffffff !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+  letter-spacing: -0.3px;
 }
 
 @keyframes slideInLeft {
@@ -1351,15 +1415,13 @@ html { background: var(--bg, #ffffff); }
 .app header .header-controls {
   display: flex;
   align-items: center;
-  gap: 12px;
-  /* anchor header controls to top-right in header */
+  gap: 16px;
   margin-left: auto;
   position: absolute;
-  right: 18px;
+  right: 24px;
   top: 50%;
   transform: translateY(-50%);
   z-index: 3000;
-  align-self: center;
 }
 
 .app header .header-time {
@@ -1368,16 +1430,32 @@ html { background: var(--bg, #ffffff); }
   align-items: flex-end;
   gap: 2px;
   margin-right: 8px;
-  color: white; /* ensure time text is visible on purple header */
+  padding: 6px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
-.app header .header-time .header-time-clock { font-size: 14px; font-weight: 700; }
-.app header .header-time .header-time-date { font-size: 12px; opacity: 0.9; }
+.app header .header-time .header-time-clock {
+  font-size: 15px;
+  font-weight: 700;
+  color: #ffffff !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.app header .header-time .header-time-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.9) !important;
+  font-weight: 500;
+}
 
 /* Make sure header controls (icons & text) are readable on header background */
-.app header .header-controls, .app header .header-controls * {
-  color: white !important;
-  fill: white !important;
+.app header .header-controls,
+.app header .header-controls *,
+.app header .header-controls span,
+.app header .header-controls button {
+  color: #ffffff !important;
+  fill: #ffffff !important;
 }
 
 @media (max-width: 800px) {
@@ -3417,37 +3495,49 @@ ul:not(.products):not(.cart) li:hover {
 
 .bill-summary {
   margin: 20px 0;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
 }
 
 .bill-summary > div {
   display: flex;
   justify-content: space-between;
-  margin: 8px 0;
+  margin: 10px 0;
   font-size: 14px;
+  color: #475569;
 }
 
 .bill-summary .grand-total {
   margin-top: 15px;
   padding-top: 15px;
-  border-top: 2px solid #333;
+  border-top: 2px solid #1e293b;
   font-size: 18px;
-  font-weight: bold;
-  color: #1e3c72;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .bill-footer {
   text-align: center;
   margin-top: 30px;
-  padding-top: 15px;
-  border-top: 2px dashed #333;
+  padding-top: 20px;
+  border-top: 2px dashed #64748b;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 0 0 12px 12px;
 }
 
 .bill-footer p {
-  margin: 5px 0;
-  font-size: 13px;
+  margin: 6px 0;
+  font-size: 14px;
+  color: #475569;
+}
+
+.bill-footer p:first-child {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
 }
 
 .breakdown-row {
@@ -3497,15 +3587,20 @@ ul:not(.products):not(.cart) li:hover {
 
 /* Copyright Footer */
 .copyright-footer {
-  background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-  color: white;
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: #ffffff;
   text-align: center;
-  padding: 20px;
+  padding: 24px 20px;
   margin-top: auto;
-  box-shadow: 0 -4px 15px rgba(0,0,0,0.1);
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
   position: relative;
   bottom: 0;
   width: 100%;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.copyright-footer * {
+  color: #ffffff !important;
 }
 
 .footer-content {
@@ -3514,8 +3609,15 @@ ul:not(.products):not(.cart) li:hover {
 }
 
 .footer-content p {
-  margin: 5px 0;
+  margin: 6px 0;
   font-size: 14px;
+  color: rgba(255, 255, 255, 0.9) !important;
+}
+
+.footer-content p:first-child {
+  font-weight: 600;
+  font-size: 15px;
+  color: #ffffff !important;
 }
 
 .footer-credits {
@@ -4946,7 +5048,11 @@ tbody td {
   display: flex;
   gap: 12px;
   justify-content: flex-end;
-  background: var(--bg-tertiary);
+  background: linear-gradient(180deg, var(--bg-tertiary) 0%, #f1f5f9 100%);
+}
+
+.modal-footer button {
+  min-width: 100px;
 }
 
 /* Responsive modal padding */
@@ -6966,9 +7072,21 @@ textarea:focus-visible {
 /* Footer */
 .login-footer-text {
   text-align: center;
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 20px;
+  font-size: 13px;
+  color: #64748b;
+  margin-top: 24px;
+  padding: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.login-footer-text a {
+  color: #667eea;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.login-footer-text a:hover {
+  text-decoration: underline;
 }
 
 /* Responsive */
@@ -7666,14 +7784,26 @@ textarea:focus-visible {
 
 /* Login Footer */
 .login-footer {
-  padding-top: 20px;
+  padding-top: 24px;
   text-align: center;
+  border-top: 1px solid #e2e8f0;
+  margin-top: 20px;
 }
 
 .login-footer p {
-  font-size: 12px;
-  color: #94a3b8;
+  font-size: 13px;
+  color: #64748b;
   margin: 0;
+}
+
+.login-footer a {
+  color: #667eea;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.login-footer a:hover {
+  text-decoration: underline;
 }
 
 /* Mobile Responsive */
