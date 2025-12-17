@@ -1620,25 +1620,38 @@ h2 {
 
 .stats-grid { display: grid; gap: 20px; align-items:stretch; margin-bottom:24px; width:100%; }
 
-/* Dashboard-specific: display cards as full-width rows so each card fills the main area */
+/* Dashboard-specific: 5 cards in a row to fill screen */
 .dashboard .stats-grid {
-  /* allow cards to flow side-by-side and stretch to fill available space
-     on large screens — responsive to viewport width */
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 20px; /* slightly larger gap for visual breathing room */
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 24px;
 }
+
+/* Responsive: adjust columns for smaller screens */
+@media (max-width: 1400px) {
+  .dashboard .stats-grid { grid-template-columns: repeat(3, 1fr) !important; }
+}
+@media (max-width: 900px) {
+  .dashboard .stats-grid { grid-template-columns: repeat(2, 1fr) !important; }
+}
+@media (max-width: 600px) {
+  .dashboard .stats-grid { grid-template-columns: 1fr !important; }
+}
+
 .stat-card { 
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
-  padding: 24px; 
-  border-radius: 16px; 
-  box-shadow: 0 8px 24px rgba(102, 126, 234, 0.2), 0 2px 8px rgba(0,0,0,0.1); 
+  padding: 28px; 
+  border-radius: 18px; 
+  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.25), 0 4px 10px rgba(0,0,0,0.1); 
   border: none;
-  min-height: 120px; 
+  min-height: 160px; 
   display: flex; 
+  flex-direction: column;
   align-items: center; 
-  gap: 16px;
+  justify-content: center;
+  gap: 12px;
   transition: all 0.3s ease;
   color: white;
+  text-align: center;
 }
 
 .stat-card:hover {

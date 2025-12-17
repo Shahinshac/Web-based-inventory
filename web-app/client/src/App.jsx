@@ -4238,46 +4238,46 @@ export default function App(){
             </div>
 
             {/* Quick Actions */}
-            <div className="quick-actions" style={{display:'flex', gap:12, marginBottom:18, alignItems:'center'}}>
-              <button className="btn-primary" onClick={()=>{ setShowAddProduct(true); handleTabChange('products') }}><Icon name="add"/> Add Product</button>
-              <button className="btn-primary" onClick={()=>{ setShowAddCustomer(true); handleTabChange('customers') }}><Icon name="customers"/> Add Customer</button>
-              <button className="btn-primary" onClick={()=>{ handleTabChange('pos') }}><Icon name="invoices"/> New Sale</button>
-              <button className="btn-primary" onClick={()=>{ handleTabChange('reports') }} style={{background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'}}><Icon name="reports"/> Reports</button>
+            <div className="quick-actions" style={{display:'grid', gridTemplateColumns:'repeat(4, 1fr)', gap:16, marginBottom:24, width:'100%'}}>
+              <button className="btn-primary" style={{padding:'16px 20px', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}} onClick={()=>{ setShowAddProduct(true); handleTabChange('products') }}><Icon name="add" size={20}/> Add Product</button>
+              <button className="btn-primary" style={{padding:'16px 20px', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}} onClick={()=>{ setShowAddCustomer(true); handleTabChange('customers') }}><Icon name="customers" size={20}/> Add Customer</button>
+              <button className="btn-primary" style={{padding:'16px 20px', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px'}} onClick={()=>{ handleTabChange('pos') }}><Icon name="invoices" size={20}/> New Sale</button>
+              <button className="btn-primary" style={{padding:'16px 20px', fontSize:'15px', display:'flex', alignItems:'center', justifyContent:'center', gap:'10px', background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)'}} onClick={()=>{ handleTabChange('reports') }}><Icon name="reports" size={20}/> Reports</button>
             </div>
-            <div className="stats-grid">
-              <div className="stat-card scale-in" style={{animationDelay: '0s', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white'}}>
-                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="cash" size={24} /></div>
-                <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.totalRevenue || 0)}</h3>
-                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Revenue</p>
+            <div className="stats-grid" style={{display:'grid', gridTemplateColumns:'repeat(5, 1fr)', gap:20, width:'100%'}}>
+              <div className="stat-card scale-in" style={{animationDelay: '0s', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)', color: 'white', padding:'28px', minHeight:'140px', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)', width:'60px', height:'60px', marginBottom:'12px'}}><Icon name="cash" size={28} /></div>
+                <div className="stat-info" style={{textAlign:'center'}}>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white', fontSize:'24px', fontWeight:'700', margin:'0 0 6px 0'}}>{formatCurrency0(stats.totalRevenue || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)', fontSize:'14px', margin:0}}>Total Revenue</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.1s', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white'}}>
-                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="invoices" size={24} /></div>
-                <div className="stat-info">
-                  <h3 style={{color: 'white'}}>{stats.totalInvoices || 0}</h3>
-                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Invoices</p>
+              <div className="stat-card scale-in" style={{animationDelay: '0.1s', background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)', color: 'white', padding:'28px', minHeight:'140px', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)', width:'60px', height:'60px', marginBottom:'12px'}}><Icon name="invoices" size={28} /></div>
+                <div className="stat-info" style={{textAlign:'center'}}>
+                  <h3 style={{color: 'white', fontSize:'24px', fontWeight:'700', margin:'0 0 6px 0'}}>{stats.totalInvoices || 0}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)', fontSize:'14px', margin:0}}>Total Invoices</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.2s', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white'}}>
-                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="analytics" size={24} /></div>
-                <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.todaySales || 0)}</h3>
-                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Today's Sales</p>
+              <div className="stat-card scale-in" style={{animationDelay: '0.2s', background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)', color: 'white', padding:'28px', minHeight:'140px', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)', width:'60px', height:'60px', marginBottom:'12px'}}><Icon name="analytics" size={28} /></div>
+                <div className="stat-info" style={{textAlign:'center'}}>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white', fontSize:'24px', fontWeight:'700', margin:'0 0 6px 0'}}>{formatCurrency0(stats.todaySales || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)', fontSize:'14px', margin:0}}>Today's Sales</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.3s', background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white'}}>
-                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="cash" size={24} /></div>
-                <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.todayProfit || 0)}</h3>
-                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Today's Profit</p>
+              <div className="stat-card scale-in" style={{animationDelay: '0.3s', background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)', color: 'white', padding:'28px', minHeight:'140px', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)', width:'60px', height:'60px', marginBottom:'12px'}}><Icon name="cash" size={28} /></div>
+                <div className="stat-info" style={{textAlign:'center'}}>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white', fontSize:'24px', fontWeight:'700', margin:'0 0 6px 0'}}>{formatCurrency0(stats.todayProfit || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)', fontSize:'14px', margin:0}}>Today's Profit</p>
                 </div>
               </div>
-              <div className="stat-card scale-in" style={{animationDelay: '0.4s', background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white'}}>
-                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)'}}><Icon name="products" size={24} /></div>
-                <div className="stat-info">
-                  <h3 style={{whiteSpace: 'nowrap', color: 'white'}}>{formatCurrency0(stats.totalInvestment || 0)}</h3>
-                  <p style={{color: 'rgba(255,255,255,0.9)'}}>Total Investment</p>
+              <div className="stat-card scale-in" style={{animationDelay: '0.4s', background: 'linear-gradient(135deg, #fa709a 0%, #fee140 100%)', color: 'white', padding:'28px', minHeight:'140px', flexDirection:'column', alignItems:'center', justifyContent:'center', textAlign:'center'}}>
+                <div className="stat-icon" style={{background: 'rgba(255,255,255,0.2)', width:'60px', height:'60px', marginBottom:'12px'}}><Icon name="products" size={28} /></div>
+                <div className="stat-info" style={{textAlign:'center'}}>
+                  <h3 style={{whiteSpace: 'nowrap', color: 'white', fontSize:'24px', fontWeight:'700', margin:'0 0 6px 0'}}>{formatCurrency0(stats.totalInvestment || 0)}</h3>
+                  <p style={{color: 'rgba(255,255,255,0.9)', fontSize:'14px', margin:0}}>Total Investment</p>
                 </div>
               </div>
             </div>
@@ -5442,6 +5442,13 @@ export default function App(){
                         </td>
                         <td style={{display:'flex',gap:'8px',alignItems:'center',flexWrap:'wrap'}}>
                           <button className="btn-primary" onClick={() => viewInvoice(inv)}><Icon name="view" size={14} /> View</button>
+                          <button
+                            onClick={() => sendInvoiceWhatsApp(inv)}
+                            title="Send via WhatsApp"
+                            style={{width:'36px', height:'36px', borderRadius:'50%', background:'#25D366', border:'none', cursor:'pointer', display:'inline-flex', alignItems:'center', justifyContent:'center', boxShadow:'0 3px 8px rgba(37,211,102,0.25)'}}
+                          >
+                            <Icon name="whatsapp" size={16} style={{color:'white'}} />
+                          </button>
                           <button className="btn-danger" onClick={() => deleteInvoice(inv)}><Icon name="delete" size={14} /> Delete</button>
                         </td>
                       </tr>
@@ -6104,17 +6111,18 @@ export default function App(){
               </div>
             </div>
 
-            <div className="modal-actions" style={{marginTop:'20px'}}>
-              <button onClick={printBill} className="btn-primary important-btn btn-icon"><Icon name="print"/> <span className="label">Print Bill</span></button>
+            <div className="modal-actions" style={{marginTop:'20px', display:'flex', gap:'12px', alignItems:'center', justifyContent:'center'}}>
+              <button onClick={printBill} className="btn-primary" style={{padding:'14px 28px', fontSize:'15px', display:'flex', alignItems:'center', gap:'10px', borderRadius:'10px', minWidth:'140px', justifyContent:'center'}}>
+                <Icon name="print" size={18}/> Print Bill
+              </button>
               <button
                 onClick={() => { if (!lastBill) return; sendInvoiceWhatsApp(lastBill); }}
-                className="btn-primary whatsapp-btn icon-only"
                 title="Send via WhatsApp"
-                style={{ marginLeft:'8px' }}
+                style={{width:'50px', height:'50px', borderRadius:'50%', background:'#25D366', border:'none', cursor:'pointer', display:'flex', alignItems:'center', justifyContent:'center', boxShadow:'0 4px 12px rgba(37,211,102,0.3)'}}
               >
-                <Icon name="whatsapp" size={18} />
+                <Icon name="whatsapp" size={22} style={{color:'white'}} />
               </button>
-              <button onClick={()=>setShowBill(false)} className="btn-secondary">Close</button>
+              <button onClick={()=>setShowBill(false)} className="btn-secondary" style={{padding:'14px 28px', fontSize:'15px', borderRadius:'10px', minWidth:'120px'}}>Close</button>
             </div>
           </div>
         </div>
