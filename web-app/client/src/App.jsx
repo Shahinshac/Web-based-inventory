@@ -3982,136 +3982,259 @@ export default function App(){
         </div>
       )}
 
-      <header>
-        <div style={{display:'flex', alignItems:'center', gap:'16px', flex:1}}>
-          <h1 style={{
-            margin:0, 
-            display:'flex', 
-            alignItems:'center', 
-            gap:'8px',
-            fontSize:'24px',
-            fontWeight:'bold',
-            color:'white'
+      {/* ====== MAIN HEADER ====== */}
+      <header style={{
+        background: 'linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #6d28d9 100%)',
+        padding: '0 24px',
+        height: '70px',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        position: 'fixed',
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1000,
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
+      }}>
+        {/* Logo Section */}
+        <div style={{display:'flex', alignItems:'center', gap:'12px'}}>
+          <div style={{
+            width: '40px',
+            height: '40px',
+            background: 'rgba(255,255,255,0.15)',
+            borderRadius: '10px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}>
-            <Icon name="dashboard" size={26} /> 26:07 Electronics
+            <Icon name="spark" size={24} />
+          </div>
+          <h1 style={{
+            margin: 0, 
+            fontSize: '20px',
+            fontWeight: '700',
+            color: '#ffffff',
+            letterSpacing: '-0.5px'
+          }}>
+            26:07 Electronics
           </h1>
         </div>
-        <div className="header-controls">
-          <div style={{display:'flex',alignItems:'center',gap:16}}>
-            {/* Cart toggle */}
-            <button aria-label="Open cart" title="Open cart" className="header-cart-btn" onClick={() => setCartOpen(s=>!s)} style={{
-              background: 'rgba(255,255,255,0.2)',
-              color: 'white',
-              border: 'none',
-              padding: '8px 12px',
-              borderRadius: '8px',
-              cursor: 'pointer',
+
+        {/* Right Side Controls */}
+        <div style={{display:'flex', alignItems:'center', gap:'20px'}}>
+          {/* Cart Button */}
+          <button 
+            onClick={() => setCartOpen(s=>!s)}
+            style={{
+              background: 'rgba(255,255,255,0.15)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              borderRadius: '10px',
+              padding: '8px 14px',
               display: 'flex',
               alignItems: 'center',
-              gap: '6px',
-              fontWeight: 600
-            }}>
-              <Icon name="cart" />
-              {cartCount > 0 && <span style={{
+              gap: '8px',
+              cursor: 'pointer',
+              color: '#ffffff'
+            }}
+          >
+            <Icon name="cart" size={18} />
+            {cartCount > 0 && (
+              <span style={{
                 background: '#ef4444',
-                color: 'white',
-                borderRadius: '12px',
+                color: '#ffffff',
+                borderRadius: '10px',
                 padding: '2px 8px',
                 fontSize: '12px',
-                fontWeight: 'bold'
-              }}>{cartCount}</span>}
-            </button>
-
-            {/* Time and date always visible */}
-            <div style={{color:'white',fontSize:13,textAlign:'right',lineHeight:1.2}}>
-              <div style={{fontWeight:700}}>{indiaTime}</div>
-              <div style={{opacity:0.9,fontSize:11}}>{indiaDate}</div>
-            </div>
-
-            {/* Profile photo circle (shows Admin when not logged in) */}
-            <div style={{display:'flex', alignItems:'center', gap:12}}>
-              <div 
-                onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
-                style={{
-                  width: 42,
-                  height: 42,
-                  borderRadius: '50%',
-                  overflow: 'hidden',
-                  cursor: 'pointer',
-                  background: 'linear-gradient(135deg, #ffffff 0%, #e0e7ff 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  border: '2px solid rgba(255,255,255,0.6)',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-                }}
-                title="Click to change photo"
-              >
-                {profilePhoto ? (
-                  <img 
-                    src={profilePhoto} 
-                    alt="Profile" 
-                    style={{width:'100%',height:'100%',objectFit:'cover'}}
-                    onError={(e) => {
-                      e.target.style.display = 'none';
-                      setProfilePhoto(null);
-                    }}
-                  />
-                ) : (
-                  <span style={{color:'#667eea',fontWeight:'bold',fontSize:16}}>
-                    {(currentUser?.name || currentUser?.username || 'A').charAt(0).toUpperCase()}
-                  </span>
-                )}
-              </div>
-              <input 
-                id="header-photo-upload"
-                type="file" 
-                accept="image/*" 
-                style={{display:'none'}} 
-                onChange={async (e)=>{
-                  const f = e.target.files && e.target.files[0]
-                  if (!f) return
-                  const reader = new FileReader()
-                  reader.onload = () => setProfilePhoto(reader.result)
-                  reader.readAsDataURL(f)
-                  if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
-                    try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
-                  }
-                }} 
-              />
-              <span style={{color:'white',fontWeight:700,fontSize:14}}>{currentUser?.username || 'Admin'}</span>
-            </div>
-
-            {/* Logout button */}
-            {isAuthenticated && (
-              <button className="logout-btn" onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }}>
-                Logout
-              </button>
+                fontWeight: '700'
+              }}>{cartCount}</span>
             )}
+          </button>
+
+          {/* Time Display */}
+          <div style={{
+            background: 'rgba(255,255,255,0.1)',
+            borderRadius: '10px',
+            padding: '8px 14px',
+            textAlign: 'right'
+          }}>
+            <div style={{color:'#ffffff', fontSize:'14px', fontWeight:'700'}}>{indiaTime}</div>
+            <div style={{color:'rgba(255,255,255,0.8)', fontSize:'11px'}}>{indiaDate}</div>
           </div>
+
+          {/* User Profile */}
+          <div style={{display:'flex', alignItems:'center', gap:'10px'}}>
+            <div 
+              onClick={()=>{ const fi = document.getElementById('header-photo-upload'); if(fi) fi.click() }}
+              style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: '50%',
+                overflow: 'hidden',
+                cursor: 'pointer',
+                background: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                border: '2px solid rgba(255,255,255,0.5)'
+              }}
+            >
+              {profilePhoto ? (
+                <img 
+                  src={profilePhoto} 
+                  alt="Profile" 
+                  style={{width:'100%',height:'100%',objectFit:'cover'}}
+                  onError={(e) => { e.target.style.display = 'none'; setProfilePhoto(null); }}
+                />
+              ) : (
+                <span style={{color:'#6d28d9', fontWeight:'bold', fontSize:'16px'}}>
+                  {(currentUser?.name || currentUser?.username || 'A').charAt(0).toUpperCase()}
+                </span>
+              )}
+            </div>
+            <input 
+              id="header-photo-upload"
+              type="file" 
+              accept="image/*" 
+              style={{display:'none'}} 
+              onChange={async (e)=>{
+                const f = e.target.files && e.target.files[0]
+                if (!f) return
+                const reader = new FileReader()
+                reader.onload = () => setProfilePhoto(reader.result)
+                reader.readAsDataURL(f)
+                if (isOnline && currentUser && (currentUser.id || currentUser._id)) {
+                  try { await uploadProfilePhoto(f) } catch(err) { console.error('Photo upload failed:', err) }
+                }
+              }} 
+            />
+            <span style={{color:'#ffffff', fontWeight:'600', fontSize:'14px'}}>
+              {currentUser?.username || 'Admin'}
+            </span>
+          </div>
+
+          {/* Logout Button */}
+          {isAuthenticated && (
+            <button 
+              onClick={() => { if(confirm('Are you sure you want to logout?')) handleLogout() }}
+              style={{
+                background: 'linear-gradient(135deg, #dc2626 0%, #b91c1c 100%)',
+                color: '#ffffff',
+                border: 'none',
+                borderRadius: '8px',
+                padding: '10px 18px',
+                fontSize: '13px',
+                fontWeight: '700',
+                cursor: 'pointer',
+                boxShadow: '0 2px 8px rgba(220,38,38,0.4)'
+              }}
+            >
+              Logout
+            </button>
+          )}
         </div>
       </header>
-      <main>
-        {/* Horizontal Navigation Bar */}
-        <nav className="horizontal-nav" aria-label="Main navigation">
-          <div className="horizontal-nav-inner">
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('dashboard')}} className={`nav-tab ${tab==='dashboard' ? 'active' : ''}`}><Icon name="dashboard"/> <span>Dashboard</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('pos')}} className={`nav-tab ${tab==='pos' ? 'active' : ''}`}><Icon name="pos"/> <span>Transactions</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('products')}} className={`nav-tab ${tab==='products' ? 'active' : ''}`}><Icon name="products"/> <span>Products</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('inventory')}} className={`nav-tab ${tab==='inventory' ? 'active' : ''}`}><Icon name="analytics"/> <span>Inventory</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('customers')}} className={`nav-tab ${tab==='customers' ? 'active' : ''}`}><Icon name="customers"/> <span>Customers</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('invoices')}} className={`nav-tab ${tab==='invoices' ? 'active' : ''}`}><Icon name="invoices"/> <span>Invoices</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity()){handleTabChange('analytics');fetchAnalyticsData(analyticsDateRange);}}} className={`nav-tab ${tab==='analytics' ? 'active' : ''}`}><Icon name="analytics"/> <span>Analytics</span></button>
-            <button onClick={async ()=>{if(await checkUserValidity())handleTabChange('reports')}} className={`nav-tab ${tab==='reports' ? 'active' : ''}`}><Icon name="reports"/> <span>Reports</span></button>
-            {isAdmin && <button onClick={()=>{handleTabChange('users');setShowUserManagement(true);fetchUsers()}} className={`nav-tab ${tab==='users'?'active':''}`}><Icon name="users"/> <span>Users</span></button>}
-            {isAdmin && <button onClick={()=>{handleTabChange('audit');fetchAuditLogs()}} className={`nav-tab ${tab==='audit'?'active':''}`}><Icon name="audit"/> <span>Audit</span></button>}
-          </div>
+
+      {/* ====== MAIN CONTENT ====== */}
+      <main style={{marginTop: '70px'}}>
+        {/* Navigation Bar */}
+        <nav style={{
+          background: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+          display: 'flex',
+          alignItems: 'center',
+          overflowX: 'auto',
+          position: 'sticky',
+          top: '70px',
+          zIndex: 99,
+          boxShadow: '0 2px 10px rgba(0,0,0,0.2)'
+        }}>
+          {[
+            { id: 'dashboard', icon: 'dashboard', label: 'Dashboard' },
+            { id: 'pos', icon: 'pos', label: 'Transactions' },
+            { id: 'products', icon: 'products', label: 'Products' },
+            { id: 'inventory', icon: 'analytics', label: 'Inventory' },
+            { id: 'customers', icon: 'customers', label: 'Customers' },
+            { id: 'invoices', icon: 'invoices', label: 'Invoices' },
+            { id: 'analytics', icon: 'analytics', label: 'Analytics' },
+            { id: 'reports', icon: 'reports', label: 'Reports' },
+          ].map(item => (
+            <button 
+              key={item.id}
+              onClick={async () => {
+                if(await checkUserValidity()) {
+                  handleTabChange(item.id);
+                  if(item.id === 'analytics') fetchAnalyticsData(analyticsDateRange);
+                }
+              }}
+              style={{
+                background: tab === item.id ? 'rgba(255,255,255,0.2)' : 'transparent',
+                border: 'none',
+                borderBottom: tab === item.id ? '3px solid #ffffff' : '3px solid transparent',
+                color: '#ffffff',
+                padding: '16px 20px',
+                fontSize: '14px',
+                fontWeight: tab === item.id ? '700' : '500',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.2s'
+              }}
+            >
+              <Icon name={item.icon} size={18} />
+              <span>{item.label}</span>
+            </button>
+          ))}
+          {isAdmin && (
+            <>
+              <button 
+                onClick={() => { handleTabChange('users'); setShowUserManagement(true); fetchUsers() }}
+                style={{
+                  background: tab === 'users' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                  border: 'none',
+                  borderBottom: tab === 'users' ? '3px solid #ffffff' : '3px solid transparent',
+                  color: '#ffffff',
+                  padding: '16px 20px',
+                  fontSize: '14px',
+                  fontWeight: tab === 'users' ? '700' : '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Icon name="users" size={18} />
+                <span>Users</span>
+              </button>
+              <button 
+                onClick={() => { handleTabChange('audit'); fetchAuditLogs() }}
+                style={{
+                  background: tab === 'audit' ? 'rgba(255,255,255,0.2)' : 'transparent',
+                  border: 'none',
+                  borderBottom: tab === 'audit' ? '3px solid #ffffff' : '3px solid transparent',
+                  color: '#ffffff',
+                  padding: '16px 20px',
+                  fontSize: '14px',
+                  fontWeight: tab === 'audit' ? '700' : '500',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px'
+                }}
+              >
+                <Icon name="audit" size={18} />
+                <span>Audit</span>
+              </button>
+            </>
+          )}
         </nav>
+
         <div className="content">
         {tab==='dashboard' && (
           <div className="dashboard">
             <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:'20px'}}>
-              <h2>Dashboard Overview</h2>
+              <h2 style={{color: '#1e293b', margin: 0}}>Dashboard Overview</h2>
             </div>
 
             {/* Quick Actions */}

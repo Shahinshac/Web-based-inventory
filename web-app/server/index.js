@@ -45,7 +45,7 @@ function sanitizeString(str) {
 }
 
 // Import validators
-const { validateCheckout, validateProduct, validateCustomer } = require('./validators');
+const { validateCheckout, validateProduct, validateCustomer, validateUserRegistration } = require('./validators');
 
 // HTTP request logging middleware
 app.use(logger.httpLogger);

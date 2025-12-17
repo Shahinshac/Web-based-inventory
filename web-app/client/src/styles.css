@@ -1339,35 +1339,17 @@ html { background: var(--bg, #ffffff); }
   to { opacity: 1; }
 }
 
+/* ============================================
+   HEADER STYLES - Completely Rewritten
+   ============================================ */
+
+/* Since header now uses inline styles in JSX, these are fallbacks */
 .app header {
-  /* Purple gradient header background for brand consistency */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: #ffffff;
-  /* Compact header with proper vertical centering */
-  padding: 0 32px;
-  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.35);
-  /* Fixed positioning at the top of viewport */
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  width: 100%;
-  height: var(--header-height);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  z-index: 1000;
-  gap: 16px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, #1e3a8a 0%, #3730a3 50%, #6d28d9 100%) !important;
+  color: #ffffff !important;
 }
 
-/* Ensure ALL header text is white and visible */
-.app header,
-.app header *,
-.app header h1,
-.app header span,
-.app header button,
-.app header a {
+.app header * {
   color: #ffffff !important;
 }
 
@@ -1376,20 +1358,13 @@ html { background: var(--bg, #ffffff); }
   stroke: #ffffff !important;
 }
 
-.app header h1 {
-  margin: 0;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 22px;
-  font-weight: 800;
-  animation: slideInLeft 0.6s ease-out;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Navigation uses inline styles now but keep fallbacks */
+.horizontal-nav {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%) !important;
+}
+
+.nav-tab {
   color: #ffffff !important;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
-  letter-spacing: -0.3px;
 }
 
 @keyframes slideInLeft {
@@ -1397,105 +1372,17 @@ html { background: var(--bg, #ffffff); }
   to { transform: translateX(0); opacity: 1; }
 }
 
-
-/* Header clock (India time/date) */
-.app header .header-clock {
-  position: relative;
-  right: 0;
-  top: 0;
-  text-align: right;
-  color: #fff !important;
-  line-height: 1;
-  display: flex; /* ensure clock is visible */
-  flex-direction: column;
-  align-items: flex-end;
-}
-
-/* Header controls (top-right): layout and time display */
-.app header .header-controls {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  margin-left: auto;
-  position: absolute;
-  right: 24px;
-  top: 50%;
-  transform: translateY(-50%);
-  z-index: 3000;
-}
-
-.app header .header-time {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 2px;
-  margin-right: 8px;
-  padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.app header .header-time .header-time-clock {
-  font-size: 15px;
-  font-weight: 700;
-  color: #ffffff !important;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
-}
-
-.app header .header-time .header-time-date {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.9) !important;
-  font-weight: 500;
-}
-
-/* Make sure header controls (icons & text) are readable on header background */
-.app header .header-controls,
-.app header .header-controls *,
-.app header .header-controls span,
-.app header .header-controls button {
-  color: #ffffff !important;
-  fill: #ffffff !important;
-}
-
-@media (max-width: 800px) {
-  .app header { padding: 0 12px; }
-  .app header h1 { font-size: 18px; }
-  .app header h1 span { font-size: 18px !important; }
-  .app header .header-clock { display: none; }
-  .app header .header-time { display: none; }
-  .header-controls { gap: 8px !important; }
-  .logout-btn { padding: 6px 10px !important; font-size: 12px !important; }
-  .header-cart-btn { padding: 4px 6px !important; }
-  
-  /* Mobile horizontal nav */
-  .horizontal-nav {
-    padding: 0;
-  }
-  
-  .nav-tab {
-    padding: 12px 16px;
-    font-size: 12px;
-  }
-  
-  .nav-tab span {
-    display: none;
-  }
-  
-  .nav-tab svg {
-    margin: 0;
-  }
-  
-  .content {
-    padding: 16px;
-  }
-}
-
 @keyframes slideInRight {
   from { transform: translateX(50px); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 }
 
+/* Mobile responsive */
+@media (max-width: 800px) {
+  .content {
+    padding: 16px;
+  }
+}
 
 .app {
   display: flex;
