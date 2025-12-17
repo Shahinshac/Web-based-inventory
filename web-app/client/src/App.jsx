@@ -3294,11 +3294,12 @@ export default function App(){
   async function uploadProfilePhoto(file) {
     if (!file) return
     setUploadingPhoto(true)
+    // Get userId at function scope so it's available in catch block
+    const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
+    const currentUserId = stored && (stored.id || stored._id || stored.userId)
     try {
-      const stored = JSON.parse(localStorage.getItem('currentUser') || '{}')
-      const userId = stored && (stored.id || stored._id || stored.userId)
       // If user is not authenticated or no id, bail out — fallback to local persist
-      if (!isAuthenticated || !isOnline || !userId) {
+      if (!isAuthenticated || !isOnline || !currentUserId) {
         // fallback: keep preview locally
         return
       }
@@ -3309,7 +3310,7 @@ export default function App(){
       fd.append('userId', stored.id || stored._id || '')
       fd.append('username', stored.username || '')
 
-      const res = await fetch(API(`/api/users/${userId}/photo`), {
+      const res = await fetch(API(`/api/users/${currentUserId}/photo`), {
         method: 'POST',
         body: fd
       })
@@ -3318,15 +3319,17 @@ export default function App(){
       if (!res.ok) throw new Error(data.error || 'Upload failed')
 
       // server returns a stable endpoint - use full API path resolution
-      const serverPath = API(`/api/users/${userId}/photo`)
+      const serverPath = API(`/api/users/${currentUserId}/photo`)
       setProfilePhoto(serverPath)
-      setLocalUserPhotos(u => ({ ...(u||{}), [userId]: serverPath }))
+      setLocalUserPhotos(u => ({ ...(u||{}), [currentUserId]: serverPath }))
       showNotification('✅ Profile photo saved to server', 'success')
     } catch (e) {
       showNotification('Failed to sync photo to server. Saved locally and will retry when online.', 'warning')
       try {
         const dataUrl = await readFileAsDataURL(file)
-        setPendingUploads(p => ([...p, { type: 'profile', id: userId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+        if (currentUserId) {
+          setPendingUploads(p => ([...p, { type: 'profile', id: currentUserId, fileData: dataUrl, mime: file.type, fileName: file.name, ts: Date.now() }]))
+        }
       } catch(err) { }
     } finally {
       setUploadingPhoto(false)
