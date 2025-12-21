@@ -19,14 +19,24 @@ from database import get_db, init_db, add_sample_data
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Disable CSRF for simpler form handling (enable in production with proper tokens)
-app.config['WTF_CSRF_ENABLED'] = False
+# Security configurations
+app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
+app.config['WTF_CSRF_TIME_LIMIT'] = None  # CSRF tokens don't expire
+
+# Initialize CSRF Protection
+csrf = CSRFProtect(app)
 
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 login_manager.login_message = 'Please log in to access this page.'
+
+# Rate limiting dictionary
+login_attempts = defaultdict(lambda: {'count': 0, 'timestamp': time.time()})
 
 # Ensure upload directory exists
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
@@ -121,8 +131,28 @@ def login():
         return redirect(url_for('dashboard'))
     
     if request.method == 'POST':
+        ip = request.remote_addr
+        current_time = time.time()
+        
+        # Rate limiting: Check login attempts
+        if login_attempts[ip]['count'] >= 5:
+            if current_time - login_attempts[ip]['timestamp'] < 900:  # 15 minutes
+                remaining = int(900 - (current_time - login_attempts[ip]['timestamp']))
+                flash(f'Too many login attempts. Please try again in {remaining // 60} minutes.', 'error')
+                return render_template('login.html')
+            else:
+                # Reset after 15 minutes
+                login_attempts[ip] = {'count': 0, 'timestamp': current_time}
+        
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '')
+        
+        # Prevent admin username from being used in login page
+        if username.lower() == 'admin':
+            flash('Invalid username or password.', 'error')
+            login_attempts[ip]['count'] += 1
+            login_attempts[ip]['timestamp'] = current_time
+            return render_template('login.html')
         
         conn = get_db()
         cursor = conn.cursor()
@@ -131,23 +161,39 @@ def login():
         conn.close()
         
         if user and check_password_hash(user['password_hash'], password):
+            # Reset login attempts on successful login
+            login_attempts[ip] = {'count': 0, 'timestamp': current_time}
+            
             user_obj = User(user['id'], user['username'], user['email'], user['role'], user['photo'])
             login_user(user_obj, remember=True)
-            log_audit('LOGIN', {'username': username})
+            session.permanent = True
+            log_audit('LOGIN', {'username': username, 'ip': ip})
             flash(f'Welcome back, {username}!', 'success')
             return redirect(url_for('dashboard'))
         else:
+            login_attempts[ip]['count'] += 1
+            login_attempts[ip]['timestamp'] = current_time
             flash('Invalid username or password.', 'error')
     
     return render_template('login.html')
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    if request.method == 'POST':
+    # Disable public registration - comment out this block to allow registration
+    flash('Registration is currently disabled. Please contact administrator.', 'error')
+    return redirect(url_for('login'))
+    
+    # Original registration code (disabled for security)
+    '''if request.method == 'POST':
         username = request.form.get('username', '').strip()
         email = request.form.get('email', '').strip()
         password = request.form.get('password', '')
         confirm_password = request.form.get('confirm_password', '')
+        
+        # Prevent admin username registration
+        if username.lower() == 'admin':
+            flash('This username is not available.', 'error')
+            return render_template('login.html', show_register=True)
         
         if not username or not password:
             flash('Username and password are required.', 'error')
@@ -157,8 +203,8 @@ def register():
             flash('Passwords do not match.', 'error')
             return render_template('login.html', show_register=True)
         
-        if len(password) < 6:
-            flash('Password must be at least 6 characters.', 'error')
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'error')
             return render_template('login.html', show_register=True)
         
         conn = get_db()
@@ -184,6 +230,57 @@ def register():
         return redirect(url_for('login'))
     
     return render_template('login.html', show_register=True)
+
+@app.route('/sys-admin', methods=['GET', 'POST'])
+def admin_login():
+    """Hidden admin login page at /sys-admin"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    
+    if request.method == 'POST':
+        ip = request.remote_addr
+        current_time = time.time()
+        
+        # Strict rate limiting for admin: 3 attempts
+        admin_key = f'admin_{ip}'
+        if login_attempts[admin_key]['count'] >= 3:
+            if current_time - login_attempts[admin_key]['timestamp'] < 1800:  # 30 minutes
+                remaining = int(1800 - (current_time - login_attempts[admin_key]['timestamp']))
+                flash(f'Access denied. Try again in {remaining // 60} minutes.', 'error')
+                return render_template('admin_login.html')
+            else:
+                login_attempts[admin_key] = {'count': 0, 'timestamp': current_time}
+        
+        username = request.form.get('username', '').strip()
+        password = request.form.get('password', '')
+        
+        # Only allow admin username here
+        if username.lower() != 'admin':
+            flash('Invalid administrator credentials.', 'error')
+            login_attempts[admin_key]['count'] += 1
+            login_attempts[admin_key]['timestamp'] = current_time
+            return render_template('admin_login.html')
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        cursor.execute('SELECT * FROM users WHERE username = ? AND role = ? AND is_active = 1', (username, 'admin'))
+        user = cursor.fetchone()
+        conn.close()
+        
+        if user and check_password_hash(user['password_hash'], password):
+            login_attempts[admin_key] = {'count': 0, 'timestamp': current_time}
+            user_obj = User(user['id'], user['username'], user['email'], user['role'], user['photo'])
+            login_user(user_obj, remember=True)
+            session.permanent = True
+            log_audit('ADMIN_LOGIN', {'username': username, 'ip': ip})
+            flash(f'Welcome, System Administrator!', 'success')
+            return redirect(url_for('dashboard'))
+        else:
+            login_attempts[admin_key]['count'] += 1
+            login_attempts[admin_key]['timestamp'] = current_time
+            flash('Invalid administrator credentials.', 'error')
+    
+    return render_template('admin_login.html')
 
 @app.route('/logout')
 @login_required

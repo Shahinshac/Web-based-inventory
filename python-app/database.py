@@ -147,7 +147,12 @@ def init_db():
         cursor.execute('''
             INSERT INTO users (username, password_hash, email, role)
             VALUES (?, ?, ?, ?)
-        ''', ('admin', generate_password_hash('admin123'), 'admin@store.com', 'admin'))
+        ''', ('admin', generate_password_hash('shahinsha'), 'admin@store.com', 'admin'))
+    else:
+        # Update existing admin password to 'shahinsha'
+        cursor.execute('''
+            UPDATE users SET password_hash = ? WHERE username = 'admin'
+        ''', (generate_password_hash('shahinsha'),))
     
     # Create walk-in customer if not exists
     cursor.execute("SELECT id FROM customers WHERE name = 'Walk-in Customer'")
