@@ -178,9 +178,9 @@ def init_db():
             VALUES (?, ?, ?, ?)
         ''', ('Walk-in Customer', '', 'Counter Sale', 'B2C'))
     
-        conn.commit()
-        conn.close()
-        print("✅ Database initialized successfully!")
+    conn.commit()
+    conn.close()
+    print("✅ Database initialized successfully!")
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
         if conn:
