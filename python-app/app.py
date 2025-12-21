@@ -16,10 +16,20 @@ import time
 
 from config import Config
 from database import get_db, init_db, add_sample_data
+import traceback
 
 # Initialize Flask app
 app = Flask(__name__)
 app.config.from_object(Config)
+
+# Initialize database on startup
+try:
+    init_db()
+    add_sample_data()
+    print("✅ Application initialized successfully")
+except Exception as e:
+    print(f"❌ Failed to initialize application: {e}")
+    print(traceback.format_exc())
 
 # Initialize Flask-Login
 login_manager = LoginManager()

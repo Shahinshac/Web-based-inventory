@@ -8,8 +8,13 @@ class Config:
     # Secret key for session management
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Database
-    DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
+    # Database - Use /tmp for ephemeral storage in production (Render)
+    if os.environ.get('RENDER'):
+        # Render uses ephemeral file system, store in /tmp
+        DATABASE_PATH = '/tmp/inventory.db'
+    else:
+        # Local development
+        DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
     
     # Session settings
     PERMANENT_SESSION_LIFETIME = timedelta(hours=2)

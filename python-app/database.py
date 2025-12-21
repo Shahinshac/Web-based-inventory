@@ -9,14 +9,27 @@ from config import Config
 
 def get_db():
     """Get database connection with row factory"""
-    conn = sqlite3.connect(Config.DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    try:
+        # Ensure directory exists
+        db_dir = os.path.dirname(Config.DATABASE_PATH)
+        if db_dir and not os.path.exists(db_dir):
+            os.makedirs(db_dir, exist_ok=True)
+        
+        conn = sqlite3.connect(Config.DATABASE_PATH)
+        conn.row_factory = sqlite3.Row
+        return conn
+    except Exception as e:
+        print(f"❌ Database connection error: {e}")
+        raise
 
 def init_db():
     """Initialize database with all tables"""
-    conn = get_db()
-    cursor = conn.cursor()
+    try:
+        conn = get_db()
+        cursor = conn.cursor()
+    except Exception as e:
+        print(f"❌ Failed to connect to database: {e}")
+        raise
     
     # Users table
     cursor.execute('''
@@ -165,9 +178,14 @@ def init_db():
             VALUES (?, ?, ?, ?)
         ''', ('Walk-in Customer', '', 'Counter Sale', 'B2C'))
     
-    conn.commit()
-    conn.close()
-    print("✅ Database initialized successfully!")
+        conn.commit()
+        conn.close()
+        print("✅ Database initialized successfully!")
+    except Exception as e:
+        print(f"❌ Database initialization error: {e}")
+        if conn:
+            conn.close()
+        raise
 
 def add_sample_data():
     """Add sample products and customers"""

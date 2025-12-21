@@ -6,7 +6,7 @@ services:
     plan: free
     branch: main
     buildCommand: pip install -r python-app/requirements.txt
-    startCommand: cd python-app && gunicorn app:app
+    startCommand: cd python-app && gunicorn app:app --bind 0.0.0.0:$PORT --workers 1 --timeout 120
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
@@ -14,3 +14,5 @@ services:
         generateValue: true
       - key: FLASK_ENV
         value: production
+      - key: RENDER
+        value: true
