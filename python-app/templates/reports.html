@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}Reports{% endblock %}
+
+{% block content %}
+<h1 style="color: #ffffff; margin-bottom: 24px; font-size: 1.75rem;">
+    <i class="fas fa-file-alt"></i> Reports & Summary
+</h1>
+
+<!-- Summary Stats -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon blue">
+            <i class="fas fa-boxes"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ product_summary.total or 0 }}</h3>
+            <p>Total Products</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon purple">
+            <i class="fas fa-warehouse"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ "{:,.0f}".format(product_summary.stock_value or 0) }}</h3>
+            <p>Total Stock Units</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon green">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ customer_count }}</h3>
+            <p>Total Customers</p>
+        </div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon orange">
+            <i class="fas fa-file-invoice"></i>
+        </div>
+        <div class="stat-content">
+            <h3>{{ sales_summary.total_bills or 0 }}</h3>
+            <p>Total Invoices</p>
+        </div>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); gap: 24px;">
+    <!-- Revenue Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-rupee-sign"></i> Revenue Summary</h2>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: linear-gradient(135deg, #dcfce7, #bbf7d0); border-radius: 12px;">
+                <div>
+                    <p style="color: #166534; font-size: 0.85rem;">Total Revenue</p>
+                    <h3 style="color: #166534; font-size: 1.5rem;">₹{{ "{:,.0f}".format(sales_summary.total_revenue or 0) }}</h3>
+                </div>
+                <div style="font-size: 2rem; color: #10b981;">💰</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: linear-gradient(135deg, #dbeafe, #bfdbfe); border-radius: 12px;">
+                <div>
+                    <p style="color: #1e40af; font-size: 0.85rem;">Total Profit</p>
+                    <h3 style="color: #1e40af; font-size: 1.5rem;">₹{{ "{:,.0f}".format(sales_summary.total_profit or 0) }}</h3>
+                </div>
+                <div style="font-size: 2rem; color: #3b82f6;">📈</div>
+            </div>
+            
+            {% if sales_summary.total_revenue and sales_summary.total_revenue > 0 %}
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: linear-gradient(135deg, #fef3c7, #fde68a); border-radius: 12px;">
+                <div>
+                    <p style="color: #92400e; font-size: 0.85rem;">Profit Margin</p>
+                    <h3 style="color: #92400e; font-size: 1.5rem;">{{ "{:.1f}".format((sales_summary.total_profit or 0) / sales_summary.total_revenue * 100) }}%</h3>
+                </div>
+                <div style="font-size: 2rem; color: #f59e0b;">📊</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    
+    <!-- Inventory Value -->
+    <div class="card">
+        <div class="card-header">
+            <h2 class="card-title"><i class="fas fa-warehouse"></i> Inventory Value</h2>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; gap: 16px;">
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: #f8fafc; border-radius: 12px; border: 2px solid #e2e8f0;">
+                <div>
+                    <p style="color: #64748b; font-size: 0.85rem;">At Cost Price</p>
+                    <h3 style="color: #1e293b; font-size: 1.5rem;">₹{{ "{:,.0f}".format(inventory_value.cost or 0) }}</h3>
+                </div>
+                <div style="font-size: 2rem;">📦</div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: linear-gradient(135deg, #ede9fe, #ddd6fe); border-radius: 12px;">
+                <div>
+                    <p style="color: #6d28d9; font-size: 0.85rem;">At Retail Price</p>
+                    <h3 style="color: #6d28d9; font-size: 1.5rem;">₹{{ "{:,.0f}".format(inventory_value.retail or 0) }}</h3>
+                </div>
+                <div style="font-size: 2rem; color: #7c3aed;">🏷️</div>
+            </div>
+            
+            {% if inventory_value.cost and inventory_value.cost > 0 %}
+            <div style="display: flex; justify-content: space-between; padding: 16px; background: linear-gradient(135deg, #dcfce7, #bbf7d0); border-radius: 12px;">
+                <div>
+                    <p style="color: #166534; font-size: 0.85rem;">Potential Profit</p>
+                    <h3 style="color: #166534; font-size: 1.5rem;">₹{{ "{:,.0f}".format((inventory_value.retail or 0) - (inventory_value.cost or 0)) }}</h3>
+                </div>
+                <div style="font-size: 2rem; color: #10b981;">💎</div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="card" style="margin-top: 24px;">
+    <div class="card-header">
+        <h2 class="card-title"><i class="fas fa-bolt"></i> Quick Actions</h2>
+    </div>
+    
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="{{ url_for('products', filter='low-stock') }}" class="btn btn-secondary">
+            <i class="fas fa-exclamation-triangle"></i> View Low Stock
+        </a>
+        <a href="{{ url_for('invoices', date_filter='today') }}" class="btn btn-secondary">
+            <i class="fas fa-calendar-day"></i> Today's Sales
+        </a>
+        <a href="{{ url_for('analytics') }}" class="btn btn-secondary">
+            <i class="fas fa-chart-line"></i> View Analytics
+        </a>
+        {% if current_user.is_admin() %}
+        <a href="{{ url_for('audit') }}" class="btn btn-secondary">
+            <i class="fas fa-history"></i> Audit Logs
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

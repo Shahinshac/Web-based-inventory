@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Invoice {{ bill.bill_number }}{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+    <h1 style="color: #ffffff; font-size: 1.75rem;">
+        <i class="fas fa-file-invoice"></i> Invoice Details
+    </h1>
+    <a href="{{ url_for('invoices') }}" class="btn btn-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Invoices
+    </a>
+</div>
+
+<div class="card" id="invoice-content">
+    <!-- Invoice Header -->
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 30px; padding-bottom: 20px; border-bottom: 2px solid #e2e8f0;">
+        <div>
+            <h2 style="font-size: 1.5rem; color: #1e293b; margin-bottom: 8px;">
+                <span style="font-size: 2rem;">⚡</span> {{ company.name }}
+            </h2>
+            <p style="color: #64748b; font-size: 0.9rem;">{{ company.address }}</p>
+            <p style="color: #64748b; font-size: 0.9rem;">Phone: {{ company.phone }} | Email: {{ company.email }}</p>
+            <p style="color: #64748b; font-size: 0.9rem;">GSTIN: {{ company.gstin }}</p>
+        </div>
+        <div style="text-align: right;">
+            <h3 style="font-size: 1.75rem; color: #4f46e5; margin-bottom: 8px;">TAX INVOICE</h3>
+            <p style="font-weight: 700; font-size: 1.1rem;">{{ bill.bill_number }}</p>
+            <p style="color: #64748b;">{{ bill.bill_date[:10] }}</p>
+            <span class="badge badge-success" style="margin-top: 8px;">{{ bill.payment_status }}</span>
+        </div>
+    </div>
+    
+    <!-- Customer Info -->
+    <div style="background: #f8fafc; border-radius: 12px; padding: 20px; margin-bottom: 24px;">
+        <h4 style="color: #64748b; font-size: 0.85rem; text-transform: uppercase; margin-bottom: 12px;">Bill To</h4>
+        <h3 style="color: #1e293b; margin-bottom: 4px;">{{ bill.customer_name }}</h3>
+        {% if bill.customer_phone %}
+        <p style="color: #64748b;">Phone: {{ bill.customer_phone }}</p>
+        {% endif %}
+        {% if bill.customer_address %}
+        <p style="color: #64748b;">{{ bill.customer_address }}</p>
+        {% endif %}
+    </div>
+    
+    <!-- Items Table -->
+    <div class="table-container" style="margin-bottom: 24px;">
+        <table>
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Product</th>
+                    <th>HSN</th>
+                    <th>Qty</th>
+                    <th>Unit Price</th>
+                    <th>Amount</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ loop.index }}</td>
+                    <td style="font-weight: 600;">{{ item.product_name }}</td>
+                    <td>{{ item.hsn_code }}</td>
+                    <td>{{ item.quantity }}</td>
+                    <td>₹{{ "{:,.0f}".format(item.unit_price) }}</td>
+                    <td style="font-weight: 600;">₹{{ "{:,.0f}".format(item.line_subtotal) }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Totals -->
+    <div style="display: flex; justify-content: flex-end;">
+        <div style="width: 300px;">
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span>Subtotal:</span>
+                <span style="font-weight: 600;">₹{{ "{:,.2f}".format(bill.subtotal) }}</span>
+            </div>
+            
+            {% if bill.discount_amount > 0 %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0; color: #10b981;">
+                <span>Discount ({{ bill.discount_percent }}%):</span>
+                <span>-₹{{ "{:,.2f}".format(bill.discount_amount) }}</span>
+            </div>
+            {% endif %}
+            
+            {% if bill.cgst > 0 %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span>CGST (9%):</span>
+                <span>₹{{ "{:,.2f}".format(bill.cgst) }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span>SGST (9%):</span>
+                <span>₹{{ "{:,.2f}".format(bill.sgst) }}</span>
+            </div>
+            {% else %}
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e2e8f0;">
+                <span>IGST (18%):</span>
+                <span>₹{{ "{:,.2f}".format(bill.igst) }}</span>
+            </div>
+            {% endif %}
+            
+            <div style="display: flex; justify-content: space-between; padding: 12px 0; font-size: 1.25rem; font-weight: 700; color: #4f46e5;">
+                <span>Grand Total:</span>
+                <span>₹{{ "{:,.0f}".format(bill.grand_total) }}</span>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; padding: 8px 0; color: #10b981;">
+                <span>Profit:</span>
+                <span style="font-weight: 600;">₹{{ "{:,.2f}".format(bill.total_profit) }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Payment Info -->
+    <div style="margin-top: 24px; padding-top: 20px; border-top: 2px dashed #e2e8f0; text-align: center;">
+        <p style="color: #64748b;">
+            Payment Mode: <strong style="text-transform: uppercase;">{{ bill.payment_mode }}</strong> |
+            Created by: <strong>{{ bill.created_by_username or 'System' }}</strong>
+        </p>
+        <p style="color: #94a3b8; font-size: 0.85rem; margin-top: 16px;">Thank you for your business!</p>
+    </div>
+</div>
+
+<div style="margin-top: 20px; display: flex; gap: 12px;">
+    <button onclick="window.print()" class="btn btn-primary">
+        <i class="fas fa-print"></i> Print Invoice
+    </button>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    @media print {
+        .header, .nav, .footer, .btn { display: none !important; }
+        .main { margin-top: 0 !important; padding: 0 !important; }
+        .card { box-shadow: none !important; }
+        body { background: white !important; }
+    }
+</style>
+{% endblock %}

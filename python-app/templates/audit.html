@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Audit Logs{% endblock %}
+
+{% block content %}
+<h1 style="color: #ffffff; margin-bottom: 24px; font-size: 1.75rem;">
+    <i class="fas fa-history"></i> Audit Logs
+</h1>
+
+<div class="card">
+    {% if logs %}
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>User</th>
+                    <th>Details</th>
+                    <th>IP Address</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="font-size: 0.85rem; color: #64748b; white-space: nowrap;">
+                        {{ log.created_at[:19] if log.created_at else '-' }}
+                    </td>
+                    <td>
+                        <span class="badge badge-{% if 'LOGIN' in log.action %}info{% elif 'DELETED' in log.action %}danger{% elif 'ADDED' in log.action or 'COMPLETED' in log.action %}success{% else %}warning{% endif %}">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td style="font-weight: 600;">{{ log.username or 'System' }}</td>
+                    <td style="max-width: 400px; overflow: hidden; text-overflow: ellipsis; font-size: 0.85rem; color: #64748b;">
+                        {{ log.details[:100] if log.details else '-' }}{% if log.details and log.details|length > 100 %}...{% endif %}
+                    </td>
+                    <td style="font-family: monospace; font-size: 0.85rem;">{{ log.ip_address or '-' }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <i class="fas fa-clipboard-list"></i>
+        <h3>No audit logs</h3>
+        <p>Activity will be recorded here</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
