@@ -642,6 +642,13 @@
                 <span>Reports</span>
             </a>
             {% if current_user.is_admin() %}
+            <a href="{{ url_for('user_approvals') }}" class="nav-tab {% if active_tab == 'user_approvals' %}active{% endif %}" style="position: relative;">
+                <i class="fas fa-user-check"></i>
+                <span>Approvals</span>
+                {% if stats.pending_approvals and stats.pending_approvals > 0 %}
+                <span style="position: absolute; top: 8px; right: 8px; background: #ef4444; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700;">{{ stats.pending_approvals }}</span>
+                {% endif %}
+            </a>
             <a href="{{ url_for('users') }}" class="nav-tab {% if active_tab == 'users' %}active{% endif %}">
                 <i class="fas fa-user-cog"></i>
                 <span>Users</span>

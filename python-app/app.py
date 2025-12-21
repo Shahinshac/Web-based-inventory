@@ -155,11 +155,25 @@ def login():
         
         conn = get_db()
         cursor = conn.cursor()
-        cursor.execute('SELECT * FROM users WHERE username = ? AND is_active = 1', (username,))
+        cursor.execute('SELECT * FROM users WHERE username = ?', (username,))
         user = cursor.fetchone()
         conn.close()
         
-        if user and check_password_hash(user['password_hash'], password):
+        if not user:
+            login_attempts[ip]['count'] += 1
+            login_attempts[ip]['timestamp'] = current_time
+            flash('Invalid username or password.', 'error')
+            return render_template('login.html')
+        
+        if not user['is_approved']:
+            flash('Your account is pending admin approval.', 'error')
+            return render_template('login.html')
+        
+        if not user['is_active']:
+            flash('Your account has been deactivated. Contact administrator.', 'error')
+            return render_template('login.html')
+        
+        if check_password_hash(user['password_hash'], password):
             # Reset login attempts on successful login
             login_attempts[ip] = {'count': 0, 'timestamp': current_time}
             
@@ -178,9 +192,52 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Disable public registration - only admins can create users
-    flash('Registration is currently disabled. Please contact administrator.', 'error')
-    return redirect(url_for('login'))
+    if request.method == 'POST':
+        username = request.form.get('username', '').strip()
+        email = request.form.get('email', '').strip()
+        password = request.form.get('password', '')
+        confirm_password = request.form.get('confirm_password', '')
+        
+        # Prevent admin username registration
+        if username.lower() == 'admin':
+            flash('This username is not available.', 'error')
+            return render_template('login.html', show_register=True)
+        
+        if not username or not password:
+            flash('Username and password are required.', 'error')
+            return render_template('login.html', show_register=True)
+        
+        if password != confirm_password:
+            flash('Passwords do not match.', 'error')
+            return render_template('login.html', show_register=True)
+        
+        if len(password) < 8:
+            flash('Password must be at least 8 characters.', 'error')
+            return render_template('login.html', show_register=True)
+        
+        conn = get_db()
+        cursor = conn.cursor()
+        
+        # Check if username exists
+        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+        if cursor.fetchone():
+            conn.close()
+            flash('Username already exists.', 'error')
+            return render_template('login.html', show_register=True)
+        
+        # Create user with pending approval (is_approved = 0)
+        cursor.execute('''
+            INSERT INTO users (username, password_hash, email, role, is_approved, is_active)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ''', (username, generate_password_hash(password), email, 'cashier', 0, 0))
+        conn.commit()
+        conn.close()
+        
+        log_audit('USER_REGISTRATION_REQUEST', {'username': username, 'email': email})
+        flash('Registration successful! Your account is pending admin approval.', 'success')
+        return redirect(url_for('login'))
+    
+    return render_template('login.html', show_register=True)
 
 @app.route('/sys-admin', methods=['GET', 'POST'])
 def admin_login():
@@ -242,6 +299,101 @@ def logout():
     return redirect(url_for('login'))
 
 # ============================================================================
+# USER APPROVAL SYSTEM
+# ============================================================================
+
+@app.route('/user-approvals')
+@login_required
+@admin_required
+def user_approvals():
+    """Admin page to view and approve pending user registrations"""
+    conn = get_db()
+    cursor = conn.cursor()
+    cursor.execute('''
+        SELECT id, username, email, created_at 
+        FROM users 
+        WHERE is_approved = 0 
+        ORDER BY created_at DESC
+    ''')
+    pending_users = cursor.fetchall()
+    conn.close()
+    return render_template('user_approvals.html', pending_users=pending_users, active_tab='user_approvals')
+
+@app.route('/approve-user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def approve_user(user_id):
+    """Approve a pending user and assign role"""
+    role = request.form.get('role', 'cashier')
+    
+    # Validate role
+    if role not in ['cashier', 'manager', 'admin']:
+        flash('Invalid role selected.', 'error')
+        return redirect(url_for('user_approvals'))
+    
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get user details
+    cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        flash('User not found.', 'error')
+        return redirect(url_for('user_approvals'))
+    
+    # Approve user
+    cursor.execute('''
+        UPDATE users 
+        SET is_approved = 1, is_active = 1, role = ?, approved_by = ? 
+        WHERE id = ?
+    ''', (role, current_user.id, user_id))
+    conn.commit()
+    conn.close()
+    
+    log_audit('USER_APPROVED', {
+        'user_id': user_id,
+        'username': user['username'],
+        'role': role,
+        'approved_by': current_user.username
+    })
+    
+    flash(f'User {user["username"]} approved as {role.title()}!', 'success')
+    return redirect(url_for('user_approvals'))
+
+@app.route('/reject-user/<int:user_id>', methods=['POST'])
+@login_required
+@admin_required
+def reject_user(user_id):
+    """Reject and delete a pending user"""
+    conn = get_db()
+    cursor = conn.cursor()
+    
+    # Get user details
+    cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+    user = cursor.fetchone()
+    
+    if not user:
+        conn.close()
+        flash('User not found.', 'error')
+        return redirect(url_for('user_approvals'))
+    
+    # Delete user
+    cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+    conn.commit()
+    conn.close()
+    
+    log_audit('USER_REJECTED', {
+        'user_id': user_id,
+        'username': user['username'],
+        'rejected_by': current_user.username
+    })
+    
+    flash(f'User {user["username"]} rejected and removed.', 'info')
+    return redirect(url_for('user_approvals'))
+
+# ============================================================================
 # DASHBOARD
 # ============================================================================
 
@@ -262,6 +414,12 @@ def dashboard():
     # Total customers
     cursor.execute('SELECT COUNT(*) as total FROM customers')
     customer_count = cursor.fetchone()['total']
+    
+    # Pending user approvals (admin only)
+    pending_approvals = 0
+    if current_user.is_admin():
+        cursor.execute('SELECT COUNT(*) as count FROM users WHERE is_approved = 0')
+        pending_approvals = cursor.fetchone()['count']
     
     # Today's sales
     cursor.execute('''
@@ -317,6 +475,7 @@ def dashboard():
         'month_sales_count': month_sales['count'],
         'month_sales_total': month_sales['total'],
         'month_profit': month_sales['profit'],
+        'pending_approvals': pending_approvals,
     }
     
     return render_template('dashboard.html', 

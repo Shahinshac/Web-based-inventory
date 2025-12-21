@@ -27,8 +27,11 @@ def init_db():
             email TEXT,
             role TEXT DEFAULT 'cashier',
             is_active INTEGER DEFAULT 1,
+            is_approved INTEGER DEFAULT 0,
+            approved_by INTEGER,
             photo TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (approved_by) REFERENCES users(id)
         )
     ''')
     
@@ -145,13 +148,13 @@ def init_db():
     cursor.execute("SELECT id FROM users WHERE username = 'admin'")
     if not cursor.fetchone():
         cursor.execute('''
-            INSERT INTO users (username, password_hash, email, role)
-            VALUES (?, ?, ?, ?)
-        ''', ('admin', generate_password_hash('shahinsha'), 'admin@store.com', 'admin'))
+            INSERT INTO users (username, password_hash, email, role, is_approved)
+            VALUES (?, ?, ?, ?, ?)
+        ''', ('admin', generate_password_hash('shahinsha'), 'admin@store.com', 'admin', 1))
     else:
-        # Update existing admin password to 'shahinsha'
+        # Update existing admin password to 'shahinsha' and ensure approved
         cursor.execute('''
-            UPDATE users SET password_hash = ? WHERE username = 'admin'
+            UPDATE users SET password_hash = ?, is_approved = 1 WHERE username = 'admin'
         ''', (generate_password_hash('shahinsha'),))
     
     # Create walk-in customer if not exists

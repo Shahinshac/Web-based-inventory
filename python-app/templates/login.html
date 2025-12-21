@@ -206,7 +206,8 @@
             {% endwith %}
             
             <div class="tab-toggle">
-                <button id="login-tab" class="active" onclick="showLogin()">Staff Login</button>
+                <button id="login-tab" class="{% if not show_register %}active{% endif %}" onclick="showLogin()">Login</button>
+                <button id="register-tab" class="{% if show_register %}active{% endif %}" onclick="showRegister()">Register</button>
             </div>
             
             <!-- Login Form -->
@@ -234,11 +235,67 @@
                 </button>
             </form>
             
+            <!-- Register Form -->
+            <form id="register-form" action="{{ url_for('register') }}" method="POST" style="{% if not show_register %}display:none{% endif %}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}"/>
+                <div class="form-group">
+                    <label>Username</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-user"></i>
+                        <input type="text" name="username" class="form-control" placeholder="Choose username" required>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Email (Optional)</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-envelope"></i>
+                        <input type="email" name="email" class="form-control" placeholder="Enter email">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="password" class="form-control" placeholder="Create password (min 8 chars)" required minlength="8">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label>Confirm Password</label>
+                    <div class="input-wrapper">
+                        <i class="fas fa-lock"></i>
+                        <input type="password" name="confirm_password" class="form-control" placeholder="Confirm password" required minlength="8">
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn-login">
+                    <i class="fas fa-user-plus"></i>
+                    Register
+                </button>
+            </form>
+            
             <div class="login-footer" style="margin-top: 24px; text-align: center; color: #64748b; font-size: 0.875rem;">
-                <p>🔒 Secure Staff Login Portal</p>
-                <p style="margin-top: 8px; font-size: 0.75rem;">Contact administrator for access credentials</p>
+                <p>🔒 After registration, admin will review and approve your account</p>
             </div>
         </div>
     </div>
+    
+    <script>
+        function showLogin() {
+            document.getElementById('login-form').style.display = 'block';
+            document.getElementById('register-form').style.display = 'none';
+            document.getElementById('login-tab').classList.add('active');
+            document.getElementById('register-tab').classList.remove('active');
+        }
+        
+        function showRegister() {
+            document.getElementById('login-form').style.display = 'none';
+            document.getElementById('register-form').style.display = 'block';
+            document.getElementById('login-tab').classList.remove('active');
+            document.getElementById('register-tab').classList.add('active');
+        }
+    </script>
 </body>
 </html>
