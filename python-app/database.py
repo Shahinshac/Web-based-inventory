@@ -24,163 +24,162 @@ def get_db():
 
 def init_db():
     """Initialize database with all tables"""
+    conn = None
     try:
         conn = get_db()
         cursor = conn.cursor()
-    except Exception as e:
-        print(f"❌ Failed to connect to database: {e}")
-        raise
-    
-    # Users table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password_hash TEXT NOT NULL,
-            email TEXT,
-            role TEXT DEFAULT 'cashier',
-            is_active INTEGER DEFAULT 1,
-            is_approved INTEGER DEFAULT 0,
-            approved_by INTEGER,
-            photo TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (approved_by) REFERENCES users(id)
-        )
-    ''')
-    
-    # Products table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS products (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            hsn_code TEXT DEFAULT '9999',
-            quantity INTEGER DEFAULT 0,
-            cost_price REAL DEFAULT 0.0,
-            price REAL DEFAULT 0.0,
-            min_stock INTEGER DEFAULT 10,
-            barcode TEXT,
-            photo TEXT,
-            category TEXT DEFAULT 'General',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            created_by INTEGER,
-            FOREIGN KEY (created_by) REFERENCES users(id)
-        )
-    ''')
-    
-    # Customers table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS customers (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            name TEXT NOT NULL,
-            phone TEXT,
-            address TEXT,
-            place TEXT,
-            pincode TEXT,
-            gstin TEXT,
-            customer_type TEXT DEFAULT 'B2C',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-    ''')
-    
-    # Bills table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bills (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bill_number TEXT UNIQUE NOT NULL,
-            customer_id INTEGER,
-            customer_name TEXT NOT NULL,
-            customer_phone TEXT,
-            customer_address TEXT,
-            customer_state TEXT DEFAULT 'Same',
-            subtotal REAL DEFAULT 0.0,
-            discount_percent REAL DEFAULT 0.0,
-            discount_amount REAL DEFAULT 0.0,
-            cgst REAL DEFAULT 0.0,
-            sgst REAL DEFAULT 0.0,
-            igst REAL DEFAULT 0.0,
-            gst_amount REAL DEFAULT 0.0,
-            grand_total REAL DEFAULT 0.0,
-            total_profit REAL DEFAULT 0.0,
-            payment_mode TEXT DEFAULT 'cash',
-            payment_status TEXT DEFAULT 'Paid',
-            created_by INTEGER,
-            created_by_username TEXT,
-            bill_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (customer_id) REFERENCES customers(id),
-            FOREIGN KEY (created_by) REFERENCES users(id)
-        )
-    ''')
-    
-    # Bill items table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS bill_items (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            bill_id INTEGER NOT NULL,
-            product_id INTEGER NOT NULL,
-            product_name TEXT NOT NULL,
-            hsn_code TEXT DEFAULT '9999',
-            quantity INTEGER DEFAULT 1,
-            cost_price REAL DEFAULT 0.0,
-            unit_price REAL DEFAULT 0.0,
-            line_subtotal REAL DEFAULT 0.0,
-            line_profit REAL DEFAULT 0.0,
-            FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
-            FOREIGN KEY (product_id) REFERENCES products(id)
-        )
-    ''')
-    
-    # Expenses table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS expenses (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            category TEXT NOT NULL,
-            amount REAL NOT NULL,
-            description TEXT,
-            expense_date DATE,
-            created_by INTEGER,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (created_by) REFERENCES users(id)
-        )
-    ''')
-    
-    # Audit logs table
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS audit_logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            action TEXT NOT NULL,
-            user_id INTEGER,
-            username TEXT,
-            details TEXT,
-            ip_address TEXT,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (user_id) REFERENCES users(id)
-        )
-    ''')
-    
-    # Create default admin user if not exists
-    cursor.execute("SELECT id FROM users WHERE username = 'admin'")
-    if not cursor.fetchone():
+        
+        # Users table
         cursor.execute('''
-            INSERT INTO users (username, password_hash, email, role, is_approved)
-            VALUES (?, ?, ?, ?, ?)
-        ''', ('admin', generate_password_hash('shahinsha'), 'admin@store.com', 'admin', 1))
-    else:
-        # Update existing admin password to 'shahinsha' and ensure approved
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT UNIQUE NOT NULL,
+                password_hash TEXT NOT NULL,
+                email TEXT,
+                role TEXT DEFAULT 'cashier',
+                is_active INTEGER DEFAULT 1,
+                is_approved INTEGER DEFAULT 0,
+                approved_by INTEGER,
+                photo TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (approved_by) REFERENCES users(id)
+            )
+        ''')
+        
+        # Products table
         cursor.execute('''
-            UPDATE users SET password_hash = ?, is_approved = 1 WHERE username = 'admin'
-        ''', (generate_password_hash('shahinsha'),))
-    
-    # Create walk-in customer if not exists
-    cursor.execute("SELECT id FROM customers WHERE name = 'Walk-in Customer'")
-    if not cursor.fetchone():
+            CREATE TABLE IF NOT EXISTS products (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                hsn_code TEXT DEFAULT '9999',
+                quantity INTEGER DEFAULT 0,
+                cost_price REAL DEFAULT 0.0,
+                price REAL DEFAULT 0.0,
+                min_stock INTEGER DEFAULT 10,
+                barcode TEXT,
+                photo TEXT,
+                category TEXT DEFAULT 'General',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                created_by INTEGER,
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            )
+        ''')
+        
+        # Customers table
         cursor.execute('''
-            INSERT INTO customers (name, phone, address, customer_type)
-            VALUES (?, ?, ?, ?)
-        ''', ('Walk-in Customer', '', 'Counter Sale', 'B2C'))
-    
-    conn.commit()
-    conn.close()
-    print("✅ Database initialized successfully!")
+            CREATE TABLE IF NOT EXISTS customers (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                name TEXT NOT NULL,
+                phone TEXT,
+                address TEXT,
+                place TEXT,
+                pincode TEXT,
+                gstin TEXT,
+                customer_type TEXT DEFAULT 'B2C',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        
+        # Bills table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bills (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bill_number TEXT UNIQUE NOT NULL,
+                customer_id INTEGER,
+                customer_name TEXT NOT NULL,
+                customer_phone TEXT,
+                customer_address TEXT,
+                customer_state TEXT DEFAULT 'Same',
+                subtotal REAL DEFAULT 0.0,
+                discount_percent REAL DEFAULT 0.0,
+                discount_amount REAL DEFAULT 0.0,
+                cgst REAL DEFAULT 0.0,
+                sgst REAL DEFAULT 0.0,
+                igst REAL DEFAULT 0.0,
+                gst_amount REAL DEFAULT 0.0,
+                grand_total REAL DEFAULT 0.0,
+                total_profit REAL DEFAULT 0.0,
+                payment_mode TEXT DEFAULT 'cash',
+                payment_status TEXT DEFAULT 'Paid',
+                created_by INTEGER,
+                created_by_username TEXT,
+                bill_date TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (customer_id) REFERENCES customers(id),
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            )
+        ''')
+        
+        # Bill items table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS bill_items (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                bill_id INTEGER NOT NULL,
+                product_id INTEGER NOT NULL,
+                product_name TEXT NOT NULL,
+                hsn_code TEXT DEFAULT '9999',
+                quantity INTEGER DEFAULT 1,
+                cost_price REAL DEFAULT 0.0,
+                unit_price REAL DEFAULT 0.0,
+                line_subtotal REAL DEFAULT 0.0,
+                line_profit REAL DEFAULT 0.0,
+                FOREIGN KEY (bill_id) REFERENCES bills(id) ON DELETE CASCADE,
+                FOREIGN KEY (product_id) REFERENCES products(id)
+            )
+        ''')
+        
+        # Expenses table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS expenses (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                category TEXT NOT NULL,
+                amount REAL NOT NULL,
+                description TEXT,
+                expense_date DATE,
+                created_by INTEGER,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (created_by) REFERENCES users(id)
+            )
+        ''')
+        
+        # Audit logs table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS audit_logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                action TEXT NOT NULL,
+                user_id INTEGER,
+                username TEXT,
+                details TEXT,
+                ip_address TEXT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (user_id) REFERENCES users(id)
+            )
+        ''')
+        
+        # Create default admin user if not exists
+        cursor.execute("SELECT id FROM users WHERE username = 'admin'")
+        if not cursor.fetchone():
+            cursor.execute('''
+                INSERT INTO users (username, password_hash, email, role, is_approved)
+                VALUES (?, ?, ?, ?, ?)
+            ''', ('admin', generate_password_hash('shahinsha'), 'admin@store.com', 'admin', 1))
+        else:
+            # Update existing admin password to 'shahinsha' and ensure approved
+            cursor.execute('''
+                UPDATE users SET password_hash = ?, is_approved = 1 WHERE username = 'admin'
+            ''', (generate_password_hash('shahinsha'),))
+        
+        # Create walk-in customer if not exists
+        cursor.execute("SELECT id FROM customers WHERE name = 'Walk-in Customer'")
+        if not cursor.fetchone():
+            cursor.execute('''
+                INSERT INTO customers (name, phone, address, customer_type)
+                VALUES (?, ?, ?, ?)
+            ''', ('Walk-in Customer', '', 'Counter Sale', 'B2C'))
+        
+        conn.commit()
+        conn.close()
+        print("✅ Database initialized successfully!")
+        
     except Exception as e:
         print(f"❌ Database initialization error: {e}")
         if conn:
