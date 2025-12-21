@@ -19,6 +19,9 @@ from database import get_db, init_db, add_sample_data
 app = Flask(__name__)
 app.config.from_object(Config)
 
+# Disable CSRF for simpler form handling (enable in production with proper tokens)
+app.config['WTF_CSRF_ENABLED'] = False
+
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
