@@ -12,7 +12,17 @@ class Config:
     DATABASE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'inventory.db')
     
     # Session settings
-    PERMANENT_SESSION_LIFETIME = timedelta(hours=12)
+    PERMANENT_SESSION_LIFETIME = timedelta(hours=2)
+    SESSION_COOKIE_SECURE = os.environ.get('FLASK_ENV') == 'production'
+    SESSION_COOKIE_HTTPONLY = True
+    SESSION_COOKIE_SAMESITE = 'Lax'
+    
+    # CSRF Protection
+    WTF_CSRF_ENABLED = False  # Enable in production with proper setup
+    
+    # Application settings
+    DEBUG = os.environ.get('FLASK_ENV') != 'production'
+    TESTING = False
     
     # Company Info
     COMPANY_NAME = os.environ.get('COMPANY_NAME', '26:07 Electronics')
@@ -27,3 +37,4 @@ class Config:
     # Upload folder
     UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'static', 'uploads')
     MAX_CONTENT_LENGTH = 10 * 1024 * 1024  # 10MB max upload
+    ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}

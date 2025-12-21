@@ -21,13 +21,6 @@ from database import get_db, init_db, add_sample_data
 app = Flask(__name__)
 app.config.from_object(Config)
 
-# Security configurations
-app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
-app.config['SESSION_COOKIE_HTTPONLY'] = True
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
-app.config['WTF_CSRF_ENABLED'] = False  # Disabled for now - enable in production with proper setup
-
 # Initialize Flask-Login
 login_manager = LoginManager()
 login_manager.init_app(app)
@@ -398,6 +391,12 @@ def reject_user(user_id):
 # ============================================================================
 
 @app.route('/')
+def index():
+    """Redirect root to login or dashboard"""
+    if current_user.is_authenticated:
+        return redirect(url_for('dashboard'))
+    return redirect(url_for('login'))
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
