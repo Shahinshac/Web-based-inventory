@@ -7,10 +7,12 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
 from datetime import datetime, timedelta
+from collections import defaultdict
 import json
 import os
 import io
 import base64
+import time
 
 from config import Config
 from database import get_db, init_db, add_sample_data
@@ -24,10 +26,7 @@ app.config['SESSION_COOKIE_SECURE'] = False  # Set True in production with HTTPS
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
 app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(hours=2)
-app.config['WTF_CSRF_TIME_LIMIT'] = None  # CSRF tokens don't expire
-
-# Initialize CSRF Protection
-csrf = CSRFProtect(app)
+app.config['WTF_CSRF_ENABLED'] = False  # Disabled for now - enable in production with proper setup
 
 # Initialize Flask-Login
 login_manager = LoginManager()
@@ -179,57 +178,9 @@ def login():
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    # Disable public registration - comment out this block to allow registration
+    # Disable public registration - only admins can create users
     flash('Registration is currently disabled. Please contact administrator.', 'error')
     return redirect(url_for('login'))
-    
-    # Original registration code (disabled for security)
-    '''if request.method == 'POST':
-        username = request.form.get('username', '').strip()
-        email = request.form.get('email', '').strip()
-        password = request.form.get('password', '')
-        confirm_password = request.form.get('confirm_password', '')
-        
-        # Prevent admin username registration
-        if username.lower() == 'admin':
-            flash('This username is not available.', 'error')
-            return render_template('login.html', show_register=True)
-        
-        if not username or not password:
-            flash('Username and password are required.', 'error')
-            return render_template('login.html', show_register=True)
-        
-        if password != confirm_password:
-            flash('Passwords do not match.', 'error')
-            return render_template('login.html', show_register=True)
-        
-        if len(password) < 8:
-            flash('Password must be at least 8 characters.', 'error')
-            return render_template('login.html', show_register=True)
-        
-        conn = get_db()
-        cursor = conn.cursor()
-        
-        # Check if username exists
-        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
-        if cursor.fetchone():
-            conn.close()
-            flash('Username already exists.', 'error')
-            return render_template('login.html', show_register=True)
-        
-        # Create user
-        cursor.execute('''
-            INSERT INTO users (username, password_hash, email, role)
-            VALUES (?, ?, ?, ?)
-        ''', (username, generate_password_hash(password), email, 'cashier'))
-        conn.commit()
-        conn.close()
-        
-        log_audit('USER_REGISTERED', {'username': username})
-        flash('Registration successful! Please log in.', 'success')
-        return redirect(url_for('login'))
-    
-    return render_template('login.html', show_register=True)
 
 @app.route('/sys-admin', methods=['GET', 'POST'])
 def admin_login():
