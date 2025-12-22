@@ -1225,5 +1225,8 @@ if __name__ == '__main__':
     init_db()
     add_sample_data()
     
+    # Get port from environment (Railway, Render, etc.) or default to 5000
+    port = int(os.environ.get('PORT', 5000))
+    
     # Run development server
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=app.config['DEBUG'], host='0.0.0.0', port=port)

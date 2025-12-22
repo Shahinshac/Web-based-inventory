@@ -8,9 +8,17 @@ class Config:
     # Secret key for session management
     SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key-change-in-production'
     
-    # Database - Use /tmp for ephemeral storage in production (Render)
-    if os.environ.get('RENDER'):
-        # Render uses ephemeral file system, store in /tmp
+    # Database configuration
+    # Support DATABASE_URL for PostgreSQL (Railway, Heroku, etc.)
+    DATABASE_URL = os.environ.get('DATABASE_URL')
+    
+    if DATABASE_URL:
+        # Convert postgres:// to postgresql:// for SQLAlchemy compatibility
+        if DATABASE_URL.startswith('postgres://'):
+            DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
+        DATABASE_PATH = DATABASE_URL
+    elif os.environ.get('RENDER') or os.environ.get('RAILWAY_ENVIRONMENT'):
+        # Use /tmp for ephemeral storage on Render/Railway with SQLite
         DATABASE_PATH = '/tmp/inventory.db'
     else:
         # Local development
