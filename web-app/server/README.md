@@ -2,6 +2,30 @@
 
 This folder contains utility scripts that help perform admin and maintenance actions against the server database.
 
+## Quick Deploy (Render + MongoDB Atlas) 🚀
+
+1. **Create Render Web Service**
+   - Root Directory: `web-app/server`
+   - Environment: Node
+   - Build Command: `npm install`
+   - Start Command: `npm start`
+
+2. **Required Environment Variables**
+   ```
+   NODE_ENV=production
+   PORT=4000
+   MONGODB_URI=your-mongodb-connection-string
+   DB_NAME=inventorydb
+   ADMIN_USERNAME=admin
+   ADMIN_PASSWORD=your-secure-password
+   ```
+
+3. **Verify**
+   - After deploy, check `GET /api/ping` → `{"ok":true}` and ensure API routes work from your frontend.
+
+> Tip: While testing, allow Atlas network access `0.0.0.0/0` or use Render's IP ranges; restrict access in production.
+
+
 ## change-admin-password.js
 
 Purpose: safely update the stored admin user's password in the database and optionally invalidate (log out) all sessions.

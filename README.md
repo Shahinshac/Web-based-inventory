@@ -33,6 +33,14 @@ A modern, full-stack inventory management system with React frontend and Node.js
 
 ## 🚀 Deployment
 
+### Canonical Deployment (quick checklist) ✅
+
+- **Frontend (Vercel)**: Push to GitHub → Import project into Vercel → set **Root Directory** = `web-app/client` → add env var `VITE_API_URL=https://<your-backend-url>` → Build & Deploy. Verify the site at `https://<project>.vercel.app` and confirm login works.
+
+- **Backend (Render + MongoDB Atlas)**: Push to GitHub → Create Web Service on Render with **Root Directory** = `web-app/server` → set env vars `MONGODB_URI`, `DB_NAME`, `ADMIN_USERNAME`, `ADMIN_PASSWORD`, `PORT=4000` → Deploy. Verify `https://<your-backend>/api/ping` returns `{"ok":true}`.
+
+**Note:** For testing, allow Atlas network access `0.0.0.0/0` or use Render’s IP ranges; in production lock it down to approved IPs only.
+
 ### Backend Deployment (Render)
 
 1. **Create a new Web Service on Render:**
