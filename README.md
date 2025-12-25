@@ -96,6 +96,25 @@ A modern, full-stack inventory management system with React frontend and Node.js
    - Wait for deployment to complete
    - Your app will be live at `https://your-project.vercel.app`
 
+## Automated deployments (GitHub Actions)
+
+This repository includes two GitHub Actions workflows that will automatically run on pushes to `main`:
+
+- `.github/workflows/deploy-frontend-vercel.yml` — Builds and deploys the frontend to Vercel. Requires the repository secrets:
+  - `VERCEL_TOKEN` (personal token from Vercel)
+  - `VERCEL_ORG_ID` (Vercel organization ID)
+  - `VERCEL_PROJECT_ID` (Vercel project ID)
+
+- `.github/workflows/deploy-backend-render.yml` — Triggers a Render deploy via the Render API. Requires:
+  - `RENDER_API_KEY` (API key from Render)
+  - `RENDER_SERVICE_ID` (ID of the Render service to deploy)
+
+How to set the secrets:
+- Vercel: Project Settings → Tokens; copy the token and the Org/Project IDs from the Vercel dashboard.
+- Render: Account → API Keys to create a key; the Service ID is visible on the Render service page.
+
+> Tip: You can also connect the repo directly in both Vercel and Render dashboards for first-time setup — the workflows are useful for triggering deploys automatically after each push.
+
 ## 🔧 Local Development
 
 ### Backend Setup
