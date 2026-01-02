@@ -1,6 +1,16 @@
 // Load environment variables FIRST before anything else
 require('dotenv').config();
 
+// CRITICAL: Log environment variables to diagnose Render deployment issues
+console.log('🔍 Environment Variables Check:');
+console.log('MONGODB_URI:', process.env.MONGODB_URI ? `Set (${process.env.MONGODB_URI.substring(0, 20)}...)` : '❌ NOT SET');
+console.log('DB_NAME:', process.env.DB_NAME || '❌ NOT SET');
+console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME || '❌ NOT SET');
+console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '✓ Set (hidden)' : '❌ NOT SET');
+console.log('NODE_ENV:', process.env.NODE_ENV || '❌ NOT SET');
+console.log('PORT:', process.env.PORT || '4000 (default)');
+console.log('---');
+
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
