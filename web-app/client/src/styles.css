@@ -8969,19 +8969,283 @@ button {
 }
 
 /* ============================================
+   APP HEADER - Modern Professional Design
+   ============================================ */
+
+.app-header {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.header-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+}
+
+.company-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.company-logo {
+  font-size: 32px;
+  line-height: 1;
+}
+
+.company-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.company-name {
+  font-size: 18px;
+  font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.company-tagline {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+.header-center {
+  display: flex;
+  align-items: center;
+}
+
+.time-display {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.india-time {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  color: white;
+}
+
+.india-date {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.status-indicators {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.online-indicator,
+.offline-indicator {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.online-indicator {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.offline-indicator {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+}
+
+.offline-count {
+  background: #ef4444;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.user-menu-container {
+  position: relative;
+}
+
+.user-menu-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: white;
+}
+
+.user-menu-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.user-avatar,
+.user-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.user-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.user-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+
+.user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: white;
+}
+
+.user-role {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.user-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  z-index: 1001;
+  animation: slideDown 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.user-dropdown-header {
+  padding: 16px;
+  background: var(--bg);
+  border-bottom: 1px solid var(--border);
+}
+
+.user-dropdown-info strong {
+  display: block;
+  font-size: 14px;
+  color: var(--text);
+  margin-bottom: 2px;
+}
+
+.user-dropdown-info span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.user-dropdown-divider {
+  height: 1px;
+  background: var(--border);
+}
+
+.user-dropdown-item {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  background: none;
+  border: none;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.user-dropdown-item:hover {
+  background: var(--bg);
+}
+
+.user-dropdown-item.logout-item {
+  color: #ef4444;
+}
+
+.user-dropdown-item.logout-item:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* ============================================
    ENHANCED TAB NAVIGATION STYLES
    ============================================ */
 
 .tab-navigation {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 8px 16px;
+  background: rgba(0, 0, 0, 0.15);
+  padding: 10px 24px;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
 }
 
+.tab-navigation::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-navigation::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
 .tab-list {
   display: flex;
-  gap: 6px;
+  gap: 8px;
   min-width: max-content;
 }
 
@@ -8989,11 +9253,11 @@ button {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 10px 16px;
-  background: transparent;
-  border: none;
+  padding: 12px 18px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.7);
+  color: rgba(255, 255, 255, 0.85);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
@@ -9002,14 +9266,18 @@ button {
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.2);
   color: white;
+  transform: translateY(-1px);
 }
 
 .tab-btn.active {
-  background: rgba(255, 255, 255, 0.25);
-  color: white;
+  background: white;
+  border-color: white;
+  color: #667eea;
   font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .tab-btn svg {
@@ -9021,13 +9289,19 @@ button {
 }
 
 .tab-btn.admin-tab {
-  border-left: 2px solid rgba(251, 191, 36, 0.5);
-  margin-left: 8px;
-  padding-left: 14px;
+  border-left: 3px solid #fbbf24;
+  margin-left: 12px;
+  background: rgba(251, 191, 36, 0.1);
+}
+
+.tab-btn.admin-tab:hover {
+  background: rgba(251, 191, 36, 0.2);
 }
 
 .tab-btn.admin-tab.active {
-  border-left-color: #fbbf24;
+  background: #fbbf24;
+  color: #1f2937;
+  border-color: #fbbf24;
 }
 
 /* Remove old shortcut styles */
@@ -9036,8 +9310,32 @@ button {
 }
 
 @media (max-width: 768px) {
+  .header-top {
+    padding: 10px 16px;
+  }
+  
+  .company-name {
+    font-size: 15px;
+  }
+  
+  .company-tagline {
+    display: none;
+  }
+  
+  .header-center {
+    display: none;
+  }
+  
+  .user-info {
+    display: none;
+  }
+  
+  .tab-navigation {
+    padding: 8px 16px;
+  }
+  
   .tab-btn {
-    padding: 8px 12px;
+    padding: 10px 14px;
     font-size: 12px;
     gap: 6px;
   }
@@ -9049,12 +9347,24 @@ button {
 }
 
 @media (max-width: 480px) {
+  .header-top {
+    padding: 8px 12px;
+  }
+  
+  .company-logo {
+    font-size: 24px;
+  }
+  
+  .company-name {
+    font-size: 14px;
+  }
+  
   .tab-navigation {
     padding: 6px 12px;
   }
   
   .tab-btn {
-    padding: 8px 10px;
+    padding: 10px 12px;
   }
   
   .tab-btn .tab-label {
