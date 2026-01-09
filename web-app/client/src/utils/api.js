@@ -5,8 +5,12 @@
 
 // Get base API URL from environment
 export const API = (path) => {
-  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
-  return baseUrl + path
+  let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
+  // Remove trailing slash if present
+  baseUrl = baseUrl.replace(/\/$/, '')
+  const fullUrl = baseUrl + path
+  console.log('🔗 API Request:', fullUrl)
+  return fullUrl
 }
 
 /**
