@@ -3083,8 +3083,7 @@ ul:not(.products):not(.cart) li:hover {
   border-color: #dc2626;
   box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
 }
-.tab-btn { flex:1; padding:12px 18px; border-radius:12px; background:transparent; border:none; cursor:pointer; color:#7b7b7b; font-weight:700; transition: all 250ms cubic-bezier(.2,.9,.2,1); position:relative; }
-.tab-btn.active { background:white; color:#2b6cb0; box-shadow: 0 8px 20px rgba(43,108,176,0.12); transform:translateY(-2px); }
+/* Old tab-btn styles removed - using enhanced styles in ENHANCED TAB NAVIGATION section */
 .animated-panel { padding:30px 36px; animation: cardIn 420ms cubic-bezier(.2,.9,.2,1); }
 @keyframes cardIn { from { transform: translateY(8px); opacity:0 } to { transform:translateY(0); opacity:1 } }
 
