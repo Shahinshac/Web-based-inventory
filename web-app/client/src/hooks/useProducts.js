@@ -15,7 +15,7 @@ import {
   deleteProductPhoto as deletePhotoAPI
 } from '../services/productService'
 
-export const useProducts = (currentUser, isAdmin, isOnline) => {
+export const useProducts = (isOnline, isAuthenticated) => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
@@ -62,11 +62,8 @@ export const useProducts = (currentUser, isAdmin, isOnline) => {
   }
 
   // Add product
-  const addProduct = async (productData) => {
+  const addProduct = async (productData, userId = null, username = null) => {
     try {
-      const userId = currentUser?.id || null
-      const username = isAdmin ? 'admin' : currentUser?.username
-      
       const result = await addProductAPI(productData, userId, username)
       await fetchProducts() // Refresh list
       return { success: true, data: result }
