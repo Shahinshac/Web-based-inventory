@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import { API } from '../../utils/api';
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [filter, setFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -13,17 +15,21 @@ export default function AuditLogs() {
 
   const fetchAuditLogs = async () => {
     setLoading(true);
+    setError(null);
     try {
       const url = filter === 'all' 
-        ? '/api/audit-logs?limit=100' 
-        : `/api/audit-logs?limit=100&action=${filter}`;
+        ? API('/api/audit-logs?limit=100')
+        : API(`/api/audit-logs?limit=100&action=${filter}`);
       const res = await fetch(url);
       if (res.ok) {
         const data = await res.json();
         setLogs(data.logs || data || []);
+      } else {
+        throw new Error('Failed to load audit logs');
       }
     } catch (error) {
       console.error('Failed to fetch audit logs:', error);
+      setError('Unable to load audit logs. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -141,6 +147,15 @@ export default function AuditLogs() {
           <span className="stat-label">User Activities</span>
         </div>
       </div>
+
+      {/* Error Message */}
+      {error && (
+        <div className="error-banner">
+          <Icon name="alert-triangle" size={20} />
+          <span>{error}</span>
+          <button onClick={fetchAuditLogs}>Retry</button>
+        </div>
+      )}
 
       {/* Logs List */}
       <div className="audit-logs-container">

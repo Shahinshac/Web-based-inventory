@@ -9383,6 +9383,42 @@ button {
 
 .audit-logs-page {
   animation: fadeIn 0.3s ease-out;
+  padding: 24px;
+}
+
+/* Error Banner */
+.error-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 12px;
+  color: #ef4444;
+  margin-bottom: 24px;
+}
+
+.error-banner span {
+  flex: 1;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.error-banner button {
+  padding: 8px 16px;
+  background: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.error-banner button:hover {
+  background: #dc2626;
 }
 
 .page-header {
@@ -9663,6 +9699,7 @@ button {
 
 .stock-management-page {
   animation: fadeIn 0.3s ease-out;
+  padding: 24px;
 }
 
 /* Stock Overview Cards */

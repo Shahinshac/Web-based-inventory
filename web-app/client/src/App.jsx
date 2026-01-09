@@ -24,6 +24,7 @@ import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { DEFAULT_GST, GST_PERCENT, PAYMENT_MODES } from './constants';
+import { API } from './utils/api';
 import './styles.css';
 
 export default function App() {
@@ -202,7 +203,7 @@ Esc: Close modals/dialogs`;
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch('/api/users');
+      const res = await fetch(API('/api/users'));
       if (res.ok) {
         const data = await res.json();
         setUsers(data);
@@ -214,7 +215,7 @@ Esc: Close modals/dialogs`;
 
   const approveUser = async (userId) => {
     try {
-      const res = await fetch(`/api/users/${userId}/approve`, { method: 'PATCH' });
+      const res = await fetch(API(`/api/users/${userId}/approve`), { method: 'PATCH' });
       if (res.ok) {
         showNotification('✅ User approved successfully!', 'success');
         await fetchUsers();
@@ -227,7 +228,7 @@ Esc: Close modals/dialogs`;
   const deleteUser = async (userId) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
-      const res = await fetch(`/api/users/${userId}`, { method: 'DELETE' });
+      const res = await fetch(API(`/api/users/${userId}`), { method: 'DELETE' });
       if (res.ok) {
         showNotification('✅ User deleted successfully!', 'success');
         await fetchUsers();
