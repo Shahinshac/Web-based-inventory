@@ -72,7 +72,7 @@ export default function App() {
   const { isOnline, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
   
   const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct, uploadPhoto: uploadProductPhoto } = 
-    useProducts(isOnline, isAuthenticated);
+    useProducts(isOnline, isAuthenticated, currentUser, isAdmin);
   
   const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, getCustomerPurchases } = 
     useCustomers(isOnline, isAuthenticated);
@@ -424,11 +424,12 @@ Esc: Close modals/dialogs`;
       {/* Horizontal Tab Navigation Bar */}
       <nav style={{
         display: 'flex',
-        gap: '8px',
+        gap: '4px',
         padding: '12px 20px',
         background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
         overflowX: 'auto',
         flexWrap: 'nowrap',
+        justifyContent: 'space-evenly',
         boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
       }}>
         {navTabs.map(t => (
@@ -439,12 +440,13 @@ Esc: Close modals/dialogs`;
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              padding: '10px 16px',
+              padding: '12px 24px',
+              flex: '1 1 auto',
               background: tab === t.id ? 'white' : 'rgba(255,255,255,0.15)',
               border: 'none',
               borderRadius: '8px',
               color: tab === t.id ? '#5a67d8' : 'white',
-              fontSize: '13px',
+              fontSize: '14px',
               fontWeight: tab === t.id ? '600' : '500',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
@@ -453,7 +455,7 @@ Esc: Close modals/dialogs`;
               transition: 'all 0.2s ease'
             }}
           >
-            <span style={{ fontSize: '16px' }}>{t.icon}</span>
+            <span style={{ fontSize: '18px' }}>{t.icon}</span>
             <span>{t.label}</span>
           </button>
         ))}

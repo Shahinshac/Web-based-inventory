@@ -15,7 +15,7 @@ import {
   deleteProductPhoto as deletePhotoAPI
 } from '../services/productService'
 
-export const useProducts = (isOnline, isAuthenticated) => {
+export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
