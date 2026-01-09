@@ -3,6 +3,7 @@ import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function UserCard({ 
   user, 
@@ -40,7 +41,7 @@ export default function UserCard({
         <div className="user-card-header">
           <div className="user-avatar">
             {user.photo ? (
-              <img src={user.photo} alt={user.username} />
+              <img src={normalizePhotoUrl(user.photo)} alt={user.username} />
             ) : (
               <Icon name="user" size={32} />
             )}

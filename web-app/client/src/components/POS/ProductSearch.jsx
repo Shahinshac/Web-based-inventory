@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import SearchBar from '../Common/SearchBar';
 import Icon from '../../Icon';
 import { formatCurrency } from '../../constants';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function ProductSearch({ products, onProductSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,7 +63,7 @@ export default function ProductSearch({ products, onProductSelect }) {
             >
               {product.photo && (
                 <div className="product-image">
-                  <img src={product.photo} alt={product.name} />
+                  <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
                 </div>
               )}
               <div className="product-info">

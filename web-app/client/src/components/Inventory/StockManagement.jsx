@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import Icon from '../../Icon';
 import { formatCurrency } from '../../constants';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function StockManagement({ 
   products, 
@@ -234,7 +235,7 @@ export default function StockManagement({
                       <div className="product-cell">
                         <div className="product-thumb">
                           {product.photo ? (
-                            <img src={product.photo} alt={product.name} />
+                            <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
                           ) : (
                             <Icon name="package" size={20} />
                           )}

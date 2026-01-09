@@ -3,6 +3,7 @@ import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { formatCurrency } from '../../constants';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function ProductCard({ 
   product, 
@@ -35,7 +36,7 @@ export default function ProductCard({
       <div className={`product-card ${stockStatus}`}>
         <div className="product-card-image">
           {product.photo ? (
-            <img src={product.photo} alt={product.name} />
+            <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
           ) : (
             <div className="product-placeholder">
               <Icon name="package" size={48} color="#cbd5e1" />

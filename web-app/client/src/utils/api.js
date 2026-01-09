@@ -4,13 +4,39 @@
  */
 
 // Get base API URL from environment
-export const API = (path) => {
+export const getApiBaseUrl = () => {
   let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000'
   // Remove trailing slash if present
-  baseUrl = baseUrl.replace(/\/$/, '')
+  return baseUrl.replace(/\/$/, '')
+}
+
+export const API = (path) => {
+  const baseUrl = getApiBaseUrl()
   const fullUrl = baseUrl + path
   console.log('🔗 API Request:', fullUrl)
   return fullUrl
+}
+
+/**
+ * Normalize photo URLs to use the client's API base URL
+ * This handles cases where the server stores photos with different domains
+ */
+export const normalizePhotoUrl = (photoUrl) => {
+  if (!photoUrl) return null
+  
+  // If it's already a relative path, prepend API base
+  if (photoUrl.startsWith('/api/')) {
+    return getApiBaseUrl() + photoUrl
+  }
+  
+  // Extract the /api/... path from absolute URLs
+  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[^/]+\/photo/)
+  if (apiPathMatch) {
+    return getApiBaseUrl() + apiPathMatch[0]
+  }
+  
+  // Return as-is if it's already a valid URL (e.g., external URLs)
+  return photoUrl
 }
 
 /**
