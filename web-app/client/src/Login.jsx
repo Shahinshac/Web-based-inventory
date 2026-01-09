@@ -167,8 +167,8 @@ const Login = ({ onLogin, onRegister }) => {
             </div>
             
             {/* Brand name */}
-            <h1 className="brand-name">Shahinsha's Inventory</h1>
-            <p className="brand-tagline">Smart Inventory Management System</p>
+            <h1 className="brand-name">26:07 Electronics</h1>
+            <p className="brand-tagline">Premium Electronics & Smart Solutions</p>
             
             {/* Features list */}
             <div className="brand-list">
@@ -411,7 +411,7 @@ const Login = ({ onLogin, onRegister }) => {
 
           {/* Footer */}
           <div className="login-footer-text">
-            &copy; {currentYear} Shahinsha's Inventory
+            &copy; {currentYear} 26:07 Electronics
           </div>
         </div>
       </div>
