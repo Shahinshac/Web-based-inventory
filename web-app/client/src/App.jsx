@@ -11,7 +11,10 @@ import InvoicesList from './components/Invoices/InvoicesList';
 import Analytics from './components/Analytics/Analytics';
 import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
+import AuditLogs from './components/AuditLogs/AuditLogs';
+import StockManagement from './components/Inventory/StockManagement';
 import { useAuth } from './hooks/useAuth';
+
 import { useProducts } from './hooks/useProducts';
 import { useCustomers } from './hooks/useCustomers';
 import { useInvoices } from './hooks/useInvoices';
@@ -307,6 +310,15 @@ Esc: Close modals/dialogs`;
           />
         );
 
+      case 'inventory':
+        return (
+          <StockManagement 
+            products={products}
+            onUpdateProduct={updateProduct}
+            canEdit={canEdit()}
+          />
+        );
+
       case 'customers':
         return (
           <CustomersList 
@@ -352,6 +364,12 @@ Esc: Close modals/dialogs`;
             canViewProfit={canViewProfit()}
           />
         );
+
+      case 'audit':
+        if (!isAdmin) {
+          return <div className="error-message">Admin access required</div>;
+        }
+        return <AuditLogs />;
 
       case 'users':
         if (!isAdmin) {
