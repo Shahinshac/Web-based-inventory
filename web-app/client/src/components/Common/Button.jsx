@@ -5,6 +5,7 @@
 
 import React from 'react'
 import PropTypes from 'prop-types'
+import Icon from '../../Icon'
 
 const Button = ({ 
   children, 
@@ -16,7 +17,8 @@ const Button = ({
   fullWidth = false,
   type = 'button',
   icon,
-  className = ''
+  className = '',
+  style = {}
 }) => {
   const baseStyles = {
     display: 'inline-flex',
@@ -62,6 +64,11 @@ const Button = ({
       background: 'transparent',
       color: '#667eea',
       border: '2px solid #667eea'
+    },
+    ghost: {
+      background: 'transparent',
+      color: '#374151',
+      border: '1px solid #e5e7eb'
     }
   }
 
@@ -80,10 +87,13 @@ const Button = ({
     }
   }
 
+  const iconSize = size === 'small' ? 14 : size === 'large' ? 18 : 16
+
   const buttonStyles = {
     ...baseStyles,
     ...variants[variant],
-    ...sizes[size]
+    ...sizes[size],
+    ...style
   }
 
   return (
@@ -107,23 +117,24 @@ const Button = ({
           }}
         />
       )}
-      {icon && !loading && <span>{icon}</span>}
+      {icon && !loading && <Icon name={icon} size={iconSize} />}
       {children}
     </button>
   )
 }
 
 Button.propTypes = {
-  children: PropTypes.node.isRequired,
+  children: PropTypes.node,
   onClick: PropTypes.func,
-  variant: PropTypes.oneOf(['primary', 'secondary', 'success', 'danger', 'warning', 'outline']),
+  variant: PropTypes.oneOf(['primary', 'secondary', 'success', 'danger', 'warning', 'outline', 'ghost']),
   size: PropTypes.oneOf(['small', 'medium', 'large']),
   disabled: PropTypes.bool,
   loading: PropTypes.bool,
   fullWidth: PropTypes.bool,
   type: PropTypes.oneOf(['button', 'submit', 'reset']),
-  icon: PropTypes.node,
-  className: PropTypes.string
+  icon: PropTypes.string,
+  className: PropTypes.string,
+  style: PropTypes.object
 }
 
 export default Button
