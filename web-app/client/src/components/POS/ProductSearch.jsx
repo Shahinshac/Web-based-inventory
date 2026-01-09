@@ -63,7 +63,11 @@ export default function ProductSearch({ products, onProductSelect }) {
             >
               {product.photo && (
                 <div className="product-image">
-                  <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
+                  <img 
+                    src={normalizePhotoUrl(product.photo)} 
+                    alt={product.name}
+                    onError={(e) => { e.target.parentElement.style.display = 'none'; }}
+                  />
                 </div>
               )}
               <div className="product-info">

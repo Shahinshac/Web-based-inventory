@@ -117,7 +117,6 @@ router.post('/login', async (req, res) => {
       { $set: { lastLogin: new Date() } }
     );
     
-    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     res.json({
       success: true,
       user: {
@@ -127,9 +126,7 @@ router.post('/login', async (req, res) => {
         role: user.role,
         approved: user.approved,
         sessionVersion: user.sessionVersion || 1,
-        photo: (user.photo && typeof user.photo === 'string') 
-          ? (user.photo.startsWith('http') ? user.photo : `${base}/api/users/${user._id.toString()}/photo`) 
-          : null
+        photo: user.photo ? `/api/users/${user._id.toString()}/photo` : null
       }
     });
   } catch (e) {
@@ -173,7 +170,6 @@ router.get('/session', async (req, res) => {
 router.get('/', async (req, res) => {
   try {
     const db = getDB();
-    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
     
     const users = await db.collection('users')
       .find({})
@@ -185,9 +181,7 @@ router.get('/', async (req, res) => {
       username: u.username,
       email: u.email,
       role: u.role,
-      photo: (u.photo && typeof u.photo === 'string')
-        ? (u.photo.startsWith('http') ? u.photo : `${base}/api/users/${u._id.toString()}/photo`)
-        : null,
+      photo: u.photo ? `/api/users/${u._id.toString()}/photo` : null,
       approved: u.approved,
       sessionVersion: u.sessionVersion || 1,
       createdAt: u.createdAt,
@@ -438,9 +432,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     // Ensure upload dir exists
     await ensureUploadDir(path.join(__dirname, '..', 'uploads', 'users'));
 
-    // Build fully-qualified photo URL
-    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
-    let photoUrl = `${base}/api/users/${id}/photo`;
+    // Store relative photo URL - client will construct full URL
+    let photoUrl = `/api/users/${id}/photo`;
     
     const storageMode = String(req.query.storage || '').toLowerCase();
     const useDbStorage = (storageMode !== 'fs'); // default to DB

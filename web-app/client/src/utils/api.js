@@ -24,18 +24,31 @@ export const API = (path) => {
 export const normalizePhotoUrl = (photoUrl) => {
   if (!photoUrl) return null
   
+  const baseUrl = getApiBaseUrl()
+  
   // If it's already a relative path, prepend API base
   if (photoUrl.startsWith('/api/')) {
-    return getApiBaseUrl() + photoUrl
+    return baseUrl + photoUrl
   }
   
-  // Extract the /api/... path from absolute URLs
-  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[^/]+\/photo/)
+  // Extract the /api/... path from absolute URLs (handles old URLs with wrong domain)
+  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[a-f0-9]+\/photo/i)
   if (apiPathMatch) {
-    return getApiBaseUrl() + apiPathMatch[0]
+    return baseUrl + apiPathMatch[0]
   }
   
-  // Return as-is if it's already a valid URL (e.g., external URLs)
+  // If URL already has our base URL, return as-is
+  if (photoUrl.startsWith(baseUrl)) {
+    return photoUrl
+  }
+  
+  // For any other absolute URL with /api/ in it, extract and rebuild
+  if (photoUrl.includes('/api/')) {
+    const pathStart = photoUrl.indexOf('/api/')
+    return baseUrl + photoUrl.substring(pathStart)
+  }
+  
+  // Return as-is for external URLs
   return photoUrl
 }
 

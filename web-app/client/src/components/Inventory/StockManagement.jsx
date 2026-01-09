@@ -235,7 +235,11 @@ export default function StockManagement({
                       <div className="product-cell">
                         <div className="product-thumb">
                           {product.photo ? (
-                            <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
+                            <img 
+                              src={normalizePhotoUrl(product.photo)} 
+                              alt={product.name}
+                              onError={(e) => { e.target.style.display = 'none'; }}
+                            />
                           ) : (
                             <Icon name="package" size={20} />
                           )}

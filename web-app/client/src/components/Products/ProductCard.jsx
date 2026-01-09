@@ -31,12 +31,23 @@ export default function ProductCard({
     }
   };
 
+  const [imageError, setImageError] = useState(false);
+
+  const handleImageError = () => {
+    console.warn('Failed to load image for product:', product.name, product.photo);
+    setImageError(true);
+  };
+
   return (
     <>
       <div className={`product-card ${stockStatus}`}>
         <div className="product-card-image">
-          {product.photo ? (
-            <img src={normalizePhotoUrl(product.photo)} alt={product.name} />
+          {product.photo && !imageError ? (
+            <img 
+              src={normalizePhotoUrl(product.photo)} 
+              alt={product.name}
+              onError={handleImageError}
+            />
           ) : (
             <div className="product-placeholder">
               <Icon name="package" size={48} color="#cbd5e1" />

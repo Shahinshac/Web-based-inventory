@@ -323,9 +323,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
       }
     }
     
-    // Build fully-qualified photo URL so clients can use it directly
-    const base = process.env.PUBLIC_BASE_URL || (req.protocol + '://' + req.get('host'));
-    let photoUrl = `${base}/api/products/${id}/photo`;
+    // Store relative photo URL - client will construct full URL using its API base
+    let photoUrl = `/api/products/${id}/photo`;
 
     // Default photo storage: DB unless explicitly requested 'fs'
     const storageMode = String(req.query.storage || '').toLowerCase();

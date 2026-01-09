@@ -41,7 +41,11 @@ export default function UserCard({
         <div className="user-card-header">
           <div className="user-avatar">
             {user.photo ? (
-              <img src={normalizePhotoUrl(user.photo)} alt={user.username} />
+              <img 
+                src={normalizePhotoUrl(user.photo)} 
+                alt={user.username}
+                onError={(e) => { e.target.style.display = 'none'; }}
+              />
             ) : (
               <Icon name="user" size={32} />
             )}
