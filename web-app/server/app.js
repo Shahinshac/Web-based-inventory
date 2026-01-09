@@ -57,7 +57,7 @@ app.use(logger.httpLogger);
 
 // Root health check
 app.get('/', (req, res) => {
-  res.send('Welcome To Our BoB\'s Inventory Collection App ✨✨🎊🎉');
+  res.send('Welcome To Shahinsha\'s Inventory Management App ✨✨🎊🎉');
 });
 
 // Simple health check

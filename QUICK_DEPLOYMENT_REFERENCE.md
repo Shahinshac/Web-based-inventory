@@ -73,6 +73,36 @@
 
 ## 🆘 TROUBLESHOOTING
 
+**Problem:** DNS/SRV RESOLUTION FAILURE (mongodb+srv:// not working)  
+**Fix:** Use standard connection string instead of SRV format:
+
+### Option A: Get Standard Connection String from Atlas (Recommended)
+1. Go to **MongoDB Atlas** → **Database** → Click **Connect** on your cluster
+2. Select **Drivers** → Node.js
+3. ⚠️ **CRITICAL:** Look for a toggle/dropdown that says "Connection String Type"
+4. Change from **SRV connection string** to **Standard connection string**
+5. Copy the string - it will look like:
+   ```
+   mongodb://shahinshac:YOUR_PASSWORD@ac-xxxxx-shard-00-00.abcdefg.mongodb.net:27017,ac-xxxxx-shard-00-01.abcdefg.mongodb.net:27017,ac-xxxxx-shard-00-02.abcdefg.mongodb.net:27017/inventorydb?ssl=true&replicaSet=atlas-abcdef-shard-0&authSource=admin&retryWrites=true&w=majority
+   ```
+   ⚠️ The `abcdefg` part will be YOUR cluster's unique identifier - don't use placeholder values!
+
+### Option B: Find Your Actual Shard Hostnames
+1. In Atlas Dashboard, click your **Cluster name** (e.g., "Cluster0")
+2. Look for **"..."** menu → **Command Line Tools** → **Connect Instructions**
+3. Or check the cluster overview for the actual shard node addresses
+4. Your real hostnames look like: `cluster0-shard-00-00.ab12cd3.mongodb.net`
+
+### Option C: Use MongoDB Atlas UI to Test Connection First
+1. In Atlas, go to **Database** → **Browse Collections**
+2. If you can browse your database, the cluster is working
+3. Go to **Network Access** → Verify `0.0.0.0/0` is in the IP Access List
+4. Go to **Database Access** → Verify your user has **readWriteAnyDatabase** role
+
+### ⚠️ COMMON MISTAKE
+Do NOT copy the example from documentation! The `xxxxx` values are placeholders.
+Your actual connection string will have unique identifiers like `ab12cd3` not `xxxxx`.
+
 **Problem:** Backend health check fails  
 **Fix:** Check MongoDB URI and IP whitelist
 
