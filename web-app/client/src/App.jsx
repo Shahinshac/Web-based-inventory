@@ -401,8 +401,6 @@ Esc: Close modals/dialogs`;
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
-        indiaTime={indiaTime}
-        indiaDate={indiaDate}
         isOnline={isOnline}
         offlineCount={offlineTransactions.length}
       />

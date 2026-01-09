@@ -10,8 +10,6 @@ export default function Header({
   userRole,
   onLogout, 
   profilePhoto,
-  indiaTime,
-  indiaDate,
   isOnline,
   offlineCount
 }) {
@@ -34,16 +32,6 @@ export default function Header({
               <h1 className="company-name">26:07 Electronics</h1>
               <p className="company-tagline">Inventory Management System</p>
             </div>
-          </div>
-        </div>
-
-        <div className="header-center">
-          <div className="time-display">
-            <div className="india-time">
-              <Icon name="clock" size={16} />
-              <span>{indiaTime}</span>
-            </div>
-            <div className="india-date">{indiaDate}</div>
           </div>
         </div>
 
@@ -85,7 +73,6 @@ export default function Header({
                 <span className="user-name">{currentUser?.username || 'User'}</span>
                 <span className="user-role">{getRoleDisplay()}</span>
               </div>
-              <Icon name={showUserMenu ? 'chevron-up' : 'chevron-down'} size={16} />
             </button>
 
             {showUserMenu && (
@@ -99,10 +86,7 @@ export default function Header({
                 <div className="user-dropdown-divider"></div>
                 <button 
                   className="user-dropdown-item"
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    // Navigate to profile/settings if needed
-                  }}
+                  onClick={() => setShowUserMenu(false)}
                 >
                   <Icon name="settings" size={18} />
                   <span>Settings</span>
