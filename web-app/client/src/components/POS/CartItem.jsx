@@ -17,35 +17,24 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }) {
     <div className="cart-item">
       <div className="cart-item-info">
         <h4 className="cart-item-name">{item.name}</h4>
-        <p className="cart-item-price">{formatCurrency(item.price)} each</p>
+        <p className="cart-item-price">{formatCurrency(item.price)} × {item.quantity}</p>
       </div>
 
       <div className="cart-item-controls">
-        <div className="quantity-controls">
+        <div className="qty-control">
           <button 
-            className="qty-btn"
+            className="qty-btn decrease"
             onClick={() => handleQuantityChange(item.quantity - 1)}
-            disabled={item.quantity <= 1}
           >
-            <Icon name="minus" size={14} />
+            −
           </button>
-          <input
-            type="number"
-            className="qty-input"
-            value={item.quantity}
-            onChange={(e) => {
-              const val = parseInt(e.target.value) || 0;
-              handleQuantityChange(val);
-            }}
-            min="1"
-            max={item.maxStock}
-          />
+          <span className="qty-value">{item.quantity}</span>
           <button 
-            className="qty-btn"
+            className="qty-btn increase"
             onClick={() => handleQuantityChange(item.quantity + 1)}
             disabled={item.quantity >= item.maxStock}
           >
-            <Icon name="plus" size={14} />
+            +
           </button>
         </div>
 
@@ -54,20 +43,13 @@ export default function CartItem({ item, onUpdateQuantity, onRemove }) {
         </div>
 
         <button 
-          className="remove-btn"
+          className="remove-item-btn"
           onClick={() => onRemove(item.id)}
           title="Remove from cart"
         >
-          <Icon name="x" size={16} />
+          <Icon name="trash-2" size={16} />
         </button>
       </div>
-
-      {item.quantity >= item.maxStock && (
-        <div className="cart-item-warning">
-          <Icon name="alert-triangle" size={14} />
-          <span>Maximum stock reached</span>
-        </div>
-      )}
     </div>
   );
 }

@@ -23,7 +23,7 @@ export default function Cart({
           </h3>
         </div>
         <div className="cart-empty-state">
-          <Icon name="shopping-cart" size={64} color="#cbd5e1" />
+          <Icon name="shopping-cart" size={56} color="#cbd5e1" />
           <p>Your cart is empty</p>
           <small>Add products to get started</small>
         </div>
@@ -36,14 +36,15 @@ export default function Cart({
       <div className="cart-header">
         <h3 className="cart-title">
           <Icon name="shopping-cart" size={20} />
-          Shopping Cart
-          <span className="cart-count">({cartCount} items)</span>
+          Cart
+          <span className="cart-count">({cartCount})</span>
         </h3>
         <Button 
           variant="ghost" 
           size="small"
           onClick={onClear}
           icon="trash-2"
+          style={{ color: 'white', opacity: 0.9 }}
         >
           Clear
         </Button>
@@ -62,7 +63,7 @@ export default function Cart({
 
       <div className="cart-summary">
         <div className="cart-total">
-          <span>Subtotal:</span>
+          <span>Total:</span>
           <strong>{formatCurrency(cartTotal)}</strong>
         </div>
       </div>
