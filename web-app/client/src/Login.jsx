@@ -1,10 +1,7 @@
 /**
  * @file Login.jsx
  * @description Authentication component with login and registration
- * Provides secure user authentication with form validation and error handling
- * 
- * @author 26:07 Electronics
- * @version 2.0.0
+ * Self-contained component that manages its own form state
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -14,7 +11,7 @@ import Icon from './Icon.jsx';
 /**
  * Login Component
  * 
- * Handles user authentication with:
+ * Self-contained authentication component with:
  * - Login form with username/password
  * - Registration form with username/email/password
  * - Remember me functionality
@@ -22,54 +19,27 @@ import Icon from './Icon.jsx';
  * - Form validation
  * - Loading states
  * - Error display
- * 
- * @component
- * @param {Object} props - Component props
- * @param {boolean} props.showLoginPage - Current tab (true = login, false = register)
- * @param {Function} props.setShowLoginPage - Toggle between login/register
- * @param {string} props.authUsername - Login username value
- * @param {Function} props.setAuthUsername - Update login username
- * @param {string} props.authPassword - Login password value
- * @param {Function} props.setAuthPassword - Update login password
- * @param {string} props.authError - Login error message
- * @param {Function} props.handleAuth - Login handler
- * @param {string} props.registerUsername - Registration username value
- * @param {Function} props.setRegisterUsername - Update registration username
- * @param {string} props.registerPassword - Registration password value
- * @param {Function} props.setRegisterPassword - Update registration password
- * @param {string} props.registerEmail - Registration email value
- * @param {Function} props.setRegisterEmail - Update registration email
- * @param {Function} props.handleRegister - Registration handler
- * @param {string} props.registerError - Registration error message
- * @returns {React.Element} Login page component
  */
-const Login = ({
-  showLoginPage,
-  setShowLoginPage,
-  authUsername,
-  setAuthUsername,
-  authPassword,
-  setAuthPassword,
-  authError,
-  handleAuth,
-  registerUsername,
-  setRegisterUsername,
-  registerPassword,
-  setRegisterPassword,
-  registerEmail,
-  setRegisterEmail,
-  handleRegister,
-  registerError,
-}) => {
+const Login = ({ onLogin, onRegister }) => {
   // ==================== STATE ====================
   
-  /** @type {[boolean, Function]} Loading state for form submission */
+  // Tab state
+  const [showLoginPage, setShowLoginPage] = useState(true);
+  
+  // Login form state
+  const [authUsername, setAuthUsername] = useState('');
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  
+  // Register form state
+  const [registerUsername, setRegisterUsername] = useState('');
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerError, setRegisterError] = useState('');
+  
+  // UI state
   const [loading, setLoading] = useState(false);
-  
-  /** @type {[boolean, Function]} Password visibility toggle */
   const [showPassword, setShowPassword] = useState(false);
-  
-  /** @type {[boolean, Function]} Remember me checkbox state */
   const [rememberMe, setRememberMe] = useState(false);
 
   // ==================== EFFECTS ====================
@@ -87,7 +57,7 @@ const Login = ({
     } catch (error) {
       console.error('Failed to load remembered user:', error);
     }
-  }, [setAuthUsername]);
+  }, []);
 
   /**
    * Save/remove remembered username based on checkbox
@@ -108,47 +78,66 @@ const Login = ({
 
   /**
    * Handle login form submission
-   * @param {React.FormEvent} e - Form event
    */
   const onLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
+    setAuthError('');
     
-    // Validate inputs
     if (!authUsername || !authPassword) {
+      setAuthError('Please fill in all fields');
       return;
     }
     
     setLoading(true);
     try {
-      await handleAuth();
+      const result = await onLogin(authUsername, authPassword);
+      if (result && result.error) {
+        setAuthError(result.error);
+      }
     } catch (error) {
-      console.error('Login error:', error);
+      setAuthError(error.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [authUsername, authPassword, handleAuth]);
+  }, [authUsername, authPassword, onLogin]);
 
   /**
    * Handle registration form submission
-   * @param {React.FormEvent} e - Form event
    */
   const onRegisterSubmit = useCallback(async (e) => {
     e.preventDefault();
+    setRegisterError('');
     
-    // Validate inputs
     if (!registerUsername || !registerEmail || !registerPassword) {
+      setRegisterError('Please fill in all fields');
+      return;
+    }
+    
+    if (registerPassword.length < 6) {
+      setRegisterError('Password must be at least 6 characters');
       return;
     }
     
     setLoading(true);
     try {
-      await handleRegister();
+      const result = await onRegister(registerUsername, registerEmail, registerPassword);
+      if (result && result.error) {
+        setRegisterError(result.error);
+      } else if (result && result.success) {
+        // Show success and switch to login
+        setRegisterError('');
+        alert('Registration successful! Please wait for admin approval.');
+        setShowLoginPage(true);
+        setRegisterUsername('');
+        setRegisterEmail('');
+        setRegisterPassword('');
+      }
     } catch (error) {
-      console.error('Registration error:', error);
+      setRegisterError(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [registerUsername, registerEmail, registerPassword, handleRegister]);
+  }, [registerUsername, registerEmail, registerPassword, onRegister]);
 
   /**
    * Toggle password visibility
@@ -157,38 +146,10 @@ const Login = ({
     setShowPassword(prev => !prev);
   }, []);
 
-  /**
-   * Switch to login tab
-   */
-  const switchToLogin = useCallback(() => {
-    setShowLoginPage(true);
-  }, [setShowLoginPage]);
-
-  /**
-   * Switch to register tab
-   */
-  const switchToRegister = useCallback(() => {
-    setShowLoginPage(false);
-  }, [setShowLoginPage]);
-
   // ==================== RENDER HELPERS ====================
 
-  /**
-   * Check if login form is valid
-   * @returns {boolean}
-   */
   const isLoginValid = authUsername && authPassword;
-
-  /**
-   * Check if registration form is valid
-   * @returns {boolean}
-   */
   const isRegisterValid = registerUsername && registerEmail && registerPassword && registerPassword.length >= 6;
-
-  /**
-   * Get current year for footer
-   * @returns {number}
-   */
   const currentYear = new Date().getFullYear();
 
   // ==================== RENDER ====================
@@ -206,8 +167,8 @@ const Login = ({
             </div>
             
             {/* Brand name */}
-            <h1 className="brand-name">26:07 Electronics</h1>
-            <p className="brand-tagline">Premium Electronics & Smart Solutions</p>
+            <h1 className="brand-name">Shahinsha's Inventory</h1>
+            <p className="brand-tagline">Smart Inventory Management System</p>
             
             {/* Features list */}
             <div className="brand-list">
@@ -240,7 +201,7 @@ const Login = ({
               <button
                 type="button"
                 className={`login-tab ${showLoginPage ? 'active' : ''}`}
-                onClick={switchToLogin}
+                onClick={() => setShowLoginPage(true)}
                 aria-label="Switch to login"
               >
                 <Icon name="lock" size={16} />
@@ -249,7 +210,7 @@ const Login = ({
               <button
                 type="button"
                 className={`login-tab ${!showLoginPage ? 'active' : ''}`}
-                onClick={switchToRegister}
+                onClick={() => setShowLoginPage(false)}
                 aria-label="Switch to register"
               >
                 <Icon name="add" size={16} />
@@ -450,7 +411,7 @@ const Login = ({
 
           {/* Footer */}
           <div className="login-footer-text">
-            &copy; {currentYear} 26:07 Electronics
+            &copy; {currentYear} Shahinsha's Inventory
           </div>
         </div>
       </div>
@@ -462,27 +423,8 @@ const Login = ({
  * PropTypes validation
  */
 Login.propTypes = {
-  showLoginPage: PropTypes.bool.isRequired,
-  setShowLoginPage: PropTypes.func.isRequired,
-  authUsername: PropTypes.string.isRequired,
-  setAuthUsername: PropTypes.func.isRequired,
-  authPassword: PropTypes.string.isRequired,
-  setAuthPassword: PropTypes.func.isRequired,
-  authError: PropTypes.string,
-  handleAuth: PropTypes.func.isRequired,
-  registerUsername: PropTypes.string.isRequired,
-  setRegisterUsername: PropTypes.func.isRequired,
-  registerPassword: PropTypes.string.isRequired,
-  setRegisterPassword: PropTypes.func.isRequired,
-  registerEmail: PropTypes.string.isRequired,
-  setRegisterEmail: PropTypes.func.isRequired,
-  handleRegister: PropTypes.func.isRequired,
-  registerError: PropTypes.string,
-};
-
-Login.defaultProps = {
-  authError: '',
-  registerError: '',
+  onLogin: PropTypes.func.isRequired,
+  onRegister: PropTypes.func.isRequired,
 };
 
 export default Login;
