@@ -33,7 +33,7 @@ export default function Dashboard({
     try {
       setClearing(true);
       
-      const apiUrl = API('/admin/clear-database');
+      const apiUrl = API('/api/admin/clear-database');
       console.log('Clearing database with URL:', apiUrl);
       
       const response = await fetch(apiUrl, {
