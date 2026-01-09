@@ -15,42 +15,42 @@ export default function Cart({
 
   if (cart.length === 0) {
     return (
-      <div className="cart empty">
-        <div className="cart-header">
-          <h3 className="cart-title">
-            <Icon name="shopping-cart" size={20} />
+      <div className="cart empty" style={{ minHeight: '400px' }}>
+        <div className="cart-header" style={{ padding: '20px 24px' }}>
+          <h3 className="cart-title" style={{ fontSize: '18px' }}>
+            <Icon name="shopping-cart" size={24} />
             Shopping Cart
           </h3>
         </div>
-        <div className="cart-empty-state">
-          <Icon name="shopping-cart" size={56} color="#cbd5e1" />
-          <p>Your cart is empty</p>
-          <small>Add products to get started</small>
+        <div className="cart-empty-state" style={{ padding: '48px 24px' }}>
+          <Icon name="shopping-cart" size={72} color="#cbd5e1" />
+          <p style={{ fontSize: '16px', marginTop: '16px', marginBottom: '8px' }}>Your cart is empty</p>
+          <small style={{ fontSize: '14px', color: '#64748b' }}>Add products to get started</small>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="cart">
-      <div className="cart-header">
-        <h3 className="cart-title">
-          <Icon name="shopping-cart" size={20} />
+    <div className="cart" style={{ boxShadow: '0 6px 24px rgba(0, 0, 0, 0.12)' }}>
+      <div className="cart-header" style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+        <h3 className="cart-title" style={{ fontSize: '18px' }}>
+          <Icon name="shopping-cart" size={24} />
           Cart
-          <span className="cart-count">({cartCount})</span>
+          <span className="cart-count" style={{ fontSize: '14px' }}>({cartCount})</span>
         </h3>
         <Button 
           variant="ghost" 
           size="small"
           onClick={onClear}
           icon="trash-2"
-          style={{ color: 'white', opacity: 0.9 }}
+          style={{ color: 'white', opacity: 0.9, padding: '8px 16px', fontSize: '14px' }}
         >
           Clear
         </Button>
       </div>
 
-      <div className="cart-items">
+      <div className="cart-items" style={{ padding: '20px', gap: '12px', display: 'flex', flexDirection: 'column', maxHeight: '400px' }}>
         {cart.map((item) => (
           <CartItem 
             key={item.id}
@@ -61,10 +61,10 @@ export default function Cart({
         ))}
       </div>
 
-      <div className="cart-summary">
-        <div className="cart-total">
-          <span>Total:</span>
-          <strong>{formatCurrency(cartTotal)}</strong>
+      <div className="cart-summary" style={{ padding: '20px 24px', borderTop: '2px solid #e2e8f0', background: '#f8f9fa' }}>
+        <div className="cart-total" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '18px', fontWeight: '600' }}>
+          <span style={{ color: '#475569' }}>Total:</span>
+          <strong style={{ fontSize: '22px', color: '#1e293b' }}>{formatCurrency(cartTotal)}</strong>
         </div>
       </div>
     </div>

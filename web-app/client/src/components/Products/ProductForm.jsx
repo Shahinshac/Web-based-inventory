@@ -79,7 +79,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       onClose={onClose}
       title={product ? 'Edit Product' : 'Add New Product'}
     >
-      <form onSubmit={handleSubmit} className="product-form">
+      <form onSubmit={handleSubmit} className="product-form" style={{ display: 'flex', flexDirection: 'column', gap: '20px', padding: '4px' }}>
         <Input
           label="Product Name"
           value={formData.name}
@@ -87,9 +87,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
           placeholder="Enter product name"
           required
           error={errors.name}
+          style={{ fontSize: '15px', padding: '12px 16px' }}
         />
 
-        <div className="form-row">
+        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <Input
             label="Price (₹)"
             type="number"
@@ -100,6 +101,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             step="0.01"
             required
             error={errors.price}
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
 
           <Input
@@ -110,10 +112,11 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             placeholder="0.00"
             min="0"
             step="0.01"
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
         </div>
 
-        <div className="form-row">
+        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <Input
             label="Quantity"
             type="number"
@@ -123,6 +126,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             min="0"
             required
             error={errors.quantity}
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
 
           <Input
@@ -133,6 +137,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             placeholder="10"
             min="0"
             error={errors.minStock}
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
         </div>
 
@@ -141,14 +146,16 @@ export default function ProductForm({ product, onSubmit, onClose }) {
           value={formData.category}
           onChange={(e) => handleChange('category', e.target.value)}
           placeholder="Electronics, Accessories, etc."
+          style={{ fontSize: '15px', padding: '12px 16px' }}
         />
 
-        <div className="form-row">
+        <div className="form-row" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
           <Input
             label="Serial Number"
             value={formData.serialNo}
             onChange={(e) => handleChange('serialNo', e.target.value)}
             placeholder="Optional"
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
 
           <Input
@@ -156,6 +163,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             value={formData.barcode}
             onChange={(e) => handleChange('barcode', e.target.value)}
             placeholder="Optional"
+            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
         </div>
 
@@ -165,13 +173,14 @@ export default function ProductForm({ product, onSubmit, onClose }) {
           onChange={(e) => handleChange('hsnCode', e.target.value)}
           placeholder="9999"
           helperText="Harmonized System of Nomenclature code for GST"
+          style={{ fontSize: '15px', padding: '12px 16px' }}
         />
 
-        <div className="form-actions">
-          <Button type="button" variant="secondary" onClick={onClose}>
+        <div className="form-actions" style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end', marginTop: '8px', paddingTop: '20px', borderTop: '2px solid #e2e8f0' }}>
+          <Button type="button" variant="secondary" onClick={onClose} style={{ padding: '12px 28px', fontSize: '15px' }}>
             Cancel
           </Button>
-          <Button type="submit" variant="primary">
+          <Button type="submit" variant="primary" style={{ padding: '12px 28px', fontSize: '15px' }}>
             {product ? 'Update Product' : 'Add Product'}
           </Button>
         </div>
