@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import Button from '../Common/Button';
 import { formatCurrency, formatCurrency0 } from '../../constants';
+import { API } from '../../utils/api';
 
 export default function Dashboard({ 
   stats, 
@@ -9,10 +11,51 @@ export default function Dashboard({
   onNavigate,
   onAddProduct,
   onAddCustomer,
-  canEdit
+  canEdit,
+  isAdmin,
+  currentUser
 }) {
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [clearing, setClearing] = useState(false);
+
+  const handleClearDatabase = async () => {
+    if (!window.confirm('⚠️ WARNING: This will delete ALL data (products, customers, invoices, etc.) from the database!\n\nAre you absolutely sure?')) {
+      return;
+    }
+
+    if (!window.confirm('🚨 FINAL CONFIRMATION: This action cannot be undone!\n\nType YES in your mind and click OK to proceed.')) {
+      return;
+    }
+
+    try {
+      setClearing(true);
+      const response = await fetch(API.getUrl('/admin/clear-database'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        },
+        body: JSON.stringify({
+          adminUsername: currentUser?.username,
+          adminPassword: prompt('Enter admin password to confirm:')
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('✅ Database cleared successfully!\n\nThe page will reload.');
+        window.location.reload();
+      } else {
+        alert('❌ Error: ' + (data.error || 'Failed to clear database'));
+      }
+    } catch (error) {
+      alert('❌ Error: ' + error.message);
+    } finally {
+      setClearing(false);
+    }
+  };
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -76,6 +119,18 @@ export default function Dashboard({
                 day: 'numeric' 
               })}</span>
             </div>
+            {isAdmin && (
+              <Button
+                variant="danger"
+                size="small"
+                icon="trash-2"
+                onClick={handleClearDatabase}
+                disabled={clearing}
+                style={{ marginLeft: '12px', background: '#dc2626', color: 'white' }}
+              >
+                {clearing ? 'Clearing...' : 'Clear Database'}
+              </Button>
+            )}
           </div>
         </div>
       </div>

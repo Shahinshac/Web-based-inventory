@@ -276,6 +276,8 @@ Esc: Close modals/dialogs`;
             onAddProduct={() => {}}
             onAddCustomer={() => {}}
             canEdit={canEdit()}
+            isAdmin={isAdmin}
+            currentUser={currentUser}
           />
         );
 
