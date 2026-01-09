@@ -1,0 +1,102 @@
+/**
+ * Authentication Service
+ * Handles login, registration, and session management
+ */
+
+import { API, apiPost, apiGet } from '../utils/api'
+
+/**
+ * Login user
+ */
+export const loginUser = async (username, password) => {
+  const response = await apiPost('/api/users/login', { username, password })
+  
+  if (response.user) {
+    // Store user data in localStorage
+    const isAdmin = response.user.role === 'admin'
+    localStorage.setItem('currentUser', JSON.stringify(response.user))
+    localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
+    localStorage.setItem('userRole', response.user.role || 'cashier')
+  }
+  
+  return response
+}
+
+/**
+ * Register new user
+ */
+export const registerUser = async (username, password, email) => {
+  return await apiPost('/api/users/register', { username, password, email })
+}
+
+/**
+ * Logout user
+ */
+export const logoutUser = () => {
+  localStorage.removeItem('currentUser')
+  localStorage.removeItem('isAdmin')
+  localStorage.removeItem('userRole')
+  localStorage.removeItem('authToken')
+}
+
+/**
+ * Get current user from localStorage
+ */
+export const getCurrentUser = () => {
+  try {
+    const storedUser = localStorage.getItem('currentUser')
+    if (storedUser) {
+      return JSON.parse(storedUser)
+    }
+  } catch (error) {
+    console.error('Error parsing current user:', error)
+  }
+  return null
+}
+
+/**
+ * Check if user is authenticated
+ */
+export const isAuthenticated = () => {
+  return !!getCurrentUser()
+}
+
+/**
+ * Check if user is admin
+ */
+export const isUserAdmin = () => {
+  return localStorage.getItem('isAdmin') === 'true'
+}
+
+/**
+ * Get user role
+ */
+export const getUserRole = () => {
+  return localStorage.getItem('userRole') || 'cashier'
+}
+
+/**
+ * Validate session with server
+ */
+export const validateSession = async (username) => {
+  try {
+    const response = await apiGet(`/api/users/${encodeURIComponent(username)}/session`)
+    return response
+  } catch (error) {
+    console.error('Session validation error:', error)
+    return null
+  }
+}
+
+/**
+ * Check if user account still exists
+ */
+export const checkUserValidity = async (userId) => {
+  try {
+    const response = await apiGet(`/api/users/check/${userId}`)
+    return response.exists && response.approved
+  } catch (error) {
+    console.error('User validity check error:', error)
+    return false
+  }
+}

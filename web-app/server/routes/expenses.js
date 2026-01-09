@@ -1,0 +1,118 @@
+/**
+ * Expenses Routes Module
+ * Handles expense tracking endpoints
+ */
+
+const express = require('express');
+const router = express.Router();
+const { ObjectId } = require('mongodb');
+const { getDB } = require('../db');
+const logger = require('../logger');
+const { logAudit } = require('../services/auditService');
+
+/**
+ * GET /api/expenses
+ * Get all expenses
+ */
+router.get('/', async (req, res) => {
+  try {
+    const db = getDB();
+    const expenses = await db.collection('expenses')
+      .find({})
+      .sort({ date: -1 })
+      .toArray();
+    
+    const formatted = expenses.map(e => ({
+      id: e._id.toString(),
+      description: e.description,
+      amount: e.amount,
+      category: e.category,
+      date: e.date,
+      createdBy: e.createdBy,
+      createdByUsername: e.createdByUsername
+    }));
+    
+    res.json(formatted);
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * POST /api/expenses
+ * Add a new expense
+ */
+router.post('/', async (req, res) => {
+  try {
+    const { description, amount, category, date, userId, username } = req.body;
+    
+    if (!description || !amount) {
+      return res.status(400).json({ error: 'Description and amount are required' });
+    }
+    
+    const db = getDB();
+    
+    const expense = {
+      description: description,
+      amount: parseFloat(amount),
+      category: category || 'General',
+      date: date ? new Date(date) : new Date(),
+      createdAt: new Date(),
+      createdBy: userId || null,
+      createdByUsername: username || 'Unknown'
+    };
+    
+    const result = await db.collection('expenses').insertOne(expense);
+    
+    // Log audit trail
+    await logAudit(db, 'EXPENSE_ADDED', userId, username, {
+      expenseId: result.insertedId.toString(),
+      description,
+      amount
+    });
+    
+    res.json({ 
+      id: result.insertedId.toString(), 
+      ...expense 
+    });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * DELETE /api/expenses/:id
+ * Delete an expense
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { userId, username } = req.query;
+    const db = getDB();
+    
+    // Get expense before deleting
+    const expense = await db.collection('expenses').findOne({ _id: new ObjectId(id) });
+    
+    if (!expense) {
+      return res.status(404).json({ error: 'Expense not found' });
+    }
+    
+    await db.collection('expenses').deleteOne({ _id: new ObjectId(id) });
+    
+    // Log audit trail
+    await logAudit(db, 'EXPENSE_DELETED', userId, username, {
+      expenseId: id,
+      description: expense.description,
+      amount: expense.amount
+    });
+    
+    res.json({ success: true });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+module.exports = router;

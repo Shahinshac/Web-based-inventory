@@ -1,87 +1,120 @@
+/**
+ * Logger Module
+ * Centralized logging system using Winston
+ * Provides console and file logging with different levels
+ */
+
 const winston = require('winston');
 const path = require('path');
 
-// Define log levels
-const levels = {
+// Log level definitions with priority
+const LOG_LEVELS = {
   error: 0,
   warn: 1,
   info: 2,
   http: 3,
-  debug: 4,
+  debug: 4
 };
 
-// Define colors for each level
-const colors = {
+// Color scheme for console output
+const LOG_COLORS = {
   error: 'red',
   warn: 'yellow',
   info: 'green',
   http: 'magenta',
-  debug: 'blue',
+  debug: 'blue'
 };
 
-winston.addColors(colors);
+// Apply colors to Winston
+winston.addColors(LOG_COLORS);
 
-// Define log format
-const format = winston.format.combine(
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+// Timestamp format for logs
+const TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+
+/**
+ * Create JSON format for file logging
+ */
+const fileFormat = winston.format.combine(
+  winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
   winston.format.errors({ stack: true }),
   winston.format.splat(),
   winston.format.json()
 );
 
-// Console format with colors
+/**
+ * Create colored format for console output
+ */
 const consoleFormat = winston.format.combine(
   winston.format.colorize({ all: true }),
-  winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  winston.format.printf(
-    (info) => `${info.timestamp} ${info.level}: ${info.message}${info.stack ? '\n' + info.stack : ''}`
-  )
+  winston.format.timestamp({ format: TIMESTAMP_FORMAT }),
+  winston.format.printf(({ timestamp, level, message, stack }) => {
+    const stackTrace = stack ? `\n${stack}` : '';
+    return `${timestamp} ${level}: ${message}${stackTrace}`;
+  })
 );
 
-// Define transports
+/**
+ * Define log file paths
+ */
+const LOG_DIR = path.join(__dirname, 'logs');
+const ERROR_LOG_PATH = path.join(LOG_DIR, 'error.log');
+const COMBINED_LOG_PATH = path.join(LOG_DIR, 'combined.log');
+
+/**
+ * Configure transport layers
+ */
 const transports = [
-  // Console logging
+  // Console transport with colors
   new winston.transports.Console({
-    format: consoleFormat,
+    format: consoleFormat
   }),
-  // File logging for errors
+  // Error-only file transport
   new winston.transports.File({
-    filename: path.join(__dirname, 'logs', 'error.log'),
+    filename: ERROR_LOG_PATH,
     level: 'error',
-    format: format,
+    format: fileFormat
   }),
-  // File logging for all logs
+  // All logs file transport
   new winston.transports.File({
-    filename: path.join(__dirname, 'logs', 'combined.log'),
-    format: format,
-  }),
+    filename: COMBINED_LOG_PATH,
+    format: fileFormat
+  })
 ];
 
-// Create logger instance
+/**
+ * Create the logger instance
+ */
 const logger = winston.createLogger({
   level: process.env.LOG_LEVEL || 'info',
-  levels,
+  levels: LOG_LEVELS,
   transports,
-  exitOnError: false,
+  exitOnError: false
 });
 
-// HTTP request logging middleware
+/**
+ * HTTP Request Logging Middleware
+ * Logs all incoming HTTP requests with response status and duration
+ * @param {Object} req - Express request object
+ * @param {Object} res - Express response object
+ * @param {Function} next - Express next middleware function
+ */
 logger.httpLogger = (req, res, next) => {
-  const start = Date.now();
-  
+  const startTime = Date.now();
+
   res.on('finish', () => {
-    const duration = Date.now() - start;
-    const message = `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`;
-    
+    const duration = Date.now() - startTime;
+    const logMessage = `${req.method} ${req.originalUrl} ${res.statusCode} - ${duration}ms`;
+
+    // Log based on status code
     if (res.statusCode >= 500) {
-      logger.error(message);
+      logger.error(logMessage);
     } else if (res.statusCode >= 400) {
-      logger.warn(message);
+      logger.warn(logMessage);
     } else {
-      logger.http(message);
+      logger.http(logMessage);
     }
   });
-  
+
   next();
 };
 
