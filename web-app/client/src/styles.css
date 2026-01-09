@@ -4951,10 +4951,25 @@ tbody td {
   min-width: 100px;
 }
 
-/* Responsive modal padding */
-@media (max-width: 640px) {
-  .modal-header {
-    padding: 18px 20px;
+  /* Allow specific modals to expand and avoid internal scrolling */
+  .modal-no-internal-scroll .modal-body {
+    overflow-y: visible;
+  }
+
+  .modal-no-internal-scroll .modal-footer {
+    position: sticky;
+    bottom: 0;
+    background: var(--bg, #fff);
+    z-index: 2;
+  }
+
+  /* Fullscreen modal helper */
+  .modal-fullscreen {
+    height: 100vh !important;
+    max-height: 100vh !important;
+    border-radius: 0 !important;
+  }
+
   }
   
   .modal-body {

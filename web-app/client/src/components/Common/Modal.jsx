@@ -13,9 +13,11 @@ const Modal = ({
   children, 
   footer,
   size = 'medium',
-  closeOnOverlayClick = true 
+  closeOnOverlayClick = true,
+  noInternalScroll = false,
+  fullScreen = false
 }) => {
-  // Close on Escape key
+  // Close on Escape key and optional body scroll lock for fullScreen
   useEffect(() => {
     if (!isOpen) return
 
@@ -26,8 +28,20 @@ const Modal = ({
     }
 
     window.addEventListener('keydown', handleEscape)
-    return () => window.removeEventListener('keydown', handleEscape)
-  }, [isOpen, onClose])
+
+    // Lock body scroll when fullScreen to avoid double scrollbars
+    const previousBodyOverflow = document.body.style.overflow
+    if (fullScreen) {
+      document.body.style.overflow = 'hidden'
+    }
+
+    return () => {
+      window.removeEventListener('keydown', handleEscape)
+      if (fullScreen) {
+        document.body.style.overflow = previousBodyOverflow
+      }
+    }
+  }, [isOpen, onClose, fullScreen])
 
   if (!isOpen) return null
 
@@ -44,37 +58,59 @@ const Modal = ({
     full: 'max-w-7xl'
   }
 
+  const overlayStyle = {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(0, 0, 0, 0.5)',
+    display: 'flex',
+    alignItems: fullScreen ? 'stretch' : (noInternalScroll ? 'flex-start' : 'center'),
+    justifyContent: 'center',
+    zIndex: 1000,
+    padding: '20px',
+    overflowY: 'auto'
+  }
+
+  const contentStyle = {
+    background: 'white',
+    borderRadius: '12px',
+    boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+    width: '100%',
+    maxHeight: fullScreen ? '100vh' : (noInternalScroll ? 'none' : '90vh'),
+    height: fullScreen ? '100vh' : 'auto',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden'
+  }
+
+  const bodyStyle = {
+    padding: '24px',
+    overflowY: noInternalScroll ? 'visible' : 'auto',
+    flex: 1
+  }
+
+  const footerStyle = {
+    padding: '16px 24px',
+    borderTop: '1px solid #e5e7eb',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: '12px',
+    ...(noInternalScroll || fullScreen ? { position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 } : {})
+  }
+
   return (
     <div 
       className="modal-overlay"
       onClick={handleOverlayClick}
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        background: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 1000,
-        padding: '20px'
-      }}
+      style={overlayStyle}
     >
       <div 
-        className={`modal-content ${sizeClasses[size]}`}
+        className={`modal-content ${sizeClasses[size]} ${noInternalScroll ? 'modal-no-internal-scroll' : ''} ${fullScreen ? 'modal-fullscreen' : ''}`}
         onClick={(e) => e.stopPropagation()}
-        style={{
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          width: '100%',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-          overflow: 'hidden'
-        }}
+        style={contentStyle}
       >
         {/* Modal Header */}
         {title && (
@@ -111,11 +147,7 @@ const Modal = ({
         {/* Modal Body */}
         <div 
           className="modal-body"
-          style={{
-            padding: '24px',
-            overflowY: 'auto',
-            flex: 1
-          }}
+          style={bodyStyle}
         >
           {children}
         </div>
@@ -124,14 +156,7 @@ const Modal = ({
         {footer && (
           <div 
             className="modal-footer"
-            style={{
-              padding: '16px 24px',
-              borderTop: '1px solid #e5e7eb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'flex-end',
-              gap: '12px'
-            }}
+            style={footerStyle}
           >
             {footer}
           </div>

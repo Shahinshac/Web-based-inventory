@@ -3,6 +3,7 @@ import Modal from '../Common/Modal';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
+import './ProductForm.css';
 
 export default function ProductForm({ product, onSubmit, onClose }) {
   const [formData, setFormData] = useState({
@@ -116,12 +117,14 @@ export default function ProductForm({ product, onSubmit, onClose }) {
   });
 
   return (
-    <Modal 
-      isOpen={true}
-      onClose={onClose}
-      title={product ? '✏️ Edit Product' : '✨ Add New Product'}
-      size="large"
-    >
+    <div className="product-form-modal">
+      <Modal 
+        isOpen={true}
+        onClose={onClose}
+        title={product ? '✏️ Edit Product' : '✨ Add New Product'}
+        size="large"
+        noInternalScroll={true}
+      >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '4px' }}>
         
         {/* Section 1: Basic Information */}
@@ -345,5 +348,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         </div>
       </form>
     </Modal>
+    </div>
   );
 }

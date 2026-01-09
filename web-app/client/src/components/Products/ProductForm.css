@@ -1,0 +1,15 @@
+.product-form-modal .modal-body {
+  overflow-y: visible;
+}
+
+.product-form-modal .modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg, #fff);
+  z-index: 2;
+}
+
+/* Helpful to ensure product modal can expand on smaller screens */
+.product-form-modal .modal-content {
+  max-height: none;
+}
