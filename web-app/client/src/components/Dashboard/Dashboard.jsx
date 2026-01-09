@@ -20,37 +20,44 @@ export default function Dashboard({
   const [clearing, setClearing] = useState(false);
 
   const handleClearDatabase = async () => {
-    if (!window.confirm('⚠️ WARNING: This will delete ALL data (products, customers, invoices, etc.) from the database!\n\nAre you absolutely sure?')) {
+    if (!window.confirm('⚠️ WARNING: This will permanently delete ALL data!\n\n• Products\n• Customers\n• Invoices\n• Expenses\n• Audit Logs\n\nAdmin users will be preserved.\n\nAre you absolutely sure?')) {
       return;
     }
 
-    if (!window.confirm('🚨 FINAL CONFIRMATION: This action cannot be undone!\n\nType YES in your mind and click OK to proceed.')) {
+    const password = prompt('🔐 Enter admin password to confirm:');
+    if (!password) {
+      alert('❌ Password required to clear database');
       return;
     }
 
     try {
       setClearing(true);
-      const response = await fetch(API.getUrl('/admin/clear-database'), {
+      
+      const apiUrl = API.getUrl('/admin/clear-database');
+      console.log('Clearing database with URL:', apiUrl);
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          adminUsername: currentUser?.username,
-          adminPassword: prompt('Enter admin password to confirm:')
+          adminUsername: currentUser?.username || 'admin',
+          adminPassword: password
         })
       });
 
       const data = await response.json();
+      console.log('Clear database response:', data);
 
       if (response.ok) {
-        alert('✅ Database cleared successfully!\n\nThe page will reload.');
-        window.location.reload();
+        alert('✅ Database cleared successfully!\n\n' + JSON.stringify(data, null, 2) + '\n\nPage will reload in 2 seconds.');
+        setTimeout(() => window.location.reload(), 2000);
       } else {
         alert('❌ Error: ' + (data.error || 'Failed to clear database'));
       }
     } catch (error) {
+      console.error('Clear database error:', error);
       alert('❌ Error: ' + error.message);
     } finally {
       setClearing(false);
@@ -109,7 +116,7 @@ export default function Dashboard({
             <h1 className="welcome-title">Dashboard Overview</h1>
             <p className="welcome-subtitle">Here's what's happening with your business today</p>
           </div>
-          <div className="welcome-date">
+          <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <div className="date-display">
               <Icon name="calendar" size={20} />
               <span>{currentTime.toLocaleDateString('en-IN', { 
@@ -120,16 +127,41 @@ export default function Dashboard({
               })}</span>
             </div>
             {isAdmin && (
-              <Button
-                variant="danger"
-                size="small"
-                icon="trash-2"
+              <button
                 onClick={handleClearDatabase}
                 disabled={clearing}
-                style={{ marginLeft: '12px', background: '#dc2626', color: 'white' }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '10px 20px',
+                  background: clearing ? '#9ca3af' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '10px',
+                  fontSize: '14px',
+                  fontWeight: '600',
+                  cursor: clearing ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease',
+                  boxShadow: clearing ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.3)',
+                  opacity: clearing ? 0.7 : 1
+                }}
+                onMouseOver={(e) => {
+                  if (!clearing) {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.4)';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!clearing) {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
+                  }
+                }}
               >
-                {clearing ? 'Clearing...' : 'Clear Database'}
-              </Button>
+                <Icon name={clearing ? "loader" : "trash-2"} size={18} />
+                <span>{clearing ? 'Clearing Database...' : 'Clear Database'}</span>
+              </button>
             )}
           </div>
         </div>
