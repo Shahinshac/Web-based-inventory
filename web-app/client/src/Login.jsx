@@ -120,7 +120,7 @@ const Login = ({ onLogin, onRegister }) => {
     
     setLoading(true);
     try {
-      const result = await onRegister(registerUsername, registerEmail, registerPassword);
+      const result = await onRegister(registerUsername, registerPassword, registerEmail);
       if (result && result.error) {
         setRegisterError(result.error);
       } else if (result && result.success) {

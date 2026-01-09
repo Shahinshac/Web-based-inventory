@@ -60,15 +60,14 @@ export default function App() {
     isAdmin, 
     currentUser, 
     userRole,
-    login, 
-    logout,
-    register,
-    profilePhoto
+    handleLogin: login, 
+    handleLogout: logout,
+    handleRegister: register
   } = useAuth();
 
   const { isOnline, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
   
-  const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct, uploadProductPhoto } = 
+  const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct, uploadPhoto: uploadProductPhoto } = 
     useProducts(isOnline, isAuthenticated);
   
   const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, getCustomerPurchases } = 
@@ -77,7 +76,7 @@ export default function App() {
   const { invoices, fetchInvoices, createInvoice, deleteInvoice, filterInvoices } = 
     useInvoices(isOnline, isAuthenticated, tab);
   
-  const { cart, addToCart, updateCartItem, removeFromCart, clearCart, selectedCustomer, selectCustomer } = 
+  const { cart, addToCart, setQuantity: updateCartItem, removeFromCart, clearCart, selectedCustomer, setSelectedCustomer: selectCustomer } = 
     useCart(products);
   
   const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
@@ -383,7 +382,6 @@ Esc: Close modals/dialogs`;
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
-        profilePhoto={profilePhoto}
         indiaTime={indiaTime}
         indiaDate={indiaDate}
         isOnline={isOnline}
