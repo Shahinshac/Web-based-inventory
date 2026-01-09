@@ -347,7 +347,7 @@ const Login = ({
                 </div>
               </div>
             ) : (
-              
+              <>
               {/* ==================== REGISTER FORM ==================== */}
               <div className="login-content">
                 <div className="login-header">
@@ -444,6 +444,7 @@ const Login = ({
                   <span>Admin will review and approve your access</span>
                 </div>
               </div>
+              </>
             )}
           </div>
 

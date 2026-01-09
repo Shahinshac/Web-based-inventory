@@ -20,6 +20,7 @@ const express = require('express');
 const cors = require('cors');
 const path = require('path');
 const logger = require('./logger');
+const { CORS_ORIGIN } = require('./config/constants');
 
 // Import middleware
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -39,7 +40,12 @@ const publicRoutes = require('./routes/public');
 const app = express();
 
 // Middleware
-app.use(cors());
+const corsOptions = {
+  origin: CORS_ORIGIN === '*' ? '*' : CORS_ORIGIN.split(','),
+  credentials: true,
+  optionsSuccessStatus: 200
+};
+app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 

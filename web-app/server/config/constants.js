@@ -52,6 +52,11 @@ const PORT = process.env.PORT || 4000;
  */
 const NODE_ENV = process.env.NODE_ENV || 'development';
 
+/**
+ * CORS Origin (frontend URL)
+ */
+const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
+
 module.exports = {
   JWT_SECRET,
   COMPANY_NAME,
@@ -65,5 +70,6 @@ module.exports = {
   ADMIN_USERNAME,
   ADMIN_PASSWORD,
   PORT,
-  NODE_ENV
+  NODE_ENV,
+  CORS_ORIGIN
 };
