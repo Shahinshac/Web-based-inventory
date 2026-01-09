@@ -13,22 +13,50 @@ const tabs = [
 ];
 
 const adminTabs = [
-  { id: 'audit', label: 'Audit Logs', icon: 'audit', adminOnly: true },
-  { id: 'users', label: 'Users', icon: 'lock', adminOnly: true },
+  { id: 'audit', label: 'Audit Logs', icon: 'clipboard-list', adminOnly: true },
+  { id: 'users', label: 'Users', icon: 'shield', adminOnly: true },
 ];
 
 export default function TabNavigation({ activeTab, onTabChange, isAdmin }) {
   const allTabs = isAdmin ? [...tabs, ...adminTabs] : tabs;
 
   return (
-    <nav className="tab-navigation">
-      <div className="tab-list">
+    <nav className="tab-navigation" style={{
+      display: 'block',
+      background: 'rgba(0, 0, 0, 0.2)',
+      padding: '12px 20px',
+      overflowX: 'auto',
+      overflowY: 'hidden'
+    }}>
+      <div className="tab-list" style={{
+        display: 'flex',
+        gap: '8px',
+        minWidth: 'max-content',
+        flexWrap: 'nowrap',
+        alignItems: 'center'
+      }}>
         {allTabs.map(tab => (
           <button
             key={tab.id}
             className={`tab-btn ${activeTab === tab.id ? 'active' : ''} ${tab.adminOnly ? 'admin-tab' : ''}`}
             onClick={() => onTabChange(tab.id)}
             title={tab.label}
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '8px',
+              padding: '12px 20px',
+              background: activeTab === tab.id ? 'white' : 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.2)',
+              borderRadius: '10px',
+              color: activeTab === tab.id ? '#667eea' : 'white',
+              fontSize: '14px',
+              fontWeight: activeTab === tab.id ? '600' : '500',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap',
+              flexShrink: 0,
+              boxShadow: activeTab === tab.id ? '0 4px 16px rgba(0, 0, 0, 0.2)' : 'none'
+            }}
           >
             <Icon name={tab.icon} size={18} />
             <span className="tab-label">{tab.label}</span>

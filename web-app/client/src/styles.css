@@ -8966,6 +8966,9 @@ button {
   flex-shrink: 0;
   z-index: 1000;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .header-top {
@@ -9216,13 +9219,16 @@ button {
    ============================================ */
 
 .tab-navigation {
-  background: rgba(0, 0, 0, 0.15);
-  padding: 10px 20px;
+  background: rgba(0, 0, 0, 0.2);
+  padding: 12px 20px;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
+  display: block !important;
+  visibility: visible !important;
+  min-height: 60px;
 }
 
 .tab-navigation::-webkit-scrollbar {
@@ -9244,28 +9250,30 @@ button {
 }
 
 .tab-list {
-  display: flex;
+  display: flex !important;
   gap: 8px;
   min-width: max-content;
   flex-wrap: nowrap;
   align-items: center;
+  visibility: visible !important;
 }
 
 .tab-btn {
-  display: inline-flex;
+  display: inline-flex !important;
   align-items: center;
   gap: 8px;
-  padding: 10px 18px;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 10px;
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 13px;
+  color: white;
+  font-size: 14px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
   white-space: nowrap;
   flex-shrink: 0;
+  visibility: visible !important;
 }
 
 .tab-btn:hover {
