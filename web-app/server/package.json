@@ -12,6 +12,7 @@
     "update-company-phone": "node scripts/update_company_phone.js",
     "migrate-photos-to-db": "node scripts/migrate_photos_to_db.js",
     "clear-db": "node scripts/clear-database.js",
+    "clear-db-auto": "node scripts/clear-database-auto.js",
     "clear-db-full": "node scripts/clear-database.js --full",
     "clear-products": "node scripts/clear-database.js --products",
     "clear-customers": "node scripts/clear-database.js --customers",
