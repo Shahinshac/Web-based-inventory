@@ -131,10 +131,10 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
         />
 
         <div className="form-actions">
-          <Button type="button" variant="secondary" onClick={onClose}>
+          <Button type="button" variant="secondary" size="large" onClick={onClose}>
             Cancel
-          </Button>
-          <Button type="submit" variant="primary">
+          </Button> 
+          <Button type="submit" variant="primary" size="large">
             {customer ? 'Update Customer' : 'Add Customer'}
           </Button>
         </div>

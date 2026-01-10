@@ -4969,8 +4969,6 @@ tbody td {
     max-height: 100vh !important;
     border-radius: 0 !important;
   }
-
-  }
   
   .modal-body {
     padding: 20px;
@@ -4988,7 +4986,6 @@ tbody td {
   .modal-title {
     font-size: 18px;
   }
-}
 
 /* ============================================
    NOTIFICATIONS - Toast System
@@ -10078,6 +10075,77 @@ button {
   background: #dc2626;
 }
 
+/* Form & Input Utilities */
+.input-group {
+  margin-bottom: 16px;
+}
+.input-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+.input-field {
+  width: 100%;
+  padding: 14px 16px;
+  font-size: 16px;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border);
+  background: var(--card);
+  color: var(--text);
+  outline: none;
+  transition: box-shadow var(--transition), border-color var(--transition);
+}
+.input-field:focus {
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.06);
+  border-color: var(--primary);
+}
+.input-field--large {
+  padding: 16px 18px;
+  font-size: 16px;
+  border-radius: var(--radius-xl);
+}
+.input-field--full {
+  width: 100%;
+}
+.input-error {
+  border-color: var(--accent-danger);
+  box-shadow: 0 0 0 3px rgba(239,68,68,0.06);
+}
+.error-message {
+  display: block;
+  margin-top: 8px;
+  color: var(--accent-danger);
+  font-size: 13px;
+}
+.helper-text {
+  display: block;
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+@media (max-width: 900px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+.form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+.form-actions .btn {
+  padding: 12px 28px;
+  font-size: 15px;
+}
+
 /* Responsive Styles */
 @media (max-width: 1200px) {
   .stock-overview {
@@ -11117,3 +11185,5 @@ button {
   background: linear-gradient(135deg, #fbbf24, #f59e0b) !important;
   color: #1f2937 !important;
 }
+
+/* touch: force rebuild */

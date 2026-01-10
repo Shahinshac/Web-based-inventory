@@ -144,7 +144,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             placeholder="Enter product name"
             required
             error={errors.name}
-            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
           
           <div style={{ marginTop: '20px' }}>
@@ -153,7 +152,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               value={formData.category}
               onChange={(e) => handleChange('category', e.target.value)}
               placeholder="Electronics, Accessories, etc."
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
           </div>
         </div>
@@ -168,7 +166,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Pricing & Profit</span>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="form-row">
             <Input
               label="Selling Price (₹)"
               type="number"
@@ -179,7 +177,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               step="0.01"
               required
               error={errors.price}
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
 
             <Input
@@ -190,7 +187,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               placeholder="0.00"
               min="0"
               step="0.01"
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
           </div>
 
@@ -233,7 +229,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Inventory Management</span>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+          <div className="form-row">
             <Input
               label="Current Quantity"
               type="number"
@@ -243,7 +239,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               min="0"
               required
               error={errors.quantity}
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
 
             <Input
@@ -254,7 +249,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               placeholder="10"
               min="0"
               error={errors.minStock}
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
           </div>
 
@@ -292,13 +286,12 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Product Tracking</span>
           </div>
           
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '20px' }}>
+          <div className="form-row" style={{ marginBottom: '20px' }}>
             <Input
               label="Serial Number"
               value={formData.serialNo}
               onChange={(e) => handleChange('serialNo', e.target.value)}
               placeholder="Optional"
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
 
             <Input
@@ -306,7 +299,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               value={formData.barcode}
               onChange={(e) => handleChange('barcode', e.target.value)}
               placeholder="Optional"
-              style={{ fontSize: '15px', padding: '12px 16px' }}
             />
           </div>
 
@@ -316,7 +308,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             onChange={(e) => handleChange('hsnCode', e.target.value)}
             placeholder="9999"
             helperText="Harmonized System of Nomenclature code for GST"
-            style={{ fontSize: '15px', padding: '12px 16px' }}
           />
         </div>
 

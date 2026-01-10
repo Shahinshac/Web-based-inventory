@@ -14,9 +14,15 @@ export default function Input({
   className = '',
   error,
   helperText,
+  size = 'large',
+  fullWidth = false,
   ...props 
 }) {
   const inputId = `input-${label?.replace(/\s+/g, '-').toLowerCase()}`;
+
+  const sizeClass = size ? `input-field--${size}` : '';
+  const fullClass = fullWidth ? 'input-field--full' : '';
+  const errorClass = error ? 'input-error' : '';
 
   return (
     <div className={`input-group ${className}`}>
@@ -37,7 +43,8 @@ export default function Input({
         min={min}
         max={max}
         step={step}
-        className={`input-field ${error ? 'input-error' : ''}`}
+        className={`input-field ${sizeClass} ${fullClass} ${errorClass}`}
+        aria-invalid={!!error}
         {...props}
       />
       {error && <span className="error-message">{error}</span>}
