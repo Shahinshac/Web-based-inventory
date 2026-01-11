@@ -123,7 +123,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         onClose={onClose}
         title={product ? '✏️ Edit Product' : '✨ Add New Product'}
         size="xl"
-        noInternalScroll={true}
       >
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '4px' }}>
         

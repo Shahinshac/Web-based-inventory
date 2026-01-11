@@ -22,6 +22,7 @@ export default function CheckoutForm({
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState('')
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
@@ -30,9 +31,24 @@ export default function CheckoutForm({
   const finalTotal = afterDiscount + gstAmount;
 
   const handleCheckout = async () => {
+    setCheckoutError('')
+
     if (cart.length === 0) {
-      alert('Cart is empty!');
+      setCheckoutError('Cart is empty. Add products to proceed.')
       return;
+    }
+
+    // Validate item quantities against stock (inline errors)
+    for (const item of cart) {
+      const q = Number(item.quantity) || 0
+      if (q <= 0) {
+        setCheckoutError(`Item "${item.name}" has invalid quantity.`)
+        return
+      }
+      if (item.maxStock !== undefined && q > item.maxStock) {
+        setCheckoutError(`Item "${item.name}" exceeds available stock (${item.maxStock}).`)
+        return
+      }
     }
 
     // Validate split payment if enabled
@@ -45,7 +61,7 @@ export default function CheckoutForm({
       );
 
       if (!validation.valid) {
-        alert(validation.error);
+        setCheckoutError(validation.error)
         return;
       }
     }
@@ -94,6 +110,7 @@ export default function CheckoutForm({
           <Icon name="user" size={18} />
           Customer (Optional)
         </h4>
+        {checkoutError && <div className="form-error" style={{ marginBottom: '10px' }}>{checkoutError}</div>}
         <select
           className="customer-select"
           value={selectedCustomer?.id || ''}

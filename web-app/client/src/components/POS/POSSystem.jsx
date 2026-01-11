@@ -18,25 +18,37 @@ export default function POSSystem({
   onSelectCustomer,
   onCheckout,
   isOnline,
-  companyInfo
+  companyInfo,
+  cartErrors = {}
 }) {
   const [showScanner, setShowScanner] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [addError, setAddError] = useState('')
 
   const handleProductSelect = (product, quantity = 1) => {
-    onAddToCart(product, quantity);
+    const res = onAddToCart(product, quantity);
+    if (res && !res.success) {
+      setAddError(res.error || 'Failed to add product')
+      setTimeout(() => setAddError(''), 4000)
+    }
   };
 
   const handleBarcodeScanned = (barcode) => {
     const product = products.find(p => p.barcode === barcode || p.serialNo === barcode);
     if (product) {
       if (product.quantity > 0) {
-        onAddToCart(product, 1);
+        const res = onAddToCart(product, 1);
+        if (res && !res.success) {
+          setAddError(res.error || 'Failed to add product')
+          setTimeout(() => setAddError(''), 4000)
+        }
       } else {
-        alert('⚠️ Product is out of stock!');
+        setAddError('⚠️ Product is out of stock!')
+        setTimeout(() => setAddError(''), 4000)
       }
     } else {
-      alert('❌ Product not found with barcode: ' + barcode);
+      setAddError('❌ Product not found with barcode: ' + barcode)
+      setTimeout(() => setAddError(''), 4000)
     }
     setShowScanner(false);
   };
@@ -72,6 +84,7 @@ export default function POSSystem({
             products={products}
             onProductSelect={handleProductSelect}
           />
+          {addError && <div className="form-error" style={{ marginTop: 8 }}>{addError}</div>}
         </div>
 
         <div className={`pos-right ${cartOpen ? 'mobile-open' : ''}`}>
@@ -80,6 +93,7 @@ export default function POSSystem({
             onUpdateQuantity={onUpdateCartItem}
             onRemove={onRemoveFromCart}
             onClear={onClearCart}
+            errors={cartErrors}
           />
 
           <CheckoutForm 

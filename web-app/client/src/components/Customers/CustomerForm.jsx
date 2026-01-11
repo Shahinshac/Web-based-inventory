@@ -75,7 +75,6 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
       onClose={onClose}
       title={customer ? 'Edit Customer' : 'Add New Customer'}
       size="xl"
-      noInternalScroll={true}
     >
       <form onSubmit={handleSubmit} className="customer-form">
         <Input

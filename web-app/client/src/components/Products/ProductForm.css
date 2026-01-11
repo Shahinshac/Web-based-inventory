@@ -1,5 +1,6 @@
 .product-form-modal .modal-body {
-  overflow-y: visible;
+  /* Allow internal scrolling on small screens so header/footer remain visible */
+  overflow-y: auto;
 }
 
 .product-form-modal .modal-footer {
@@ -11,5 +12,5 @@
 
 /* Helpful to ensure product modal can expand on smaller screens */
 .product-form-modal .modal-content {
-  max-height: none;
+  max-height: calc(100vh - 40px);
 }

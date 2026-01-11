@@ -79,7 +79,7 @@ export default function App() {
   const { invoices, fetchInvoices, createInvoice, deleteInvoice, filterInvoices } = 
     useInvoices(isOnline, isAuthenticated, tab);
   
-  const { cart, addToCart, updateCartItem, removeFromCart, clearCart, selectedCustomer, selectCustomer } = 
+  const { cart, addToCart, updateCartItem, removeFromCart, clearCart, selectedCustomer, selectCustomer, errors: cartErrors } = 
     useCart(products);
   
   const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
@@ -337,6 +337,7 @@ Esc: Close modals/dialogs`;
             onCheckout={handleCheckout}
             isOnline={isOnline}
             companyInfo={companyInfo}
+            cartErrors={cartErrors}
           />
         );
 

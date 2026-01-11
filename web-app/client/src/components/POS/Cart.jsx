@@ -3,33 +3,38 @@ import CartItem from './CartItem';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import { formatCurrency } from '../../constants';
+import { calculateSubtotal } from '../../utils/calculations';
+
+// Cart component now accepts `errors` prop to display inline validation messages for items
+
 
 export default function Cart({ 
   cart, 
   onUpdateQuantity, 
   onRemove, 
-  onClear 
+  onClear,
+  errors = {}
 }) {
-  const cartTotal = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  const cartTotal = calculateSubtotal(cart)
   const cartCount = cart.reduce((sum, item) => sum + item.quantity, 0);
 
   if (cart.length === 0) {
     return (
-      <div className="cart empty" style={{ minHeight: '400px' }}>
-        <div className="cart-header" style={{ padding: '20px 24px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-          <h3 className="cart-title" style={{ fontSize: '18px' }}>
-            <Icon name="shopping-cart" size={24} />
+      <div className="cart empty" style={{ minHeight: '300px' }}>
+        <div className="cart-header" style={{ padding: '16px 20px', background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
+          <h3 className="cart-title" style={{ fontSize: '16px' }}>
+            <Icon name="shopping-cart" size={20} />
             Shopping Cart
           </h3>
         </div>
-        <div className="cart-empty-state" style={{ padding: '48px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '300px' }}>
+        <div className="cart-empty-state" style={{ padding: '36px 20px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ 
             animation: 'bounce 2s infinite',
-            marginBottom: '16px'
+            marginBottom: '12px'
           }}>
-            <Icon name="shopping-cart" size={72} color="#cbd5e1" />
+            <Icon name="shopping-cart" size={56} color="#cbd5e1" />
           </div>
-          <p style={{ fontSize: '16px', marginTop: '16px', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>Your cart is empty</p>
+          <p style={{ fontSize: '16px', marginTop: '12px', marginBottom: '8px', fontWeight: '600', color: '#475569' }}>Your cart is empty</p>
           <small style={{ fontSize: '14px', color: '#64748b' }}>Add products to get started</small>
         </div>
       </div>
@@ -42,27 +47,19 @@ export default function Cart({
       position: 'relative'
     }}>
       <div className="cart-header" style={{ 
-        padding: '20px 24px', 
+        padding: '16px 20px', 
         background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        position: 'relative',
-        overflow: 'hidden'
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
       }}>
-        <div style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'radial-gradient(circle at top right, rgba(255,255,255,0.2), transparent)',
-          pointerEvents: 'none'
-        }}></div>
-        <h3 className="cart-title" style={{ fontSize: '18px', position: 'relative', zIndex: 1 }}>
-          <Icon name="shopping-cart" size={24} />
+        <h3 className="cart-title" style={{ fontSize: '16px', position: 'relative', zIndex: 1 }}>
+          <Icon name="shopping-cart" size={20} />
           Cart
           <span className="cart-count" style={{ 
-            fontSize: '14px',
+            fontSize: '12px',
             background: 'rgba(255,255,255,0.25)',
-            padding: '4px 12px',
+            padding: '4px 10px',
             borderRadius: '20px',
             marginLeft: '8px',
             fontWeight: '700'
@@ -75,34 +72,20 @@ export default function Cart({
           size="small"
           onClick={onClear}
           icon="trash-2"
-          style={{ color: 'white', opacity: 0.9, padding: '8px 16px', fontSize: '14px', position: 'relative', zIndex: 1 }}
+          style={{ color: 'white', opacity: 0.9, padding: '8px 12px', fontSize: '13px' }}
         >
           Clear
         </Button>
       </div>
 
-      {/* Scroll indicator at top */}
-      {cart.length > 3 && (
-        <div style={{
-          position: 'absolute',
-          top: '76px',
-          left: 0,
-          right: 0,
-          height: '20px',
-          background: 'linear-gradient(to bottom, rgba(248,249,250,0.9), transparent)',
-          pointerEvents: 'none',
-          zIndex: 2
-        }}></div>
-      )}
-
       <div 
         className="cart-items" 
         style={{ 
-          padding: '20px', 
+          padding: '12px 16px', 
           gap: '12px', 
           display: 'flex', 
           flexDirection: 'column', 
-          maxHeight: '400px',
+          maxHeight: '360px',
           overflowY: 'auto',
           scrollBehavior: 'smooth',
           position: 'relative'
@@ -112,7 +95,7 @@ export default function Cart({
           <div
             key={item.id}
             style={{
-              animation: `slideInCart 0.3s ease-out ${index * 0.05}s backwards`
+              animation: `slideInCart 0.2s ease-out ${index * 0.03}s backwards`
             }}
           >
             <CartItem 
@@ -120,27 +103,16 @@ export default function Cart({
               onUpdateQuantity={onUpdateQuantity}
               onRemove={onRemove}
             />
+            {errors[item.id] && (
+              <div className="form-error" style={{ marginTop: '6px', fontSize: '13px' }}>{errors[item.id]}</div>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Scroll indicator at bottom */}
-      {cart.length > 3 && (
-        <div style={{
-          position: 'absolute',
-          bottom: '90px',
-          left: 0,
-          right: 0,
-          height: '20px',
-          background: 'linear-gradient(to top, rgba(248,249,250,0.9), transparent)',
-          pointerEvents: 'none',
-          zIndex: 2
-        }}></div>
-      )}
-
       <div className="cart-summary" style={{ 
-        padding: '20px 24px', 
-        borderTop: '2px solid #e2e8f0', 
+        padding: '16px 20px', 
+        borderTop: '1px solid #e6eef8', 
         background: 'linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%)',
         position: 'relative'
       }}>
@@ -148,21 +120,16 @@ export default function Cart({
           display: 'flex', 
           justifyContent: 'space-between', 
           alignItems: 'center', 
-          fontSize: '18px', 
-          fontWeight: '600',
-          animation: 'pulse 2s ease-in-out infinite'
+          fontSize: '16px', 
+          fontWeight: '600'
         }}>
           <span style={{ color: '#475569', display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Icon name="dollar-sign" size={20} />
+            <Icon name="dollar-sign" size={16} />
             Total:
           </span>
           <strong style={{ 
-            fontSize: '22px', 
-            color: '#1e293b',
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
+            fontSize: '18px', 
+            color: '#1e293b'
           }}>
             {formatCurrency(cartTotal)}
           </strong>
@@ -173,7 +140,7 @@ export default function Cart({
         @keyframes slideInCart {
           from {
             opacity: 0;
-            transform: translateX(-20px);
+            transform: translateX(-12px);
           }
           to {
             opacity: 1;
@@ -186,20 +153,12 @@ export default function Cart({
             transform: translateY(0);
           }
           50% {
-            transform: translateY(-10px);
-          }
-        }
-
-        @keyframes pulse {
-          0%, 100% {
-            opacity: 1;
-          }
-          50% {
-            opacity: 0.8;
+            transform: translateY(-8px);
           }
         }
 
         .cart-items::-webkit-scrollbar {
+          height: 8px;
           width: 8px;
         }
 
@@ -217,6 +176,8 @@ export default function Cart({
         .cart-items::-webkit-scrollbar-thumb:hover {
           background: linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%);
         }
+
+        .form-error { color: var(--accent-danger); font-size: 13px; margin-top: 6px }
       `}</style>
     </div>
   );

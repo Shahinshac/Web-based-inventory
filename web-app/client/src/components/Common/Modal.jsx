@@ -79,7 +79,7 @@ const Modal = ({
     borderRadius: '12px',
     boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
     width: '100%',
-    maxHeight: fullScreen ? '100vh' : (noInternalScroll ? 'none' : '90vh'),
+    maxHeight: fullScreen ? '100vh' : (noInternalScroll ? 'none' : 'calc(100vh - 40px)'),
     height: fullScreen ? '100vh' : 'auto',
     display: 'flex',
     flexDirection: 'column',
@@ -99,7 +99,7 @@ const Modal = ({
     alignItems: 'center',
     justifyContent: 'flex-end',
     gap: '12px',
-    ...(noInternalScroll || fullScreen ? { position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 } : {})
+    ...((!noInternalScroll || fullScreen) ? { position: 'sticky', bottom: 0, background: '#fff', zIndex: 2 } : {})
   }
 
   return (
@@ -122,7 +122,11 @@ const Modal = ({
               borderBottom: '1px solid #e5e7eb',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
+              position: 'sticky',
+              top: 0,
+              zIndex: 3,
+              background: 'linear-gradient(180deg, rgba(255,255,255,0.95), rgba(255,255,255,0.95))'
             }}
           >
             <h2 style={{ margin: 0, fontSize: '20px', fontWeight: '600' }}>
