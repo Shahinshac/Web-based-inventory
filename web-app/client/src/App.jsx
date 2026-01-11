@@ -24,7 +24,8 @@ import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { DEFAULT_GST, GST_PERCENT, PAYMENT_MODES } from './constants';
-import { API } from './utils/api';
+import { API, apiPost, apiPatch } from './utils/api';
+import { generatePublicInvoiceUrl, generateWhatsAppLink } from './services/invoiceService';
 import './styles.css';
 
 export default function App() {
@@ -180,16 +181,38 @@ Esc: Close modals/dialogs`;
   };
 
   // Export functions (simplified - implement full logic as needed)
-  const handleExportPDF = (invoice) => {
-    // Implement PDF export using jsPDF (logic from original App.jsx)
-    showNotification('PDF export coming soon...', 'info');
+  const handleExportPDF = async (invoice) => {
+    try {
+      const res = await generatePublicInvoiceUrl(invoice.id || invoice._id, currentUser?.username, companyInfo);
+      if (res?.publicUrl) {
+        // Open printable page and trigger print via query param
+        window.open(res.publicUrl + '?print=1', '_blank');
+        showNotification('Opening printable invoice...', 'success');
+      } else {
+        showNotification('Failed to generate printable invoice', 'error');
+      }
+    } catch (e) {
+      showNotification('Failed to generate printable invoice', 'error');
+      console.error(e);
+    }
   };
 
-  const handleShareWhatsApp = (invoice) => {
-    // Implement WhatsApp sharing (logic from original App.jsx)
-    const message = `Invoice #${invoice.id} - Total: ₹${invoice.total}`;
-    const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(url, '_blank');
+  const handleShareWhatsApp = async (invoice) => {
+    try {
+      const res = await generateWhatsAppLink(invoice.id || invoice._id, currentUser?.username, companyInfo);
+      if (res?.whatsappUrl) {
+        window.open(res.whatsappUrl, '_blank');
+      } else if (res?.publicUrl) {
+        const message = `Invoice #${invoice.id} - Total: ₹${invoice.total} - ${res.publicUrl}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      } else {
+        const message = `Invoice #${invoice.id} - Total: ₹${invoice.total}`;
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+      }
+    } catch (e) {
+      showNotification('Failed to create WhatsApp link', 'error');
+      console.error(e);
+    }
   };
 
   // User management (admin only)
@@ -239,13 +262,36 @@ Esc: Close modals/dialogs`;
   };
 
   const forceLogoutUser = async (username) => {
-    // Implement force logout logic
-    showNotification('Force logout coming soon...', 'info');
+    if (!confirm(`Force logout ${username}? You will need to enter admin password to confirm.`)) return;
+    const adminPassword = prompt('Enter your admin password to confirm force logout:');
+    if (!adminPassword) {
+      showNotification('Action cancelled', 'info');
+      return;
+    }
+    try {
+      await apiPost('/api/admin/invalidate-user-session', {
+        targetUsername: username,
+        adminUsername: currentUser?.username,
+        adminPassword
+      });
+      showNotification(`✅ Force logout requested for ${username}`, 'success');
+      await fetchUsers();
+    } catch (e) {
+      showNotification('Failed to force logout user', 'error');
+      console.error(e);
+    }
   };
 
   const revokeUserAccess = async (userId, username) => {
-    // Implement revoke access logic
-    showNotification('Revoke access coming soon...', 'info');
+    if (!confirm(`Revoke access for ${username}? This will unapprove the user.`)) return;
+    try {
+      await apiPatch(`/api/users/${userId}/unapprove`, {});
+      showNotification(`✅ Revoked access for ${username}`, 'success');
+      await fetchUsers();
+    } catch (e) {
+      showNotification('Failed to revoke user access', 'error');
+      console.error(e);
+    }
   };
 
   // If not authenticated, show login page
@@ -362,8 +408,8 @@ Esc: Close modals/dialogs`;
             invoices={invoices}
             products={products}
             customers={customers}
-            onExportCSV={() => showNotification('CSV export coming soon...', 'info')}
-            onExportPDF={() => showNotification('PDF export coming soon...', 'info')}
+            onExportCSV={() => { window.open(API('/api/backup/invoices-csv'), '_blank'); showNotification('Downloading invoices CSV...', 'success') }}
+            onExportPDF={() => { window.open(API('/api/backup/json'), '_blank'); showNotification('Downloading JSON backup...', 'success') }}
             canViewProfit={canViewProfit()}
           />
         );

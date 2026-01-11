@@ -19,7 +19,7 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
       isOpen={true}
       onClose={onClose}
       title={`Invoice #${invoice.id}`}
-      size="large"
+      size="xl"
     >
       <div className="invoice-details">
         <div className="invoice-header">

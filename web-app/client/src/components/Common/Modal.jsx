@@ -55,6 +55,7 @@ const Modal = ({
     small: 'max-w-md',
     medium: 'max-w-2xl',
     large: 'max-w-4xl',
+    xl: 'modal-xl',
     full: 'max-w-7xl'
   }
 
@@ -172,8 +173,10 @@ Modal.propTypes = {
   title: PropTypes.string,
   children: PropTypes.node.isRequired,
   footer: PropTypes.node,
-  size: PropTypes.oneOf(['small', 'medium', 'large', 'full']),
-  closeOnOverlayClick: PropTypes.bool
+  size: PropTypes.oneOf(['small', 'medium', 'large', 'xl', 'full']),
+  closeOnOverlayClick: PropTypes.bool,
+  noInternalScroll: PropTypes.bool,
+  fullScreen: PropTypes.bool
 }
 
 export default Modal

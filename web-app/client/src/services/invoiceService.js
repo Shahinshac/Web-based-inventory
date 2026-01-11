@@ -44,6 +44,16 @@ export const generatePublicInvoiceUrl = async (invoiceId, requestedBy, company) 
 }
 
 /**
+ * Generate WhatsApp share link for invoice (server returns whatsappUrl and/or publicUrl)
+ */
+export const generateWhatsAppLink = async (invoiceId, requestedBy, company) => {
+  return await apiPost(`/api/invoices/${invoiceId}/whatsapp-link`, {
+    requestedBy,
+    company
+  })
+} 
+
+/**
  * Get invoice stats
  */
 export const getInvoiceStats = async () => {

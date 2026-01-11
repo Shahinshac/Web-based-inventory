@@ -176,6 +176,7 @@ router.get('/invoice/:token', async (req, res) => {
                 if(el) el.innerText = numberToWords(total) + ' Rupees Only';
               })();
             </script>
+            ${req.query.print === '1' ? '<script>window.print();</script>' : ''}
           </div>
         </body>
       </html>`);
