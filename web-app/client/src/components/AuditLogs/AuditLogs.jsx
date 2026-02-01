@@ -1,411 +1,508 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
-import { API } from '../../utils/api';
-import { formatDateTime } from '../../utils/formatters';
 
-// Action type categories for filtering
-const ACTION_TYPES = [
-  { value: 'all', label: 'All Actions', category: 'all' },
-  // Product actions
-  { value: 'PRODUCT_ADDED', label: 'Product Added', category: 'product' },
-  { value: 'PRODUCT_UPDATED', label: 'Product Updated', category: 'product' },
-  { value: 'PRODUCT_DELETED', label: 'Product Deleted', category: 'product' },
-  { value: 'PRODUCT_STOCK_UPDATED', label: 'Stock Updated', category: 'product' },
-  { value: 'PRODUCT_PHOTO_UPDATED', label: 'Product Photo Updated', category: 'product' },
-  { value: 'PRODUCT_PHOTO_DELETED', label: 'Product Photo Deleted', category: 'product' },
-  // Sale actions
-  { value: 'SALE_COMPLETED', label: 'Sale Completed', category: 'sale' },
-  { value: 'INVOICE_CREATED', label: 'Invoice Created', category: 'sale' },
-  { value: 'INVOICE_DELETED', label: 'Invoice Deleted', category: 'sale' },
-  // Customer actions
-  { value: 'CUSTOMER_ADDED', label: 'Customer Added', category: 'customer' },
-  { value: 'CUSTOMER_UPDATED', label: 'Customer Updated', category: 'customer' },
-  { value: 'CUSTOMER_DELETED', label: 'Customer Deleted', category: 'customer' },
-  // User actions
-  { value: 'USER_LOGIN', label: 'User Login', category: 'user' },
-  { value: 'USER_LOGOUT', label: 'User Logout', category: 'user' },
-  { value: 'USER_REGISTERED', label: 'User Registered', category: 'user' },
-  { value: 'USER_APPROVED', label: 'User Approved', category: 'user' },
-  { value: 'USER_PASSWORD_CHANGED', label: 'Password Changed', category: 'user' },
-  { value: 'USER_PHOTO_UPDATED', label: 'User Photo Updated', category: 'user' },
-  { value: 'USER_PHOTO_DELETED', label: 'User Photo Deleted', category: 'user' },
-  // Expense actions
-  { value: 'EXPENSE_ADDED', label: 'Expense Added', category: 'expense' },
-  { value: 'EXPENSE_UPDATED', label: 'Expense Updated', category: 'expense' },
-  { value: 'EXPENSE_DELETED', label: 'Expense Deleted', category: 'expense' },
-  // Admin actions
-  { value: 'ADMIN_PASSWORD_CHANGED', label: 'Admin Password Changed', category: 'admin' },
-  { value: 'ADMIN_CLEAR_DATABASE', label: 'Database Cleared', category: 'admin' },
-  { value: 'ADMIN_UPDATE_COMPANY_PHONE', label: 'Company Phone Updated', category: 'admin' },
+// API base URL
+const getApiUrl = () => {
+  const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+  return baseUrl.replace(/\/$/, '');
+};
+
+// Format date/time in IST
+const formatTime = (dateStr) => {
+  if (!dateStr) return 'N/A';
+  try {
+    return new Date(dateStr).toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      timeZone: 'Asia/Kolkata'
+    });
+  } catch {
+    return 'Invalid date';
+  }
+};
+
+// Action filters
+const ACTIONS = [
+  { value: '', label: 'All Actions' },
+  { value: 'PRODUCT_ADDED', label: 'Product Added' },
+  { value: 'PRODUCT_UPDATED', label: 'Product Updated' },
+  { value: 'PRODUCT_DELETED', label: 'Product Deleted' },
+  { value: 'PRODUCT_STOCK_UPDATED', label: 'Stock Updated' },
+  { value: 'SALE_COMPLETED', label: 'Sale Completed' },
+  { value: 'CUSTOMER_ADDED', label: 'Customer Added' },
+  { value: 'CUSTOMER_UPDATED', label: 'Customer Updated' },
+  { value: 'CUSTOMER_DELETED', label: 'Customer Deleted' },
+  { value: 'USER_LOGIN', label: 'User Login' },
+  { value: 'USER_LOGOUT', label: 'User Logout' },
+  { value: 'USER_PASSWORD_CHANGED', label: 'Password Changed' },
+  { value: 'EXPENSE_ADDED', label: 'Expense Added' },
+  { value: 'EXPENSE_DELETED', label: 'Expense Deleted' },
 ];
 
-// Date range options
-const DATE_RANGES = [
-  { value: 'all', label: 'All Time' },
-  { value: 'today', label: 'Today' },
-  { value: 'week', label: 'This Week' },
-  { value: 'month', label: 'This Month' },
-];
+// Get icon for action type
+const getIcon = (action) => {
+  if (!action) return 'activity';
+  if (action.includes('PRODUCT') || action.includes('STOCK')) return 'package';
+  if (action.includes('SALE') || action.includes('INVOICE')) return 'shopping-cart';
+  if (action.includes('CUSTOMER')) return 'users';
+  if (action.includes('EXPENSE')) return 'credit-card';
+  if (action.includes('USER') || action.includes('LOGIN') || action.includes('LOGOUT')) return 'user';
+  if (action.includes('ADMIN') || action.includes('PASSWORD')) return 'shield';
+  return 'activity';
+};
 
-// Items per page options
-const PAGE_SIZES = [25, 50, 100, 200];
+// Get color for action type
+const getColor = (action) => {
+  if (!action) return '#6b7280';
+  if (action.includes('DELETED') || action.includes('CLEAR')) return '#ef4444';
+  if (action.includes('ADDED') || action.includes('COMPLETED') || action.includes('CREATED')) return '#22c55e';
+  if (action.includes('UPDATED') || action.includes('APPROVED') || action.includes('CHANGED')) return '#3b82f6';
+  if (action.includes('LOGIN')) return '#8b5cf6';
+  if (action.includes('LOGOUT')) return '#f59e0b';
+  return '#6b7280';
+};
 
 export default function AuditLogs() {
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filter, setFilter] = useState('all');
-  const [dateRange, setDateRange] = useState('all');
-  const [searchQuery, setSearchQuery] = useState('');
+  const [error, setError] = useState('');
+  const [actionFilter, setActionFilter] = useState('');
+  const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(50);
-  const [totalLogs, setTotalLogs] = useState(0);
+  const [total, setTotal] = useState(0);
+  const pageSize = 50;
 
-  // Calculate date range boundaries
-  const getDateRangeBounds = useCallback(() => {
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    
-    switch (dateRange) {
-      case 'today':
-        return { start: today.toISOString(), end: now.toISOString() };
-      case 'week': {
-        const weekStart = new Date(today);
-        weekStart.setDate(today.getDate() - today.getDay());
-        return { start: weekStart.toISOString(), end: now.toISOString() };
-      }
-      case 'month': {
-        const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-        return { start: monthStart.toISOString(), end: now.toISOString() };
-      }
-      default:
-        return null;
-    }
-  }, [dateRange]);
-
-  const fetchAuditLogs = useCallback(async () => {
+  // Fetch audit logs
+  const fetchLogs = async () => {
     setLoading(true);
-    setError(null);
+    setError('');
+    
     try {
       const params = new URLSearchParams();
-      params.append('limit', pageSize);
-      params.append('skip', (page - 1) * pageSize);
+      params.append('limit', pageSize.toString());
+      params.append('skip', ((page - 1) * pageSize).toString());
       
-      if (filter !== 'all') {
-        params.append('action', filter);
-      }
-      
-      const dateBounds = getDateRangeBounds();
-      if (dateBounds) {
-        params.append('startDate', dateBounds.start);
-        params.append('endDate', dateBounds.end);
+      if (actionFilter) {
+        params.append('action', actionFilter);
       }
 
-      const res = await fetch(API(`/api/audit-logs?${params.toString()}`));
-      if (res.ok) {
-        const data = await res.json();
-        // Support both array and object response formats
-        if (Array.isArray(data)) {
-          setLogs(data);
-          setTotalLogs(data.length);
-        } else {
-          setLogs(data.logs || []);
-          setTotalLogs(data.total || data.logs?.length || 0);
-        }
+      const url = `${getApiUrl()}/api/audit-logs?${params.toString()}`;
+      console.log('Fetching audit logs:', url);
+      
+      const response = await fetch(url);
+      
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || `HTTP ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('Audit logs response:', data);
+      
+      // Handle both formats: array or { logs, total }
+      if (Array.isArray(data)) {
+        setLogs(data);
+        setTotal(data.length);
       } else {
-        const errorData = await res.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to load audit logs');
+        setLogs(data.logs || []);
+        setTotal(data.total || 0);
       }
     } catch (err) {
-      setError(err.message || 'Unable to load audit logs. Please try again.');
+      console.error('Failed to fetch audit logs:', err);
+      setError(err.message || 'Failed to load audit logs');
+      setLogs([]);
     } finally {
       setLoading(false);
     }
-  }, [filter, dateRange, page, pageSize, getDateRangeBounds]);
+  };
 
+  // Fetch on mount and when filters change
   useEffect(() => {
-    fetchAuditLogs();
-  }, [fetchAuditLogs]);
+    fetchLogs();
+  }, [page, actionFilter]);
 
-  // Reset to page 1 when filters change
+  // Reset page when filter changes
   useEffect(() => {
     setPage(1);
-  }, [filter, dateRange, pageSize]);
+  }, [actionFilter]);
 
-  const getActionIcon = (action) => {
-    if (action?.includes('PRODUCT') || action?.includes('STOCK')) return 'package';
-    if (action?.includes('SALE') || action?.includes('INVOICE')) return 'shopping-cart';
-    if (action?.includes('CUSTOMER')) return 'users';
-    if (action?.includes('EXPENSE')) return 'credit-card';
-    if (action?.includes('USER') || action?.includes('LOGIN') || action?.includes('LOGOUT')) return 'user';
-    if (action?.includes('ADMIN') || action?.includes('PASSWORD')) return 'shield';
-    return 'activity';
-  };
-
-  const getActionColor = (action) => {
-    if (action?.includes('DELETED') || action?.includes('CLEAR')) return 'var(--color-danger, #ef4444)';
-    if (action?.includes('ADDED') || action?.includes('COMPLETED') || action?.includes('CREATED')) return 'var(--color-success, #22c55e)';
-    if (action?.includes('UPDATED') || action?.includes('APPROVED') || action?.includes('CHANGED')) return 'var(--color-primary, #3b82f6)';
-    if (action?.includes('LOGIN') || action?.includes('LOGOUT')) return 'var(--color-purple, #8b5cf6)';
-    if (action?.includes('EXPENSE')) return 'var(--color-warning, #f59e0b)';
-    return 'var(--color-gray, #6b7280)';
-  };
-
-  // Helper function to get a semi-transparent background color
-  const getActionBgColor = (action) => {
-    if (action?.includes('DELETED') || action?.includes('CLEAR')) return 'rgba(239, 68, 68, 0.15)';
-    if (action?.includes('ADDED') || action?.includes('COMPLETED') || action?.includes('CREATED')) return 'rgba(34, 197, 94, 0.15)';
-    if (action?.includes('UPDATED') || action?.includes('APPROVED') || action?.includes('CHANGED')) return 'rgba(59, 130, 246, 0.15)';
-    if (action?.includes('LOGIN') || action?.includes('LOGOUT')) return 'rgba(139, 92, 246, 0.15)';
-    if (action?.includes('EXPENSE')) return 'rgba(245, 158, 11, 0.15)';
-    return 'rgba(107, 114, 128, 0.15)';
-  };
-
+  // Filter logs by search
   const filteredLogs = logs.filter(log => {
-    if (!searchQuery) return true;
-    const query = searchQuery.toLowerCase();
-    const detailsStr = typeof log.details === 'object' 
-      ? JSON.stringify(log.details) 
-      : String(log.details || '');
+    if (!search) return true;
+    const q = search.toLowerCase();
+    const details = typeof log.details === 'object' ? JSON.stringify(log.details) : String(log.details || '');
     return (
-      log.action?.toLowerCase().includes(query) ||
-      log.username?.toLowerCase().includes(query) ||
-      detailsStr.toLowerCase().includes(query)
+      (log.action || '').toLowerCase().includes(q) ||
+      (log.username || '').toLowerCase().includes(q) ||
+      details.toLowerCase().includes(q)
     );
   });
 
-  const totalPages = Math.ceil(totalLogs / pageSize);
+  const totalPages = Math.ceil(total / pageSize);
 
-  // Stats calculation
-  const stats = {
-    total: logs.length,
-    products: logs.filter(l => l.action?.includes('PRODUCT') || l.action?.includes('STOCK')).length,
-    sales: logs.filter(l => l.action?.includes('SALE') || l.action?.includes('INVOICE')).length,
-    users: logs.filter(l => l.action?.includes('USER') || l.action?.includes('LOGIN') || l.action?.includes('LOGOUT')).length,
+  // Format details object
+  const formatDetails = (details) => {
+    if (!details) return null;
+    if (typeof details === 'string') return details;
+    return Object.entries(details)
+      .filter(([_, v]) => v !== null && v !== undefined && v !== '')
+      .map(([k, v]) => `${k}: ${v}`)
+      .join(' • ');
   };
 
   return (
-    <div className="audit-logs-page">
+    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
       {/* Header */}
-      <div className="page-header">
-        <div className="header-content">
-          <div className="header-icon" style={{ background: 'var(--gradient-purple, linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%))' }}>
-            <Icon name="audit" size={28} />
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'center', 
+        marginBottom: '24px',
+        background: 'white',
+        padding: '20px 24px',
+        borderRadius: '16px',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
+      }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '12px',
+            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'white'
+          }}>
+            <Icon name="shield" size={24} />
           </div>
-          <div className="header-text">
-            <h1>Audit Logs</h1>
-            <p>Track all changes and activities in your system</p>
+          <div>
+            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#1f2937' }}>
+              Audit Logs
+            </h1>
+            <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#6b7280' }}>
+              Track all system activities and changes
+            </p>
           </div>
         </div>
-        <button className="refresh-btn" onClick={fetchAuditLogs} disabled={loading}>
-          <Icon name={loading ? 'loader' : 'refresh'} size={18} className={loading ? 'spin' : ''} />
+        <button
+          onClick={fetchLogs}
+          disabled={loading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: loading ? '#e5e7eb' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
+            color: loading ? '#9ca3af' : 'white',
+            border: 'none',
+            borderRadius: '10px',
+            fontSize: '14px',
+            fontWeight: 600,
+            cursor: loading ? 'not-allowed' : 'pointer',
+            transition: 'all 0.2s'
+          }}
+        >
+          <Icon name={loading ? 'loader' : 'refresh-cw'} size={18} />
           {loading ? 'Loading...' : 'Refresh'}
         </button>
       </div>
 
       {/* Filters */}
-      <div className="audit-filters">
-        <div className="search-box">
-          <Icon name="search" size={18} />
+      <div style={{
+        display: 'flex',
+        gap: '16px',
+        marginBottom: '24px',
+        flexWrap: 'wrap'
+      }}>
+        {/* Search */}
+        <div style={{
+          flex: 1,
+          minWidth: '250px',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '12px 16px',
+          background: 'white',
+          borderRadius: '12px',
+          border: '1px solid #e5e7eb'
+        }}>
+          <Icon name="search" size={18} style={{ color: '#9ca3af' }} />
           <input
             type="text"
-            placeholder="Search logs by action, user, or details..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by action, user, or details..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              flex: 1,
+              border: 'none',
+              outline: 'none',
+              fontSize: '14px',
+              background: 'transparent'
+            }}
           />
-          {searchQuery && (
-            <button className="clear-search" onClick={() => setSearchQuery('')}>
-              <Icon name="x" size={14} />
+          {search && (
+            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
+              <Icon name="x" size={16} style={{ color: '#9ca3af' }} />
             </button>
           )}
         </div>
-        
-        <div className="filter-group">
-          {/* Date Range Filter */}
-          <div className="date-filter-btns">
-            {DATE_RANGES.map(range => (
-              <button
-                key={range.value}
-                className={`date-filter-btn ${dateRange === range.value ? 'active' : ''}`}
-                onClick={() => setDateRange(range.value)}
-              >
-                {range.label}
-              </button>
-            ))}
+
+        {/* Action Filter */}
+        <select
+          value={actionFilter}
+          onChange={(e) => setActionFilter(e.target.value)}
+          style={{
+            padding: '12px 16px',
+            background: 'white',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            fontSize: '14px',
+            cursor: 'pointer',
+            minWidth: '180px'
+          }}
+        >
+          {ACTIONS.map(a => (
+            <option key={a.value} value={a.value}>{a.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Stats */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+        gap: '16px',
+        marginBottom: '24px'
+      }}>
+        {[
+          { label: 'Total Logs', value: total, color: '#8b5cf6' },
+          { label: 'Shown', value: filteredLogs.length, color: '#3b82f6' },
+          { label: 'Page', value: `${page} / ${totalPages || 1}`, color: '#22c55e' }
+        ].map((stat, i) => (
+          <div key={i} style={{
+            background: 'white',
+            padding: '20px',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '1px solid #e5e7eb'
+          }}>
+            <div style={{ fontSize: '28px', fontWeight: 700, color: stat.color }}>{stat.value}</div>
+            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>{stat.label}</div>
           </div>
-          
-          {/* Action Type Filter */}
-          <select 
-            value={filter} 
-            onChange={(e) => setFilter(e.target.value)}
-            className="filter-select"
-          >
-            {ACTION_TYPES.map(type => (
-              <option key={type.value} value={type.value}>{type.label}</option>
-            ))}
-          </select>
-          
-          {/* Page Size */}
-          <select
-            value={pageSize}
-            onChange={(e) => setPageSize(Number(e.target.value))}
-            className="filter-select page-size-select"
-          >
-            {PAGE_SIZES.map(size => (
-              <option key={size} value={size}>{size} per page</option>
-            ))}
-          </select>
-        </div>
+        ))}
       </div>
 
-      {/* Stats Summary */}
-      <div className="audit-stats">
-        <div className="stat-item">
-          <span className="stat-number">{stats.total}</span>
-          <span className="stat-label">Total Logs</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{stats.products}</span>
-          <span className="stat-label">Product Changes</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{stats.sales}</span>
-          <span className="stat-label">Sales</span>
-        </div>
-        <div className="stat-item">
-          <span className="stat-number">{stats.users}</span>
-          <span className="stat-label">User Activities</span>
-        </div>
-      </div>
-
-      {/* Error Message */}
+      {/* Error */}
       {error && (
-        <div className="error-banner">
-          <Icon name="alert-triangle" size={20} />
-          <span>{error}</span>
-          <button onClick={fetchAuditLogs}>Retry</button>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '16px 20px',
+          background: '#fef2f2',
+          border: '1px solid #fecaca',
+          borderRadius: '12px',
+          marginBottom: '24px',
+          color: '#dc2626'
+        }}>
+          <Icon name="alert-circle" size={20} />
+          <span style={{ flex: 1 }}>{error}</span>
+          <button 
+            onClick={fetchLogs}
+            style={{
+              padding: '8px 16px',
+              background: '#dc2626',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '13px',
+              fontWeight: 500
+            }}
+          >
+            Retry
+          </button>
         </div>
       )}
 
       {/* Logs List */}
-      <div className="audit-logs-container">
+      <div style={{
+        background: 'white',
+        borderRadius: '16px',
+        border: '1px solid #e5e7eb',
+        overflow: 'hidden'
+      }}>
         {loading ? (
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>Loading audit logs...</p>
+          <div style={{ padding: '60px', textAlign: 'center' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              border: '3px solid #e5e7eb',
+              borderTopColor: '#8b5cf6',
+              borderRadius: '50%',
+              animation: 'spin 1s linear infinite',
+              margin: '0 auto 16px'
+            }} />
+            <p style={{ color: '#6b7280', margin: 0 }}>Loading audit logs...</p>
+            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
           </div>
         ) : filteredLogs.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">
-              <Icon name="inbox" size={48} />
-            </div>
-            <h3>No Audit Logs Found</h3>
-            <p>{searchQuery ? 'Try adjusting your search or filters' : 'There are no logs matching your criteria'}</p>
-            {(filter !== 'all' || dateRange !== 'all' || searchQuery) && (
-              <button 
-                className="clear-filters-btn"
-                onClick={() => {
-                  setFilter('all');
-                  setDateRange('all');
-                  setSearchQuery('');
-                }}
-              >
-                Clear All Filters
-              </button>
-            )}
+          <div style={{ padding: '60px', textAlign: 'center' }}>
+            <Icon name="inbox" size={48} style={{ color: '#d1d5db', marginBottom: '16px' }} />
+            <h3 style={{ margin: '0 0 8px', color: '#374151' }}>No Audit Logs Found</h3>
+            <p style={{ color: '#6b7280', margin: 0 }}>
+              {search || actionFilter ? 'Try adjusting your filters' : 'No activity has been recorded yet'}
+            </p>
           </div>
         ) : (
-          <>
-            <div className="logs-timeline">
-              {filteredLogs.map((log, index) => (
-                <div key={log._id || log.id || index} className="log-item">
-                  <div className="log-timeline">
-                    <div 
-                      className="log-dot" 
-                      style={{ background: getActionColor(log.action) }}
-                    />
-                    {index < filteredLogs.length - 1 && <div className="log-line" />}
-                  </div>
-                  <div className="log-card">
-                    <div className="log-header">
-                      <div className="log-action">
-                        <div 
-                          className="action-icon" 
-                          style={{ 
-                            background: getActionBgColor(log.action),
-                            color: getActionColor(log.action)
-                          }}
-                        >
-                          <Icon name={getActionIcon(log.action)} size={16} />
-                        </div>
-                        <span className="action-text">{log.action?.replace(/_/g, ' ')}</span>
-                      </div>
-                      <span className="log-time">{formatDateTime(log.timestamp || log.createdAt)}</span>
-                    </div>
-                    <div className="log-body">
-                      <div className="log-user">
-                        <Icon name="user" size={14} />
-                        <span>{log.username || log.performedBy || 'System'}</span>
-                      </div>
-                      {log.details && (
-                        <p className="log-details">
-                          {typeof log.details === 'object' 
-                            ? Object.entries(log.details)
-                                .map(([key, val]) => `${key}: ${val}`)
-                                .join(', ')
-                            : log.details
-                          }
-                        </p>
-                      )}
-                      {log.metadata && (
-                        <details className="log-metadata">
-                          <summary>View Details</summary>
-                          <pre>{JSON.stringify(log.metadata, null, 2)}</pre>
-                        </details>
-                      )}
-                    </div>
-                  </div>
+          <div style={{ padding: '8px' }}>
+            {filteredLogs.map((log, idx) => (
+              <div
+                key={log.id || log._id || idx}
+                style={{
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '16px',
+                  padding: '16px',
+                  borderRadius: '12px',
+                  background: idx % 2 === 0 ? '#f9fafb' : 'white',
+                  marginBottom: '4px'
+                }}
+              >
+                {/* Icon */}
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: '10px',
+                  background: `${getColor(log.action)}15`,
+                  color: getColor(log.action),
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Icon name={getIcon(log.action)} size={18} />
                 </div>
-              ))}
-            </div>
-            
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="pagination">
-                <button 
-                  className="pagination-btn"
-                  onClick={() => setPage(1)}
-                  disabled={page === 1}
-                >
-                  <Icon name="chevrons-left" size={16} />
-                </button>
-                <button 
-                  className="pagination-btn"
-                  onClick={() => setPage(p => Math.max(1, p - 1))}
-                  disabled={page === 1}
-                >
-                  <Icon name="chevron-left" size={16} />
-                </button>
-                <span className="pagination-info">
-                  Page {page} of {totalPages}
-                </span>
-                <button 
-                  className="pagination-btn"
-                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-                  disabled={page === totalPages}
-                >
-                  <Icon name="chevron-right" size={16} />
-                </button>
-                <button 
-                  className="pagination-btn"
-                  onClick={() => setPage(totalPages)}
-                  disabled={page === totalPages}
-                >
-                  <Icon name="chevrons-right" size={16} />
-                </button>
+
+                {/* Content */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px', flexWrap: 'wrap' }}>
+                    <div>
+                      <span style={{
+                        display: 'inline-block',
+                        padding: '4px 10px',
+                        background: `${getColor(log.action)}15`,
+                        color: getColor(log.action),
+                        borderRadius: '6px',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        marginBottom: '6px'
+                      }}>
+                        {(log.action || 'UNKNOWN').replace(/_/g, ' ')}
+                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#6b7280' }}>
+                        <Icon name="user" size={14} />
+                        <span>{log.username || 'System'}</span>
+                      </div>
+                    </div>
+                    <span style={{ fontSize: '12px', color: '#9ca3af', whiteSpace: 'nowrap' }}>
+                      {formatTime(log.timestamp)}
+                    </span>
+                  </div>
+                  
+                  {log.details && Object.keys(log.details).length > 0 && (
+                    <p style={{
+                      margin: '8px 0 0',
+                      padding: '10px 12px',
+                      background: '#f3f4f6',
+                      borderRadius: '8px',
+                      fontSize: '13px',
+                      color: '#4b5563',
+                      lineHeight: 1.5
+                    }}>
+                      {formatDetails(log.details)}
+                    </p>
+                  )}
+                </div>
               </div>
-            )}
-          </>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '16px',
+            borderTop: '1px solid #e5e7eb'
+          }}>
+            <button
+              onClick={() => setPage(1)}
+              disabled={page === 1}
+              style={{
+                padding: '8px 12px',
+                background: page === 1 ? '#f3f4f6' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                opacity: page === 1 ? 0.5 : 1
+              }}
+            >
+              <Icon name="chevrons-left" size={16} />
+            </button>
+            <button
+              onClick={() => setPage(p => Math.max(1, p - 1))}
+              disabled={page === 1}
+              style={{
+                padding: '8px 12px',
+                background: page === 1 ? '#f3f4f6' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: page === 1 ? 'not-allowed' : 'pointer',
+                opacity: page === 1 ? 0.5 : 1
+              }}
+            >
+              <Icon name="chevron-left" size={16} />
+            </button>
+            <span style={{ padding: '8px 16px', fontSize: '14px', color: '#374151' }}>
+              Page {page} of {totalPages}
+            </span>
+            <button
+              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+              style={{
+                padding: '8px 12px',
+                background: page === totalPages ? '#f3f4f6' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                opacity: page === totalPages ? 0.5 : 1
+              }}
+            >
+              <Icon name="chevron-right" size={16} />
+            </button>
+            <button
+              onClick={() => setPage(totalPages)}
+              disabled={page === totalPages}
+              style={{
+                padding: '8px 12px',
+                background: page === totalPages ? '#f3f4f6' : 'white',
+                border: '1px solid #e5e7eb',
+                borderRadius: '8px',
+                cursor: page === totalPages ? 'not-allowed' : 'pointer',
+                opacity: page === totalPages ? 0.5 : 1
+              }}
+            >
+              <Icon name="chevrons-right" size={16} />
+            </button>
+          </div>
         )}
       </div>
     </div>
