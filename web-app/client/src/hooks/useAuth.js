@@ -157,3 +157,10 @@ export const useAuth = () => {
     handleRegister,
     handleLogout,
     handlePhotoUpdate,
+    canViewProfit,
+    canEdit,
+    canDelete,
+    canMakeSales
+  }
+}
+
