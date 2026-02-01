@@ -270,77 +270,218 @@
 .approval-header {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   margin-bottom: 20px;
   padding-bottom: 16px;
   border-bottom: 2px solid rgba(252, 211, 77, 0.5);
 }
 
-.approval-header h3 {
+.approval-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.approval-header-text h3 {
   font-size: 18px;
   font-weight: 700;
   color: #92400e;
-  margin: 0;
+  margin: 0 0 4px 0;
+}
+
+.approval-count {
+  font-size: 13px;
+  color: #b45309;
 }
 
 .approval-list {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .approval-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
+  padding: 20px;
   background: white;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 1px solid #fcd34d;
   gap: 16px;
   flex-wrap: wrap;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .approval-user-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
   flex: 1;
-  min-width: 200px;
+  min-width: 180px;
 }
 
-.approval-user-info > div {
+.approval-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.approval-user-details {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
 }
 
-.approval-user-info strong {
-  font-size: 15px;
+.approval-user-details strong {
+  font-size: 16px;
   font-weight: 600;
   color: #0f172a;
 }
 
-.approval-user-info span {
+.approval-email {
   font-size: 13px;
   color: #64748b;
 }
 
-.user-role-badge {
-  display: inline-flex;
-  padding: 2px 8px;
-  border-radius: 6px;
-  font-size: 11px;
+.approval-role-select {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 160px;
+}
+
+.approval-role-select label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
   font-weight: 600;
+  color: #64748b;
   text-transform: uppercase;
-  background: rgba(16, 185, 129, 0.15);
-  color: #059669;
-  width: fit-content;
+  letter-spacing: 0.5px;
+}
+
+.approval-role-select label svg {
+  color: #f59e0b;
+}
+
+.role-dropdown {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 600;
+  color: #0f172a;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  padding-right: 36px;
+}
+
+.role-dropdown:hover {
+  border-color: #f59e0b;
+}
+
+.role-dropdown:focus {
+  outline: none;
+  border-color: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.15);
 }
 
 .approval-actions {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.approval-actions button {
+  min-width: 100px;
+}
+
+/* User Approval Responsive */
+@media (max-width: 768px) {
+  .user-approval-section {
+    padding: 20px;
+  }
+  
+  .approval-header {
+    gap: 12px;
+  }
+  
+  .approval-icon-wrapper {
+    width: 42px;
+    height: 42px;
+  }
+  
+  .approval-header-text h3 {
+    font-size: 16px;
+  }
+  
+  .approval-item {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px;
+  }
+  
+  .approval-user-info {
+    min-width: 100%;
+    margin-bottom: 12px;
+  }
+  
+  .approval-role-select {
+    min-width: 100%;
+    margin-bottom: 12px;
+  }
+  
+  .role-dropdown {
+    width: 100%;
+  }
+  
+  .approval-actions {
+    width: 100%;
+  }
+  
+  .approval-actions button {
+    flex: 1;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .user-approval-section {
+    padding: 16px;
+    border-radius: 12px;
+  }
+  
+  .approval-avatar {
+    width: 42px;
+    height: 42px;
+  }
+  
+  .approval-user-details strong {
+    font-size: 15px;
+  }
+  
+  .approval-email {
+    font-size: 12px;
+  }
 }
 
 /* Empty State */

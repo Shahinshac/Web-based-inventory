@@ -244,19 +244,25 @@ router.get('/:username/session', async (req, res) => {
 
 /**
  * PATCH /api/users/:id/approve
- * Approve user (Admin Only)
+ * Approve user with role assignment (Admin Only)
  */
 router.patch('/:id/approve', async (req, res) => {
   try {
     const { id } = req.params;
+    const { role } = req.body;
     const db = getDB();
+    
+    // Validate role if provided
+    const validRoles = ['admin', 'manager', 'cashier'];
+    const assignedRole = role && validRoles.includes(role) ? role : 'cashier';
     
     await db.collection('users').updateOne(
       { _id: new ObjectId(id) },
-      { $set: { approved: true } }
+      { $set: { approved: true, role: assignedRole } }
     );
     
-    res.json({ success: true, message: 'User approved successfully' });
+    logger.info(`User ${id} approved with role: ${assignedRole}`);
+    res.json({ success: true, message: `User approved as ${assignedRole}`, role: assignedRole });
   } catch (e) {
     logger.error('Approve user error:', e);
     res.status(500).json({ error: e.message });

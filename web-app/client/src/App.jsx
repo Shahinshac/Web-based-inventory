@@ -238,11 +238,15 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  const approveUser = async (userId) => {
+  const approveUser = async (userId, role = 'cashier') => {
     try {
-      const res = await fetch(API(`/api/users/${userId}/approve`), { method: 'PATCH' });
+      const res = await fetch(API(`/api/users/${userId}/approve`), { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role })
+      });
       if (res.ok) {
-        showNotification('✅ User approved successfully!', 'success');
+        showNotification(`✅ User approved as ${role}!`, 'success');
         await fetchUsers();
       }
     } catch (error) {
