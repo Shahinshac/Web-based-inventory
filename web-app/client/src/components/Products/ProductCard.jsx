@@ -39,9 +39,21 @@ export default function ProductCard({
   const [imageError, setImageError] = useState(false);
 
   const handleImageError = () => {
-    console.warn('Failed to load image for product:', product.name, product.photo);
+    console.warn('Failed to load image for product:', product.name, 'Photos:', product.photos, 'Legacy photo:', product.photo);
     setImageError(true);
   };
+
+  // Log photo info for debugging
+  React.useEffect(() => {
+    if (product.photos && product.photos.length > 0) {
+      console.log('Product photo info:', {
+        productName: product.name,
+        photosCount: product.photos.length,
+        firstPhoto: product.photos[0],
+        normalizedUrl: normalizePhotoUrl(product.photos[0].url)
+      });
+    }
+  }, [product.photos, product.name]);
 
   // Generate and download barcode
   const downloadBarcode = useCallback(() => {

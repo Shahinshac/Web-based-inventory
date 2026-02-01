@@ -454,6 +454,7 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
       const filePath = path.join(__dirname, '..', 'uploads', 'products', filename);
       await fs.writeFile(filePath, req.file.buffer);
       photoId = filename;
+      photoUrl = `/api/products/${id}/photo/${filename}`;
       
       // ADD to photos array (never replace existing photos)
       await db.collection('products').updateOne(
@@ -484,16 +485,24 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     await logAudit(db, 'PRODUCT_PHOTO_UPDATED', userId, username, {
       productId: id,
       productName: product.name,
-      photoUrl: photoUrl
+      photoUrl: photoUrl,
+      photoId: photoId,
+      storage: useDbStorage ? 'db' : 'fs'
     });
+    
+    logger.info(`✅ Photo uploaded successfully for product ${id}: ${photoUrl}`);
     
     res.json({ 
       success: true, 
-      photo: photoUrl,
+      photo: {
+        id: photoId,
+        url: photoUrl,
+        storage: useDbStorage ? 'db' : 'fs'
+      },
       message: 'Product photo uploaded successfully' 
     });
   } catch (e) {
-    logger.error(e);
+    logger.error('❌ Photo upload error:', e);
     res.status(500).json({ error: e.message });
   }
 });

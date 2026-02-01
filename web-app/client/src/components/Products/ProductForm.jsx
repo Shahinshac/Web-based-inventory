@@ -118,28 +118,34 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         });
 
         if (!response.ok) {
-          throw new Error('Failed to upload photo');
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(errorData.error || 'Failed to upload photo');
         }
 
         const data = await response.json();
+        console.log('✅ Photo upload response:', data);
         
-        // Add the new photo to the formData
-        if (data.success && data.photo) {
-          // Fetch updated product to get the complete photo object
+        // Fetch updated product to get the complete photo object
+        if (data.success) {
           const productResponse = await fetch(`${getApiBaseUrl()}/api/products`);
-          const products = await productResponse.json();
-          const updatedProduct = products.find(p => p.id === product.id);
-          
-          if (updatedProduct && updatedProduct.photos) {
-            setFormData(prev => ({
-              ...prev,
-              photos: updatedProduct.photos
-            }));
+          if (productResponse.ok) {
+            const products = await productResponse.json();
+            const updatedProduct = products.find(p => p.id === product.id);
+            
+            if (updatedProduct && updatedProduct.photos) {
+              console.log('✅ Updated product photos:', updatedProduct.photos);
+              setFormData(prev => ({
+                ...prev,
+                photos: updatedProduct.photos
+              }));
+            }
           }
         }
       }
+      
+      alert('Photos uploaded successfully!');
     } catch (error) {
-      console.error('Error uploading photo:', error);
+      console.error('❌ Error uploading photo:', error);
       alert('Failed to upload photo: ' + error.message);
     } finally {
       setUploadingPhoto(false);
