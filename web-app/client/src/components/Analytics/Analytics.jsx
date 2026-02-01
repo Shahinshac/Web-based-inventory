@@ -77,10 +77,10 @@ export default function Analytics({
             Low Stock Alerts
           </h3>
           <div className="low-stock-grid">
-            {lowStock.slice(0, 6).map(product => (
-              <div key={product.id} className="low-stock-item">
+            {lowStock.slice(0, 6).map((product, index) => (
+              <div key={index} className="low-stock-item">
                 <span className="product-name">{product.name}</span>
-                <span className="stock-level">{product.quantity} left</span>
+                <span className="stock-level">{product.currentStock} left</span>
               </div>
             ))}
           </div>

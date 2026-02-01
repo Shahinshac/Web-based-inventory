@@ -232,4 +232,58 @@ router.get('/sales-trend', async (req, res) => {
   }
 });
 
+/**
+ * GET /api/analytics/revenue-profit
+ * Get revenue and profit summary with daily data
+ */
+router.get('/revenue-profit', async (req, res) => {
+  try {
+    const db = getDB();
+    const days = parseInt(req.query.days) || 30;
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - days);
+    
+    const bills = await db.collection('bills')
+      .find({ billDate: { $gte: startDate } })
+      .sort({ billDate: 1 })
+      .toArray();
+    
+    const totalRevenue = bills.reduce((sum, bill) => sum + (bill.grandTotal || 0), 0);
+    const totalProfit = bills.reduce((sum, bill) => sum + (bill.totalProfit || 0), 0);
+    const totalCost = bills.reduce((sum, bill) => sum + (bill.totalCost || 0), 0);
+    const totalSales = bills.length;
+    
+    // Group by date for chart data
+    const dailyData = [];
+    const dailyMap = {};
+    
+    bills.forEach(bill => {
+      const date = new Date(bill.billDate).toISOString().split('T')[0];
+      if (!dailyMap[date]) {
+        dailyMap[date] = { date, revenue: 0, profit: 0, sales: 0 };
+      }
+      dailyMap[date].revenue += bill.grandTotal || 0;
+      dailyMap[date].profit += bill.totalProfit || 0;
+      dailyMap[date].sales += 1;
+    });
+    
+    // Convert to array and sort by date
+    Object.values(dailyMap).forEach(item => dailyData.push(item));
+    dailyData.sort((a, b) => new Date(a.date) - new Date(b.date));
+    
+    res.json({
+      totalRevenue: Math.round(totalRevenue),
+      totalProfit: Math.round(totalProfit),
+      totalCost: Math.round(totalCost),
+      totalSales,
+      profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : 0,
+      averageOrderValue: totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0,
+      dailyData
+    });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: 'Failed to get revenue and profit data' });
+  }
+});
+
 module.exports = router;

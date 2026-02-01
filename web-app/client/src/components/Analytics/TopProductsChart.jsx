@@ -10,14 +10,14 @@ export default function TopProductsChart({ products }) {
     );
   }
 
-  const maxSold = Math.max(...products.map(p => p.totalSold || 0), 1);
+  const maxSold = Math.max(...products.map(p => p.quantity || 0), 1);
 
   return (
     <div className="chart-container">
       <h3 className="chart-title">Top Selling Products</h3>
       <div className="horizontal-bar-chart">
         {products.map((product, index) => {
-          const width = ((product.totalSold || 0) / maxSold) * 100;
+          const width = ((product.quantity || 0) / maxSold) * 100;
           return (
             <div key={index} className="horizontal-bar-wrapper">
               <div className="product-label">{product.name}</div>
@@ -26,7 +26,7 @@ export default function TopProductsChart({ products }) {
                   className="horizontal-bar"
                   style={{ width: `${width}%` }}
                 >
-                  <span className="bar-value">{product.totalSold} sold</span>
+                  <span className="bar-value">{product.quantity} sold</span>
                 </div>
               </div>
             </div>

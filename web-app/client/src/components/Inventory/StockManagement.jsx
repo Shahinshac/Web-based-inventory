@@ -42,9 +42,7 @@ export default function StockManagement({
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(p => 
-        p.name?.toLowerCase().includes(query) ||
-        p.sku?.toLowerCase().includes(query) ||
-        p.category?.toLowerCase().includes(query)
+        p.name?.toLowerCase().includes(query)
       );
     }
 
@@ -217,8 +215,6 @@ export default function StockManagement({
             <thead>
               <tr>
                 <th>Product</th>
-                <th>SKU</th>
-                <th>Category</th>
                 <th>Current Stock</th>
                 <th>Min Stock</th>
                 <th>Status</th>
@@ -247,8 +243,6 @@ export default function StockManagement({
                         <span className="product-name">{product.name}</span>
                       </div>
                     </td>
-                    <td><span className="sku-badge">{product.sku || '-'}</span></td>
-                    <td>{product.category || 'Uncategorized'}</td>
                     <td>
                       <span className={`stock-qty ${product.quantity === 0 ? 'zero' : product.quantity < (product.minStock || 5) ? 'low' : ''}`}>
                         {product.quantity || 0}
