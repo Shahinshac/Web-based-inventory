@@ -65,9 +65,11 @@ export default function App() {
     isAdmin, 
     currentUser, 
     userRole,
+    profilePhoto,
     handleLogin: login, 
     handleLogout: logout,
-    handleRegister: register
+    handleRegister: register,
+    handlePhotoUpdate: updateProfilePhoto
   } = useAuth();
 
   const { isOnline, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
@@ -466,6 +468,8 @@ Esc: Close modals/dialogs`;
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
+        profilePhoto={profilePhoto}
+        onPhotoUpdate={updateProfilePhoto}
         isOnline={isOnline}
         offlineCount={offlineTransactions.length}
       />

@@ -13,7 +13,8 @@ import {
   isUserAdmin,
   getUserRole,
   validateSession,
-  checkUserValidity
+  checkUserValidity,
+  updateUserPhoto
 } from '../services/authService'
 
 export const useAuth = () => {
@@ -21,6 +22,7 @@ export const useAuth = () => {
   const [isAdmin, setIsAdmin] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
   const [userRole, setUserRole] = useState('cashier')
+  const [profilePhoto, setProfilePhoto] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
@@ -32,6 +34,7 @@ export const useAuth = () => {
       setCurrentUser(user)
       setIsAdmin(isUserAdmin())
       setUserRole(getUserRole())
+      setProfilePhoto(user.photo || null)
     }
     setLoading(false)
   }, [])
@@ -86,6 +89,7 @@ export const useAuth = () => {
       setCurrentUser(user)
       setIsAdmin(user.role === 'admin')
       setUserRole(user.role || 'cashier')
+      setProfilePhoto(user.photo || null)
       
       return { success: true, user }
     } catch (err) {
@@ -111,6 +115,17 @@ export const useAuth = () => {
     setIsAdmin(false)
     setCurrentUser(null)
     setUserRole('cashier')
+    setProfilePhoto(null)
+  }
+
+  const handlePhotoUpdate = (newPhotoUrl) => {
+    setProfilePhoto(newPhotoUrl)
+    // Update in localStorage
+    updateUserPhoto(newPhotoUrl)
+    // Update currentUser state
+    if (currentUser) {
+      setCurrentUser({ ...currentUser, photo: newPhotoUrl })
+    }
   }
 
   // Permission helpers
@@ -135,14 +150,10 @@ export const useAuth = () => {
     isAdmin,
     currentUser,
     userRole,
+    profilePhoto,
     loading,
     error,
     handleLogin,
     handleRegister,
     handleLogout,
-    canViewProfit,
-    canEdit,
-    canDelete,
-    canMakeSales
-  }
-}
+    handlePhotoUpdate,

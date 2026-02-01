@@ -100,3 +100,18 @@ export const checkUserValidity = async (userId) => {
     return false
   }
 }
+/**
+ * Update user's photo in localStorage
+ */
+export const updateUserPhoto = (photoUrl) => {
+  try {
+    const storedUser = localStorage.getItem('currentUser')
+    if (storedUser) {
+      const user = JSON.parse(storedUser)
+      user.photo = photoUrl
+      localStorage.setItem('currentUser', JSON.stringify(user))
+    }
+  } catch (error) {
+    console.error('Error updating user photo:', error)
+  }
+}
