@@ -9215,9 +9215,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 8px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
+  min-height: 60px;
 }
 
 .header-left {
@@ -9228,21 +9229,22 @@ button {
 .company-brand {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .company-logo {
-  font-size: 32px;
+  font-size: 28px;
   line-height: 1;
 }
 
 .company-info {
   display: flex;
   flex-direction: column;
+  gap: 2px;
 }
 
 .company-name {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   color: white;
   margin: 0;
@@ -9250,8 +9252,8 @@ button {
 }
 
 .company-tagline {
-  font-size: 11px;
-  color: rgba(255, 255, 255, 0.7);
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.65);
   margin: 0;
 }
 
@@ -9562,16 +9564,18 @@ button {
    ============================================ */
 
 .tab-navigation {
-  background: #1e1b4b;
+  background: rgba(30, 27, 75, 0.6);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
-  padding: 0 16px;
+  padding: 0 20px;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  height: 48px;
+  height: 44px;
   flex-shrink: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .tab-navigation::-webkit-scrollbar {
@@ -9585,42 +9589,64 @@ button {
   padding: 0;
   list-style: none;
   height: 100%;
-  gap: 4px;
+  gap: 6px;
 }
 
 .tab-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  padding: 0 16px;
-  height: 36px;
+  gap: 6px;
+  padding: 0 14px;
+  height: 32px;
   background: transparent;
   border: none;
-  border-radius: 6px;
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.65);
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   flex-shrink: 0;
+  position: relative;
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.12);
   color: #ffffff;
+  transform: translateY(-1px);
 }
 
 .tab-btn.active {
-  background: rgba(255, 255, 255, 0.15);
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
   color: #ffffff;
   font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.tab-btn.active::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 40%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.8), transparent);
+  border-radius: 2px;
 }
 
 .tab-btn .tab-emoji {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1;
+  filter: grayscale(0.3);
+  transition: filter 0.2s ease;
+}
+
+.tab-btn:hover .tab-emoji,
+.tab-btn.active .tab-emoji {
+  filter: grayscale(0);
 }
 
 .tab-btn .tab-label {
@@ -9629,17 +9655,25 @@ button {
 
 /* Admin tabs with gold accent */
 .tab-btn.admin-tab {
-  color: rgba(251, 191, 36, 0.85);
+  color: rgba(251, 191, 36, 0.8);
+  border: 1px solid rgba(251, 191, 36, 0.2);
 }
 
 .tab-btn.admin-tab:hover {
   color: #fbbf24;
   background: rgba(251, 191, 36, 0.15);
+  border-color: rgba(251, 191, 36, 0.4);
 }
 
 .tab-btn.admin-tab.active {
   color: #fbbf24;
-  background: rgba(251, 191, 36, 0.2);
+  background: linear-gradient(135deg, rgba(251, 191, 36, 0.25), rgba(251, 191, 36, 0.15));
+  border-color: rgba(251, 191, 36, 0.5);
+  box-shadow: 0 2px 8px rgba(251, 191, 36, 0.3), inset 0 1px 0 rgba(251, 191, 36, 0.3);
+}
+
+.tab-btn.admin-tab.active::before {
+  background: linear-gradient(90deg, transparent, rgba(251, 191, 36, 0.9), transparent);
 }
 
 /* Responsive - Tablet */
