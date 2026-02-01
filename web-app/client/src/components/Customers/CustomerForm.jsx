@@ -5,7 +5,7 @@ import Button from '../Common/Button';
 import Icon from '../../Icon';
 import './CustomerForm.css';
 
-export default function CustomerForm({ customer, onSubmit, onClose }) {
+export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = false }) {
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -75,8 +75,8 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
       <Modal 
         isOpen={true}
         onClose={onClose}
-        title={customer ? '✏️ Edit Customer' : '👤 Add New Customer'}
-        size="xl"
+        title={customer ? '✏️ Edit Customer' : quickAdd ? '⚡ Quick Add Customer' : '👤 Add New Customer'}
+        size={quickAdd ? "md" : "xl"}
       >
         <form onSubmit={handleSubmit} className="customer-form">
           
@@ -88,6 +88,7 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
                 <Icon name="user" size={20} color="white" />
               </div>
               <h3 className="form-section-title">Contact Information</h3>
+              {quickAdd && <span className="quick-add-badge">Quick Add</span>}
             </div>
             
             <Input
@@ -112,62 +113,74 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
             </div>
           </div>
 
-          {/* Section 2: Address Details */}
-          <div className="form-section address">
-            <div className="form-section-bar" />
-            <div className="form-section-header">
-              <div className="form-section-icon">
-                <Icon name="map-pin" size={20} color="white" />
+          {/* Show full form only if not quick add */}
+          {!quickAdd && (
+            <>
+              {/* Section 2: Address Details */}
+              <div className="form-section address">
+                <div className="form-section-bar" />
+                <div className="form-section-header">
+                  <div className="form-section-icon">
+                    <Icon name="map-pin" size={20} color="white" />
+                  </div>
+                  <h3 className="form-section-title">Address Details</h3>
+                </div>
+                
+                <Input
+                  label="Street Address"
+                  value={formData.address}
+                  onChange={(e) => handleChange('address', e.target.value)}
+                  placeholder="Enter street address"
+                />
+
+                <div className="form-row">
+                  <Input
+                    label="Place/City"
+                    value={formData.place}
+                    onChange={(e) => handleChange('place', e.target.value)}
+                    placeholder="City name"
+                  />
+
+                  <Input
+                    label="Pincode"
+                    value={formData.pincode}
+                    onChange={(e) => handleChange('pincode', e.target.value)}
+                    placeholder="6-digit pincode"
+                    maxLength="6"
+                    error={errors.pincode}
+                  />
+                </div>
               </div>
-              <h3 className="form-section-title">Address Details</h3>
-            </div>
-            
-            <Input
-              label="Street Address"
-              value={formData.address}
-              onChange={(e) => handleChange('address', e.target.value)}
-              placeholder="Enter street address"
-            />
 
-            <div className="form-row">
-              <Input
-                label="Place/City"
-                value={formData.place}
-                onChange={(e) => handleChange('place', e.target.value)}
-                placeholder="City name"
-              />
-
-              <Input
-                label="Pincode"
-                value={formData.pincode}
-                onChange={(e) => handleChange('pincode', e.target.value)}
-                placeholder="6-digit pincode"
-                maxLength="6"
-                error={errors.pincode}
-              />
-            </div>
-          </div>
-
-          {/* Section 3: Business Information */}
-          <div className="form-section business">
-            <div className="form-section-bar" />
-            <div className="form-section-header">
-              <div className="form-section-icon">
-                <Icon name="briefcase" size={20} color="white" />
+              {/* Section 3: Business Information */}
+              <div className="form-section business">
+                <div className="form-section-bar" />
+                <div className="form-section-header">
+                  <div className="form-section-icon">
+                    <Icon name="briefcase" size={20} color="white" />
+                  </div>
+                  <h3 className="form-section-title">Business Information</h3>
+                </div>
+                
+                <Input
+                  label="GSTIN"
+                  value={formData.gstin}
+                  onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())}
+                  placeholder="15-character GSTIN (optional)"
+                  maxLength="15"
+                  error={errors.gstin}
+                  helperText="Goods and Services Tax Identification Number"
+                />
               </div>
-              <h3 className="form-section-title">Business Information</h3>
+            </>
+          )}
+
+          {quickAdd && (
+            <div className="quick-add-note">
+              <Icon name="info" size={14} />
+              <span>Complete customer details can be added later from the Customers section</span>
             </div>
-            
-            <Input
-              label="GSTIN"
-              value={formData.gstin}
-              onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())}
-              placeholder="15-character GSTIN (optional)"
-              maxLength="15"
-              error={errors.gstin}
-              helperText="Goods and Services Tax Identification Number"
-            />
-          </div>
+          )}
 
           {/* Action Buttons */}
           <div className="form-actions">

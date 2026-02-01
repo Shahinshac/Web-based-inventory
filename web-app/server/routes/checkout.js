@@ -228,12 +228,19 @@ router.get('/', async (req, res) => {
     
     const formatted = bills.map(bill => ({
       id: bill._id.toString(),
-      customer_id: bill.customerId ? bill.customerId.toString() : null,
-      customer_name: bill.customerName || 'Walk-in',
+      billNumber: bill.billNumber || bill._id.toString(),
+      customerId: bill.customerId ? bill.customerId.toString() : null,
+      customerName: bill.customerName || 'Walk-in Customer',
       customerPhone: bill.customerPhone || null,
       customerPlace: bill.customerPlace || bill.customer_place || null,
       customerPincode: bill.customerPincode || bill.customer_pincode || null,
       customerAddress: bill.customerAddress || null,
+      // Include customer object for InvoiceCard display
+      customer: bill.customerId ? {
+        id: bill.customerId.toString(),
+        name: bill.customerName,
+        phone: bill.customerPhone
+      } : null,
       subtotal: bill.subtotal || 0,
       discountPercent: bill.discountPercent || 0,
       discountValue: bill.discountPercent || 0,
@@ -245,6 +252,7 @@ router.get('/', async (req, res) => {
       sgst: bill.sgst || 0,
       igst: bill.igst || 0,
       total: bill.grandTotal || 0,
+      grandTotal: bill.grandTotal || 0,
       totalProfit: bill.totalProfit || 0,
       paymentMode: bill.paymentMode || 'Cash',
       splitPaymentDetails: bill.splitPaymentDetails || null,
@@ -260,9 +268,9 @@ router.get('/', async (req, res) => {
       })) : [],
       created_at: bill.billDate,
       date: bill.billDate,
+      billDate: bill.billDate,
       createdByUsername: bill.createdByUsername || 'Unknown',
-      companyPhone: bill.companyPhone || COMPANY_PHONE,
-      billNumber: bill.billNumber || bill._id.toString()
+      companyPhone: bill.companyPhone || COMPANY_PHONE
     }));
     
     res.json(formatted);
@@ -416,12 +424,21 @@ router.post('/:id/whatsapp-link', async (req, res) => {
     const publicUrl = `${base}/public/invoice/${token}`;
     
     // Generate WhatsApp message
-    const message = `Hi ${invoice.customerName}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}. Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
-    const whatsappUrl = `https://wa.me/${invoice.customerPhone?.replace(/[^0-9]/g, '')}?text=${encodeURIComponent(message)}`;
+    const message = `Hi ${invoice.customerName || 'Customer'}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}. Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
+    
+    // Format phone number with +91 prefix for Indian numbers
+    let whatsappUrl = null;
+    if (invoice.customerPhone) {
+      const cleanPhone = String(invoice.customerPhone).replace(/[^0-9]/g, '');
+      // Add +91 prefix if it's a 10-digit number (Indian number)
+      const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+      whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    }
     
     await logAudit(db, 'PUBLIC_INVOICE_LINK_CREATED', null, req.body.requestedBy || 'system', { 
       invoiceId: invoice._id.toString(), 
-      token 
+      token,
+      hasPhone: !!invoice.customerPhone
     });
 
     res.json({ 

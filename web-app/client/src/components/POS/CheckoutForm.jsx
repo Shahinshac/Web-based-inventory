@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import SplitPaymentForm from './SplitPaymentForm';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
+import CustomerForm from '../Customers/CustomerForm';
 import { formatCurrency, formatCurrency0, GST_PERCENT, PAYMENT_MODES, validateSplitPayment } from '../../constants';
 
 export default function CheckoutForm({ 
@@ -24,6 +25,7 @@ export default function CheckoutForm({
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
+  const [showCustomerForm, setShowCustomerForm] = useState(false);
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
@@ -41,18 +43,25 @@ export default function CheckoutForm({
     );
   }, [customers, customerSearch]);
 
-  // Payment modes configuration
+  // Payment modes configuration with enhanced visuals
   const paymentModes = [
-    { value: PAYMENT_MODES.CASH, label: 'Cash', icon: 'dollar-sign', color: '#10b981' },
-    { value: PAYMENT_MODES.UPI, label: 'UPI', icon: 'smartphone', color: '#6366f1' },
-    { value: PAYMENT_MODES.CARD, label: 'Card', icon: 'credit-card', color: '#f59e0b' },
-    { value: PAYMENT_MODES.CHEQUE, label: 'Cheque', icon: 'file-text', color: '#8b5cf6' },
+    { value: PAYMENT_MODES.CASH, label: 'Cash', icon: 'dollar-sign', color: '#10b981', desc: 'Cash Payment' },
+    { value: PAYMENT_MODES.UPI, label: 'UPI', icon: 'smartphone', color: '#6366f1', desc: 'GPay, PhonePe, Paytm' },
+    { value: PAYMENT_MODES.CARD, label: 'Card', icon: 'credit-card', color: '#f59e0b', desc: 'Credit/Debit Card' },
+    { value: PAYMENT_MODES.CHEQUE, label: 'Cheque', icon: 'file-text', color: '#8b5cf6', desc: 'Bank Cheque' },
   ];
 
   // Get customer initials
   const getInitials = (name) => {
     if (!name) return '?';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  // Handle inline customer creation
+  const handleCustomerCreated = (newCustomer) => {
+    setShowCustomerForm(false);
+    onSelectCustomer(newCustomer);
+    setCustomerSearch('');
   };
 
   const handleCheckout = async () => {
@@ -215,13 +224,31 @@ export default function CheckoutForm({
                   ))}
                 </div>
               ) : !customerSearch ? (
-                <div className="walk-in-badge">
-                  <Icon name="user" size={16} />
-                  <span>Walk-in Customer</span>
-                </div>
+                <>
+                  <div className="walk-in-badge">
+                    <Icon name="user" size={16} />
+                    <span>Walk-in Customer</span>
+                  </div>
+                  <button 
+                    className="add-customer-btn"
+                    onClick={() => setShowCustomerForm(true)}
+                    type="button"
+                  >
+                    <Icon name="user-plus" size={16} />
+                    <span>Add New Customer</span>
+                  </button>
+                </>
               ) : (
                 <div className="no-customers-found">
                   <span>No customers found</span>
+                  <button 
+                    className="add-customer-link"
+                    onClick={() => setShowCustomerForm(true)}
+                    type="button"
+                  >
+                    <Icon name="plus" size={14} />
+                    Create "{customerSearch}"
+                  </button>
                 </div>
               )}
             </>
@@ -303,13 +330,16 @@ export default function CheckoutForm({
                 onClick={() => setPaymentMode(mode.value)}
                 style={{ '--accent-color': mode.color }}
               >
-                <div className="payment-method-icon">
-                  <Icon name={mode.icon} size={22} />
+                <div className="payment-method-icon" style={{ background: `linear-gradient(135deg, ${mode.color}20, ${mode.color}10)` }}>
+                  <Icon name={mode.icon} size={24} style={{ color: mode.color }} />
                 </div>
-                <span className="payment-method-label">{mode.label}</span>
+                <div className="payment-method-content">
+                  <span className="payment-method-label">{mode.label}</span>
+                  <span className="payment-method-desc">{mode.desc}</span>
+                </div>
                 {paymentMode === mode.value && (
                   <div className="payment-method-check">
-                    <Icon name="check" size={14} />
+                    <Icon name="check-circle" size={18} style={{ color: mode.color }} />
                   </div>
                 )}
               </button>
@@ -383,6 +413,15 @@ export default function CheckoutForm({
           <Icon name="wifi-off" size={16} />
           <span>Offline mode - sale will sync when online</span>
         </div>
+      )}
+
+      {/* Inline Customer Creation Modal */}
+      {showCustomerForm && (
+        <CustomerForm
+          onSubmit={handleCustomerCreated}
+          onClose={() => setShowCustomerForm(false)}
+          quickAdd={true}
+        />
       )}
     </div>
   );

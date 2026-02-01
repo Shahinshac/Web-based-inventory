@@ -12941,11 +12941,17 @@ button {
 
 .barcode-qr-actions {
   display: flex;
+  flex-direction: column;
   gap: 10px;
 }
 
-.barcode-download-btn,
-.qrcode-download-btn {
+.code-action-group {
+  display: flex;
+  gap: 8px;
+}
+
+.barcode-view-btn,
+.qrcode-view-btn {
   flex: 1;
   display: flex;
   align-items: center;
@@ -12960,28 +12966,201 @@ button {
   border: 1px solid;
 }
 
-.barcode-download-btn {
+.barcode-download-btn,
+.qrcode-download-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid;
+  min-width: 42px;
+}
+
+.barcode-view-btn {
   background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
   border-color: #86efac;
   color: #16a34a;
 }
 
-.barcode-download-btn:hover {
+.barcode-view-btn:hover {
   background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(34, 197, 94, 0.2);
 }
 
-.qrcode-download-btn {
+.barcode-download-btn {
+  background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+  border-color: #16a34a;
+  color: white;
+}
+
+.barcode-download-btn:hover {
+  background: linear-gradient(135deg, #15803d 0%, #166534 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.qrcode-view-btn {
   background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
   border-color: #a5b4fc;
   color: #4f46e5;
 }
 
-.qrcode-download-btn:hover {
+.qrcode-view-btn:hover {
   background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+}
+
+.qrcode-download-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  border-color: #4f46e5;
+  color: white;
+}
+
+.qrcode-download-btn:hover {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+/* Code Preview Modal Styles */
+.code-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  backdrop-filter: blur(4px);
+  animation: fadeIn 0.2s ease;
+}
+
+.code-modal-content {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  max-width: 500px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: auto;
+  animation: slideUp 0.3s ease;
+}
+
+.code-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.code-modal-header h3 {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.code-modal-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  transition: background 0.2s ease;
+  color: #6b7280;
+}
+
+.code-modal-close:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.code-modal-body {
+  padding: 24px;
+  text-align: center;
+}
+
+.code-product-name {
+  font-size: 16px;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 8px;
+}
+
+.code-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: #6b7280;
+  font-family: 'Courier New', monospace;
+  margin-bottom: 20px;
+}
+
+.code-preview {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+  background: #f9fafb;
+  border-radius: 12px;
+  margin: 0 auto;
+  max-width: 100%;
+}
+
+.code-preview img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+.code-info {
+  font-size: 13px;
+  color: #6b7280;
+  margin-top: 16px;
+}
+
+.code-modal-footer {
+  display: flex;
+  gap: 12px;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  justify-content: flex-end;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 /* Responsive */
@@ -13002,6 +13181,332 @@ button {
   
   .barcode-qr-actions {
     flex-direction: column;
+  }
+}
+
+/* ============================================
+   ENHANCED CHECKOUT STYLES - NEW FEATURES
+   ============================================ */
+
+/* Payment Method Cards - Enhanced with Descriptions */
+.payment-method-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.payment-method-desc {
+  font-size: 11px;
+  color: #94a3b8;
+  font-weight: 400;
+  text-align: center;
+}
+
+.payment-method-card.active .payment-method-desc {
+  color: #64748b;
+}
+
+/* Add Customer Button Styles */
+.add-customer-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 16px;
+  margin-top: 8px;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 2px dashed #0ea5e9;
+  border-radius: 10px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-customer-btn:hover {
+  background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%);
+  border-color: #0284c7;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(14, 165, 233, 0.2);
+}
+
+.no-customers-found {
+  padding: 16px;
+  text-align: center;
+  color: #64748b;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.add-customer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  color: #0369a1;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-customer-link:hover {
+  background: #e0f2fe;
+  border-color: #0ea5e9;
+  transform: translateY(-1px);
+}
+
+/* Split Payment Form - Modern Design */
+.split-payment-form-modern {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+}
+
+.split-payment-inputs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.split-input-card {
+  background: white;
+  border-radius: 12px;
+  padding: 14px;
+  border: 2px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.split-input-card:hover {
+  border-color: #cbd5e1;
+}
+
+.split-input-card:focus-within {
+  border-color: var(--primary, #6366f1);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+}
+
+.split-input-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.split-input-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.split-input-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+}
+
+.split-label-main {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.split-label-sub {
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+.split-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.split-currency-symbol {
+  position: absolute;
+  left: 14px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #64748b;
+  pointer-events: none;
+}
+
+.split-amount-input {
+  width: 100%;
+  padding: 12px 14px 12px 32px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #1e293b;
+  border: none;
+  background: #f8fafc;
+  border-radius: 8px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.split-amount-input:focus {
+  background: #f1f5f9;
+}
+
+.split-amount-input::placeholder {
+  color: #cbd5e1;
+  font-weight: 400;
+}
+
+.split-progress-bar {
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.split-progress-fill {
+  height: 100%;
+  transition: width 0.3s ease, background 0.3s ease;
+  border-radius: 2px;
+}
+
+.split-payment-summary-modern {
+  background: white;
+  border-radius: 12px;
+  padding: 16px;
+  border: 2px solid #e2e8f0;
+}
+
+.split-payment-summary-modern.valid {
+  border-color: #10b981;
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.split-payment-summary-modern.underpaid {
+  border-color: #ef4444;
+  background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+}
+
+.split-payment-summary-modern.overpaid {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.split-summary-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #64748b;
+  margin-bottom: 12px;
+}
+
+.split-summary-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.split-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.split-summary-row span {
+  color: #64748b;
+}
+
+.split-summary-row strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.split-summary-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 8px 0;
+}
+
+.split-summary-row.balance {
+  font-size: 14px;
+  padding-top: 4px;
+}
+
+.split-summary-row.balance span {
+  font-weight: 600;
+}
+
+.split-payment-alert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 8px;
+  color: #991b1b;
+  font-size: 12px;
+}
+
+.split-payment-success {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 10px 12px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  color: #166534;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Responsive Enhancements */
+@media (max-width: 768px) {
+  .split-payment-form-modern {
+    padding: 12px;
+    gap: 12px;
+  }
+  
+  .split-input-card {
+    padding: 12px;
+  }
+  
+  .split-input-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .split-label-main {
+    font-size: 13px;
+  }
+  
+  .split-amount-input {
+    font-size: 15px;
+    padding: 10px 12px 10px 28px;
+  }
+  
+  .split-currency-symbol {
+    left: 12px;
+    font-size: 15px;
   }
 }
 

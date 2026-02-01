@@ -51,22 +51,58 @@ router.get('/invoice/:token', async (req, res) => {
           <title>Invoice ${invoice.billNumber || invoice._id}</title>
           <style>
             :root { --maxw: 842px; --page-bg: #f7fafc; }
-            html,body{height:100%;}
-            body{font-family:Segoe UI,Arial,sans-serif;padding:20px;background:var(--page-bg);color:#111}
-            .paper{background:#fff;max-width:760px;margin:16px auto;padding:20px;border-radius:6px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
-            .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
-            .company{font-size:20px;font-weight:700;color:#222}
-            .meta{font-size:13px;color:#444;text-align:right}
-            .customer{display:flex;justify-content:space-between;margin-bottom:12px}
-            table{width:100%;border-collapse:collapse;margin-top:8px}
-            th,td{padding:8px;border-bottom:1px solid #eee;text-align:left;font-size:13px}
-            th{background:#fafafa;font-weight:700}
-            tfoot td{border-top:2px solid #ddd;font-weight:700}
-            .totals{margin-top:12px;display:flex;justify-content:flex-end;gap:12px}
-            .totals .col{min-width:220px;background:#fafafa;padding:10px;border-radius:6px}
-            .print-cta{margin-top:16px;text-align:center}
-            .small{font-size:12px;color:#666}
-            @media print{ body{background:white} .paper{box-shadow:none;border-radius:0} .print-cta{display:none} }
+            * { box-sizing: border-box; }
+            html,body { height:100%; margin: 0; padding: 0; }
+            body { font-family: Segoe UI, Arial, sans-serif; padding: 20px; background: var(--page-bg); color: #111; }
+            .paper { background: #fff; max-width: 760px; margin: 16px auto; padding: 20px; border-radius: 6px; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+            .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 14px; }
+            .company { font-size: 20px; font-weight: 700; color: #222; line-height: 1.2; }
+            .meta { font-size: 13px; color: #444; text-align: right; }
+            .customer { display: flex; justify-content: space-between; margin-bottom: 10px; }
+            table { width: 100%; border-collapse: collapse; margin-top: 8px; margin-bottom: 10px; }
+            th, td { padding: 7px 8px; border-bottom: 1px solid #eee; text-align: left; font-size: 13px; line-height: 1.3; }
+            th { background: #fafafa; font-weight: 700; }
+            tbody tr { page-break-inside: avoid; }
+            tfoot td { border-top: 2px solid #ddd; font-weight: 700; }
+            .totals { margin-top: 10px; display: flex; justify-content: flex-end; gap: 12px; }
+            .totals .col { min-width: 220px; background: #fafafa; padding: 8px; border-radius: 6px; }
+            .print-cta { margin-top: 16px; text-align: center; }
+            .small { font-size: 12px; color: #666; line-height: 1.4; }
+            .terms-box { margin-top: 10px; background: #fff; padding: 8px; border: 1px dotted #ccc; page-break-inside: avoid; }
+            .terms-box ol { margin: 4px 0 0 16px; padding: 0; color: #444; font-size: 11px; }
+            .terms-box ol li { margin: 2px 0; }
+            .signatures { display: flex; justify-content: space-between; margin-top: 14px; page-break-inside: avoid; }
+            .signatures > div { text-align: center; width: 45%; }
+            .signatures > div > div { border-top: 1px solid #000; padding-top: 8px; font-size: 12px; }
+            
+            @media print { 
+              body { background: white; padding: 0; margin: 0; }
+              .paper { 
+                box-shadow: none; 
+                border-radius: 0; 
+                max-width: 100%; 
+                margin: 0; 
+                padding: 12mm 10mm; 
+                min-height: 100vh;
+                page-break-after: avoid;
+              }
+              .print-cta { display: none; }
+              .header { margin-bottom: 10px; }
+              .company { font-size: 18px; }
+              .meta { font-size: 12px; }
+              th, td { padding: 5px 6px; font-size: 12px; }
+              .totals { margin-top: 8px; }
+              .totals .col { padding: 6px; }
+              .small { font-size: 11px; }
+              table { margin-top: 6px; margin-bottom: 8px; }
+              .terms-box { margin-top: 8px; padding: 6px; }
+              .terms-box ol { font-size: 10px; margin-top: 3px; }
+              .signatures { margin-top: 10px; }
+              @page { 
+                size: A4; 
+                margin: 10mm 8mm; 
+              }
+            }
           </style>
         </head>
         <body>
@@ -127,13 +163,13 @@ router.get('/invoice/:token', async (req, res) => {
               </div>
             </div>
 
-            <div style="margin-top:14px;padding:12px;background:#f9f9f9;border:1px dashed #ccc">
+            <div style="margin-top:14px;padding:12px;background:#f9f9f9;border:1px dashed #ccc;page-break-inside:avoid;">
               <strong>Amount in Words: </strong><span id="amount-in-words"></span>
             </div>
 
-            <div style="margin-top:14px;background:#fff;padding:10px;border:1px dotted #ccc">
+            <div class="terms-box">
               <strong>Terms & Conditions:</strong>
-              <ol style="margin-top:6px;color:#444">
+              <ol>
                 <li>Goods once sold cannot be returned or exchanged.</li>
                 <li>Payment is due at the time of purchase.</li>
                 <li>Subject to local jurisdiction only.</li>
@@ -141,9 +177,9 @@ router.get('/invoice/:token', async (req, res) => {
               </ol>
             </div>
 
-            <div style="display:flex;justify-content:space-between;margin-top:24px">
-              <div style="text-align:center;width:45%"><div style="border-top:1px solid #000;padding-top:10px;">Customer Signature</div></div>
-              <div style="text-align:center;width:45%"><div style="border-top:1px solid #000;padding-top:10px;">Authorized Signatory</div></div>
+            <div class="signatures">
+              <div><div>Customer Signature</div></div>
+              <div><div>Authorized Signatory</div></div>
             </div>
 
             <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleDateString() + ', ' + new Date(entry.expiresAt).toLocaleTimeString() : '—'}</div>

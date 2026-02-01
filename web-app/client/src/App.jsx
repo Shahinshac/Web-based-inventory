@@ -201,18 +201,26 @@ Esc: Close modals/dialogs`;
 
   const handleShareWhatsApp = async (invoice) => {
     try {
+      // Validate customer phone exists
+      if (!invoice.customerPhone || invoice.customerPhone.trim() === '') {
+        showNotification('❌ Cannot send WhatsApp: Customer phone number is missing', 'error');
+        return;
+      }
+
       const res = await generateWhatsAppLink(invoice.id || invoice._id, currentUser?.username, companyInfo);
       if (res?.whatsappUrl) {
         window.open(res.whatsappUrl, '_blank');
+        showNotification('✅ Opening WhatsApp...', 'success');
       } else if (res?.publicUrl) {
-        const message = `Invoice #${invoice.id} - Total: ₹${invoice.total} - ${res.publicUrl}`;
+        // Fallback: open WhatsApp without pre-filled number
+        const message = `Invoice #${invoice.billNumber || invoice.id} - Total: ₹${invoice.grandTotal || invoice.total} - ${res.publicUrl}`;
         window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        showNotification('⚠️ Opening WhatsApp (please select contact manually)', 'warning');
       } else {
-        const message = `Invoice #${invoice.id} - Total: ₹${invoice.total}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        showNotification('❌ Failed to create WhatsApp link', 'error');
       }
     } catch (e) {
-      showNotification('Failed to create WhatsApp link', 'error');
+      showNotification('❌ Failed to create WhatsApp link: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
     }
   };

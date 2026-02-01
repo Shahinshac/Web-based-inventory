@@ -324,7 +324,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     }
     
     // Store relative photo URL - client will construct full URL using its API base
-    let photoUrl = `/api/products/${id}/photo`;
+    // Add timestamp for cache-busting - ensures all users see updated photos immediately
+    let photoUrl = `/api/products/${id}/photo?t=${Date.now()}`;
 
     // Default photo storage: DB unless explicitly requested 'fs'
     const storageMode = String(req.query.storage || '').toLowerCase();
@@ -349,6 +350,7 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
             photo: photoUrl,
             photoStorage: 'db',
             photoDbId: photoId,
+            photoUpdatedAt: new Date(),
             lastModifiedBy: userId || null,
             lastModifiedByUsername: username || 'Unknown',
             lastModified: new Date()
@@ -369,6 +371,7 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
             photo: photoUrl,
             photoStorage: 'fs',
             photoFilename: filename,
+            photoUpdatedAt: new Date(),
             lastModifiedBy: userId || null,
             lastModifiedByUsername: username || 'Unknown',
             lastModified: new Date()
@@ -398,6 +401,7 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
 /**
  * GET /api/products/:id/photo
  * Serve product photo (filesystem or DB-backed)
+ * Query parameter ?t= is used for cache-busting and is ignored
  */
 router.get('/:id/photo', async (req, res) => {
   try {
@@ -416,7 +420,7 @@ router.get('/:id/photo', async (req, res) => {
       if (!photoData) return res.status(404).json({ error: 'Image data not found' });
 
       res.setHeader('Content-Type', photoData.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
       return res.send(photoData.data);
     }
 
