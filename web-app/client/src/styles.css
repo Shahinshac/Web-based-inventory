@@ -91,6 +91,16 @@ html, body {
   --gradient-success: linear-gradient(135deg, #10b981 0%, #34d399 100%);
   --gradient-danger: linear-gradient(135deg, #ef4444 0%, #f87171 100%);
   --gradient-warning: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+  --gradient-purple: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%);
+  
+  /* Semantic Colors for Audit Logs & Status */
+  --color-danger: #ef4444;
+  --color-success: #22c55e;
+  --color-primary: #3b82f6;
+  --color-purple: #8b5cf6;
+  --color-warning: #f59e0b;
+  --color-gray: #6b7280;
+  --bg-hover: rgba(0, 0, 0, 0.05);
   
   /* Header */
   --header-bg: #ffffff;
@@ -9714,15 +9724,172 @@ button {
 .log-metadata {
   background: var(--card);
   border-radius: 8px;
-  padding: 12px;
   margin-top: 8px;
-  overflow-x: auto;
+  overflow: hidden;
+}
+
+.log-metadata summary {
+  padding: 8px 12px;
+  font-size: 12px;
+  color: var(--primary);
+  cursor: pointer;
+  user-select: none;
+}
+
+.log-metadata summary:hover {
+  background: var(--bg-hover, rgba(0,0,0,0.05));
+}
+
+.log-metadata pre {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: pre-wrap;
+  word-break: break-all;
+  padding: 12px;
+  margin: 0;
+  background: var(--bg);
+  border-top: 1px solid var(--border);
+  max-height: 200px;
+  overflow-y: auto;
 }
 
 .log-metadata code {
   font-size: 12px;
   color: var(--text-secondary);
   white-space: pre-wrap;
+}
+
+/* Date Filter Buttons */
+.filter-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.date-filter-btns {
+  display: flex;
+  gap: 4px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 4px;
+}
+
+.date-filter-btn {
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.date-filter-btn:hover {
+  color: var(--text);
+  background: var(--bg-hover, rgba(0,0,0,0.05));
+}
+
+.date-filter-btn.active {
+  background: var(--primary);
+  color: white;
+}
+
+/* Page Size Select */
+.page-size-select {
+  min-width: 120px;
+}
+
+/* Clear Search Button */
+.search-box .clear-search {
+  padding: 4px;
+  border: none;
+  background: var(--bg-hover, rgba(0,0,0,0.1));
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-secondary);
+  transition: all 0.2s ease;
+}
+
+.search-box .clear-search:hover {
+  background: var(--danger, #ef4444);
+  color: white;
+}
+
+/* Clear Filters Button */
+.clear-filters-btn {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: var(--primary);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.clear-filters-btn:hover {
+  background: var(--primary-dark, #7c3aed);
+}
+
+/* Audit Logs Pagination */
+.audit-logs-container .pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+
+.pagination-btn {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--border);
+  background: var(--card);
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--text);
+  transition: all 0.2s ease;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-info {
+  padding: 0 16px;
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+/* Refresh Button Loading State */
+.refresh-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.refresh-btn .spin {
+  animation: spin 1s linear infinite;
 }
 
 /* ============================================
@@ -10203,10 +10370,21 @@ button {
   
   .filter-group {
     width: 100%;
+    flex-direction: column;
+  }
+  
+  .date-filter-btns {
+    width: 100%;
+    justify-content: center;
   }
   
   .filter-select {
     flex: 1;
+    width: 100%;
+  }
+  
+  .page-size-select {
+    width: 100%;
   }
   
   .audit-stats {
@@ -10229,6 +10407,31 @@ button {
   
   .log-card {
     padding: 12px;
+  }
+  
+  .date-filter-btns {
+    flex-wrap: wrap;
+  }
+  
+  .date-filter-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+  
+  .pagination {
+    flex-wrap: wrap;
+  }
+  
+  .pagination-btn {
+    width: 32px;
+    height: 32px;
+  }
+  
+  .pagination-info {
+    width: 100%;
+    text-align: center;
+    order: -1;
+    margin-bottom: 8px;
   }
   
   .overview-card {

@@ -510,21 +510,44 @@ router.get('/database-stats', async (req, res) => {
 /**
  * GET /api/audit-logs
  * Get audit logs (Admin Only)
+ * Supports pagination, date range filtering, and action type filtering
  */
 router.get('/audit-logs', async (req, res) => {
   try {
     const db = getDB();
-    const limit = parseInt(req.query.limit) || 100;
-    const action = req.query.action; // Filter by action type
+    const limit = Math.min(parseInt(req.query.limit) || 50, 500); // Max 500 logs
+    const skip = parseInt(req.query.skip) || 0;
+    const action = req.query.action;
+    const startDate = req.query.startDate;
+    const endDate = req.query.endDate;
     
+    // Build query with filters
     let query = {};
-    if (action) {
+    
+    // Action filter
+    if (action && action !== 'all') {
       query.action = action;
     }
     
+    // Date range filter
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate) {
+        query.timestamp.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.timestamp.$lte = new Date(endDate);
+      }
+    }
+    
+    // Get total count for pagination
+    const total = await db.collection('audit_logs').countDocuments(query);
+    
+    // Fetch logs with pagination
     const logs = await db.collection('audit_logs')
       .find(query)
       .sort({ timestamp: -1 })
+      .skip(skip)
       .limit(limit)
       .toArray();
     
@@ -534,10 +557,18 @@ router.get('/audit-logs', async (req, res) => {
       userId: log.userId ? log.userId.toString() : null,
       username: log.username,
       timestamp: log.timestamp,
-      details: log.details
+      details: log.details,
+      metadata: log.metadata || null
     }));
     
-    res.json(formatted);
+    // Return consistent response format with pagination info
+    res.json({
+      logs: formatted,
+      total,
+      page: Math.floor(skip / limit) + 1,
+      pageSize: limit,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (e) {
     logger.error('Get audit logs error:', e);
     res.status(500).json({ error: e.message });
