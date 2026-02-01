@@ -1409,12 +1409,12 @@ html { background: var(--bg, #ffffff); }
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  padding: 28px 24px;
-  background: var(--bg, #f8f9fa);
+  padding: 32px 32px;
+  background: var(--bg, #f5f7fa);
   min-width: 0;
   -webkit-overflow-scrolling: touch;
-  /* Critical: Proper spacing from sticky navbar (header-top 56px + tab-nav 44px = 100px total) */
-  margin-top: 16px;
+  /* Critical: Proper spacing from sticky navbar (header-top 60px + tab-nav 52px = 112px total) */
+  margin-top: 20px;
 }
 
 /* Smooth scrolling */
@@ -2331,42 +2331,46 @@ ul:not(.products):not(.cart) li:hover {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 24px;
+  margin-bottom: 36px;
 }
 
 .stat-card {
   background: white;
-  border-radius: 14px;
-  padding: 20px 22px;
+  border-radius: 16px;
+  padding: 22px 24px;
   display: flex;
   align-items: center;
-  gap: 18px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+  gap: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.06);
   transition: all 0.3s ease;
   animation: fadeInUp 0.5s ease;
   /* allow stat content (long numbers) to overflow so they remain visible */
   overflow: visible;
   min-width: 0;
   min-height: 110px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+  position: relative;
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 12px 28px rgba(99, 102, 241, 0.12);
+  border-color: rgba(99, 102, 241, 0.15);
 }
 
 .stat-icon {
-  width: 56px;
-  height: 56px;
+  width: 52px;
+  height: 52px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.8rem; /* icon size tuned to match layout */
+  font-size: 1.6rem;
   flex-shrink: 0;
-  border-radius: 10px;
-  background: linear-gradient(135deg,#eef2ff,#f3f8ff);
+  border-radius: 14px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e8f0ff 100%);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.1);
 }
 
 .stat-info {
@@ -8145,7 +8149,7 @@ button {
    ============================================ */
 
 .modern-dashboard {
-  padding: 1.5rem;
+  padding: 0;
   animation: fadeIn 0.3s ease-out;
 }
 
@@ -8200,17 +8204,17 @@ button {
 .modern-stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-  margin-bottom: 32px;
+  gap: 24px;
+  margin-bottom: 40px;
 }
 
 .modern-stat-card {
   background: var(--card);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 18px;
+  padding: 26px;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 16px rgba(0, 0, 0, 0.06);
   border: 1px solid var(--border);
   transition: all 0.3s ease;
 }
@@ -8321,16 +8325,16 @@ button {
 
 .action-card {
   background: var(--card);
-  border-radius: 16px;
-  padding: 24px;
+  border-radius: 18px;
+  padding: 26px;
   display: flex;
   flex-direction: column;
   align-items: center;
   text-align: center;
   cursor: pointer;
-  border: 2px solid transparent;
+  border: 1px solid var(--border);
   transition: all 0.3s ease;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .action-card:hover {
@@ -9200,10 +9204,10 @@ button {
    ============================================ */
 
 .app-header {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
   flex-shrink: 0;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 24px rgba(99, 102, 241, 0.3), 0 1px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   display: flex;
@@ -9215,11 +9219,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding: 12px 28px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
   overflow: visible;
-  min-height: 56px;
-  height: 56px;
+  min-height: 60px;
+  height: 60px;
 }
 
 .header-left {
@@ -9230,12 +9234,13 @@ button {
 .company-brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 14px;
 }
 
 .company-logo {
-  font-size: 24px;
+  font-size: 28px;
   line-height: 1;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
 }
 
 .company-info {
@@ -9245,11 +9250,12 @@ button {
 }
 
 .company-name {
-  font-size: 15px;
+  font-size: 17px;
   font-weight: 700;
   color: white;
   margin: 0;
   line-height: 1.2;
+  letter-spacing: 0.3px;
 }
 
 .company-tagline {
@@ -9567,19 +9573,19 @@ button {
    ============================================ */
 
 .tab-navigation {
-  background: rgba(30, 27, 75, 0.6);
-  backdrop-filter: blur(10px);
+  background: rgba(30, 27, 75, 0.5);
+  backdrop-filter: blur(12px);
   display: flex;
   align-items: center;
-  padding: 0 20px;
+  padding: 0 28px;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  height: 44px;
+  height: 52px;
   flex-shrink: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
 .tab-navigation::-webkit-scrollbar {
@@ -9593,24 +9599,24 @@ button {
   padding: 0;
   list-style: none;
   height: 100%;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tab-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 0 14px;
-  height: 32px;
+  gap: 8px;
+  padding: 0 18px;
+  height: 36px;
   background: transparent;
   border: none;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.65);
-  font-size: 13px;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 13.5px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
   flex-shrink: 0;
   position: relative;
@@ -9623,10 +9629,11 @@ button {
 }
 
 .tab-btn.active {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.1));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0.12));
   color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 .tab-btn.active::before {
