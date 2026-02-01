@@ -205,28 +205,24 @@ export default function Dashboard({
                 <Icon name="shopping-cart" size={24} />
               </div>
               <span className="action-label">New Sale</span>
-              <span className="action-shortcut">F2</span>
             </button>
             <button className="action-card" onClick={onAddProduct}>
               <div className="action-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
                 <Icon name="plus" size={24} />
               </div>
               <span className="action-label">Add Product</span>
-              <span className="action-shortcut">Ctrl+N</span>
             </button>
             <button className="action-card" onClick={onAddCustomer}>
               <div className="action-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
                 <Icon name="user-plus" size={24} />
               </div>
               <span className="action-label">Add Customer</span>
-              <span className="action-shortcut">Ctrl+K</span>
             </button>
             <button className="action-card" onClick={() => onNavigate('products')}>
               <div className="action-icon" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
                 <Icon name="package" size={24} />
               </div>
               <span className="action-label">View Products</span>
-              <span className="action-shortcut">F3</span>
             </button>
           </div>
         </div>
