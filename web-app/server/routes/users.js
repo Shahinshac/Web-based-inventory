@@ -117,6 +117,12 @@ router.post('/login', async (req, res) => {
       { $set: { lastLogin: new Date() } }
     );
     
+    // Log the login action
+    await logAudit(db, 'USER_LOGIN', user._id.toString(), user.username, {
+      role: user.role,
+      ip: req.ip || req.connection?.remoteAddress || 'unknown'
+    });
+    
     res.json({
       success: true,
       user: {
@@ -141,7 +147,16 @@ router.post('/login', async (req, res) => {
  */
 router.post('/logout', async (req, res) => {
   try {
-    // In a full JWT implementation, you would invalidate the token here
+    const db = getDB();
+    const { userId, username } = req.body;
+    
+    // Log the logout action if user info provided
+    if (userId && username) {
+      await logAudit(db, 'USER_LOGOUT', userId, username, {
+        ip: req.ip || req.connection?.remoteAddress || 'unknown'
+      });
+    }
+    
     res.json({ success: true, message: 'Logged out successfully' });
   } catch (e) {
     logger.error('Logout error:', e);

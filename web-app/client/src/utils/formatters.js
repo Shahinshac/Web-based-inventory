@@ -44,12 +44,14 @@ export const formatDate = (date) => {
  * Format date with time
  */
 export const formatDateTime = (date) => {
+  if (!date) return 'N/A';
   return new Date(date).toLocaleString('en-IN', {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    timeZone: 'Asia/Kolkata'
   })
 }
 
