@@ -1409,12 +1409,12 @@ html { background: var(--bg, #ffffff); }
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  padding: 32px 28px;
+  padding: 28px 24px;
   background: var(--bg, #f8f9fa);
   min-width: 0;
   -webkit-overflow-scrolling: touch;
-  /* Critical: Add top margin to create breathing room from sticky navbar */
-  margin-top: 8px;
+  /* Critical: Proper spacing from sticky navbar (header-top 56px + tab-nav 44px = 100px total) */
+  margin-top: 16px;
 }
 
 /* Smooth scrolling */
@@ -9217,10 +9217,11 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 8px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
-  min-height: 64px;
+  min-height: 56px;
+  height: 56px;
 }
 
 .header-left {
@@ -9235,19 +9236,31 @@ button {
 }
 
 .company-logo {
-  font-size: 28px;
+  font-size: 24px;
   line-height: 1;
 }
 
 .company-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
 }
 
 .company-name {
-  font-size: 16px;
+  font-size: 15px;
   font-weight: 700;
+  color: white;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.company-tagline {
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.75);
+  margin: 0;
+  line-height: 1.2;
+}
   color: white;
   margin: 0;
   line-height: 1.2;
@@ -9575,7 +9588,7 @@ button {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  height: 48px;
+  height: 44px;
   flex-shrink: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
@@ -9818,9 +9831,12 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--border-light);
+  margin-bottom: 28px;
+  padding: 16px 20px 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--primary, #667eea);
   flex-wrap: wrap;
   gap: 20px;
   /* Ensure headers never overlap with navbar */
@@ -9835,15 +9851,16 @@ button {
 }
 
 .global-page-header-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  font-size: 24px;
 }
 
 .global-page-header-text {
@@ -9853,7 +9870,7 @@ button {
 }
 
 .global-page-title {
-  font-size: 32px;
+  font-size: 28px;
   font-weight: 700;
   color: var(--text);
   margin: 0;
@@ -9880,9 +9897,12 @@ button {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 32px;
-  padding-bottom: 20px;
-  border-bottom: 2px solid var(--border-light);
+  margin-bottom: 28px;
+  padding: 16px 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  border-left: 4px solid var(--primary, #667eea);
   flex-wrap: wrap;
   gap: 20px;
 }
@@ -9894,10 +9914,17 @@ button {
 }
 
 .header-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
   display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
+  font-size: 24px;
+}
   align-items: center;
   justify-content: center;
   color: white;
@@ -11225,23 +11252,33 @@ button {
 
 @media (max-width: 1024px) {
   .app-content {
-    padding: 24px 20px;
-    margin-top: 6px;
+    padding: 20px 16px;
+    margin-top: 12px;
   }
   
   .global-page-header {
-    margin-bottom: 24px;
-    padding-bottom: 16px;
+    margin-bottom: 20px;
+    padding: 14px 16px;
   }
   
   .global-page-title {
-    font-size: 28px;
+    font-size: 24px;
   }
   
   .global-page-header-icon {
-    width: 56px;
-    height: 56px;
-    font-size: 28px;
+    width: 48px;
+    height: 48px;
+    font-size: 22px;
+  }
+  
+  .header-top {
+    min-height: 52px;
+    height: 52px;
+    padding: 8px 16px;
+  }
+  
+  .tab-navigation {
+    height: 42px;
   }
   
   .products-grid,
@@ -11271,23 +11308,33 @@ button {
 
 @media (max-width: 768px) {
   .app-content {
-    padding: 20px 16px;
-    margin-top: 4px;
+    padding: 16px 12px;
+    margin-top: 8px;
   }
   
   .global-page-header {
-    margin-bottom: 20px;
-    padding-bottom: 12px;
+    margin-bottom: 16px;
+    padding: 12px 14px;
   }
   
   .global-page-title {
-    font-size: 24px;
+    font-size: 22px;
   }
   
   .global-page-header-icon {
-    width: 48px;
+    width: 44px;
+    height: 44px;
+    font-size: 20px;
+  }
+  
+  .header-top {
+    min-height: 48px;
     height: 48px;
-    font-size: 24px;
+    padding: 6px 12px;
+  }
+  
+  .tab-navigation {
+    height: 40px;
   }
   
   /* Headers */
@@ -11430,13 +11477,13 @@ button {
 
 @media (max-width: 480px) {
   .app-content {
-    padding: 16px 12px;
-    margin-top: 2px;
+    padding: 12px 10px;
+    margin-top: 6px;
   }
   
   .global-page-header {
-    margin-bottom: 16px;
-    padding-bottom: 10px;
+    margin-bottom: 14px;
+    padding: 10px 12px;
   }
   
   .global-page-title {
@@ -11446,7 +11493,17 @@ button {
   .global-page-header-icon {
     width: 40px;
     height: 40px;
-    font-size: 20px;
+    font-size: 18px;
+  }
+  
+  .header-top {
+    min-height: 44px;
+    height: 44px;
+    padding: 6px 10px;
+  }
+  
+  .tab-navigation {
+    height: 38px;
   }
   
   /* Smaller titles */
