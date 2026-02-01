@@ -233,7 +233,7 @@ export default function Header({
         </div>
       </div>
 
-      <TabNavigation activeTab={activeTab} onTabChange={onTabChange} isAdmin={isAdmin} />
+      <TabNavigation activeTab={activeTab} onTabChange={onTabChange} isAdmin={isAdmin} userRole={userRole} />
     </header>
   );
 }
