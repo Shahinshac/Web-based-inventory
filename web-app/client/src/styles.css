@@ -134,8 +134,8 @@ html, body {
   --z-dropdown: 1000;
   --z-sticky: 1020;
   --z-fixed: 1030;
-  --z-modal-backdrop: 1040;
-  --z-modal: 1050;
+  --z-modal-backdrop: 10000;
+  --z-modal: 10001;
   --z-popover: 1060;
   --z-tooltip: 1070;
 }
@@ -2082,7 +2082,7 @@ ul:not(.products):not(.cart) li:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 10000;
   animation: modalOverlayIn 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   overflow-y: auto;
   padding: 20px 0;
@@ -2112,7 +2112,7 @@ ul:not(.products):not(.cart) li:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.9);
   animation: modalContentIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   position: relative;
-  z-index: 1001;
+  z-index: 10001;
   margin: auto;
   border: 1px solid rgba(226, 232, 240, 0.8);
 }
