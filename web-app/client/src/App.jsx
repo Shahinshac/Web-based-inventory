@@ -448,22 +448,6 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  // Navigation tabs with emoji icons
-  const navTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'pos', label: 'POS', icon: '🛒' },
-    { id: 'products', label: 'Products', icon: '📦' },
-    { id: 'inventory', label: 'Inventory', icon: '📋' },
-    { id: 'customers', label: 'Customers', icon: '👥' },
-    { id: 'invoices', label: 'Invoices', icon: '📄' },
-    { id: 'analytics', label: 'Analytics', icon: '📈' },
-    { id: 'reports', label: 'Reports', icon: '📑' },
-    ...(isAdmin ? [
-      { id: 'audit', label: 'Audit', icon: '📝' },
-      { id: 'users', label: 'Users', icon: '🔐' },
-    ] : [])
-  ];
-
   return (
     <div className="app">
       <Header 
@@ -478,46 +462,6 @@ Esc: Close modals/dialogs`;
         isOnline={isOnline}
         offlineCount={offlineTransactions.length}
       />
-
-      {/* Horizontal Tab Navigation Bar */}
-      <nav style={{
-        display: 'flex',
-        gap: '4px',
-        padding: '12px 20px',
-        background: 'linear-gradient(135deg, #5a67d8 0%, #6b46c1 100%)',
-        overflowX: 'auto',
-        flexWrap: 'nowrap',
-        justifyContent: 'space-evenly',
-        boxShadow: '0 2px 10px rgba(0,0,0,0.1)'
-      }}>
-        {navTabs.map(t => (
-          <button
-            key={t.id}
-            onClick={() => handleTabChange(t.id)}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              padding: '12px 24px',
-              flex: '1 1 auto',
-              background: tab === t.id ? 'white' : 'rgba(255,255,255,0.15)',
-              border: 'none',
-              borderRadius: '8px',
-              color: tab === t.id ? '#5a67d8' : 'white',
-              fontSize: '14px',
-              fontWeight: tab === t.id ? '600' : '500',
-              cursor: 'pointer',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
-              boxShadow: tab === t.id ? '0 2px 8px rgba(0,0,0,0.15)' : 'none',
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <span style={{ fontSize: '18px' }}>{t.icon}</span>
-            <span>{t.label}</span>
-          </button>
-        ))}
-      </nav>
 
       <main className="app-content">
         {renderActiveTab()}
