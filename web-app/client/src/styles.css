@@ -1409,10 +1409,12 @@ html { background: var(--bg, #ffffff); }
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
-  padding: 24px;
+  padding: 32px 28px;
   background: var(--bg, #f8f9fa);
   min-width: 0;
   -webkit-overflow-scrolling: touch;
+  /* Critical: Add top margin to create breathing room from sticky navbar */
+  margin-top: 8px;
 }
 
 /* Smooth scrolling */
@@ -9203,7 +9205,7 @@ button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   flex-shrink: 0;
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15), 0 1px 3px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   display: flex;
@@ -9215,10 +9217,10 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 20px;
+  padding: 10px 20px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
   overflow: visible;
-  min-height: 60px;
+  min-height: 64px;
 }
 
 .header-left {
@@ -9573,9 +9575,10 @@ button {
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
-  height: 44px;
+  height: 48px;
   flex-shrink: 0;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .tab-navigation::-webkit-scrollbar {
@@ -9806,42 +9809,116 @@ button {
   background: #dc2626;
 }
 
-.page-header {
+/* ============================================
+   GLOBAL PAGE HEADER SYSTEM
+   Consistent header layout across all tabs
+   ============================================ */
+
+.global-page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 28px;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-light);
   flex-wrap: wrap;
-  gap: 16px;
+  gap: 20px;
+  /* Ensure headers never overlap with navbar */
+  position: relative;
+  z-index: 1;
 }
 
-.header-content {
+.global-page-header-content {
   display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 18px;
 }
 
-.header-icon {
-  width: 60px;
-  height: 60px;
+.global-page-header-icon {
+  width: 64px;
+  height: 64px;
   border-radius: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.global-page-header-text {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.global-page-title {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
+}
+
+.global-page-subtitle {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin: 0;
+  font-weight: 500;
+}
+
+.global-page-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Legacy page-header support (for backward compatibility) */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 32px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--border-light);
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.header-content {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.header-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .header-text h1 {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 700;
   color: var(--text);
-  margin: 0 0 4px 0;
+  margin: 0 0 6px 0;
+  line-height: 1.2;
+  letter-spacing: -0.5px;
 }
 
 .header-text p {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--text-secondary);
   margin: 0;
+  font-weight: 500;
 }
 
 .refresh-btn {
@@ -11148,7 +11225,23 @@ button {
 
 @media (max-width: 1024px) {
   .app-content {
-    padding: 16px;
+    padding: 24px 20px;
+    margin-top: 6px;
+  }
+  
+  .global-page-header {
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+  }
+  
+  .global-page-title {
+    font-size: 28px;
+  }
+  
+  .global-page-header-icon {
+    width: 56px;
+    height: 56px;
+    font-size: 28px;
   }
   
   .products-grid,
@@ -11178,7 +11271,23 @@ button {
 
 @media (max-width: 768px) {
   .app-content {
-    padding: 12px;
+    padding: 20px 16px;
+    margin-top: 4px;
+  }
+  
+  .global-page-header {
+    margin-bottom: 20px;
+    padding-bottom: 12px;
+  }
+  
+  .global-page-title {
+    font-size: 24px;
+  }
+  
+  .global-page-header-icon {
+    width: 48px;
+    height: 48px;
+    font-size: 24px;
   }
   
   /* Headers */
@@ -11321,7 +11430,23 @@ button {
 
 @media (max-width: 480px) {
   .app-content {
-    padding: 8px;
+    padding: 16px 12px;
+    margin-top: 2px;
+  }
+  
+  .global-page-header {
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+  }
+  
+  .global-page-title {
+    font-size: 20px;
+  }
+  
+  .global-page-header-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
   }
   
   /* Smaller titles */
