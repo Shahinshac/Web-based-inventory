@@ -218,7 +218,15 @@ export default function ProductCard({
     <>
       <div className={`product-card ${stockStatus}`}>
         <div className="product-card-image">
-          {product.photo && !imageError ? (
+          {product.photos && product.photos.length > 0 ? (
+            // Show first photo from photos array
+            <img 
+              src={normalizePhotoUrl(product.photos[0].url)} 
+              alt={product.name}
+              onError={handleImageError}
+            />
+          ) : product.photo && !imageError ? (
+            // Fallback to legacy single photo
             <img 
               src={normalizePhotoUrl(product.photo)} 
               alt={product.name}
@@ -227,6 +235,12 @@ export default function ProductCard({
           ) : (
             <div className="product-placeholder">
               <Icon name="package" size={48} color="#cbd5e1" />
+            </div>
+          )}
+          {product.photos && product.photos.length > 1 && (
+            <div className="photo-count-badge">
+              <Icon name="image" size={12} />
+              <span>{product.photos.length}</span>
             </div>
           )}
           {onUploadPhoto && (

@@ -99,6 +99,14 @@ export const apiPatch = (endpoint, data) => apiFetch(endpoint, {
 })
 
 /**
+ * PUT request
+ */
+export const apiPut = (endpoint, data) => apiFetch(endpoint, {
+  method: 'PUT',
+  body: JSON.stringify(data)
+})
+
+/**
  * DELETE request
  */
 export const apiDelete = (endpoint) => apiFetch(endpoint, { method: 'DELETE' })

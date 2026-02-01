@@ -41,7 +41,8 @@ router.get('/', async (req, res) => {
       hsnCode: p.hsnCode || '9999',
       minStock: p.minStock || 10,
       barcode: p.barcode || null,
-      photo: p.photo || null,
+      photo: p.photo || null, // Legacy single photo support
+      photos: p.photos || [], // New multiple photos array
       profit: p.price - (p.costPrice || 0),
       profitPercent: p.price > 0 ? (((p.price - (p.costPrice || 0)) / p.price) * 100).toFixed(2) : 0
     }));
@@ -78,7 +79,8 @@ router.post('/', async (req, res) => {
       hsnCode: hsnCode || '9999',
       minStock: parseInt(minStock) || 10,
       barcode: null, // Will be generated after insertion
-      photo: null,   // Will be fetched automatically or uploaded separately
+      photo: null,   // Legacy single photo (deprecated)
+      photos: [],    // Multiple photos array - NEW
       createdAt: new Date(),
       createdBy: userId || null,
       createdByUsername: username || 'Unknown'
@@ -165,8 +167,76 @@ router.patch('/:id', async (req, res) => {
 });
 
 /**
+ * PUT /api/products/:id
+ * Full product update (name, price, etc.) - PRESERVES PHOTOS
+ * CRITICAL: This endpoint NEVER touches the photos array
+ */
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, quantity, price, costPrice, hsnCode, minStock, serialNo, barcode, userId, username } = req.body;
+    const db = getDB();
+    
+    // Validate product data
+    const validationErrors = validateProduct({ name, quantity, price, costPrice, hsnCode, minStock });
+    if (validationErrors.length > 0) {
+      return res.status(400).json({ error: validationErrors.join(', ') });
+    }
+    
+    // Get product before update for audit
+    const oldProduct = await db.collection('products').findOne({ _id: new ObjectId(id) });
+    
+    if (!oldProduct) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Update product - EXPLICITLY PRESERVE PHOTOS AND PHOTO-RELATED FIELDS
+    const updateData = {
+      name: sanitizeObject(name),
+      quantity: parseInt(quantity) || 0,
+      price: parseFloat(price) || 0,
+      costPrice: parseFloat(costPrice) || 0,
+      hsnCode: hsnCode || '9999',
+      minStock: parseInt(minStock) || 10,
+      lastModifiedBy: userId || null,
+      lastModifiedByUsername: username || 'Unknown',
+      lastModified: new Date()
+    };
+    
+    // Only update serialNo and barcode if provided (optional fields)
+    if (serialNo !== undefined) updateData.serialNo = serialNo;
+    if (barcode !== undefined) updateData.barcode = barcode;
+    
+    // CRITICAL: Never touch photos, photo, photoStorage, photoDbId, photoFilename
+    // These fields are managed ONLY by photo upload/delete endpoints
+    
+    await db.collection('products').updateOne(
+      { _id: new ObjectId(id) },
+      { $set: updateData }
+    );
+    
+    // Log audit trail
+    await logAudit(db, 'PRODUCT_UPDATED', userId, username, {
+      productId: id,
+      productName: name,
+      changes: {
+        name: oldProduct.name !== name ? { old: oldProduct.name, new: name } : undefined,
+        price: oldProduct.price !== price ? { old: oldProduct.price, new: price } : undefined,
+        quantity: oldProduct.quantity !== quantity ? { old: oldProduct.quantity, new: quantity } : undefined,
+        costPrice: oldProduct.costPrice !== costPrice ? { old: oldProduct.costPrice, new: costPrice } : undefined
+      }
+    });
+    
+    res.json({ success: true });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
  * DELETE /api/products/:id
- * Delete a product and its associated photo
+ * Delete a product and ALL its associated photos
  */
 router.delete('/:id', async (req, res) => {
   try {
@@ -177,8 +247,27 @@ router.delete('/:id', async (req, res) => {
     // Get product before deleting
     const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
     
-    // Delete product photo if exists
-    if (product?.photo) {
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Delete all photos from photos array
+    if (product.photos && Array.isArray(product.photos)) {
+      for (const photo of product.photos) {
+        try {
+          if (photo.storage === 'db' && photo.dbId) {
+            await deletePhotoFromDatabase(db, 'product_images', photo.dbId);
+          } else if (photo.storage === 'fs' && photo.filename) {
+            await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', photo.filename));
+          }
+        } catch (err) {
+          logger.warn(`Failed to delete photo ${photo.id}:`, err.message);
+        }
+      }
+    }
+    
+    // Delete legacy single photo if exists (backward compatibility)
+    if (product.photo) {
       try {
         if (product.photoStorage === 'db' || product.photoDbId) {
           const photoId = product.photoDbId || String(product.photo).replace(/^db:/, '');
@@ -188,10 +277,11 @@ router.delete('/:id', async (req, res) => {
           if (filename) await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', filename));
         }
       } catch (err) {
-        logger.warn('Failed to delete product photo:', err.message);
+        logger.warn('Failed to delete legacy product photo:', err.message);
       }
     }
     
+    // Delete the product
     await db.collection('products').deleteOne({ _id: new ObjectId(id) });
     
     // Log audit trail
@@ -199,7 +289,8 @@ router.delete('/:id', async (req, res) => {
       productId: id,
       productName: product?.name || 'Unknown',
       quantity: product?.quantity || 0,
-      price: product?.price || 0
+      price: product?.price || 0,
+      photosDeleted: (product.photos || []).length
     });
     
     res.json({ success: true });
@@ -308,24 +399,13 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
       return res.status(404).json({ error: 'Product not found' });
     }
     
-    // Delete old photo if exists (support both DB-backed and filesystem-backed)
-    if (product.photo) {
-      try {
-        if (product.photoStorage === 'db' || product.photoDbId) {
-          const photoId = product.photoDbId || String(product.photo).replace(/^db:/, '');
-          if (photoId) await deletePhotoFromDatabase(db, 'product_images', photoId);
-        } else {
-          const filename = product.photoFilename || (product.photo && path.basename(product.photo));
-          if (filename) await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', filename));
-        }
-      } catch (err) {
-        logger.warn('Failed to delete old photo:', err.message);
-      }
-    }
+    // DO NOT delete old photos - we're adding to the array, not replacing
+    // This ensures images are NEVER deleted automatically
     
     // Store relative photo URL - client will construct full URL using its API base
     // Add timestamp for cache-busting - ensures all users see updated photos immediately
-    let photoUrl = `/api/products/${id}/photo?t=${Date.now()}`;
+    let photoUrl = `/api/products/${id}/photo/${Date.now()}`;  // Unique URL for each photo
+    let photoId = null;
 
     // Default photo storage: DB unless explicitly requested 'fs'
     const storageMode = String(req.query.storage || '').toLowerCase();
@@ -333,7 +413,7 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     
     if (useDbStorage) {
       // Store in database
-      const photoId = await savePhotoToDatabase(
+      photoId = await savePhotoToDatabase(
         db, 
         'product_images', 
         id, 
@@ -342,15 +422,24 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
         req.file.originalname || req.file.filename
       );
 
-      // Update product document
+      // ADD to photos array (never replace existing photos)
       await db.collection('products').updateOne(
         { _id: new ObjectId(id) },
         {
+          $push: {
+            photos: {
+              id: photoId,
+              url: photoUrl,
+              storage: 'db',
+              dbId: photoId,
+              filename: req.file.originalname || req.file.filename,
+              uploadedAt: new Date(),
+              uploadedBy: userId || null,
+              uploadedByUsername: username || 'Unknown'
+            }
+          },
           $set: {
-            photo: photoUrl,
-            photoStorage: 'db',
-            photoDbId: photoId,
-            photoUpdatedAt: new Date(),
+            photo: photoUrl, // Keep legacy field updated for backward compatibility
             lastModifiedBy: userId || null,
             lastModifiedByUsername: username || 'Unknown',
             lastModified: new Date()
@@ -363,15 +452,25 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
       const filename = `${id}-${Date.now()}${path.extname(req.file.originalname)}`;
       const filePath = path.join(__dirname, '..', 'uploads', 'products', filename);
       await fs.writeFile(filePath, req.file.buffer);
+      photoId = filename;
       
+      // ADD to photos array (never replace existing photos)
       await db.collection('products').updateOne(
         { _id: new ObjectId(id) },
         {
+          $push: {
+            photos: {
+              id: filename,
+              url: photoUrl,
+              storage: 'fs',
+              filename: filename,
+              uploadedAt: new Date(),
+              uploadedBy: userId || null,
+              uploadedByUsername: username || 'Unknown'
+            }
+          },
           $set: {
-            photo: photoUrl,
-            photoStorage: 'fs',
-            photoFilename: filename,
-            photoUpdatedAt: new Date(),
+            photo: photoUrl, // Keep legacy field updated for backward compatibility
             lastModifiedBy: userId || null,
             lastModifiedByUsername: username || 'Unknown',
             lastModified: new Date()
@@ -442,8 +541,56 @@ router.get('/:id/photo', async (req, res) => {
 });
 
 /**
+ * GET /api/products/:id/photo/:photoId
+ * Serve a specific product photo by ID from photos array
+ */
+router.get('/:id/photo/:photoId', async (req, res) => {
+  try {
+    const { id, photoId } = req.params;
+    const db = getDB();
+    const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
+
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // Find the specific photo in the photos array
+    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId);
+    
+    if (!photo) {
+      // Fallback to legacy single photo for backward compatibility
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+
+    // If DB-backed image
+    if (photo.storage === 'db' && photo.dbId) {
+      const photoData = await getPhotoFromDatabase(db, 'product_images', photo.dbId);
+      if (!photoData) return res.status(404).json({ error: 'Image data not found' });
+
+      res.setHeader('Content-Type', photoData.contentType);
+      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+      return res.send(photoData.data);
+    }
+
+    // Filesystem-backed image
+    if (photo.storage === 'fs' && photo.filename) {
+      const imgPath = path.join(__dirname, '..', 'uploads', 'products', photo.filename);
+      return res.sendFile(imgPath, err => {
+        if (err) {
+          logger.warn('Failed to send image file:', err.message);
+          res.status(404).json({ error: 'Image not found' });
+        }
+      });
+    }
+
+    res.status(404).json({ error: 'Photo not found' });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
  * DELETE /api/products/:id/photo
- * Delete product photo
+ * Delete product photo (legacy endpoint - deletes all photos)
  */
 router.delete('/:id/photo', async (req, res) => {
   try {
@@ -500,6 +647,84 @@ router.delete('/:id/photo', async (req, res) => {
     });
     
     res.json({ success: true, message: 'Product photo deleted successfully' });
+  } catch (e) {
+    logger.error(e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * DELETE /api/products/:id/photo/:photoId
+ * Delete a specific photo from product's photos array
+ * REQUIRES: confirmed=true query parameter to prevent accidental deletion
+ */
+router.delete('/:id/photo/:photoId', async (req, res) => {
+  try {
+    const { id, photoId } = req.params;
+    const { userId, username, confirmed } = req.query;
+    
+    // STRICT DELETION RULE: Require explicit confirmation
+    if (confirmed !== 'true') {
+      return res.status(400).json({ 
+        error: 'Photo deletion requires explicit confirmation',
+        message: 'Please confirm deletion by adding ?confirmed=true to the request'
+      });
+    }
+    
+    const db = getDB();
+    const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
+    
+    if (!product) {
+      return res.status(404).json({ error: 'Product not found' });
+    }
+    
+    // Find the photo to delete
+    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId);
+    
+    if (!photo) {
+      return res.status(404).json({ error: 'Photo not found' });
+    }
+    
+    // Delete the actual file/data
+    try {
+      if (photo.storage === 'db' && photo.dbId) {
+        await deletePhotoFromDatabase(db, 'product_images', photo.dbId);
+      } else if (photo.storage === 'fs' && photo.filename) {
+        await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', photo.filename));
+      }
+    } catch (err) {
+      logger.warn('Failed to delete photo file/data:', err.message);
+      // Continue with removal from array even if file deletion fails
+    }
+    
+    // Remove photo from photos array
+    await db.collection('products').updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $pull: { 
+          photos: { id: photoId }
+        },
+        $set: {
+          lastModifiedBy: userId || null,
+          lastModifiedByUsername: username || 'Unknown',
+          lastModified: new Date()
+        }
+      }
+    );
+    
+    // Log audit trail
+    await logAudit(db, 'PRODUCT_PHOTO_DELETED', userId, username, {
+      productId: id,
+      productName: product.name,
+      photoId: photoId,
+      filename: photo.filename || 'unknown'
+    });
+    
+    res.json({ 
+      success: true, 
+      message: 'Photo deleted successfully',
+      photoId: photoId
+    });
   } catch (e) {
     logger.error(e);
     res.status(500).json({ error: e.message });

@@ -3,7 +3,7 @@
  * API calls for product management
  */
 
-import { API, apiGet, apiPost, apiPatch, apiDelete, apiUpload } from '../utils/api'
+import { API, apiGet, apiPost, apiPatch, apiPut, apiDelete, apiUpload } from '../utils/api'
 
 /**
  * Fetch all products
@@ -31,10 +31,11 @@ export const addProduct = async (productData, userId, username) => {
 }
 
 /**
- * Update product
+ * Update product (full update - preserves photos)
+ * Uses PUT to update all product fields except photos
  */
 export const updateProduct = async (productId, updates, userId, username) => {
-  return await apiPatch(`/api/products/${productId}`, {
+  return await apiPut(`/api/products/${productId}`, {
     ...updates,
     userId,
     username
