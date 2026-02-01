@@ -58,6 +58,7 @@ export default function App() {
       timeZone: 'Asia/Kolkata' 
     }).format(now);
   });
+  const [recentActivity, setRecentActivity] = useState([]);
 
   // Custom hooks
   const { 
@@ -147,11 +148,92 @@ Esc: Close modals/dialogs`;
     trackPageView('Inventory Management App');
   }, []);
 
+  // Fetch recent activity when authenticated or when tab changes to dashboard
+  useEffect(() => {
+    if (isAuthenticated && (tab === 'dashboard' || tab === 'pos')) {
+      fetchRecentActivity();
+    }
+  }, [isAuthenticated, tab]);
+
   // Track tab changes
   const handleTabChange = (newTab) => {
     setTab(newTab);
     trackEvent('navigation', `tab_${newTab}`);
     trackPageView(`${newTab} Tab`);
+  };
+
+  // Fetch recent activity from audit logs
+  const fetchRecentActivity = async () => {
+    try {
+      const response = await fetch(API('/api/audit-logs?limit=10'));
+      if (response.ok) {
+        const data = await response.json();
+        const logs = data.logs || data || [];
+        
+        // Format activities for display
+        const activities = logs.map(log => {
+          const timeAgo = getTimeAgo(new Date(log.timestamp));
+          let text = '';
+          
+          switch (log.action) {
+            case 'PRODUCT_ADDED':
+              text = `Added product "${log.details?.productName || 'Unknown'}"`;
+              break;
+            case 'PRODUCT_UPDATED':
+              text = `Updated product "${log.details?.productName || 'Unknown'}"`;
+              break;
+            case 'PRODUCT_DELETED':
+              text = `Deleted product "${log.details?.productName || 'Unknown'}"`;
+              break;
+            case 'PRODUCT_STOCK_UPDATED':
+              text = `Updated stock for "${log.details?.productName || 'Unknown'}"`;
+              break;
+            case 'SALE_COMPLETED':
+            case 'INVOICE_CREATED':
+              text = `Completed sale - ${log.details?.total ? `₹${log.details.total}` : 'N/A'}`;
+              break;
+            case 'CUSTOMER_ADDED':
+              text = `Added customer "${log.details?.customerName || 'Unknown'}"`;
+              break;
+            case 'CUSTOMER_UPDATED':
+              text = `Updated customer "${log.details?.customerName || 'Unknown'}"`;
+              break;
+            case 'USER_LOGIN':
+              text = `${log.username} logged in`;
+              break;
+            case 'USER_REGISTERED':
+              text = `New user registered: ${log.username}`;
+              break;
+            default:
+              text = log.action.replace(/_/g, ' ').toLowerCase();
+          }
+          
+          return {
+            text,
+            time: timeAgo,
+            timestamp: log.timestamp
+          };
+        });
+        
+        setRecentActivity(activities);
+      }
+    } catch (error) {
+      console.error('Error fetching recent activity:', error);
+    }
+  };
+
+  // Helper function to calculate time ago
+  const getTimeAgo = (date) => {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    
+    if (seconds < 60) return 'Just now';
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    if (days < 7) return `${days}d ago`;
+    return date.toLocaleDateString();
   };
 
   // Show notification helper
@@ -170,6 +252,7 @@ Esc: Close modals/dialogs`;
         selectCustomer(null);
         await fetchProducts();
         await fetchInvoices(true);
+        await fetchRecentActivity(); // Refresh activity after sale
         trackEvent('sale_completed', 'transaction', `Bill-${result.invoice?.id}`, billData.total);
         return { success: true, invoice: result.invoice };
       } else {
@@ -330,7 +413,7 @@ Esc: Close modals/dialogs`;
         return (
           <Dashboard 
             stats={stats}
-            recentActivity={[]}
+            recentActivity={recentActivity}
             lowStockProducts={lowStockProducts}
             onNavigate={handleTabChange}
             onAddProduct={() => {}}
