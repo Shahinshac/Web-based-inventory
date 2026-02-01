@@ -209,7 +209,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
   height: 100vh;
   background: var(--bg, #f8f9fa);
   color: var(--text, #0f172a);
-  animation: fadeIn 0.4s ease-out;
+  animation: fadeIn 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   visibility: visible !important;
   opacity: 1 !important;
   overflow: hidden;
@@ -238,7 +238,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
 
 @keyframes slideUp {
   from {
-    transform: translateY(10px);
+    transform: translateY(20px);
     opacity: 0;
   }
   to {
@@ -249,7 +249,7 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
 
 @keyframes scaleIn {
   from {
-    transform: scale(0.95);
+    transform: scale(0.92);
     opacity: 0;
   }
   to {
@@ -274,7 +274,7 @@ header {
   z-index: 1000;
   justify-content: space-between;
   padding: 0 32px;
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 .header-left {
@@ -400,7 +400,7 @@ header {
   min-width: 20px;
   text-align: center;
   box-shadow: var(--shadow);
-  animation: scaleIn 0.2s ease-out;
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .header-user {
@@ -701,7 +701,7 @@ header {
   overflow-x: hidden;
   background: #f8f9fa;
   padding: 24px;
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.26, 0.64, 1);
   width: 100%;
   min-width: 0;
 }
@@ -1512,16 +1512,14 @@ html { background: var(--bg, #ffffff); }
   .sidebar { display: none !important; position: absolute; left: -9999px; height: auto; }
 }
 
-@keyframes slideUp {
-  from { transform: translateY(30px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-}
+/* Keyframe defined globally at top of file */
 
 .pos {
   display: flex;
   gap: 25px;
   margin-top: 20px;
   align-items: stretch;
+  animation: slideUp 0.5s cubic-bezier(0.34, 1.26, 0.64, 1);
 }
 
 .left {
@@ -1530,7 +1528,7 @@ html { background: var(--bg, #ffffff); }
   padding: 24px;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
-  animation: scaleIn 0.5s ease-out;
+  animation: scaleIn 0.6s cubic-bezier(0.34, 1.26, 0.64, 1);
   min-height: 500px;
   border: 1px solid rgba(226, 232, 240, 0.6);
   /* let left column shrink on smaller widths without causing overflow */
@@ -1556,7 +1554,7 @@ html { background: var(--bg, #ffffff); }
   padding: 24px;
   border-radius: 16px;
   box-shadow: 0 8px 24px rgba(0,0,0,0.06), 0 2px 6px rgba(0,0,0,0.04);
-  animation: scaleIn 0.5s ease-out 0.1s;
+  animation: scaleIn 0.6s cubic-bezier(0.34, 1.26, 0.64, 1) 0.1s;
   animation-fill-mode: backwards;
   display: flex;
   flex-direction: column;
@@ -1711,7 +1709,7 @@ h2 {
   border-radius: 12px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   cursor: pointer;
-  animation: fadeInUp 0.5s ease-out;
+  animation: fadeInUp 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border: 1px solid rgba(226, 232, 240, 0.6);
   display: flex;
   flex-direction: column;
@@ -1850,7 +1848,7 @@ h2 {
   margin: 0 0 12px 0;
   border-radius: 10px;
   border-left: 4px solid var(--accent-primary);
-  animation: slideInRight 0.3s ease-out;
+  animation: slideInRight 0.4s cubic-bezier(0.34, 1.26, 0.64, 1);
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
   font-size: 13px;
@@ -2595,7 +2593,7 @@ ul:not(.products):not(.cart) li:hover {
   max-width: 480px;
   position: relative;
   z-index: 1;
-  animation: slideUp 0.5s ease-out;
+  animation: slideUp 0.6s cubic-bezier(0.34, 1.26, 0.64, 1);
 }
 
 /* Responsive login container */
@@ -7367,13 +7365,13 @@ textarea:focus-visible {
   overflow: hidden;
   position: relative;
   z-index: 1;
-  animation: slideUpFade 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: slideUpFade 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 }
 
 @keyframes slideUpFade {
   from {
     opacity: 0;
-    transform: translateY(40px) scale(0.95);
+    transform: translateY(30px) scale(0.96);
   }
   to {
     opacity: 1;
@@ -10550,19 +10548,10 @@ button {
   max-width: 420px;
   max-height: 90vh;
   overflow-y: auto;
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.4s cubic-bezier(0.34, 1.26, 0.64, 1);
 }
 
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
+/* Keyframe defined globally at top of file */
 
 .modal-header {
   display: flex;
@@ -13368,16 +13357,7 @@ button {
   }
 }
 
-@keyframes slideUp {
-  from {
-    transform: translateY(20px);
-    opacity: 0;
-  }
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
+/* Keyframe defined globally at top of file */
 
 /* Responsive */
 @media (max-width: 768px) {

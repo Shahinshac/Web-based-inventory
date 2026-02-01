@@ -512,7 +512,8 @@ router.get('/database-stats', async (req, res) => {
  * Get audit logs (Admin Only)
  * Supports pagination, date range filtering, and action type filtering
  */
-router.get('/audit-logs', async (req, res) => {
+const { authenticateToken } = require('../middleware/auth');
+router.get('/audit-logs', authenticateToken, async (req, res) => {
   try {
     const db = getDB();
     const limit = Math.min(parseInt(req.query.limit) || 50, 500); // Max 500 logs

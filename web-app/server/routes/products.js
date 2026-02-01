@@ -402,14 +402,12 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     // DO NOT delete old photos - we're adding to the array, not replacing
     // This ensures images are NEVER deleted automatically
     
-    // Store relative photo URL - client will construct full URL using its API base
-    // Add timestamp for cache-busting - ensures all users see updated photos immediately
-    let photoUrl = `/api/products/${id}/photo/${Date.now()}`;  // Unique URL for each photo
-    let photoId = null;
-
     // Default photo storage: DB unless explicitly requested 'fs'
     const storageMode = String(req.query.storage || '').toLowerCase();
     const useDbStorage = (storageMode !== 'fs');
+    
+    let photoId = null;
+    let photoUrl = null;
     
     if (useDbStorage) {
       // Store in database
@@ -421,6 +419,9 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
         req.file.mimetype,
         req.file.originalname || req.file.filename
       );
+
+      // Store relative photo URL with the actual photoId for retrieval
+      photoUrl = `/api/products/${id}/photo/${photoId}`;
 
       // ADD to photos array (never replace existing photos)
       await db.collection('products').updateOne(
