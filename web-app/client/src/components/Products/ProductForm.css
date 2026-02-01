@@ -1,5 +1,4 @@
 .product-form-modal .modal-body {
-  /* Allow internal scrolling on small screens so header/footer remain visible */
   overflow-y: auto;
 }
 
@@ -10,7 +9,280 @@
   z-index: 2;
 }
 
-/* Helpful to ensure product modal can expand on smaller screens */
 .product-form-modal .modal-content {
+  max-width: 680px;
   max-height: calc(100vh - 40px);
+}
+
+/* Product Form Layout */
+.product-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 4px;
+}
+
+/* Form Row for side-by-side inputs */
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 560px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Input spacing within sections */
+.product-form .form-group {
+  margin-bottom: 0;
+}
+
+.product-form .form-group + .form-group {
+  margin-top: 16px;
+}
+
+/* Form Sections */
+.form-section {
+  padding: 24px 20px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.form-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Section Color Variants */
+.form-section.basic {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+}
+
+.form-section.basic .form-section-bar {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+}
+
+.form-section.basic .form-section-icon {
+  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+}
+
+.form-section.pricing {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.form-section.pricing .form-section-bar {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.form-section.pricing .form-section-icon {
+  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+}
+
+.form-section.inventory {
+  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+}
+
+.form-section.inventory .form-section-bar {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.form-section.inventory .form-section-icon {
+  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+}
+
+.form-section.tracking {
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+}
+
+.form-section.tracking .form-section-bar {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+}
+
+.form-section.tracking .form-section-icon {
+  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+}
+
+/* Customer Form Section Variants */
+.form-section.contact {
+  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+}
+
+.form-section.contact .form-section-bar {
+  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+}
+
+.form-section.contact .form-section-icon {
+  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+}
+
+.form-section.address {
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+}
+
+.form-section.address .form-section-bar {
+  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.form-section.address .form-section-icon {
+  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.form-section.business {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+}
+
+.form-section.business .form-section-bar {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+
+.form-section.business .form-section-icon {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+
+/* Section Bar (top accent line) */
+.form-section-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Section Header */
+.form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.form-section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.form-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* Info Boxes (Profit/Loss, Stock Status) */
+.info-box {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border: 2px solid;
+}
+
+.info-box.profit {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+.info-box.loss {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.info-box.in-stock {
+  background: rgba(16, 185, 129, 0.1);
+  border-color: #10b981;
+}
+
+.info-box.low-stock {
+  background: rgba(245, 158, 11, 0.1);
+  border-color: #f59e0b;
+}
+
+.info-box.out-of-stock {
+  background: rgba(239, 68, 68, 0.1);
+  border-color: #ef4444;
+}
+
+.info-box-icon {
+  font-size: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.info-box-content {
+  flex: 1;
+}
+
+.info-box-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.info-box-subtitle {
+  font-size: 12px;
+  color: #64748b;
+  margin: 0;
+}
+
+.info-box-value {
+  text-align: right;
+}
+
+.info-box-value .amount {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.info-box-value .percent {
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Form Actions */
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .form-section {
+    padding: 16px 14px;
+  }
+  
+  .form-section-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .form-section-title {
+    font-size: 14px;
+  }
+  
+  .form-actions {
+    flex-direction: column;
+  }
+  
+  .form-actions button {
+    width: 100%;
+  }
 }

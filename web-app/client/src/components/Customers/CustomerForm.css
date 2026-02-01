@@ -1,0 +1,171 @@
+.customer-form-modal .modal-body {
+  overflow-y: auto;
+}
+
+.customer-form-modal .modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: var(--bg, #fff);
+  z-index: 2;
+}
+
+.customer-form-modal .modal-content {
+  max-width: 620px;
+  max-height: calc(100vh - 40px);
+}
+
+/* Customer Form Layout */
+.customer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+  padding: 4px;
+}
+
+/* Form Row for side-by-side inputs */
+.customer-form .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 560px) {
+  .customer-form .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Input spacer for consecutive inputs */
+.customer-form .input-spacer {
+  margin-top: 16px;
+}
+
+/* Input spacing within sections */
+.customer-form .form-group {
+  margin-bottom: 0;
+}
+
+.customer-form .form-group + .form-group {
+  margin-top: 16px;
+}
+
+/* Form Sections - inheriting from ProductForm.css */
+.customer-form .form-section {
+  padding: 24px 20px;
+  border-radius: 12px;
+  border: 2px solid #e2e8f0;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.customer-form .form-section:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Section Color Variants for Customer Form */
+.customer-form .form-section.contact {
+  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+}
+
+.customer-form .form-section.contact .form-section-bar {
+  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+}
+
+.customer-form .form-section.contact .form-section-icon {
+  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+}
+
+.customer-form .form-section.address {
+  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+}
+
+.customer-form .form-section.address .form-section-bar {
+  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.customer-form .form-section.address .form-section-icon {
+  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+}
+
+.customer-form .form-section.business {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+}
+
+.customer-form .form-section.business .form-section-bar {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+
+.customer-form .form-section.business .form-section-icon {
+  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+}
+
+/* Section Bar (top accent line) */
+.customer-form .form-section-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 12px 12px 0 0;
+}
+
+/* Section Header */
+.customer-form .form-section-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.customer-form .form-section-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.customer-form .form-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0;
+}
+
+/* Form Actions */
+.customer-form .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  padding-top: 20px;
+  border-top: 2px solid #e2e8f0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .customer-form .form-section {
+    padding: 16px 14px;
+  }
+  
+  .customer-form .form-section-icon {
+    width: 36px;
+    height: 36px;
+  }
+  
+  .customer-form .form-section-title {
+    font-size: 14px;
+  }
+  
+  .customer-form .form-actions {
+    flex-direction: column;
+  }
+  
+  .customer-form .form-actions button {
+    width: 100%;
+  }
+}

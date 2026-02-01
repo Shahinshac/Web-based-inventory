@@ -80,41 +80,12 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
   // Stock status
   const getStockStatus = () => {
-    if (formData.quantity === 0) return { text: 'Out of Stock', color: '#ef4444', icon: '🔴' };
-    if (formData.quantity < formData.minStock) return { text: 'Low Stock', color: '#f59e0b', icon: '🟡' };
-    return { text: 'In Stock', color: '#10b981', icon: '🟢' };
+    if (formData.quantity === 0) return { text: 'Out of Stock', className: 'out-of-stock', icon: '🔴' };
+    if (formData.quantity < formData.minStock) return { text: 'Low Stock', className: 'low-stock', icon: '🟡' };
+    return { text: 'In Stock', className: 'in-stock', icon: '🟢' };
   };
 
   const stockStatus = getStockStatus();
-
-  // Section styles
-  const sectionStyle = {
-    padding: '24px 20px',
-    borderRadius: '12px',
-    border: '2px solid #e2e8f0',
-    position: 'relative',
-    transition: 'all 0.2s ease'
-  };
-
-  const sectionHeaderStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '12px',
-    marginBottom: '16px',
-    paddingBottom: '12px',
-    borderBottom: '2px solid #e2e8f0'
-  };
-
-  const iconWrapperStyle = (bgGradient) => ({
-    width: '40px',
-    height: '40px',
-    borderRadius: '10px',
-    background: bgGradient,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0
-  });
 
   return (
     <div className="product-form-modal">
@@ -124,28 +95,27 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         title={product ? '✏️ Edit Product' : '✨ Add New Product'}
         size="xl"
       >
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '32px', padding: '4px' }}>
-        
-        {/* Section 1: Basic Information */}
-        <div style={{ ...sectionStyle, background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(135deg, #2563eb 0%, #3b82f6 100%)', borderRadius: '12px 12px 0 0' }} />
-          <div style={sectionHeaderStyle}>
-            <div style={iconWrapperStyle('linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)')}>
-              <Icon name="package" size={20} color="white" />
+        <form onSubmit={handleSubmit} className="product-form">
+          
+          {/* Section 1: Basic Information */}
+          <div className="form-section basic">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="package" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Basic Information</h3>
             </div>
-            <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Basic Information</span>
-          </div>
-          
-          <Input
-            label="Product Name"
-            value={formData.name}
-            onChange={(e) => handleChange('name', e.target.value)}
-            placeholder="Enter product name"
-            required
-            error={errors.name}
-          />
-          
-          <div style={{ marginTop: '20px' }}>
+            
+            <Input
+              label="Product Name"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder="Enter product name"
+              required
+              error={errors.name}
+            />
+            
             <Input
               label="Category"
               value={formData.category}
@@ -153,51 +123,169 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               placeholder="Electronics, Accessories, etc."
             />
           </div>
-        </div>
 
-        {/* Section 2: Pricing & Profit */}
-        <div style={{ ...sectionStyle, background: 'linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%)' }}>
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '3px', background: 'linear-gradient(135deg, #10b981 0%, #34d399 100%)', borderRadius: '12px 12px 0 0' }} />
-          <div style={sectionHeaderStyle}>
-            <div style={iconWrapperStyle('linear-gradient(135deg, #10b981 0%, #34d399 100%)')}>
-              <Icon name="rupee" size={20} color="white" />
+          {/* Section 2: Pricing & Profit */}
+          <div className="form-section pricing">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="rupee" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Pricing & Profit</h3>
             </div>
-            <span style={{ fontSize: '16px', fontWeight: '700', color: '#0f172a' }}>Pricing & Profit</span>
+            
+            <div className="form-row">
+              <Input
+                label="Selling Price (₹)"
+                type="number"
+                value={formData.price}
+                onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+                error={errors.price}
+              />
+
+              <Input
+                label="Cost Price (₹)"
+                type="number"
+                value={formData.costPrice}
+                onChange={(e) => handleChange('costPrice', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+              />
+            </div>
+
+            {formData.price > 0 && formData.costPrice > 0 && (
+              <div className={`info-box ${profit >= 0 ? 'profit' : 'loss'}`}>
+                <span className="info-box-icon">
+                  <Icon name="trending-up" size={20} color={profit >= 0 ? '#10b981' : '#ef4444'} />
+                </span>
+                <div className="info-box-content">
+                  <p className="info-box-title" style={{ color: profit >= 0 ? '#059669' : '#dc2626' }}>
+                    {profit >= 0 ? 'Profit' : 'Loss'} per unit
+                  </p>
+                </div>
+                <div className="info-box-value">
+                  <div className="amount" style={{ color: profit >= 0 ? '#059669' : '#dc2626' }}>
+                    ₹{Math.abs(profit).toFixed(2)}
+                  </div>
+                  <div className="percent" style={{ color: profit >= 0 ? '#059669' : '#dc2626' }}>
+                    ({profitPercentage > 0 ? '+' : ''}{profitPercentage}%)
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
-          
-          <div className="form-row">
-            <Input
-              label="Selling Price (₹)"
-              type="number"
-              value={formData.price}
-              onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
-              required
-              error={errors.price}
-            />
+
+          {/* Section 3: Inventory Management */}
+          <div className="form-section inventory">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="layers" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Inventory Management</h3>
+            </div>
+            
+            <div className="form-row">
+              <Input
+                label="Current Quantity"
+                type="number"
+                value={formData.quantity}
+                onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 0)}
+                placeholder="0"
+                min="0"
+                required
+                error={errors.quantity}
+              />
+
+              <Input
+                label="Min Stock Alert"
+                type="number"
+                value={formData.minStock}
+                onChange={(e) => handleChange('minStock', parseInt(e.target.value) || 0)}
+                placeholder="10"
+                min="0"
+                error={errors.minStock}
+              />
+            </div>
+
+            {formData.quantity >= 0 && (
+              <div className={`info-box ${stockStatus.className}`}>
+                <span className="info-box-icon">{stockStatus.icon}</span>
+                <div className="info-box-content">
+                  <p className="info-box-title" style={{ color: stockStatus.className === 'in-stock' ? '#10b981' : stockStatus.className === 'low-stock' ? '#f59e0b' : '#ef4444' }}>
+                    {stockStatus.text}
+                  </p>
+                  <p className="info-box-subtitle">
+                    {formData.quantity} {formData.quantity === 1 ? 'unit' : 'units'} available
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Section 4: Product Tracking */}
+          <div className="form-section tracking">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="file-text" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Product Tracking</h3>
+            </div>
+            
+            <div className="form-row">
+              <Input
+                label="Serial Number"
+                value={formData.serialNo}
+                onChange={(e) => handleChange('serialNo', e.target.value)}
+                placeholder="Optional"
+              />
+
+              <Input
+                label="Barcode"
+                value={formData.barcode}
+                onChange={(e) => handleChange('barcode', e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
 
             <Input
-              label="Cost Price (₹)"
-              type="number"
-              value={formData.costPrice}
-              onChange={(e) => handleChange('costPrice', parseFloat(e.target.value) || 0)}
-              placeholder="0.00"
-              min="0"
-              step="0.01"
+              label="HSN Code"
+              value={formData.hsnCode}
+              onChange={(e) => handleChange('hsnCode', e.target.value)}
+              placeholder="9999"
+              helperText="Harmonized System of Nomenclature code for GST"
             />
           </div>
 
-          {formData.price > 0 && formData.costPrice > 0 && (
-            <div style={{ 
-              marginTop: '16px', 
-              padding: '16px', 
-              background: profit >= 0 ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)', 
-              borderRadius: '8px',
-              border: `2px solid ${profit >= 0 ? '#10b981' : '#ef4444'}`,
-              display: 'flex',
-              alignItems: 'center',
+          {/* Action Buttons */}
+          <div className="form-actions">
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={onClose}
+              icon="x"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary"
+              icon="check"
+            >
+              {product ? 'Update Product' : 'Add Product'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
+  );
+}
               justifyContent: 'space-between'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

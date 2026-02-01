@@ -151,6 +151,16 @@ export default function AuditLogs() {
     return 'var(--color-gray, #6b7280)';
   };
 
+  // Helper function to get a semi-transparent background color
+  const getActionBgColor = (action) => {
+    if (action?.includes('DELETED') || action?.includes('CLEAR')) return 'rgba(239, 68, 68, 0.15)';
+    if (action?.includes('ADDED') || action?.includes('COMPLETED') || action?.includes('CREATED')) return 'rgba(34, 197, 94, 0.15)';
+    if (action?.includes('UPDATED') || action?.includes('APPROVED') || action?.includes('CHANGED')) return 'rgba(59, 130, 246, 0.15)';
+    if (action?.includes('LOGIN') || action?.includes('LOGOUT')) return 'rgba(139, 92, 246, 0.15)';
+    if (action?.includes('EXPENSE')) return 'rgba(245, 158, 11, 0.15)';
+    return 'rgba(107, 114, 128, 0.15)';
+  };
+
   const filteredLogs = logs.filter(log => {
     if (!searchQuery) return true;
     const query = searchQuery.toLowerCase();
@@ -322,7 +332,7 @@ export default function AuditLogs() {
                         <div 
                           className="action-icon" 
                           style={{ 
-                            background: `color-mix(in srgb, ${getActionColor(log.action)} 15%, transparent)`,
+                            background: getActionBgColor(log.action),
                             color: getActionColor(log.action)
                           }}
                         >

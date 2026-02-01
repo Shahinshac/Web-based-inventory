@@ -4,6 +4,7 @@ import UserApproval from './UserApproval';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
+import './Users.css';
 
 export default function UsersList({ 
   users, 

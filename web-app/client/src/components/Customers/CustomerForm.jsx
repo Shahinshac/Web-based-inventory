@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../Common/Modal';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
+import Icon from '../../Icon';
+import './CustomerForm.css';
 
 export default function CustomerForm({ customer, onSubmit, onClose }) {
   const [formData, setFormData] = useState({
@@ -63,83 +65,130 @@ export default function CustomerForm({ customer, onSubmit, onClose }) {
 
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error for this field
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: undefined }));
     }
   };
 
   return (
-    <Modal 
-      isOpen={true}
-      onClose={onClose}
-      title={customer ? 'Edit Customer' : 'Add New Customer'}
-      size="xl"
-    >
-      <form onSubmit={handleSubmit} className="customer-form">
-        <Input
-          label="Customer Name"
-          value={formData.name}
-          onChange={(e) => handleChange('name', e.target.value)}
-          placeholder="Enter customer name"
-          required
-          error={errors.name}
-        />
+    <div className="customer-form-modal">
+      <Modal 
+        isOpen={true}
+        onClose={onClose}
+        title={customer ? '✏️ Edit Customer' : '👤 Add New Customer'}
+        size="xl"
+      >
+        <form onSubmit={handleSubmit} className="customer-form">
+          
+          {/* Section 1: Contact Information */}
+          <div className="form-section contact">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="user" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Contact Information</h3>
+            </div>
+            
+            <Input
+              label="Customer Name"
+              value={formData.name}
+              onChange={(e) => handleChange('name', e.target.value)}
+              placeholder="Enter customer name"
+              required
+              error={errors.name}
+            />
 
-        <Input
-          label="Phone Number"
-          type="tel"
-          value={formData.phone}
-          onChange={(e) => handleChange('phone', e.target.value)}
-          placeholder="10-digit phone number"
-          required
-          error={errors.phone}
-        />
+            <div className="input-spacer">
+              <Input
+                label="Phone Number"
+                type="tel"
+                value={formData.phone}
+                onChange={(e) => handleChange('phone', e.target.value)}
+                placeholder="10-digit phone number"
+                required
+                error={errors.phone}
+              />
+            </div>
+          </div>
 
-        <Input
-          label="Address"
-          value={formData.address}
-          onChange={(e) => handleChange('address', e.target.value)}
-          placeholder="Street address"
-        />
+          {/* Section 2: Address Details */}
+          <div className="form-section address">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="map-pin" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Address Details</h3>
+            </div>
+            
+            <Input
+              label="Street Address"
+              value={formData.address}
+              onChange={(e) => handleChange('address', e.target.value)}
+              placeholder="Enter street address"
+            />
 
-        <div className="form-row">
-          <Input
-            label="Place/City"
-            value={formData.place}
-            onChange={(e) => handleChange('place', e.target.value)}
-            placeholder="City name"
-          />
+            <div className="form-row">
+              <Input
+                label="Place/City"
+                value={formData.place}
+                onChange={(e) => handleChange('place', e.target.value)}
+                placeholder="City name"
+              />
 
-          <Input
-            label="Pincode"
-            value={formData.pincode}
-            onChange={(e) => handleChange('pincode', e.target.value)}
-            placeholder="6-digit pincode"
-            maxLength="6"
-            error={errors.pincode}
-          />
-        </div>
+              <Input
+                label="Pincode"
+                value={formData.pincode}
+                onChange={(e) => handleChange('pincode', e.target.value)}
+                placeholder="6-digit pincode"
+                maxLength="6"
+                error={errors.pincode}
+              />
+            </div>
+          </div>
 
-        <Input
-          label="GSTIN"
-          value={formData.gstin}
-          onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())}
-          placeholder="15-character GSTIN (optional)"
-          maxLength="15"
-          error={errors.gstin}
-          helperText="Goods and Services Tax Identification Number"
-        />
+          {/* Section 3: Business Information */}
+          <div className="form-section business">
+            <div className="form-section-bar" />
+            <div className="form-section-header">
+              <div className="form-section-icon">
+                <Icon name="briefcase" size={20} color="white" />
+              </div>
+              <h3 className="form-section-title">Business Information</h3>
+            </div>
+            
+            <Input
+              label="GSTIN"
+              value={formData.gstin}
+              onChange={(e) => handleChange('gstin', e.target.value.toUpperCase())}
+              placeholder="15-character GSTIN (optional)"
+              maxLength="15"
+              error={errors.gstin}
+              helperText="Goods and Services Tax Identification Number"
+            />
+          </div>
 
-        <div className="form-actions">
-          <Button type="button" variant="secondary" size="large" onClick={onClose}>
-            Cancel
-          </Button> 
-          <Button type="submit" variant="primary" size="large">
-            {customer ? 'Update Customer' : 'Add Customer'}
-          </Button>
-        </div>
-      </form>
-    </Modal>
+          {/* Action Buttons */}
+          <div className="form-actions">
+            <Button 
+              type="button" 
+              variant="secondary" 
+              onClick={onClose}
+              icon="x"
+            >
+              Cancel
+            </Button>
+            <Button 
+              type="submit" 
+              variant="primary"
+              icon="check"
+            >
+              {customer ? 'Update Customer' : 'Add Customer'}
+            </Button>
+          </div>
+        </form>
+      </Modal>
+    </div>
   );
 }
