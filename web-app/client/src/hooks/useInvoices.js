@@ -70,7 +70,7 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
 
   const createInvoice = useCallback(async (invoiceData) => {
     try {
-      const res = await fetch(API('/api/bills'), {
+      const res = await fetch(API('/api/checkout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(invoiceData)

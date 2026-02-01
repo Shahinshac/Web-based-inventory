@@ -14,8 +14,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     hsnCode: '9999',
     minStock: 10,
     serialNo: '',
-    barcode: '',
-    category: ''
+    barcode: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -30,8 +29,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
         serialNo: product.serialNo || '',
-        barcode: product.barcode || '',
-        category: product.category || ''
+        barcode: product.barcode || ''
       });
     }
   }, [product]);
@@ -114,13 +112,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               placeholder="Enter product name"
               required
               error={errors.name}
-            />
-            
-            <Input
-              label="Category"
-              value={formData.category}
-              onChange={(e) => handleChange('category', e.target.value)}
-              placeholder="Electronics, Accessories, etc."
             />
           </div>
 

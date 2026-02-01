@@ -615,6 +615,37 @@ const Icon = ({
     );
   }
 
+  // ==================== CODE/BARCODE ICONS ====================
+
+  if (name === 'barcode') {
+    return (
+      <svg {...svgProps}>
+        <path d="M3 5v14" strokeWidth="2" />
+        <path d="M6 5v14" />
+        <path d="M9 5v14" strokeWidth="3" />
+        <path d="M13 5v14" />
+        <path d="M16 5v14" strokeWidth="2" />
+        <path d="M19 5v14" />
+        <path d="M21 5v14" strokeWidth="2" />
+      </svg>
+    );
+  }
+
+  if (name === 'qr-code' || name === 'qrcode') {
+    return (
+      <svg {...svgProps}>
+        <rect x="3" y="3" width="6" height="6" rx="1" />
+        <rect x="15" y="3" width="6" height="6" rx="1" />
+        <rect x="3" y="15" width="6" height="6" rx="1" />
+        <path d="M15 15h2v2h-2z" fill="currentColor" />
+        <path d="M19 15h2v2h-2z" fill="currentColor" />
+        <path d="M15 19h2v2h-2z" fill="currentColor" />
+        <path d="M19 19h2v2h-2z" fill="currentColor" />
+        <path d="M17 17h2v2h-2z" fill="currentColor" />
+      </svg>
+    );
+  }
+
   // Icon not found
   console.warn(`Icon "${name}" not found`);
   return null;
@@ -657,6 +688,8 @@ export const AVAILABLE_ICONS = [
   'lock',
   // Payment
   'cash', 'card', 'rupee',
+  // Code/Barcode
+  'barcode', 'qr-code', 'qrcode',
   // Brand
   'spark',
 ];

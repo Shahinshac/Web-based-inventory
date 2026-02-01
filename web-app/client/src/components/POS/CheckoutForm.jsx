@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import PaymentModeSelector from './PaymentModeSelector';
+import React, { useState, useMemo } from 'react';
 import SplitPaymentForm from './SplitPaymentForm';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
@@ -16,13 +15,15 @@ export default function CheckoutForm({
   companyInfo
 }) {
   const [discount, setDiscount] = useState(0);
+  const [showDiscount, setShowDiscount] = useState(false);
   const [paymentMode, setPaymentMode] = useState(PAYMENT_MODES.CASH);
   const [splitPayment, setSplitPayment] = useState(false);
   const [cashAmount, setCashAmount] = useState('');
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
   const [loading, setLoading] = useState(false);
-  const [checkoutError, setCheckoutError] = useState('')
+  const [checkoutError, setCheckoutError] = useState('');
+  const [customerSearch, setCustomerSearch] = useState('');
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
@@ -30,8 +31,32 @@ export default function CheckoutForm({
   const gstAmount = (afterDiscount * GST_PERCENT) / 100;
   const finalTotal = afterDiscount + gstAmount;
 
+  // Filter customers based on search
+  const filteredCustomers = useMemo(() => {
+    if (!customerSearch.trim()) return customers;
+    const search = customerSearch.toLowerCase();
+    return customers.filter(c => 
+      c.name?.toLowerCase().includes(search) || 
+      c.phone?.includes(search)
+    );
+  }, [customers, customerSearch]);
+
+  // Payment modes configuration
+  const paymentModes = [
+    { value: PAYMENT_MODES.CASH, label: 'Cash', icon: 'dollar-sign', color: '#10b981' },
+    { value: PAYMENT_MODES.UPI, label: 'UPI', icon: 'smartphone', color: '#6366f1' },
+    { value: PAYMENT_MODES.CARD, label: 'Card', icon: 'credit-card', color: '#f59e0b' },
+    { value: PAYMENT_MODES.CHEQUE, label: 'Cheque', icon: 'file-text', color: '#8b5cf6' },
+  ];
+
+  // Get customer initials
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
   const handleCheckout = async () => {
-    setCheckoutError('')
+    setCheckoutError('');
 
     if (cart.length === 0) {
       setCheckoutError('Cart is empty. Add products to proceed.')
@@ -91,11 +116,13 @@ export default function CheckoutForm({
       if (result.success) {
         // Reset form
         setDiscount(0);
+        setShowDiscount(false);
         setPaymentMode(PAYMENT_MODES.CASH);
         setSplitPayment(false);
         setCashAmount('');
         setUpiAmount('');
         setCardAmount('');
+        setCustomerSearch('');
         onSelectCustomer(null);
       }
     } finally {
@@ -104,87 +131,239 @@ export default function CheckoutForm({
   };
 
   return (
-    <div className="checkout-form">
-      <div className="checkout-section">
-        <h4 className="checkout-section-title">
-          <Icon name="user" size={18} />
-          Customer (Optional)
-        </h4>
-        {checkoutError && <div className="form-error" style={{ marginBottom: '10px' }}>{checkoutError}</div>}
-        <select
-          className="customer-select"
-          value={selectedCustomer?.id || ''}
-          onChange={(e) => {
-            const customer = customers.find(c => c.id === e.target.value);
-            onSelectCustomer(customer || null);
-          }}
-        >
-          <option value="">Walk-in Customer</option>
-          {customers.map(customer => (
-            <option key={customer.id} value={customer.id}>
-              {customer.name} - {customer.phone}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div className="checkout-section">
-        <h4 className="checkout-section-title">
-          <Icon name="percent" size={18} />
-          Discount (%)
-        </h4>
-        <input
-          type="number"
-          className="discount-input"
-          value={discount}
-          onChange={(e) => setDiscount(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-          min="0"
-          max="100"
-          step="0.1"
-          placeholder="Enter discount %"
-        />
-      </div>
-
-      <PaymentModeSelector 
-        paymentMode={paymentMode}
-        onPaymentModeChange={setPaymentMode}
-        splitPayment={splitPayment}
-        onSplitPaymentChange={setSplitPayment}
-      />
-
-      {splitPayment && (
-        <SplitPaymentForm 
-          cashAmount={cashAmount}
-          upiAmount={upiAmount}
-          cardAmount={cardAmount}
-          onCashChange={setCashAmount}
-          onUpiChange={setUpiAmount}
-          onCardChange={setCardAmount}
-          total={finalTotal}
-        />
+    <div className="checkout-form-modern">
+      {/* Error Display */}
+      {checkoutError && (
+        <div className="checkout-error-banner">
+          <Icon name="alert-circle" size={18} />
+          <span>{checkoutError}</span>
+          <button onClick={() => setCheckoutError('')}>
+            <Icon name="x" size={14} />
+          </button>
+        </div>
       )}
 
-      <div className="checkout-summary">
-        <div className="summary-row">
-          <span>Subtotal:</span>
-          <span>{formatCurrency(subtotal)}</span>
-        </div>
-        {discount > 0 && (
-          <div className="summary-row discount">
-            <span>Discount ({discount}%):</span>
-            <span>- {formatCurrency(discountAmount)}</span>
+      {/* Customer Selection - Modern Card Style */}
+      <div className="checkout-card customer-card">
+        <div className="checkout-card-header">
+          <div className="checkout-card-title">
+            <Icon name="user" size={18} />
+            <span>Customer</span>
           </div>
-        )}
-        <div className="summary-row">
-          <span>GST ({GST_PERCENT}%):</span>
-          <span>{formatCurrency(gstAmount)}</span>
+          <span className="checkout-card-badge optional">Optional</span>
         </div>
-        <div className="summary-row total">
-          <strong>Total:</strong>
-          <strong>{formatCurrency0(finalTotal)}</strong>
+        
+        <div className="customer-selector-modern">
+          {selectedCustomer ? (
+            <div className="selected-customer-card">
+              <div className="customer-avatar" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+                {getInitials(selectedCustomer.name)}
+              </div>
+              <div className="customer-details">
+                <span className="customer-name">{selectedCustomer.name}</span>
+                <span className="customer-phone">
+                  <Icon name="phone" size={12} />
+                  {selectedCustomer.phone}
+                </span>
+              </div>
+              <button 
+                className="customer-clear-btn"
+                onClick={() => {
+                  onSelectCustomer(null);
+                  setCustomerSearch('');
+                }}
+              >
+                <Icon name="x" size={16} />
+              </button>
+            </div>
+          ) : (
+            <>
+              <div className="customer-search-input">
+                <Icon name="search" size={16} />
+                <input
+                  type="text"
+                  placeholder="Search customer by name or phone..."
+                  value={customerSearch}
+                  onChange={(e) => setCustomerSearch(e.target.value)}
+                />
+                {customerSearch && (
+                  <button onClick={() => setCustomerSearch('')}>
+                    <Icon name="x" size={14} />
+                  </button>
+                )}
+              </div>
+              
+              {customerSearch && filteredCustomers.length > 0 ? (
+                <div className="customer-dropdown">
+                  {filteredCustomers.slice(0, 5).map(customer => (
+                    <button
+                      key={customer.id}
+                      className="customer-option"
+                      onClick={() => {
+                        onSelectCustomer(customer);
+                        setCustomerSearch('');
+                      }}
+                    >
+                      <div className="customer-avatar small">
+                        {getInitials(customer.name)}
+                      </div>
+                      <div className="customer-option-info">
+                        <span>{customer.name}</span>
+                        <span>{customer.phone}</span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : !customerSearch ? (
+                <div className="walk-in-badge">
+                  <Icon name="user" size={16} />
+                  <span>Walk-in Customer</span>
+                </div>
+              ) : (
+                <div className="no-customers-found">
+                  <span>No customers found</span>
+                </div>
+              )}
+            </>
+          )}
         </div>
       </div>
 
+      {/* Discount Section - Collapsible */}
+      <div className="checkout-card discount-card">
+        <button 
+          className="discount-toggle"
+          onClick={() => setShowDiscount(!showDiscount)}
+        >
+          <div className="checkout-card-title">
+            <Icon name="percent" size={18} />
+            <span>Discount</span>
+          </div>
+          <div className="discount-toggle-right">
+            {discount > 0 && (
+              <span className="discount-badge">-{discount}%</span>
+            )}
+            <Icon name={showDiscount ? 'chevron-up' : 'chevron-down'} size={18} />
+          </div>
+        </button>
+        
+        {showDiscount && (
+          <div className="discount-input-section">
+            <div className="discount-quick-btns">
+              {[5, 10, 15, 20].map(d => (
+                <button
+                  key={d}
+                  className={`discount-quick-btn ${discount === d ? 'active' : ''}`}
+                  onClick={() => setDiscount(d)}
+                >
+                  {d}%
+                </button>
+              ))}
+            </div>
+            <div className="discount-custom-input">
+              <input
+                type="number"
+                value={discount}
+                onChange={(e) => setDiscount(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
+                min="0"
+                max="100"
+                step="0.5"
+                placeholder="Custom %"
+              />
+              <span className="discount-input-suffix">%</span>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Payment Method - Modern Cards */}
+      <div className="checkout-card payment-card">
+        <div className="checkout-card-header">
+          <div className="checkout-card-title">
+            <Icon name="credit-card" size={18} />
+            <span>Payment Method</span>
+          </div>
+          <label className="split-toggle-modern">
+            <input
+              type="checkbox"
+              checked={splitPayment}
+              onChange={(e) => setSplitPayment(e.target.checked)}
+            />
+            <span className="toggle-switch"></span>
+            <span className="toggle-label">Split</span>
+          </label>
+        </div>
+
+        {!splitPayment ? (
+          <div className="payment-methods-grid">
+            {paymentModes.map(mode => (
+              <button
+                key={mode.value}
+                className={`payment-method-card ${paymentMode === mode.value ? 'active' : ''}`}
+                onClick={() => setPaymentMode(mode.value)}
+                style={{ '--accent-color': mode.color }}
+              >
+                <div className="payment-method-icon">
+                  <Icon name={mode.icon} size={22} />
+                </div>
+                <span className="payment-method-label">{mode.label}</span>
+                {paymentMode === mode.value && (
+                  <div className="payment-method-check">
+                    <Icon name="check" size={14} />
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        ) : (
+          <SplitPaymentForm 
+            cashAmount={cashAmount}
+            upiAmount={upiAmount}
+            cardAmount={cardAmount}
+            onCashChange={setCashAmount}
+            onUpiChange={setUpiAmount}
+            onCardChange={setCardAmount}
+            total={finalTotal}
+          />
+        )}
+      </div>
+
+      {/* Order Summary */}
+      <div className="checkout-card summary-card">
+        <div className="checkout-card-header">
+          <div className="checkout-card-title">
+            <Icon name="file-text" size={18} />
+            <span>Order Summary</span>
+          </div>
+        </div>
+
+        <div className="checkout-summary-modern">
+          <div className="summary-row">
+            <span>Subtotal</span>
+            <span>{formatCurrency(subtotal)}</span>
+          </div>
+          {discount > 0 && (
+            <div className="summary-row discount-row">
+              <span>
+                <Icon name="tag" size={14} />
+                Discount ({discount}%)
+              </span>
+              <span className="discount-amount">-{formatCurrency(discountAmount)}</span>
+            </div>
+          )}
+          <div className="summary-row">
+            <span>GST ({GST_PERCENT}%)</span>
+            <span>{formatCurrency(gstAmount)}</span>
+          </div>
+          <div className="summary-divider"></div>
+          <div className="summary-row total-row">
+            <strong>Total</strong>
+            <strong className="total-amount">{formatCurrency0(finalTotal)}</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Complete Sale Button */}
       <Button
         variant="primary"
         size="large"
@@ -193,12 +372,14 @@ export default function CheckoutForm({
         disabled={cart.length === 0 || loading}
         icon="check-circle"
         fullWidth
+        className="complete-sale-btn"
       >
-        Complete Sale
+        {loading ? 'Processing...' : `Complete Sale • ${formatCurrency0(finalTotal)}`}
       </Button>
 
+      {/* Offline Warning */}
       {!isOnline && (
-        <div className="checkout-warning">
+        <div className="checkout-offline-warning">
           <Icon name="wifi-off" size={16} />
           <span>Offline mode - sale will sync when online</span>
         </div>

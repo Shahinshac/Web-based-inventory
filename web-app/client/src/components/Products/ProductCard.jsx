@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
+import JsBarcode from 'jsbarcode';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
@@ -37,6 +38,85 @@ export default function ProductCard({
     console.warn('Failed to load image for product:', product.name, product.photo);
     setImageError(true);
   };
+
+  // Generate and download barcode
+  const downloadBarcode = useCallback(() => {
+    const barcodeValue = product.barcode || product.serialNo || `PROD-${product.id}`;
+    const canvas = document.createElement('canvas');
+    
+    try {
+      JsBarcode(canvas, barcodeValue, {
+        format: 'CODE128',
+        width: 2,
+        height: 80,
+        displayValue: true,
+        fontSize: 14,
+        margin: 10,
+        background: '#ffffff',
+        lineColor: '#000000',
+        text: `${product.name}\n${barcodeValue}`
+      });
+      
+      const link = document.createElement('a');
+      link.download = `${product.name.replace(/[^a-z0-9]/gi, '_')}-barcode.png`;
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Error generating barcode:', err);
+      alert('Failed to generate barcode. Please try again.');
+    }
+  }, [product]);
+
+  // Generate and download QR code
+  const downloadQRCode = useCallback(async () => {
+    const qrData = JSON.stringify({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      barcode: product.barcode || '',
+      serialNo: product.serialNo || ''
+    });
+    
+    try {
+      // Using QRCode library via dynamic import or canvas API
+      const QRCode = (await import('qrcode')).default;
+      const canvas = document.createElement('canvas');
+      
+      await QRCode.toCanvas(canvas, qrData, {
+        width: 256,
+        margin: 2,
+        color: {
+          dark: '#000000',
+          light: '#ffffff'
+        }
+      });
+      
+      // Add product name below QR code
+      const ctx = canvas.getContext('2d');
+      const originalHeight = canvas.height;
+      const newCanvas = document.createElement('canvas');
+      newCanvas.width = canvas.width;
+      newCanvas.height = originalHeight + 40;
+      const newCtx = newCanvas.getContext('2d');
+      
+      newCtx.fillStyle = '#ffffff';
+      newCtx.fillRect(0, 0, newCanvas.width, newCanvas.height);
+      newCtx.drawImage(canvas, 0, 0);
+      
+      newCtx.fillStyle = '#000000';
+      newCtx.font = 'bold 14px Arial';
+      newCtx.textAlign = 'center';
+      newCtx.fillText(product.name, newCanvas.width / 2, originalHeight + 25);
+      
+      const link = document.createElement('a');
+      link.download = `${product.name.replace(/[^a-z0-9]/gi, '_')}-qrcode.png`;
+      link.href = newCanvas.toDataURL('image/png');
+      link.click();
+    } catch (err) {
+      console.error('Error generating QR code:', err);
+      alert('Failed to generate QR code. Please try again.');
+    }
+  }, [product]);
 
   return (
     <>
@@ -172,6 +252,34 @@ export default function ProductCard({
                   <span>{formatCurrency(product.costPrice)}</span>
                 </div>
               )}
+              
+              {/* Barcode & QR Code Download Section */}
+              <div className="barcode-qr-section">
+                <div className="barcode-qr-header">
+                  <Icon name="barcode" size={16} />
+                  <span>Download Codes</span>
+                </div>
+                <div className="barcode-qr-actions">
+                  <button 
+                    className="barcode-download-btn"
+                    onClick={downloadBarcode}
+                    title="Download Barcode"
+                  >
+                    <Icon name="barcode" size={18} />
+                    <span>Barcode</span>
+                    <Icon name="download" size={14} />
+                  </button>
+                  <button 
+                    className="qrcode-download-btn"
+                    onClick={downloadQRCode}
+                    title="Download QR Code"
+                  >
+                    <Icon name="qr-code" size={18} />
+                    <span>QR Code</span>
+                    <Icon name="download" size={14} />
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>
