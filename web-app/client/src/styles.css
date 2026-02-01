@@ -34,8 +34,8 @@ html, body {
   height: auto;
 }
 
-/* Header safe layout */
-.app header { overflow: hidden; }
+/* Header safe layout - allow dropdown to overflow */
+.app header { overflow: visible; }
 
 :root {
   /* Professional Modern Theme - Light & Clean */
@@ -9206,6 +9206,7 @@ button {
   position: relative;
   display: flex;
   flex-direction: column;
+  overflow: visible;
 }
 
 .header-top {
@@ -9214,6 +9215,7 @@ button {
   justify-content: space-between;
   padding: 12px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  overflow: visible;
 }
 
 .header-left {

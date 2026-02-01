@@ -439,6 +439,7 @@ Esc: Close modals/dialogs`;
             onDeleteUser={deleteUser}
             onForceLogout={forceLogoutUser}
             onRevokeAccess={revokeUserAccess}
+            onRefreshUsers={fetchUsers}
           />
         );
 

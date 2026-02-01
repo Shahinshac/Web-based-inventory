@@ -12,7 +12,8 @@ export default function UsersList({
   onApproveUser,
   onDeleteUser,
   onForceLogout,
-  onRevokeAccess
+  onRevokeAccess,
+  onRefreshUsers
 }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved'
@@ -89,6 +90,7 @@ export default function UsersList({
               onDelete={onDeleteUser}
               onForceLogout={onForceLogout}
               onRevokeAccess={onRevokeAccess}
+              onPhotoUpdate={onRefreshUsers}
             />
           ))
         ) : (
