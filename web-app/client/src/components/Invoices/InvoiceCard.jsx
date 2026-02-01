@@ -8,9 +8,9 @@ import { formatCurrency, formatCurrency0, PAYMENT_MODE_LABELS } from '../../cons
 export default function InvoiceCard({ invoice, onView, onDelete, onExport, onShare }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
-  const date = new Date(invoice.createdAt || invoice.date);
-  const formattedDate = date.toLocaleDateString('en-IN');
-  const formattedTime = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
+  const formattedDate = date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
+  const formattedTime = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 
   return (
     <>

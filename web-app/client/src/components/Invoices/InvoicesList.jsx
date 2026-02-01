@@ -23,7 +23,7 @@ export default function InvoicesList({
       invoice.customer?.name?.toLowerCase().includes(query) ||
       invoice.customer?.phone?.includes(query);
 
-    const invoiceDate = new Date(invoice.createdAt || invoice.date);
+    const invoiceDate = new Date(invoice.createdAt || invoice.billDate || invoice.date);
     const now = new Date();
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 

@@ -5,14 +5,20 @@ import Icon from '../../Icon';
 import { formatCurrency, formatCurrency0, GST_PERCENT, PAYMENT_MODE_LABELS } from '../../constants';
 
 export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) {
-  const date = new Date(invoice.createdAt || invoice.date);
+  const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
   const formattedDate = date.toLocaleDateString('en-IN', { 
     weekday: 'long', 
     year: 'numeric', 
     month: 'long', 
-    day: 'numeric' 
+    day: 'numeric',
+    timeZone: 'Asia/Kolkata'
   });
-  const formattedTime = date.toLocaleTimeString('en-IN');
+  const formattedTime = date.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: true,
+    timeZone: 'Asia/Kolkata'
+  });
 
   return (
     <Modal 
