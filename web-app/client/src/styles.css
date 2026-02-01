@@ -9545,8 +9545,8 @@ button {
    ============================================ */
 
 .tab-navigation {
-  background: rgba(0, 0, 0, 0.2);
-  padding: 12px 20px;
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  padding: 0;
   overflow-x: auto;
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
@@ -9554,21 +9554,20 @@ button {
   scrollbar-color: rgba(255, 255, 255, 0.4) transparent;
   display: block !important;
   visibility: visible !important;
-  min-height: 60px;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
 }
 
 .tab-navigation::-webkit-scrollbar {
-  height: 6px;
+  height: 4px;
 }
 
 .tab-navigation::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.1);
-  border-radius: 3px;
 }
 
 .tab-navigation::-webkit-scrollbar-thumb {
   background: rgba(255, 255, 255, 0.4);
-  border-radius: 3px;
+  border-radius: 2px;
 }
 
 .tab-navigation::-webkit-scrollbar-thumb:hover {
@@ -9577,7 +9576,7 @@ button {
 
 .tab-list {
   display: flex !important;
-  gap: 8px;
+  gap: 0;
   min-width: max-content;
   flex-wrap: nowrap;
   align-items: center;
@@ -9588,11 +9587,12 @@ button {
   display: inline-flex !important;
   align-items: center;
   gap: 8px;
-  padding: 12px 20px;
-  background: rgba(255, 255, 255, 0.15);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 10px;
-  color: white;
+  padding: 16px 24px;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  border-radius: 0;
+  color: rgba(255, 255, 255, 0.85);
   font-size: 14px;
   font-weight: 500;
   cursor: pointer;
@@ -9603,20 +9603,20 @@ button {
 }
 
 .tab-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom: 3px solid rgba(255, 255, 255, 0.4);
   color: white;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transform: none;
+  box-shadow: none;
 }
 
 .tab-btn.active {
-  background: white;
-  border-color: white;
-  color: #667eea;
+  background: rgba(255, 255, 255, 0.15);
+  border-bottom: 3px solid #ffffff;
+  color: #ffffff;
   font-weight: 600;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  transform: translateY(-1px);
+  box-shadow: none;
+  transform: none;
 }
 
 .tab-btn svg {
@@ -9626,7 +9626,7 @@ button {
 }
 
 .tab-btn .tab-emoji {
-  font-size: 16px;
+  font-size: 18px;
   line-height: 1;
 }
 
@@ -9635,19 +9635,22 @@ button {
 }
 
 .tab-btn.admin-tab {
-  border-left: 3px solid #fbbf24;
-  margin-left: 12px;
-  background: rgba(251, 191, 36, 0.15);
+  border-left: none;
+  margin-left: 8px;
+  padding-left: 24px;
+  background: rgba(251, 191, 36, 0.1);
+  border-bottom: 3px solid transparent;
 }
 
 .tab-btn.admin-tab:hover {
-  background: rgba(251, 191, 36, 0.25);
+  background: rgba(251, 191, 36, 0.2);
+  border-bottom: 3px solid rgba(251, 191, 36, 0.6);
 }
 
 .tab-btn.admin-tab.active {
-  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-  color: #1f2937;
-  border-color: #fbbf24;
+  background: rgba(251, 191, 36, 0.2);
+  border-bottom: 3px solid #fbbf24;
+  color: #fbbf24;
 }
 
 /* Remove old shortcut styles */
