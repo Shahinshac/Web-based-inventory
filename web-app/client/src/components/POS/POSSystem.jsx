@@ -19,7 +19,8 @@ export default function POSSystem({
   onCheckout,
   isOnline,
   companyInfo,
-  cartErrors = {}
+  cartErrors = {},
+  currentUser
 }) {
   const [showScanner, setShowScanner] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
@@ -96,7 +97,7 @@ export default function POSSystem({
             errors={cartErrors}
           />
 
-          <CheckoutForm 
+          <CheckoutForm
             cart={cart}
             cartTotal={cartTotal}
             customers={customers}
@@ -105,6 +106,7 @@ export default function POSSystem({
             onCheckout={onCheckout}
             isOnline={isOnline}
             companyInfo={companyInfo}
+            currentUser={currentUser}
           />
         </div>
       </div>

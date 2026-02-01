@@ -90,6 +90,12 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
                 <div><strong>Card:</strong> {formatCurrency(invoice.splitPaymentDetails.card)}</div>
               </div>
             )}
+            {invoice.createdByUsername && (
+              <div className="detail-row" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
+                <span>Salesperson:</span>
+                <strong>{invoice.createdByUsername}</strong>
+              </div>
+            )}
           </div>
         </div>
 

@@ -182,6 +182,8 @@ router.get('/invoice/:token', async (req, res) => {
               <div><div>Authorized Signatory</div></div>
             </div>
 
+            ${invoice.createdByUsername ? `<div style="margin-top:14px;padding:8px;background:#f0f9ff;border-left:3px solid #3b82f6;font-size:13px"><strong>Salesperson:</strong> ${invoice.createdByUsername}</div>` : ''}
+
             <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleDateString() + ', ' + new Date(entry.expiresAt).toLocaleTimeString() : '—'}</div>
 
             <div class="print-cta"><button onclick="window.print()" style="padding:8px 14px;border-radius:6px;background:#111;color:#fff;border:none;cursor:pointer;margin-top:12px">Print / Save PDF</button></div>

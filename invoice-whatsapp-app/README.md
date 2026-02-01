@@ -1,5 +1,15 @@
 # Invoice WhatsApp App
 
+> **⚠️ IMPORTANT: This is demo/example code only and is NOT integrated with the main application.**
+> 
+> This standalone app was created as a proof-of-concept for WhatsApp integration but is **NOT actively used** in the production system. The main Web-based Inventory application already has WhatsApp functionality built into its invoice system (see `web-app/server/routes/checkout.js` - WhatsApp link generation).
+>
+> **DO NOT** attempt to integrate this code with the main application. It uses different data structures, requires `whatsapp-web.js` (which needs browser automation/Puppeteer and won't work on most hosting platforms), and contains hardcoded sample data.
+>
+> If you need WhatsApp invoice functionality, use the existing implementation in the main app which generates `wa.me` links that work universally without special dependencies.
+
+---
+
 This project is a web application that allows users to send invoice bills to customers via WhatsApp. It features a user-friendly interface with an invoices tab and a WhatsApp button for easy communication.
 
 ## Project Structure

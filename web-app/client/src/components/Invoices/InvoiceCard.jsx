@@ -51,6 +51,12 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
               <span>Payment:</span>
               <span>{PAYMENT_MODE_LABELS[invoice.paymentMode] || invoice.paymentMode}</span>
             </div>
+            {invoice.createdByUsername && (
+              <div className="detail-row">
+                <span>Salesperson:</span>
+                <span>{invoice.createdByUsername}</span>
+              </div>
+            )}
           </div>
 
           <div className="invoice-total">

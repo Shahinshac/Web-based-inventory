@@ -357,6 +357,7 @@ Esc: Close modals/dialogs`;
             isOnline={isOnline}
             companyInfo={companyInfo}
             cartErrors={cartErrors}
+            currentUser={currentUser}
           />
         );
 

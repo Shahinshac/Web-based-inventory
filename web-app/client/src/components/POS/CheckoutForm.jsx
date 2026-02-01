@@ -13,7 +13,8 @@ export default function CheckoutForm({
   onSelectCustomer,
   onCheckout,
   isOnline,
-  companyInfo
+  companyInfo,
+  currentUser
 }) {
   const [discount, setDiscount] = useState(0);
   const [showDiscount, setShowDiscount] = useState(false);
@@ -104,8 +105,8 @@ export default function CheckoutForm({
 
     const billData = {
       items: cart,
-      customer: selectedCustomer,
-      discount,
+      customerId: selectedCustomer?.id || selectedCustomer?._id || null,
+      discountPercent: discount,
       paymentMode: splitPayment ? PAYMENT_MODES.SPLIT : paymentMode,
       splitPaymentDetails: splitPayment ? {
         cash: parseFloat(cashAmount) || 0,
@@ -116,6 +117,8 @@ export default function CheckoutForm({
       discountAmount,
       gstAmount,
       total: finalTotal,
+      userId: currentUser?.id || currentUser?._id || null,
+      username: currentUser?.username || 'Unknown',
       timestamp: new Date().toISOString()
     };
 

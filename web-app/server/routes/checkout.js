@@ -401,6 +401,19 @@ router.post('/:id/whatsapp-link', async (req, res) => {
       return res.status(404).json({ error: 'Invoice not found' });
     }
     
+    // Retrieve customer phone if not in invoice but customerId exists
+    let customerPhone = invoice.customerPhone;
+    if (!customerPhone && invoice.customerId) {
+      try {
+        const customer = await db.collection('customers').findOne({ _id: new ObjectId(invoice.customerId) });
+        if (customer && customer.phone) {
+          customerPhone = customer.phone;
+        }
+      } catch (e) {
+        logger.warn('Failed to fetch customer phone for WhatsApp link', e);
+      }
+    }
+    
     // Generate public link for invoice
     const token = crypto.randomBytes(16).toString('hex');
     const expiresAt = Date.now() + (24 * 60 * 60 * 1000); // 24 hours
@@ -424,12 +437,13 @@ router.post('/:id/whatsapp-link', async (req, res) => {
     const publicUrl = `${base}/public/invoice/${token}`;
     
     // Generate WhatsApp message
-    const message = `Hi ${invoice.customerName || 'Customer'}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}. Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
+    const customerName = invoice.customerName || 'Customer';
+    const message = `Hi ${customerName}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}. Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
     
     // Format phone number with +91 prefix for Indian numbers
     let whatsappUrl = null;
-    if (invoice.customerPhone) {
-      const cleanPhone = String(invoice.customerPhone).replace(/[^0-9]/g, '');
+    if (customerPhone) {
+      const cleanPhone = String(customerPhone).replace(/[^0-9]/g, '');
       // Add +91 prefix if it's a 10-digit number (Indian number)
       const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
       whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
@@ -438,14 +452,17 @@ router.post('/:id/whatsapp-link', async (req, res) => {
     await logAudit(db, 'PUBLIC_INVOICE_LINK_CREATED', null, req.body.requestedBy || 'system', { 
       invoiceId: invoice._id.toString(), 
       token,
-      hasPhone: !!invoice.customerPhone
+      hasPhone: !!customerPhone,
+      customerName: invoice.customerName
     });
 
     res.json({ 
       publicUrl, 
       whatsappUrl,
       token, 
-      expiresAt 
+      expiresAt,
+      hasPhone: !!customerPhone,
+      customerName: invoice.customerName || 'Customer' 
     });
   } catch (e) {
     logger.error('Create WhatsApp link failed', e);
