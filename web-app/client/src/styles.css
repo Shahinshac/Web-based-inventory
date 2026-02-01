@@ -9259,16 +9259,6 @@ button {
   margin: 0;
   line-height: 1.2;
 }
-  color: white;
-  margin: 0;
-  line-height: 1.2;
-}
-
-.company-tagline {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.65);
-  margin: 0;
-}
 
 .header-center {
   display: flex;
@@ -9922,12 +9912,6 @@ button {
   flex-shrink: 0;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.12);
   font-size: 24px;
-}
-  align-items: center;
-  justify-content: center;
-  color: white;
-  flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
 }
 
 .header-text h1 {
