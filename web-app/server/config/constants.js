@@ -12,7 +12,7 @@ const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-pro
 /**
  * Company Information
  */
-const COMPANY_NAME = process.env.COMPANY_NAME || 'My Shop';
+const COMPANY_NAME = process.env.COMPANY_NAME || '26:07 Electronics';
 const COMPANY_PHONE = process.env.COMPANY_PHONE || '7594012761';
 const COMPANY_ADDRESS = process.env.COMPANY_ADDRESS || '';
 const COMPANY_EMAIL = process.env.COMPANY_EMAIL || '';
