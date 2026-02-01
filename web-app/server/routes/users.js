@@ -438,8 +438,10 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
     // Ensure upload dir exists
     await ensureUploadDir(path.join(__dirname, '..', 'uploads', 'users'));
 
-    // Store relative photo URL - client will construct full URL
-    let photoUrl = `/api/users/${id}/photo`;
+    // Store relative photo URL with timestamp for cache-busting
+    // This ensures browser cache is invalidated when photo is updated
+    const photoTimestamp = Date.now();
+    let photoUrl = `/api/users/${id}/photo?t=${photoTimestamp}`;
     
     const storageMode = String(req.query.storage || '').toLowerCase();
     const useDbStorage = (storageMode !== 'fs'); // default to DB
@@ -460,7 +462,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
           $set: { 
             photo: photoUrl, 
             photoStorage: 'db', 
-            photoDbId: photoId, 
+            photoDbId: photoId,
+            photoUpdatedAt: new Date(),
             lastModified: new Date(), 
             lastModifiedBy: userId || null, 
             lastModifiedByUsername: username || 'Unknown' 
@@ -479,7 +482,8 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
           $set: { 
             photo: photoUrl, 
             photoStorage: 'fs', 
-            photoFilename: filename, 
+            photoFilename: filename,
+            photoUpdatedAt: new Date(),
             lastModified: new Date(), 
             lastModifiedBy: userId || null, 
             lastModifiedByUsername: username || 'Unknown' 
@@ -502,10 +506,12 @@ router.post('/:id/photo', upload.single('photo'), async (req, res) => {
 /**
  * GET /api/users/:id/photo
  * Serve user profile photo
+ * Note: Query parameter ?t= is used for cache-busting and is ignored
  */
 router.get('/:id/photo', async (req, res) => {
   try {
     const { id } = req.params;
+    // Ignore ?t= timestamp parameter - it's only for cache-busting
     const db = getDB();
     const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
     
@@ -519,7 +525,8 @@ router.get('/:id/photo', async (req, res) => {
       if (!photoData) return res.status(404).json({ error: 'Image not found' });
       
       res.setHeader('Content-Type', photoData.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=3600');
+      // Cache for 24 hours - timestamp in URL ensures cache invalidation on update
+      res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(photoData.data);
     }
 
