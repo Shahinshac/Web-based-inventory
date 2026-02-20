@@ -129,13 +129,25 @@ app.get('/api/stats', authenticateToken, async (req, res) => {
   }
 });
 
+/**
+ * Middleware that skips authentication for GET photo-serving requests.
+ * Browser <img> src attributes cannot send Authorization headers, so
+ * photo endpoints must be publicly accessible.
+ */
+function requireAuthUnlessPhoto(req, res, next) {
+  if (req.method === 'GET' && /\/photo(\/|$|\?)/.test(req.path)) {
+    return next();
+  }
+  return authenticateToken(req, res, next);
+}
+
 // API Routes
 // Users routes — login/register are public; admin sub-routes are protected internally
 app.use('/api/users/login', loginLimiter);
 app.use('/api/users', usersRoutes);
 
-// Protected routes — require valid JWT
-app.use('/api/products', authenticateToken, productsRoutes);
+// Protected routes — require valid JWT (photos bypass auth so browser <img> tags work)
+app.use('/api/products', requireAuthUnlessPhoto, productsRoutes);
 app.use('/api/customers', authenticateToken, customersRoutes);
 app.use('/api/checkout', authenticateToken, checkoutRoutes);
 app.use('/api/invoices', authenticateToken, checkoutRoutes);
