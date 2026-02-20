@@ -12,7 +12,11 @@ export const loginUser = async (username, password) => {
   const response = await apiPost('/api/users/login', { username, password })
   
   if (response.user) {
-    // Store user data in localStorage
+    // Store JWT token
+    if (response.token) {
+      localStorage.setItem('authToken', response.token)
+    }
+    // Store user data
     const isAdmin = response.user.role === 'admin'
     localStorage.setItem('currentUser', JSON.stringify(response.user))
     localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
@@ -78,12 +82,15 @@ export const getUserRole = () => {
 /**
  * Validate session with server
  */
-export const validateSession = async (username) => {
+export const validateSession = async () => {
   try {
-    const response = await apiGet(`/api/users/${encodeURIComponent(username)}/session`)
+    const token = localStorage.getItem('authToken')
+    if (!token) return null
+    const response = await apiGet('/api/users/session')
     return response
   } catch (error) {
-    console.error('Session validation error:', error)
+    // Token invalid / expired
+    logoutUser()
     return null
   }
 }

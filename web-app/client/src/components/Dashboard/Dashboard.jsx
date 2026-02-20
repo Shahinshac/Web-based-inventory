@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import { formatCurrency, formatCurrency0 } from '../../constants';
-import { API } from '../../utils/api';
+import { API, getAuthHeaders } from '../../utils/api';
 
 export default function Dashboard({ 
   stats, 
@@ -39,7 +39,8 @@ export default function Dashboard({
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          ...getAuthHeaders()
         },
         body: JSON.stringify({
           adminUsername: currentUser?.username || 'admin',

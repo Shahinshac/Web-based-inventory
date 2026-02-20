@@ -4,7 +4,7 @@ import Input from '../Common/Input';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import Icon from '../../Icon';
-import { getApiBaseUrl } from '../../utils/api';
+import { getApiBaseUrl, getAuthHeaders } from '../../utils/api';
 import './ProductForm.css';
 
 export default function ProductForm({ product, onSubmit, onClose }) {
@@ -114,6 +114,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
         const response = await fetch(`${getApiBaseUrl()}/api/products/${product.id}/photo`, {
           method: 'POST',
+          headers: getAuthHeaders(),
           body: formDataUpload
         });
 
@@ -127,7 +128,9 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         
         // Fetch updated product to get the complete photo object
         if (data.success) {
-          const productResponse = await fetch(`${getApiBaseUrl()}/api/products`);
+          const productResponse = await fetch(`${getApiBaseUrl()}/api/products`, {
+            headers: getAuthHeaders()
+          });
           if (productResponse.ok) {
             const products = await productResponse.json();
             const updatedProduct = products.find(p => p.id === product.id);
@@ -169,7 +172,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
       const response = await fetch(
         `${getApiBaseUrl()}/api/products/${product.id}/photo/${deleteConfirm.photoId}?userId=${userId}&username=${username}&confirmed=true`,
         {
-          method: 'DELETE'
+          method: 'DELETE',
+          headers: getAuthHeaders()
         }
       );
 

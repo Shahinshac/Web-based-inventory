@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import Icon from '../../Icon';
 import TabNavigation from './TabNavigation';
-import { API, normalizePhotoUrl } from '../../utils/api';
+import { API, normalizePhotoUrl, getAuthHeaders } from '../../utils/api';
 
 export default function Header({ 
   activeTab, 
@@ -56,6 +56,7 @@ export default function Header({
 
       const response = await fetch(API(`/api/users/${userId}/photo`), {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData
       });
 

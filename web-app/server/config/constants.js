@@ -7,7 +7,12 @@
  * JWT Secret for session management
  * @type {string}
  */
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key-change-this-in-production';
+const JWT_SECRET = process.env.JWT_SECRET || 'dev-jwt-secret-change-in-production';
+
+/**
+ * JWT token expiry
+ */
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h';
 
 /**
  * Company Information
@@ -59,6 +64,7 @@ const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
 module.exports = {
   JWT_SECRET,
+  JWT_EXPIRES_IN,
   COMPANY_NAME,
   COMPANY_PHONE,
   COMPANY_ADDRESS,

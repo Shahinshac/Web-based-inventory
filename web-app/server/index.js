@@ -46,14 +46,19 @@ async function initializeAdminUser() {
       
       logger.info(`✅ Created admin user: ${adminUsername}`);
     } else {
-      // Admin exists - update password if it's the default admin (to allow password changes via env var)
+      // Admin exists — only update password if env var has changed (avoids overwriting manual changes)
       if (existingAdmin.isDefault) {
-        const hashedPassword = await bcrypt.hash(adminPassword, 10);
-        await usersCollection.updateOne(
-          { username: adminUsername },
-          { $set: { password: hashedPassword } }
-        );
-        logger.info(`✅ Updated admin password for: ${adminUsername}`);
+        const passwordUnchanged = await bcrypt.compare(adminPassword, existingAdmin.password);
+        if (!passwordUnchanged) {
+          const hashedPassword = await bcrypt.hash(adminPassword, 10);
+          await usersCollection.updateOne(
+            { username: adminUsername },
+            { $set: { password: hashedPassword } }
+          );
+          logger.info(`✅ Updated admin password for: ${adminUsername}`);
+        } else {
+          logger.info(`ℹ️  Admin user unchanged: ${adminUsername}`);
+        }
       } else {
         logger.info(`ℹ️  Admin user already exists: ${adminUsername}`);
       }

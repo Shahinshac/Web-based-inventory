@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API } from '../utils/api';
+import { API, getAuthHeaders } from '../utils/api';
 
 export function useCustomers(isOnline, isAuthenticated) {
   const [customers, setCustomers] = useState([]);
@@ -12,7 +12,7 @@ export function useCustomers(isOnline, isAuthenticated) {
       setError(null);
       
       if (isOnline) {
-        const res = await fetch(API('/api/customers'));
+        const res = await fetch(API('/api/customers'), { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           setCustomers(data);
@@ -51,7 +51,7 @@ export function useCustomers(isOnline, isAuthenticated) {
     try {
       const res = await fetch(API('/api/customers'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(customerData)
       });
       
@@ -73,7 +73,7 @@ export function useCustomers(isOnline, isAuthenticated) {
     try {
       const res = await fetch(API(`/api/customers/${id}`), {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(customerData)
       });
       
@@ -92,7 +92,8 @@ export function useCustomers(isOnline, isAuthenticated) {
   const deleteCustomer = useCallback(async (id) => {
     try {
       const res = await fetch(API(`/api/customers/${id}`), {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (res.ok) {
@@ -109,7 +110,7 @@ export function useCustomers(isOnline, isAuthenticated) {
 
   const getCustomerPurchases = useCallback(async (customerId) => {
     try {
-      const res = await fetch(API(`/api/customers/${customerId}/purchases`));
+      const res = await fetch(API(`/api/customers/${customerId}/purchases`), { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         return { success: true, purchases: data };

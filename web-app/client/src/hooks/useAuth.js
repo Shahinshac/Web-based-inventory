@@ -45,11 +45,10 @@ export const useAuth = () => {
 
     const intervalId = setInterval(async () => {
       try {
-        const stored = getCurrentUser()
-        if (!stored || !stored.sessionVersion) return
-        
-        const session = await validateSession(stored.username)
-        if (session && session.sessionVersion !== stored.sessionVersion) {
+        // validateSession now verifies the JWT via the server.
+        // Returns null if token is expired/invalid/session invalidated.
+        const session = await validateSession()
+        if (!session || !session.valid) {
           handleLogout()
         }
       } catch (error) {

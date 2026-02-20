@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import { getAuthHeaders } from '../../utils/api';
 
 // API base URL
 const getApiUrl = () => {
@@ -92,7 +93,7 @@ export default function AuditLogs() {
       const url = `${getApiUrl()}/api/audit-logs?${params.toString()}`;
       console.log('Fetching audit logs:', url);
       
-      const response = await fetch(url);
+      const response = await fetch(url, { headers: getAuthHeaders() });
       
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));

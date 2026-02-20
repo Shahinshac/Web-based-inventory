@@ -24,13 +24,11 @@ import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { DEFAULT_GST, GST_PERCENT, PAYMENT_MODES } from './constants';
-import { API, apiPost, apiPatch } from './utils/api';
+import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
 import { generatePublicInvoiceUrl, generateWhatsAppLink } from './services/invoiceService';
 import './styles.css';
 
 export default function App() {
-  console.log('🚀 App component rendering...');
-
   // State
   const [tab, setTab] = useState('dashboard');
   const [notification, setNotification] = useState(null);
@@ -165,7 +163,7 @@ Esc: Close modals/dialogs`;
   // Fetch recent activity from audit logs
   const fetchRecentActivity = async () => {
     try {
-      const response = await fetch(API('/api/audit-logs?limit=10'));
+      const response = await fetch(API('/api/audit-logs?limit=10'), { headers: getAuthHeaders() });
       if (response.ok) {
         const data = await response.json();
         const logs = data.logs || data || [];
@@ -319,7 +317,7 @@ Esc: Close modals/dialogs`;
 
   const fetchUsers = async () => {
     try {
-      const res = await fetch(API('/api/users'));
+      const res = await fetch(API('/api/users'), { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         setUsers(data);
@@ -333,7 +331,7 @@ Esc: Close modals/dialogs`;
     try {
       const res = await fetch(API(`/api/users/${userId}/approve`), { 
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({ role })
       });
       if (res.ok) {
@@ -348,7 +346,7 @@ Esc: Close modals/dialogs`;
   const deleteUser = async (userId) => {
     if (!confirm('Are you sure you want to delete this user?')) return;
     try {
-      const res = await fetch(API(`/api/users/${userId}`), { method: 'DELETE' });
+      const res = await fetch(API(`/api/users/${userId}`), { method: 'DELETE', headers: getAuthHeaders() });
       if (res.ok) {
         showNotification('✅ User deleted successfully!', 'success');
         await fetchUsers();

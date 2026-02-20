@@ -6,6 +6,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 const fs = require('fs').promises;
 const fsSync = require('fs');
@@ -17,7 +18,8 @@ const upload = require('../middleware/upload');
 const { logAudit } = require('../services/auditService');
 const { savePhotoToDatabase, getPhotoFromDatabase, deletePhotoFromDatabase, deletePhotoFile, ensureUploadDir } = require('../services/photoService');
 const { sanitizeObject } = require('../services/helpers');
-const { ALLOW_ADMIN_PASSWORD_CHANGE } = require('../config/constants');
+const { ALLOW_ADMIN_PASSWORD_CHANGE, JWT_SECRET, JWT_EXPIRES_IN } = require('../config/constants');
+const { authenticateToken, requireAdmin } = require('../middleware/auth');
 
 /**
  * POST /api/users/register
@@ -71,7 +73,7 @@ router.post('/register', async (req, res) => {
     });
   } catch (e) {
     logger.error('Registration error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Registration failed' });
   }
 });
 
@@ -123,21 +125,31 @@ router.post('/login', async (req, res) => {
       ip: req.ip || req.connection?.remoteAddress || 'unknown'
     });
     
+    const sessionVersion = user.sessionVersion || 1;
+
+    // Issue JWT
+    const token = jwt.sign(
+      { userId: user._id.toString(), username: user.username, role: user.role, sessionVersion },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+
     res.json({
       success: true,
+      token,
       user: {
         id: user._id.toString(),
         username: user.username,
         email: user.email,
         role: user.role,
         approved: user.approved,
-        sessionVersion: user.sessionVersion || 1,
+        sessionVersion,
         photo: user.photo ? `/api/users/${user._id.toString()}/photo` : null
       }
     });
   } catch (e) {
     logger.error('Login error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Login failed' });
   }
 });
 
@@ -166,15 +178,14 @@ router.post('/logout', async (req, res) => {
 
 /**
  * GET /api/users/session
- * Check session validity (placeholder)
+ * Verify JWT and return session validity
  */
-router.get('/session', async (req, res) => {
+router.get('/session', authenticateToken, async (req, res) => {
   try {
-    // This would verify JWT token in production
-    res.json({ valid: true });
+    res.json({ valid: true, user: req.user });
   } catch (e) {
     logger.error('Session check error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Session check failed' });
   }
 });
 
@@ -182,14 +193,17 @@ router.get('/session', async (req, res) => {
  * GET /api/users
  * Get all users (Admin Only)
  */
-router.get('/', async (req, res) => {
+router.get('/', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const db = getDB();
-    
-    const users = await db.collection('users')
-      .find({})
-      .sort({ createdAt: -1 })
-      .toArray();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 200), 500);
+    const skip = (page - 1) * limit;
+
+    const [users, total] = await Promise.all([
+      db.collection('users').find({}).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      db.collection('users').countDocuments()
+    ]);
     
     const formatted = users.map(u => ({
       _id: u._id.toString(),
@@ -203,10 +217,11 @@ router.get('/', async (req, res) => {
       lastLogin: u.lastLogin
     }));
     
+    res.setHeader('X-Total-Count', total);
     res.json(formatted);
   } catch (e) {
     logger.error('Get users error:', e);
-    res.status(500).json({ error: e.message });
+    res.status(500).json({ error: 'Failed to retrieve users' });
   }
 });
 
@@ -244,7 +259,7 @@ router.get('/check/:id', async (req, res) => {
  * GET /api/users/:username/session
  * Get a user's current sessionVersion
  */
-router.get('/:username/session', async (req, res) => {
+router.get('/:username/session', authenticateToken, async (req, res) => {
   try {
     const { username } = req.params;
     const db = getDB();
@@ -261,7 +276,7 @@ router.get('/:username/session', async (req, res) => {
  * PATCH /api/users/:id/approve
  * Approve user with role assignment (Admin Only)
  */
-router.patch('/:id/approve', async (req, res) => {
+router.patch('/:id/approve', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
@@ -288,7 +303,7 @@ router.patch('/:id/approve', async (req, res) => {
  * PATCH /api/users/:id/unapprove
  * Unapprove user (Admin Only) - Revoke access without deleting
  */
-router.patch('/:id/unapprove', async (req, res) => {
+router.patch('/:id/unapprove', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDB();
@@ -309,7 +324,7 @@ router.patch('/:id/unapprove', async (req, res) => {
  * PATCH /api/users/:id/role
  * Change user role (Admin Only)
  */
-router.patch('/:id/role', async (req, res) => {
+router.patch('/:id/role', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const { role } = req.body;
@@ -343,7 +358,7 @@ router.patch('/:id/role', async (req, res) => {
  * DELETE /api/users/:id
  * Delete user (Admin Only)
  */
-router.delete('/:id', async (req, res) => {
+router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
   try {
     const { id } = req.params;
     const db = getDB();
@@ -373,7 +388,7 @@ router.delete('/:id', async (req, res) => {
  * PATCH /api/users/change-password
  * Change user password (requires current password)
  */
-router.patch('/change-password', async (req, res) => {
+router.patch('/change-password', authenticateToken, async (req, res) => {
   try {
     const { username, currentPassword, newPassword } = req.body;
     
@@ -419,7 +434,7 @@ router.patch('/change-password', async (req, res) => {
  * POST /api/users/:id/photo
  * Upload user profile photo
  */
-router.post('/:id/photo', upload.single('photo'), async (req, res) => {
+router.post('/:id/photo', authenticateToken, upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, username } = req.body;
@@ -565,7 +580,7 @@ router.get('/:id/photo', async (req, res) => {
  * DELETE /api/users/:id/photo
  * Delete user profile photo
  */
-router.delete('/:id/photo', async (req, res) => {
+router.delete('/:id/photo', authenticateToken, async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, username } = req.query;

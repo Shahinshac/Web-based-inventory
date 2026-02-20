@@ -3,7 +3,7 @@ import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
-import { normalizePhotoUrl, API } from '../../utils/api';
+import { normalizePhotoUrl, API, getAuthHeaders } from '../../utils/api';
 
 export default function UserCard({ 
   user, 
@@ -48,6 +48,7 @@ export default function UserCard({
 
       const response = await fetch(API(`/api/users/${userId}/photo`), {
         method: 'POST',
+        headers: getAuthHeaders(),
         body: formData
       });
 

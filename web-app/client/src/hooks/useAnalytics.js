@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API } from '../utils/api';
+import { API, getAuthHeaders } from '../utils/api';
 
 export function useAnalytics(isOnline, activeTab) {
   const [analyticsData, setAnalyticsData] = useState({
@@ -17,9 +17,9 @@ export function useAnalytics(isOnline, activeTab) {
       setError(null);
       
       const [topProductsRes, lowStockRes, revenueSummaryRes] = await Promise.all([
-        fetch(API(`/api/analytics/top-products?days=${days}&limit=10`)),
-        fetch(API('/api/analytics/low-stock')),
-        fetch(API(`/api/analytics/revenue-profit?days=${days}`))
+        fetch(API(`/api/analytics/top-products?days=${days}&limit=10`), { headers: getAuthHeaders() }),
+        fetch(API('/api/analytics/low-stock'), { headers: getAuthHeaders() }),
+        fetch(API(`/api/analytics/revenue-profit?days=${days}`), { headers: getAuthHeaders() })
       ]);
       
       const data = {
@@ -38,7 +38,7 @@ export function useAnalytics(isOnline, activeTab) {
 
   const fetchTopProducts = useCallback(async (days = 30, limit = 10) => {
     try {
-      const res = await fetch(API(`/api/analytics/top-products?days=${days}&limit=${limit}`));
+      const res = await fetch(API(`/api/analytics/top-products?days=${days}&limit=${limit}`), { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         return { success: true, data };
@@ -52,7 +52,7 @@ export function useAnalytics(isOnline, activeTab) {
 
   const fetchLowStock = useCallback(async () => {
     try {
-      const res = await fetch(API('/api/analytics/low-stock'));
+      const res = await fetch(API('/api/analytics/low-stock'), { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         return { success: true, data };
@@ -66,7 +66,7 @@ export function useAnalytics(isOnline, activeTab) {
 
   const fetchRevenueSummary = useCallback(async (days = 30) => {
     try {
-      const res = await fetch(API(`/api/analytics/revenue-profit?days=${days}`));
+      const res = await fetch(API(`/api/analytics/revenue-profit?days=${days}`), { headers: getAuthHeaders() });
       if (res.ok) {
         const data = await res.json();
         return { success: true, data };

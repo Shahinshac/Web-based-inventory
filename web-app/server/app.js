@@ -6,21 +6,14 @@
 // Load environment variables FIRST
 require('dotenv').config();
 
-// CRITICAL: Log environment variables to diagnose deployment issues
-console.log('🔍 Environment Variables Check:');
-console.log('MONGODB_URI:', process.env.MONGODB_URI ? `Set (${process.env.MONGODB_URI.substring(0, 20)}...)` : '❌ NOT SET');
-console.log('DB_NAME:', process.env.DB_NAME || '❌ NOT SET');
-console.log('ADMIN_USERNAME:', process.env.ADMIN_USERNAME || '❌ NOT SET');
-console.log('ADMIN_PASSWORD:', process.env.ADMIN_PASSWORD ? '✓ Set (hidden)' : '❌ NOT SET');
-console.log('NODE_ENV:', process.env.NODE_ENV || '❌ NOT SET');
-console.log('PORT:', process.env.PORT || '4000 (default)');
-console.log('---');
-
 const express = require('express');
 const cors = require('cors');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 const path = require('path');
 const logger = require('./logger');
-const { CORS_ORIGIN } = require('./config/constants');
+const { CORS_ORIGIN, NODE_ENV } = require('./config/constants');
+const { authenticateToken, requireAdmin } = require('./middleware/auth');
 
 // Import middleware
 const { notFoundHandler, errorHandler } = require('./middleware/errorHandler');
@@ -39,6 +32,30 @@ const publicRoutes = require('./routes/public');
 // Create Express app
 const app = express();
 
+// Security headers
+app.use(helmet({
+  crossOriginEmbedderPolicy: false,
+  contentSecurityPolicy: NODE_ENV === 'production'
+}));
+
+// Rate limiting — login endpoint (brute-force protection)
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many login attempts — please try again in 15 minutes' }
+});
+
+// General API rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 300,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests — please slow down' }
+});
+
 // Middleware
 const corsOptions = {
   origin: CORS_ORIGIN === '*' ? '*' : CORS_ORIGIN.split(','),
@@ -48,6 +65,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+
+// General API rate limit
+app.use('/api/', apiLimiter);
 
 // Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
@@ -66,7 +86,7 @@ app.get('/api/ping', (req, res) => {
 });
 
 // Stats endpoint (legacy support - could be moved to analytics)
-app.get('/api/stats', async (req, res) => {
+app.get('/api/stats', authenticateToken, async (req, res) => {
   try {
     const { getDB } = require('./db');
     const db = getDB();
@@ -104,23 +124,27 @@ app.get('/api/stats', async (req, res) => {
       todayProfit: todaySalesResult.length > 0 ? todaySalesResult[0].profit : 0
     });
   } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: e.message });
+    logger.error('Stats error:', e);
+    res.status(500).json({ error: 'Failed to retrieve stats' });
   }
 });
 
 // API Routes
-app.use('/api/products', productsRoutes);
-app.use('/api/customers', customersRoutes);
-app.use('/api/checkout', checkoutRoutes);
-app.use('/api/invoices', checkoutRoutes); // Invoice routes are in checkout
+// Users routes — login/register are public; admin sub-routes are protected internally
+app.use('/api/users/login', loginLimiter);
 app.use('/api/users', usersRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/expenses', expensesRoutes);
-app.use('/api/admin', adminRoutes);
-app.use('/api/audit-logs', adminRoutes); // Audit logs are in admin
-app.use('/api/backup', backupRoutes);
-app.use('/api/export', backupRoutes); // Export routes are in backup
+
+// Protected routes — require valid JWT
+app.use('/api/products', authenticateToken, productsRoutes);
+app.use('/api/customers', authenticateToken, customersRoutes);
+app.use('/api/checkout', authenticateToken, checkoutRoutes);
+app.use('/api/invoices', authenticateToken, checkoutRoutes);
+app.use('/api/analytics', authenticateToken, analyticsRoutes);
+app.use('/api/expenses', authenticateToken, expensesRoutes);
+app.use('/api/admin', authenticateToken, requireAdmin, adminRoutes);
+app.use('/api/audit-logs', authenticateToken, requireAdmin, adminRoutes);
+app.use('/api/backup', authenticateToken, requireAdmin, backupRoutes);
+app.use('/api/export', authenticateToken, requireAdmin, backupRoutes);
 
 // Public routes (no authentication)
 app.use('/public', publicRoutes);

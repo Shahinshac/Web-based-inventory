@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { API } from '../utils/api';
+import { API, getAuthHeaders } from '../utils/api';
 
 export function useInvoices(isOnline, isAuthenticated, activeTab) {
   const [invoices, setInvoices] = useState([]);
@@ -12,7 +12,7 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
       setError(null);
       
       if (isOnline) {
-        const res = await fetch(API('/api/invoices'));
+        const res = await fetch(API('/api/invoices'), { headers: getAuthHeaders() });
         if (res.ok) {
           const data = await res.json();
           
@@ -72,7 +72,7 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
     try {
       const res = await fetch(API('/api/checkout'), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify(invoiceData)
       });
       
@@ -105,7 +105,8 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
   const deleteInvoice = useCallback(async (id) => {
     try {
       const res = await fetch(API(`/api/invoices/${id}`), {
-        method: 'DELETE'
+        method: 'DELETE',
+        headers: getAuthHeaders()
       });
       
       if (res.ok) {

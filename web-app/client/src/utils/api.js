@@ -12,9 +12,7 @@ export const getApiBaseUrl = () => {
 
 export const API = (path) => {
   const baseUrl = getApiBaseUrl()
-  const fullUrl = baseUrl + path
-  console.log('🔗 API Request:', fullUrl)
-  return fullUrl
+  return baseUrl + path
 }
 
 /**
@@ -57,9 +55,13 @@ export const normalizePhotoUrl = (photoUrl) => {
  */
 export const apiFetch = async (endpoint, options = {}) => {
   try {
+    const token = localStorage.getItem('authToken')
+    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {}
+
     const response = await fetch(API(endpoint), {
       headers: {
         'Content-Type': 'application/json',
+        ...authHeaders,
         ...options.headers
       },
       ...options
@@ -112,13 +114,22 @@ export const apiPut = (endpoint, data) => apiFetch(endpoint, {
 export const apiDelete = (endpoint) => apiFetch(endpoint, { method: 'DELETE' })
 
 /**
- * Upload file (multipart/form-data)
+ * Get auth headers for manual fetch calls
  */
-export const apiUpload = async (endpoint, formData) => {
+export const getAuthHeaders = () => {
+  const token = localStorage.getItem('authToken')
+  return token ? { 'Authorization': `Bearer ${token}` } : {}
+}
+
+/**
+ * Upload file (multipart/form-data) - includes auth header
+ */
+export const apiUpload = async (endpoint, formData, method = 'POST') => {
   try {
     const response = await fetch(API(endpoint), {
-      method: 'POST',
-      body: formData // Don't set Content-Type for FormData
+      method,
+      headers: getAuthHeaders(), // Auth header only, NOT Content-Type (browser sets multipart boundary)
+      body: formData
     })
 
     if (!response.ok) {

@@ -20,15 +20,29 @@ const { sanitizeObject } = require('../services/helpers');
 
 /**
  * GET /api/products
- * Get all products with calculated profit metrics
+ * Get products with optional pagination. Supports ?page=N&limit=N&search=term
+ * Returns flat array (backward-compatible) + X-Total-Count header
  */
 router.get('/', async (req, res) => {
   try {
     const db = getDB();
-    const products = await db.collection('products')
-      .find({})
-      .sort({ name: 1 })
-      .toArray();
+    const page = Math.max(1, parseInt(req.query.page) || 1);
+    const limit = Math.min(Math.max(1, parseInt(req.query.limit) || 500), 1000);
+    const skip = (page - 1) * limit;
+    const search = req.query.search ? req.query.search.trim() : '';
+
+    const filter = search
+      ? { $or: [
+          { name: { $regex: search, $options: 'i' } },
+          { barcode: { $regex: search, $options: 'i' } },
+          { hsnCode: { $regex: search, $options: 'i' } }
+        ] }
+      : {};
+
+    const [products, total] = await Promise.all([
+      db.collection('products').find(filter).sort({ name: 1 }).skip(skip).limit(limit).toArray(),
+      db.collection('products').countDocuments(filter)
+    ]);
     
     // Convert _id to id for frontend compatibility
     const formatted = products.map(p => ({
@@ -41,16 +55,17 @@ router.get('/', async (req, res) => {
       hsnCode: p.hsnCode || '9999',
       minStock: p.minStock || 10,
       barcode: p.barcode || null,
-      photo: p.photo || null, // Legacy single photo support
-      photos: p.photos || [], // New multiple photos array
+      photo: p.photo || null,
+      photos: p.photos || [],
       profit: p.price - (p.costPrice || 0),
       profitPercent: p.price > 0 ? (((p.price - (p.costPrice || 0)) / p.price) * 100).toFixed(2) : 0
     }));
     
+    res.setHeader('X-Total-Count', total);
     res.json(formatted);
   } catch (e) {
-    logger.error(e);
-    res.status(500).json({ error: e.message });
+    logger.error('Get products error:', e);
+    res.status(500).json({ error: 'Failed to retrieve products' });
   }
 });
 
