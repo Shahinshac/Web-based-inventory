@@ -163,7 +163,7 @@ Esc: Close modals/dialogs`;
   // Fetch recent activity from audit logs
   const fetchRecentActivity = async () => {
     try {
-      const response = await fetch(API('/api/audit-logs?limit=10'), { headers: getAuthHeaders() });
+      const response = await fetch(API('/api/admin/audit-logs?limit=10'), { headers: getAuthHeaders() });
       if (response.ok) {
         const data = await response.json();
         const logs = data.logs || data || [];

@@ -1,17 +1,18 @@
 import React from 'react';
+import Icon from '../../Icon';
 
 // All available tabs with role access configuration
 const allTabs = [
-  { id: 'dashboard', label: 'Dashboard', emoji: '📊', roles: ['admin', 'manager', 'cashier'] },
-  { id: 'pos', label: 'POS', emoji: '🛒', roles: ['admin', 'manager', 'cashier'] },
-  { id: 'products', label: 'Products', emoji: '📦', roles: ['admin', 'manager', 'cashier'] },
-  { id: 'inventory', label: 'Inventory', emoji: '📋', roles: ['admin', 'manager'] },
-  { id: 'customers', label: 'Customers', emoji: '👥', roles: ['admin', 'manager', 'cashier'] },
-  { id: 'invoices', label: 'Invoices', emoji: '📄', roles: ['admin', 'manager', 'cashier'] },
-  { id: 'analytics', label: 'Analytics', emoji: '📈', roles: ['admin', 'manager'] },
-  { id: 'reports', label: 'Reports', emoji: '📑', roles: ['admin', 'manager'] },
-  { id: 'audit', label: 'Audit Logs', emoji: '📝', roles: ['admin'], adminOnly: true },
-  { id: 'users', label: 'Users', emoji: '🔐', roles: ['admin'], adminOnly: true },
+  { id: 'dashboard', label: 'Dashboard', icon: 'home', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'pos', label: 'POS', icon: 'shopping-cart', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'products', label: 'Products', icon: 'package', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'inventory', label: 'Inventory', icon: 'clipboard', roles: ['admin', 'manager'] },
+  { id: 'customers', label: 'Customers', icon: 'users', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'invoices', label: 'Invoices', icon: 'file-text', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'analytics', label: 'Analytics', icon: 'bar-chart-2', roles: ['admin', 'manager'] },
+  { id: 'reports', label: 'Reports', icon: 'pie-chart', roles: ['admin', 'manager'] },
+  { id: 'audit', label: 'Audit Logs', icon: 'shield', roles: ['admin'], adminOnly: true },
+  { id: 'users', label: 'Users', icon: 'user-check', roles: ['admin'], adminOnly: true },
 ];
 
 export default function TabNavigation({ activeTab, onTabChange, isAdmin, userRole }) {
@@ -31,7 +32,9 @@ export default function TabNavigation({ activeTab, onTabChange, isAdmin, userRol
             onClick={() => onTabChange(tab.id)}
             title={tab.label}
           >
-            <span className="tab-emoji">{tab.emoji}</span>
+            <span className="tab-icon">
+              <Icon name={tab.icon} size={16} />
+            </span>
             <span className="tab-label">{tab.label}</span>
           </button>
         ))}
