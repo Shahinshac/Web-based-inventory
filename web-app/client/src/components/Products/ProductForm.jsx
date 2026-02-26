@@ -105,12 +105,21 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     setUploadingPhoto(true);
 
     try {
+      // Get current user info from localStorage
+      let storedUserId = '';
+      let storedUsername = '';
+      try {
+        const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+        storedUserId = storedUser.id || storedUser._id || '';
+        storedUsername = storedUser.username || '';
+      } catch (e) { /* ignore parse errors */ }
+
       // Upload each file
       for (const file of files) {
         const formDataUpload = new FormData();
         formDataUpload.append('photo', file);
-        formDataUpload.append('userId', localStorage.getItem('userId') || '');
-        formDataUpload.append('username', localStorage.getItem('username') || '');
+        formDataUpload.append('userId', storedUserId);
+        formDataUpload.append('username', storedUsername);
 
         const response = await fetch(`${getApiBaseUrl()}/api/products/${product.id}/photo`, {
           method: 'POST',

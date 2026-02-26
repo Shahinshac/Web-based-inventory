@@ -57,9 +57,11 @@ export default function UserCard({
       });
 
       if (!response.ok) {
-        throw new Error('Failed to upload photo');
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to upload photo');
       }
 
+      alert('Photo updated successfully!');
       if (onPhotoUpdate) {
         onPhotoUpdate();
       }

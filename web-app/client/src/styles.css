@@ -176,8 +176,8 @@ p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, label, a {
   color: inherit;
 }
 
-/* Strong default for all text */
-.app * {
+/* Strong default for main content text only - NOT header/dropdown */
+.app-content * {
   color: #0f172a;
 }
 
@@ -9537,6 +9537,7 @@ button {
   padding: 12px 20px;
   background: #ffffff !important;
   border: none;
+  border-radius: 0;
   font-size: 14px;
   font-weight: 500;
   color: #334155 !important;
@@ -9545,38 +9546,57 @@ button {
   text-align: left;
   min-height: 44px;
   box-sizing: border-box;
+  transform: none;
+}
+
+.user-dropdown-item:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .user-dropdown-item span {
-  color: inherit;
-  font-size: inherit;
+  color: #334155 !important;
+  font-size: 14px !important;
+  font-weight: 500;
 }
 
 .user-dropdown-item svg {
-  color: #64748b;
+  color: #64748b !important;
   flex-shrink: 0;
 }
 
 .user-dropdown-item:hover {
-  background: #f1f5f9;
-  color: #1e293b;
+  background: #f1f5f9 !important;
+  color: #1e293b !important;
+}
+
+.user-dropdown-item:hover span {
+  color: #1e293b !important;
 }
 
 .user-dropdown-item:hover svg {
-  color: #6366f1;
+  color: #6366f1 !important;
 }
 
 .user-dropdown-item.logout-item {
-  color: #ef4444;
+  color: #ef4444 !important;
+}
+
+.user-dropdown-item.logout-item span {
+  color: #ef4444 !important;
 }
 
 .user-dropdown-item.logout-item svg {
-  color: #ef4444;
+  color: #ef4444 !important;
 }
 
 .user-dropdown-item.logout-item:hover {
-  background: #fef2f2;
-  color: #dc2626;
+  background: #fef2f2 !important;
+  color: #dc2626 !important;
+}
+
+.user-dropdown-item.logout-item:hover span {
+  color: #dc2626 !important;
 }
 
 .user-dropdown-menu-section {
@@ -9674,8 +9694,12 @@ button {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #94a3b8;
+  color: #94a3b8 !important;
   margin: 0 0 10px 0;
+}
+
+.settings-section h4 svg {
+  color: #94a3b8 !important;
 }
 
 .settings-info-row {
@@ -9692,13 +9716,13 @@ button {
 
 .settings-label {
   font-size: 14px;
-  color: #64748b;
+  color: #64748b !important;
 }
 
 .settings-value {
   font-size: 14px;
   font-weight: 600;
-  color: #1e293b;
+  color: #1e293b !important;
 }
 
 /* Photo Drop Zone */
@@ -9722,16 +9746,16 @@ button {
 .photo-drop-zone p {
   margin: 8px 0 4px;
   font-size: 13px;
-  color: #64748b;
+  color: #64748b !important;
 }
 
 .photo-drop-zone strong {
-  color: #6366f1;
+  color: #6366f1 !important;
 }
 
 .photo-drop-hint {
   font-size: 11px;
-  color: #94a3b8;
+  color: #94a3b8 !important;
 }
 
 /* ============================================
@@ -11181,15 +11205,31 @@ button {
 .date-filter-select,
 .date-range-select {
   padding: 10px 14px;
-  background: var(--card);
+  background: var(--card) !important;
   border: 1px solid var(--border);
   border-radius: 10px;
   font-size: 14px;
-  color: var(--text);
+  color: var(--text) !important;
   cursor: pointer;
   min-width: 150px;
   outline: none;
   transition: all 0.2s ease;
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23475569' d='M6 8.825L1.175 4 2.238 2.938 6 6.7l3.763-3.763L10.825 4z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 12px center !important;
+  padding-right: 32px;
+}
+
+.filter-select option,
+.sort-select option,
+.date-filter-select option,
+.date-range-select option {
+  color: #0f172a !important;
+  background: #ffffff !important;
+  font-size: 14px;
+  padding: 8px;
 }
 
 .filter-select:focus,

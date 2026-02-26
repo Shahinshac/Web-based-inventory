@@ -29,10 +29,20 @@ export default function ProductCard({
     ? 'low-stock' 
     : 'in-stock';
 
-  const handlePhotoUpload = (e) => {
+  const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
     if (file && onUploadPhoto) {
-      onUploadPhoto(product.id, file);
+      try {
+        const result = await onUploadPhoto(product.id, file);
+        if (result && !result.success) {
+          alert('Failed to upload photo: ' + (result.error || 'Unknown error'));
+        } else {
+          setImageError(false); // Reset error state to show new photo
+        }
+      } catch (err) {
+        console.error('Photo upload error:', err);
+        alert('Failed to upload photo. Please try again.');
+      }
     }
   };
 
