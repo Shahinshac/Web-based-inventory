@@ -73,7 +73,7 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
       const res = await fetch(API('/api/checkout'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify(invoiceData)
+        body: JSON.stringify({ ...invoiceData, clientTime: new Date().toISOString() })
       });
       
       if (res.ok) {

@@ -91,7 +91,7 @@ router.post('/', async (req, res) => {
       discountPercent,
       paymentMode,
       paymentStatus: 'Paid',
-      billDate: new Date(),
+      billDate: payload.clientTime ? new Date(payload.clientTime) : new Date(),
       items: [],
       createdBy: userId,
       createdByUsername: username
@@ -193,6 +193,8 @@ router.post('/', async (req, res) => {
       customerPlace: bill.customerPlace || null,
       customerPincode: bill.customerPincode || null,
       paymentMode: bill.paymentMode,
+      billDate: bill.billDate,
+      createdAt: bill.billDate,
       items: bill.items.map(item => ({
         productName: item.productName,
         quantity: item.quantity,
