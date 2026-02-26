@@ -438,7 +438,15 @@ router.post('/:id/whatsapp-link', async (req, res) => {
     
     // Generate WhatsApp message
     const customerName = invoice.customerName || 'Customer';
-    const message = `Hi ${customerName}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}. Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
+    const saleDate = invoice.billDate || invoice.created_at || invoice.date;
+    const saleTimeStr = saleDate 
+      ? new Date(saleDate).toLocaleString('en-IN', { 
+          day: '2-digit', month: 'short', year: 'numeric', 
+          hour: '2-digit', minute: '2-digit', hour12: true, 
+          timeZone: 'Asia/Kolkata' 
+        }) 
+      : '';
+    const message = `Hi ${customerName}, here's your invoice #${invoice.billNumber} from ${COMPANY_NAME}.${saleTimeStr ? ' Date: ' + saleTimeStr + '.' : ''} Total: ₹${invoice.grandTotal}. View: ${publicUrl}`;
     
     // Format phone number with +91 prefix for Indian numbers
     let whatsappUrl = null;

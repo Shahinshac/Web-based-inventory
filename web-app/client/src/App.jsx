@@ -327,6 +327,49 @@ Esc: Close modals/dialogs`;
     }
   };
 
+  const createUser = async (userData) => {
+    try {
+      const res = await fetch(API('/api/users/create'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify(userData)
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(`✅ ${data.message}`, 'success');
+        await fetchUsers();
+        return { success: true };
+      } else {
+        showNotification(`❌ ${data.error}`, 'error');
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      showNotification('Failed to create user', 'error');
+      return { success: false, error: 'Failed to create user' };
+    }
+  };
+
+  const resetUserPassword = async (userId, newPassword) => {
+    try {
+      const res = await fetch(API(`/api/users/${userId}/reset-password`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ newPassword })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        showNotification(`✅ ${data.message}`, 'success');
+        return { success: true };
+      } else {
+        showNotification(`❌ ${data.error}`, 'error');
+        return { success: false, error: data.error };
+      }
+    } catch (error) {
+      showNotification('Failed to reset password', 'error');
+      return { success: false, error: 'Failed to reset password' };
+    }
+  };
+
   const approveUser = async (userId, role = 'cashier') => {
     try {
       const res = await fetch(API(`/api/users/${userId}/approve`), { 
@@ -391,7 +434,7 @@ Esc: Close modals/dialogs`;
 
   // If not authenticated, show login page
   if (!isAuthenticated) {
-    return <Login onLogin={login} onRegister={register} />;
+    return <Login onLogin={login} />;
   }
 
   // Render active tab
@@ -525,6 +568,8 @@ Esc: Close modals/dialogs`;
           <UsersList 
             users={users}
             currentUser={currentUser}
+            onCreateUser={createUser}
+            onResetPassword={resetUserPassword}
             onApproveUser={approveUser}
             onDeleteUser={deleteUser}
             onForceLogout={forceLogoutUser}

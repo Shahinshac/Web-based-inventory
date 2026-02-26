@@ -30,7 +30,8 @@ export const normalizePhotoUrl = (photoUrl) => {
   }
   
   // Extract the /api/... path from absolute URLs (handles photoId-based URLs)
-  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[a-f0-9]+\/photo(\/[a-f0-9]+)?/i)
+  // Preserve query string parameters (e.g., ?t= for cache-busting)
+  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[a-f0-9]+\/photo(\/[a-f0-9]+)?(\?[^\s]*)?/i)
   if (apiPathMatch) {
     return baseUrl + apiPathMatch[0]
   }

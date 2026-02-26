@@ -609,3 +609,235 @@
     flex: 1;
   }
 }
+/* ==================== CREATE USER FORM ==================== */
+.create-user-section {
+  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  border: 2px solid #93c5fd;
+  border-radius: 16px;
+  padding: 24px;
+  margin-bottom: 8px;
+}
+
+.create-user-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 2px solid rgba(147, 197, 253, 0.5);
+}
+
+.create-user-icon-wrapper {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.create-user-header-text {
+  flex: 1;
+}
+
+.create-user-header-text h3 {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e40af;
+  margin: 0 0 4px 0;
+}
+
+.create-user-subtitle {
+  font-size: 13px;
+  color: #3b82f6;
+}
+
+.create-user-close {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 8px;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.create-user-close:hover {
+  background: rgba(0, 0, 0, 0.05);
+  color: #0f172a;
+}
+
+.create-user-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.create-user-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+.create-user-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.create-user-field label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.create-user-field input,
+.create-user-field select {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.create-user-field input:focus,
+.create-user-field select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.create-user-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.create-user-password-wrapper input {
+  width: 100%;
+  padding-right: 44px;
+}
+
+.password-toggle-btn {
+  position: absolute;
+  right: 8px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #64748b;
+  padding: 6px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.password-toggle-btn:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.create-user-error {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.3);
+  border-radius: 10px;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.create-user-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* ==================== RESET PASSWORD SECTION ==================== */
+.reset-password-section {
+  padding: 16px 20px;
+  border-top: 1px solid #e2e8f0;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+}
+
+.reset-password-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.reset-password-form label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.reset-password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reset-password-input-wrapper input {
+  width: 100%;
+  padding: 10px 44px 10px 14px;
+  border-radius: 10px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  transition: all 0.2s ease;
+}
+
+.reset-password-input-wrapper input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.reset-password-input-wrapper .password-toggle-btn {
+  position: absolute;
+  right: 8px;
+}
+
+.reset-password-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 640px) {
+  .create-user-section {
+    padding: 16px;
+  }
+  
+  .create-user-fields {
+    grid-template-columns: 1fr;
+  }
+  
+  .create-user-actions {
+    flex-direction: column;
+  }
+  
+  .create-user-actions button {
+    width: 100%;
+  }
+}

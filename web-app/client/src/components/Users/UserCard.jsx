@@ -11,10 +11,14 @@ export default function UserCard({
   onDelete,
   onForceLogout,
   onRevokeAccess,
+  onResetPassword,
   onPhotoUpdate
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
+  const [showResetPassword, setShowResetPassword] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -133,15 +137,15 @@ export default function UserCard({
           <RoleSelector role={user.role} readOnly />
 
           <div className="user-status">
-            {user.approved ? (
+            {user.approved !== false ? (
               <span className="badge badge-success">
                 <Icon name="check-circle" size={14} />
-                Approved
+                Active
               </span>
             ) : (
               <span className="badge badge-warning">
                 <Icon name="clock" size={14} />
-                Pending Approval
+                Disabled
               </span>
             )}
           </div>
@@ -154,16 +158,78 @@ export default function UserCard({
           )}
         </div>
 
-        {!isCurrentUser && user.approved && (
+        {showResetPassword && !isCurrentUser && (
+          <div className="reset-password-section">
+            <div className="reset-password-form">
+              <label>New Password</label>
+              <div className="reset-password-input-wrapper">
+                <input
+                  type={showNewPassword ? "text" : "password"}
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="Enter new password (min 6 chars)"
+                  minLength="6"
+                />
+                <button
+                  type="button"
+                  className="password-toggle-btn"
+                  onClick={() => setShowNewPassword(!showNewPassword)}
+                >
+                  <Icon name={showNewPassword ? "lock" : "eye"} size={14} />
+                </button>
+              </div>
+              <div className="reset-password-actions">
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={async () => {
+                    if (newPassword.length >= 6) {
+                      const result = await onResetPassword(user.id || user._id, newPassword);
+                      if (result?.success) {
+                        setNewPassword('');
+                        setShowResetPassword(false);
+                      }
+                    }
+                  }}
+                  disabled={newPassword.length < 6}
+                  icon="check"
+                >
+                  Set Password
+                </Button>
+                <Button
+                  variant="secondary"
+                  size="small"
+                  onClick={() => { setShowResetPassword(false); setNewPassword(''); }}
+                  icon="x"
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {!isCurrentUser && (
           <div className="user-card-actions">
             <Button
-              variant="warning"
+              variant="primary"
               size="small"
-              onClick={() => setShowRevokeConfirm(true)}
-              icon="user-x"
+              onClick={() => setShowResetPassword(!showResetPassword)}
+              icon="lock"
             >
-              Revoke Access
+              {showResetPassword ? 'Cancel' : 'Reset Password'}
             </Button>
+
+            {user.approved !== false && (
+              <Button
+                variant="warning"
+                size="small"
+                onClick={() => setShowRevokeConfirm(true)}
+                icon="user-x"
+              >
+                Disable
+              </Button>
+            )}
 
             <Button
               variant="secondary"
@@ -206,9 +272,9 @@ export default function UserCard({
           onRevokeAccess(user.id || user._id, user.username);
           setShowRevokeConfirm(false);
         }}
-        title="Revoke Access"
-        message={`Are you sure you want to revoke access for "${user.username}"? They will need admin approval again.`}
-        confirmText="Revoke"
+        title="Disable User"
+        message={`Are you sure you want to disable access for "${user.username}"? They will not be able to login.`}
+        confirmText="Disable"
         variant="warning"
       />
     </>

@@ -24,16 +24,32 @@ const { authenticateToken, requireAdmin } = require('../middleware/auth');
 /**
  * POST /api/users/register
  * Register new user (Direct - No OTP Required)
+ * @deprecated - Use POST /api/users/create (admin-only) instead
  */
 router.post('/register', async (req, res) => {
+  return res.status(403).json({ error: 'Self-registration is disabled. Please contact your admin to create an account.' });
+});
+
+/**
+ * POST /api/users/create
+ * Create a new user (Admin Only)
+ * Admin sets username, password, email, and role directly
+ */
+router.post('/create', authenticateToken, requireAdmin, async (req, res) => {
   try {
-    const { username, password, email } = req.body;
+    const { username, password, email, role } = req.body;
     
-    // Validate user registration data
-    const userData = { username, password, email };
-    const validationErrors = validateUserRegistration(userData);
-    if (validationErrors.length > 0) {
-      return res.status(400).json({ error: validationErrors.join(', ') });
+    // Validate required fields
+    if (!username || !password) {
+      return res.status(400).json({ error: 'Username and password are required' });
+    }
+    
+    if (password.length < 6) {
+      return res.status(400).json({ error: 'Password must be at least 6 characters' });
+    }
+    
+    if (username.length < 3) {
+      return res.status(400).json({ error: 'Username must be at least 3 characters' });
     }
     
     const db = getDB();
@@ -44,36 +60,50 @@ router.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'Username already taken' });
     }
     
+    // Validate role
+    const validRoles = ['admin', 'manager', 'cashier'];
+    const assignedRole = role && validRoles.includes(role) ? role : 'cashier';
+    
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
     
-    // Create user
+    // Create user - directly approved since admin is creating
     const user = {
       username: sanitizeObject(username.toLowerCase()),
       password: hashedPassword,
-      email: sanitizeObject(email.toLowerCase()),
-      role: 'user',
-      approved: false,
+      email: email ? sanitizeObject(email.toLowerCase()) : '',
+      role: assignedRole,
+      approved: true,
       createdAt: new Date(),
+      createdBy: req.user.username,
       lastLogin: null,
       sessionVersion: 1
     };
     
     const result = await db.collection('users').insertOne(user);
     
+    await logAudit(db, 'USER_CREATED_BY_ADMIN', req.user.userId, req.user.username, {
+      newUserId: result.insertedId.toString(),
+      newUsername: user.username,
+      role: assignedRole
+    });
+    
+    logger.info(`Admin ${req.user.username} created user: ${user.username} with role: ${assignedRole}`);
+    
     res.json({
       success: true,
-      message: 'Registration successful! Please wait for admin approval.',
+      message: `User "${user.username}" created successfully as ${assignedRole}`,
       user: {
         id: result.insertedId.toString(),
         username: user.username,
         email: user.email,
-        approved: user.approved
+        role: assignedRole,
+        approved: true
       }
     });
   } catch (e) {
-    logger.error('Registration error:', e);
-    res.status(500).json({ error: 'Registration failed' });
+    logger.error('Create user error:', e);
+    res.status(500).json({ error: 'Failed to create user' });
   }
 });
 
@@ -105,10 +135,10 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid username or password' });
     }
     
-    // Check if approved
-    if (!user.approved) {
+    // Check if account is active
+    if (user.approved === false) {
       return res.status(403).json({ 
-        error: 'Your account is pending admin approval',
+        error: 'Your account is disabled. Please contact your admin.',
         approved: false
       });
     }
@@ -380,6 +410,50 @@ router.delete('/:id', authenticateToken, requireAdmin, async (req, res) => {
     });
   } catch (e) {
     logger.error('Delete user error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
+ * PATCH /api/users/:id/reset-password
+ * Admin reset user password (Admin Only)
+ */
+router.patch('/:id/reset-password', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword } = req.body;
+    
+    if (!newPassword || newPassword.length < 6) {
+      return res.status(400).json({ error: 'New password must be at least 6 characters' });
+    }
+    
+    const db = getDB();
+    const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(id) },
+      { 
+        $set: { password: hashedPassword },
+        $inc: { sessionVersion: 1 }
+      }
+    );
+    
+    await logAudit(db, 'USER_PASSWORD_RESET_BY_ADMIN', req.user.userId, req.user.username, {
+      targetUserId: id,
+      targetUsername: user.username
+    });
+    
+    logger.info(`Admin ${req.user.username} reset password for user: ${user.username}`);
+    
+    res.json({ success: true, message: `Password reset for "${user.username}" successfully` });
+  } catch (e) {
+    logger.error('Reset user password error:', e);
     res.status(500).json({ error: e.message });
   }
 });

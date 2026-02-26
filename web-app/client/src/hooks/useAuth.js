@@ -77,11 +77,6 @@ export const useAuth = () => {
     try {
       setError(null)
       const response = await loginUser(username, password)
-      
-      if (!response.user.approved) {
-        setError('Your account is pending admin approval')
-        return { success: false, error: 'Account pending approval' }
-      }
 
       const user = response.user
       setIsAuthenticated(true)

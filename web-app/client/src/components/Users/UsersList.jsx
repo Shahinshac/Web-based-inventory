@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import UserCard from './UserCard';
-import UserApproval from './UserApproval';
+import CreateUserForm from './CreateUserForm';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
@@ -9,6 +9,8 @@ import './Users.css';
 export default function UsersList({ 
   users, 
   currentUser,
+  onCreateUser,
+  onResetPassword,
   onApproveUser,
   onDeleteUser,
   onForceLogout,
@@ -16,7 +18,8 @@ export default function UsersList({
   onRefreshUsers
 }) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [filter, setFilter] = useState('all'); // 'all', 'pending', 'approved'
+  const [filter, setFilter] = useState('all'); // 'all', 'admin', 'manager', 'cashier'
+  const [showCreateForm, setShowCreateForm] = useState(false);
 
   const filteredUsers = users.filter(user => {
     const query = searchQuery.toLowerCase();
@@ -27,11 +30,14 @@ export default function UsersList({
 
     let matchesFilter = true;
     switch (filter) {
-      case 'pending':
-        matchesFilter = !user.approved;
+      case 'admin':
+        matchesFilter = user.role === 'admin';
         break;
-      case 'approved':
-        matchesFilter = user.approved;
+      case 'manager':
+        matchesFilter = user.role === 'manager';
+        break;
+      case 'cashier':
+        matchesFilter = user.role === 'cashier';
         break;
       default:
         matchesFilter = true;
@@ -40,8 +46,7 @@ export default function UsersList({
     return matchesSearch && matchesFilter;
   });
 
-  const pendingUsers = users.filter(u => !u.approved);
-  const approvedUsers = users.filter(u => u.approved);
+  const activeUsers = users.filter(u => u.approved !== false);
 
   return (
     <div className="users-list">
@@ -49,16 +54,22 @@ export default function UsersList({
         <div>
           <h2 className="users-title">👥 User Management</h2>
           <p className="users-subtitle">
-            {users.length} total users • {pendingUsers.length} pending • {approvedUsers.length} approved
+            {users.length} total users • {activeUsers.length} active
           </p>
         </div>
+        <Button
+          variant="primary"
+          onClick={() => setShowCreateForm(!showCreateForm)}
+          icon={showCreateForm ? "x" : "add"}
+        >
+          {showCreateForm ? 'Cancel' : 'Create User'}
+        </Button>
       </div>
 
-      {pendingUsers.length > 0 && (
-        <UserApproval 
-          pendingUsers={pendingUsers}
-          onApprove={onApproveUser}
-          onReject={onDeleteUser}
+      {showCreateForm && (
+        <CreateUserForm 
+          onCreateUser={onCreateUser}
+          onClose={() => setShowCreateForm(false)}
         />
       )}
 
@@ -75,8 +86,9 @@ export default function UsersList({
           className="filter-select"
         >
           <option value="all">All Users</option>
-          <option value="approved">Approved</option>
-          <option value="pending">Pending Approval</option>
+          <option value="admin">👑 Admins</option>
+          <option value="manager">👔 Managers</option>
+          <option value="cashier">💼 Cashiers</option>
         </select>
       </div>
 
@@ -90,6 +102,7 @@ export default function UsersList({
               onDelete={onDeleteUser}
               onForceLogout={onForceLogout}
               onRevokeAccess={onRevokeAccess}
+              onResetPassword={onResetPassword}
               onPhotoUpdate={onRefreshUsers}
             />
           ))

@@ -20,22 +20,13 @@ import Icon from './Icon.jsx';
  * - Loading states
  * - Error display
  */
-const Login = ({ onLogin, onRegister }) => {
+const Login = ({ onLogin }) => {
   // ==================== STATE ====================
-  
-  // Tab state
-  const [showLoginPage, setShowLoginPage] = useState(true);
   
   // Login form state
   const [authUsername, setAuthUsername] = useState('');
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
-  
-  // Register form state
-  const [registerUsername, setRegisterUsername] = useState('');
-  const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerError, setRegisterError] = useState('');
   
   // UI state
   const [loading, setLoading] = useState(false);
@@ -102,44 +93,6 @@ const Login = ({ onLogin, onRegister }) => {
   }, [authUsername, authPassword, onLogin]);
 
   /**
-   * Handle registration form submission
-   */
-  const onRegisterSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    setRegisterError('');
-    
-    if (!registerUsername || !registerEmail || !registerPassword) {
-      setRegisterError('Please fill in all fields');
-      return;
-    }
-    
-    if (registerPassword.length < 6) {
-      setRegisterError('Password must be at least 6 characters');
-      return;
-    }
-    
-    setLoading(true);
-    try {
-      const result = await onRegister(registerUsername, registerPassword, registerEmail);
-      if (result && result.error) {
-        setRegisterError(result.error);
-      } else if (result && result.success) {
-        // Show success and switch to login
-        setRegisterError('');
-        alert('Registration successful! Please wait for admin approval.');
-        setShowLoginPage(true);
-        setRegisterUsername('');
-        setRegisterEmail('');
-        setRegisterPassword('');
-      }
-    } catch (error) {
-      setRegisterError(error.message || 'Registration failed. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  }, [registerUsername, registerEmail, registerPassword, onRegister]);
-
-  /**
    * Toggle password visibility
    */
   const togglePasswordVisibility = useCallback(() => {
@@ -149,7 +102,6 @@ const Login = ({ onLogin, onRegister }) => {
   // ==================== RENDER HELPERS ====================
 
   const isLoginValid = authUsername && authPassword;
-  const isRegisterValid = registerUsername && registerEmail && registerPassword && registerPassword.length >= 6;
   const currentYear = new Date().getFullYear();
 
   // ==================== RENDER ====================
@@ -195,31 +147,8 @@ const Login = ({ onLogin, onRegister }) => {
         {/* ==================== FORM SIDE ==================== */}
         <div className="login-form-side">
           <div className="login-box">
-            
-            {/* Tab Navigation */}
-            <div className="login-tabs">
-              <button
-                type="button"
-                className={`login-tab ${showLoginPage ? 'active' : ''}`}
-                onClick={() => setShowLoginPage(true)}
-                aria-label="Switch to login"
-              >
-                <Icon name="lock" size={16} />
-                Login
-              </button>
-              <button
-                type="button"
-                className={`login-tab ${!showLoginPage ? 'active' : ''}`}
-                onClick={() => setShowLoginPage(false)}
-                aria-label="Switch to register"
-              >
-                <Icon name="add" size={16} />
-                Register
-              </button>
-            </div>
 
             {/* ==================== LOGIN FORM ==================== */}
-            {showLoginPage ? (
               <div className="login-content">
                 <div className="login-header">
                   <h2>Welcome Back!</h2>
@@ -304,109 +233,9 @@ const Login = ({ onLogin, onRegister }) => {
                 {/* Notice */}
                 <div className="notice">
                   <Icon name="lock" size={14} />
-                  <span>Admin credentials required for owner access</span>
+                  <span>Contact your admin if you need an account</span>
                 </div>
               </div>
-            ) : (
-              <>
-              {/* ==================== REGISTER FORM ==================== */}
-              <div className="login-content">
-                <div className="login-header">
-                  <h2>Create Account</h2>
-                  <p>Sign up to get started</p>
-                </div>
-
-                <form onSubmit={onRegisterSubmit} className="login-form">
-                  {/* Username field */}
-                  <div className="field">
-                    <label htmlFor="register-username">
-                      <Icon name="customers" size={14} />
-                      Username
-                    </label>
-                    <input
-                      id="register-username"
-                      type="text"
-                      value={registerUsername}
-                      onChange={(e) => setRegisterUsername(e.target.value)}
-                      placeholder="Choose username (min 3 chars)"
-                      required
-                      minLength="3"
-                      autoFocus
-                      autoComplete="username"
-                    />
-                  </div>
-
-                  {/* Email field */}
-                  <div className="field">
-                    <label htmlFor="register-email">
-                      <Icon name="email" size={14} />
-                      Email
-                    </label>
-                    <input
-                      id="register-email"
-                      type="email"
-                      value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
-                      placeholder="Enter email address"
-                      required
-                      autoComplete="email"
-                    />
-                  </div>
-
-                  {/* Password field */}
-                  <div className="field">
-                    <label htmlFor="register-password">
-                      <Icon name="lock" size={14} />
-                      Password
-                    </label>
-                    <div className="password-field">
-                      <input
-                        id="register-password"
-                        type={showPassword ? "text" : "password"}
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        placeholder="Create password (min 6 chars)"
-                        required
-                        minLength="6"
-                        autoComplete="new-password"
-                      />
-                      <button
-                        type="button"
-                        className="eye-btn"
-                        onClick={togglePasswordVisibility}
-                        aria-label={showPassword ? "Hide password" : "Show password"}
-                      >
-                        <Icon name={showPassword ? "lock" : "eye"} size={16} />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Error message */}
-                  {registerError && (
-                    <div className="error-msg" role="alert">
-                      <Icon name="close" size={14} />
-                      {registerError}
-                    </div>
-                  )}
-
-                  {/* Submit button */}
-                  <button
-                    type="submit"
-                    className="submit-btn register"
-                    disabled={loading || !isRegisterValid}
-                  >
-                    {loading ? 'Creating...' : 'Create Account'}
-                  </button>
-                </form>
-
-                {/* Notice */}
-                <div className="notice">
-                  <Icon name="check" size={14} />
-                  <span>Admin will review and approve your access</span>
-                </div>
-              </div>
-              </>
-            )}
           </div>
 
           {/* Footer */}
@@ -424,7 +253,6 @@ const Login = ({ onLogin, onRegister }) => {
  */
 Login.propTypes = {
   onLogin: PropTypes.func.isRequired,
-  onRegister: PropTypes.func.isRequired,
 };
 
 export default Login;

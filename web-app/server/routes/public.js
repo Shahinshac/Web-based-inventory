@@ -118,8 +118,8 @@ router.get('/invoice/:token', async (req, res) => {
               <div class="meta" style="text-align:right;min-width:240px;">
                 <div><strong style="font-size:18px;padding:8px 12px;background:#111;color:#fff;display:inline-block;letter-spacing:2px">TAX INVOICE</strong></div>
                 <div style="margin-top:10px">Invoice: <strong>${invoice.billNumber || invoice._id}</strong></div>
-                <div>Date: ${new Date(invoiceDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric' })}</div>
-                <div>Time: ${new Date(invoiceDate).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' })}</div>
+                <div>Date: ${new Date(invoiceDate).toLocaleDateString('en-IN', { day:'2-digit', month:'short', year:'numeric', timeZone: 'Asia/Kolkata' })}</div>
+                <div>Time: ${new Date(invoiceDate).toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}</div>
               </div>
             </div>
 
@@ -184,7 +184,7 @@ router.get('/invoice/:token', async (req, res) => {
 
             ${invoice.createdByUsername ? `<div style="margin-top:14px;padding:8px;background:#f0f9ff;border-left:3px solid #3b82f6;font-size:13px"><strong>Salesperson:</strong> ${invoice.createdByUsername}</div>` : ''}
 
-            <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleDateString() + ', ' + new Date(entry.expiresAt).toLocaleTimeString() : '—'}</div>
+            <div style="margin-top:14px" class="small">This link expires on ${entry.expiresAt ? new Date(entry.expiresAt).toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' }) + ', ' + new Date(entry.expiresAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'}</div>
 
             <div class="print-cta"><button onclick="window.print()" style="padding:8px 14px;border-radius:6px;background:#111;color:#fff;border:none;cursor:pointer;margin-top:12px">Print / Save PDF</button></div>
 
