@@ -458,8 +458,8 @@ Esc: Close modals/dialogs`;
             recentActivity={recentActivity}
             lowStockProducts={lowStockProducts}
             onNavigate={handleTabChange}
-            onAddProduct={() => {}}
-            onAddCustomer={() => {}}
+            onAddProduct={() => handleTabChange('products')}
+            onAddCustomer={() => handleTabChange('customers')}
             canEdit={canEdit()}
             isAdmin={isAdmin}
             currentUser={currentUser}
