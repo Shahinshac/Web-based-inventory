@@ -282,7 +282,7 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
 
       {/* Add Expense Modal */}
       {showForm && (
-        <Modal title="Add Expense" onClose={() => setShowForm(false)}>
+        <Modal isOpen={true} title="Add Expense" onClose={() => setShowForm(false)}>
           <form onSubmit={handleSubmit} className="feature-form">
             <div className="form-group">
               <label>Description *</label>

@@ -9336,6 +9336,36 @@ button {
   font-weight: 700;
 }
 
+/* Dark Mode Toggle Button in Header */
+.dark-mode-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.dark-mode-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  transform: scale(1.1);
+}
+
+html.dark-mode .dark-mode-toggle-btn {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
+  color: #fbbf24;
+}
+
+html.dark-mode .dark-mode-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+
 .user-menu-container {
   position: relative;
 }

@@ -252,7 +252,7 @@ export default function Returns({ currentUser, invoices = [], showNotification }
 
       {/* New Return Modal */}
       {showForm && (
-        <Modal title="Process Return" onClose={() => setShowForm(false)} size="large">
+        <Modal isOpen={true} title="Process Return" onClose={() => setShowForm(false)} size="large">
           <form onSubmit={handleSubmit} className="feature-form">
             <div className="form-grid-2">
               <div className="form-group">

@@ -70,6 +70,14 @@ export default function Header({
             )}
           </div>
 
+          <button
+            className="dark-mode-toggle-btn"
+            onClick={toggleDarkMode}
+            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
+          >
+            <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
+          </button>
+
           <div className="user-menu-container">
             <button 
               className="user-menu-btn"
