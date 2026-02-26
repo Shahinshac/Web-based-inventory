@@ -9409,6 +9409,39 @@ button {
   overflow: hidden;
   z-index: 99999;
   animation: slideDown 0.2s ease-out;
+  color: #1e293b;
+}
+
+.user-dropdown * {
+  color: #1e293b;
+}
+
+.user-dropdown .user-dropdown-header,
+.user-dropdown .user-dropdown-header *,
+.user-dropdown .settings-panel-header,
+.user-dropdown .settings-panel-header * {
+  color: white;
+}
+
+.user-dropdown .user-dropdown-info strong {
+  color: #ffffff !important;
+}
+
+.user-dropdown .user-dropdown-info span {
+  color: #ffffff !important;
+}
+
+.user-dropdown .settings-section h4,
+.user-dropdown .settings-section h4 svg {
+  color: #94a3b8 !important;
+}
+
+.user-dropdown .settings-label {
+  color: #64748b !important;
+}
+
+.user-dropdown .settings-value {
+  color: #1e293b !important;
 }
 
 .user-dropdown-backdrop {
