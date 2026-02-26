@@ -99,11 +99,11 @@ export default function Dashboard({
       subtitle: 'Active customers'
     },
     {
-      title: 'Sales Today',
+      title: 'Total Sales',
       value: stats.totalSales || 0,
       icon: 'shopping-cart',
       gradient: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)',
-      subtitle: 'Transactions'
+      subtitle: 'All transactions'
     }
   ];
 

@@ -16,6 +16,7 @@ export default function POSSystem({
   onClearCart,
   selectedCustomer,
   onSelectCustomer,
+  onAddCustomer,
   onCheckout,
   isOnline,
   companyInfo,
@@ -103,6 +104,7 @@ export default function POSSystem({
             customers={customers}
             selectedCustomer={selectedCustomer}
             onSelectCustomer={onSelectCustomer}
+            onAddCustomer={onAddCustomer}
             onCheckout={onCheckout}
             isOnline={isOnline}
             companyInfo={companyInfo}

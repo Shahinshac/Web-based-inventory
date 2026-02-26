@@ -477,6 +477,7 @@ Esc: Close modals/dialogs`;
             onClearCart={clearCart}
             selectedCustomer={selectedCustomer}
             onSelectCustomer={selectCustomer}
+            onAddCustomer={addCustomer}
             onCheckout={handleCheckout}
             isOnline={isOnline}
             companyInfo={companyInfo}

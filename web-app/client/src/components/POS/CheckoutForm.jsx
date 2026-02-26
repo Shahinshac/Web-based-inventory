@@ -11,6 +11,7 @@ export default function CheckoutForm({
   customers,
   selectedCustomer,
   onSelectCustomer,
+  onAddCustomer,
   onCheckout,
   isOnline,
   companyInfo,
@@ -59,10 +60,25 @@ export default function CheckoutForm({
   };
 
   // Handle inline customer creation
-  const handleCustomerCreated = (newCustomer) => {
-    setShowCustomerForm(false);
-    onSelectCustomer(newCustomer);
-    setCustomerSearch('');
+  const handleCustomerCreated = async (formData) => {
+    try {
+      if (onAddCustomer) {
+        const result = await onAddCustomer(formData);
+        if (result.success && result.customer) {
+          setShowCustomerForm(false);
+          onSelectCustomer(result.customer);
+          setCustomerSearch('');
+          return;
+        }
+      }
+      // Fallback: select with form data (will show as walk-in if no ID)
+      setShowCustomerForm(false);
+      onSelectCustomer(formData);
+      setCustomerSearch('');
+    } catch (error) {
+      console.error('Failed to create customer:', error);
+      setShowCustomerForm(false);
+    }
   };
 
   const handleCheckout = async () => {

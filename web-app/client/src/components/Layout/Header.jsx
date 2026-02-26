@@ -123,11 +123,12 @@ export default function Header({
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               {photoUrl ? (
-                <img 
-                  src={photoUrl} 
-                  alt="Profile" 
-                  className="user-avatar"
-                />
+                <div className="user-avatar">
+                  <img 
+                    src={photoUrl} 
+                    alt="Profile" 
+                  />
+                </div>
               ) : (
                 <div className="user-avatar-placeholder">
                   <Icon name="user" size={20} />

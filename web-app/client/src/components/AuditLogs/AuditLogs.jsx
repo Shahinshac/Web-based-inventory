@@ -90,7 +90,7 @@ export default function AuditLogs() {
         params.append('action', actionFilter);
       }
 
-      const url = `${getApiUrl()}/api/audit-logs?${params.toString()}`;
+      const url = `${getApiUrl()}/api/admin/audit-logs?${params.toString()}`;
       console.log('Fetching audit logs:', url);
       
       const response = await fetch(url, { headers: getAuthHeaders() });
