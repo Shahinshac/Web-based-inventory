@@ -9,8 +9,12 @@ const allTabs = [
   { id: 'inventory', label: 'Inventory', icon: 'clipboard', roles: ['admin', 'manager'] },
   { id: 'customers', label: 'Customers', icon: 'users', roles: ['admin', 'manager', 'cashier'] },
   { id: 'invoices', label: 'Invoices', icon: 'file-text', roles: ['admin', 'manager', 'cashier'] },
+  { id: 'returns', label: 'Returns', icon: 'rotate-ccw', roles: ['admin', 'manager'] },
+  { id: 'expenses', label: 'Expenses', icon: 'credit-card', roles: ['admin', 'manager'] },
+  { id: 'coupons', label: 'Coupons', icon: 'tag', roles: ['admin', 'manager'] },
   { id: 'analytics', label: 'Analytics', icon: 'bar-chart-2', roles: ['admin', 'manager'] },
   { id: 'reports', label: 'Reports', icon: 'pie-chart', roles: ['admin', 'manager'] },
+  { id: 'exports', label: 'Export', icon: 'download', roles: ['admin'], adminOnly: true },
   { id: 'audit', label: 'Audit', icon: 'shield', roles: ['admin'], adminOnly: true },
   { id: 'users', label: 'Users', icon: 'user-check', roles: ['admin'], adminOnly: true },
 ];

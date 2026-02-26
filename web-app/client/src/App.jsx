@@ -13,6 +13,10 @@ import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
 import AuditLogs from './components/AuditLogs/AuditLogs';
 import StockManagement from './components/Inventory/StockManagement';
+import Returns from './components/Returns/Returns';
+import Expenses from './components/Expenses/Expenses';
+import Coupons from './components/Coupons/Coupons';
+import ExportData from './components/ExportData/ExportData';
 import { useAuth } from './hooks/useAuth';
 
 import { useProducts } from './hooks/useProducts';
@@ -549,6 +553,44 @@ Esc: Close modals/dialogs`;
             onExportCSV={() => { window.open(API('/api/backup/invoices-csv'), '_blank'); showNotification('Downloading invoices CSV...', 'success') }}
             onExportPDF={() => { window.open(API('/api/backup/json'), '_blank'); showNotification('Downloading JSON backup...', 'success') }}
             canViewProfit={canViewProfit()}
+          />
+        );
+
+      case 'returns':
+        return (
+          <Returns
+            currentUser={currentUser}
+            invoices={invoices}
+            showNotification={showNotification}
+          />
+        );
+
+      case 'expenses':
+        return (
+          <Expenses
+            currentUser={currentUser}
+            showNotification={showNotification}
+            canEdit={canEdit()}
+            canDelete={canDelete()}
+          />
+        );
+
+      case 'coupons':
+        return (
+          <Coupons
+            currentUser={currentUser}
+            showNotification={showNotification}
+            canEdit={canEdit()}
+          />
+        );
+
+      case 'exports':
+        if (!isAdmin) {
+          return <div className="error-message">Admin access required</div>;
+        }
+        return (
+          <ExportData
+            showNotification={showNotification}
           />
         );
 
