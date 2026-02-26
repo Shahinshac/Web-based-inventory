@@ -6,20 +6,22 @@ import SearchBar from '../Common/SearchBar';
 import { API, getAuthHeaders } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 
-export default function Returns({ currentUser, invoices = [], showNotification }) {
+export default function Returns({ currentUser, showNotification }) {
   const [returns, setReturns] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Form state
-  const [formData, setFormData] = useState({
-    billNumber: '',
-    customerName: '',
-    reason: '',
-    items: [{ name: '', quantity: 1, price: 0, productId: '' }]
-  });
+  // Invoice lookup state
+  const [billNumber, setBillNumber] = useState('');
+  const [lookupLoading, setLookupLoading] = useState(false);
+  const [invoiceData, setInvoiceData] = useState(null);
+  const [lookupError, setLookupError] = useState('');
+  
+  // Selected items for return (index → return quantity)
+  const [selectedItems, setSelectedItems] = useState({});
+  const [reason, setReason] = useState('');
 
   useEffect(() => {
     fetchReturns();
@@ -53,29 +55,91 @@ export default function Returns({ currentUser, invoices = [], showNotification }
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const validItems = formData.items.filter(i => i.name && i.quantity > 0 && i.price > 0);
-    if (validItems.length === 0) {
-      showNotification?.('Please add at least one valid return item', 'error');
+  const lookupInvoice = async () => {
+    if (!billNumber.trim()) {
+      setLookupError('Please enter an invoice number');
       return;
     }
-    if (!formData.reason.trim()) {
+    try {
+      setLookupLoading(true);
+      setLookupError('');
+      setInvoiceData(null);
+      setSelectedItems({});
+      const res = await fetch(API(`/api/returns/lookup-invoice/${encodeURIComponent(billNumber.trim())}`), { 
+        headers: getAuthHeaders() 
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setInvoiceData(data);
+      } else {
+        const err = await res.json();
+        setLookupError(err.error || 'Invoice not found');
+      }
+    } catch (error) {
+      setLookupError('Failed to look up invoice');
+    } finally {
+      setLookupLoading(false);
+    }
+  };
+
+  const toggleItemSelection = (index) => {
+    setSelectedItems(prev => {
+      const next = { ...prev };
+      if (next[index] !== undefined) {
+        delete next[index];
+      } else {
+        next[index] = invoiceData.items[index].quantity;
+      }
+      return next;
+    });
+  };
+
+  const updateReturnQty = (index, qty) => {
+    const maxQty = invoiceData.items[index].quantity;
+    const val = Math.max(1, Math.min(parseInt(qty) || 1, maxQty));
+    setSelectedItems(prev => ({ ...prev, [index]: val }));
+  };
+
+  const selectedCount = Object.keys(selectedItems).length;
+  const refundTotal = Object.entries(selectedItems).reduce((sum, [idx, qty]) => {
+    const item = invoiceData?.items?.[idx];
+    return sum + (item ? item.unitPrice * qty : 0);
+  }, 0);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (selectedCount === 0) {
+      showNotification?.('Please select at least one item to return', 'error');
+      return;
+    }
+    if (!reason.trim()) {
       showNotification?.('Please provide a return reason', 'error');
       return;
     }
 
-    const refundAmount = validItems.reduce((sum, i) => sum + (i.quantity * i.price), 0);
+    const items = Object.entries(selectedItems).map(([idx, qty]) => {
+      const item = invoiceData.items[idx];
+      return {
+        productId: item.productId,
+        name: item.productName,
+        quantity: qty,
+        price: item.unitPrice
+      };
+    });
+
+    const refundAmount = items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
 
     try {
       const res = await fetch(API('/api/returns'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
         body: JSON.stringify({
-          ...formData,
-          items: validItems,
+          invoiceId: invoiceData.id,
+          billNumber: invoiceData.billNumber,
+          customerName: invoiceData.customerName,
+          items,
           refundAmount,
+          reason,
           userId: currentUser?.id || currentUser?._id,
           username: currentUser?.username
         })
@@ -83,8 +147,7 @@ export default function Returns({ currentUser, invoices = [], showNotification }
 
       if (res.ok) {
         showNotification?.('Return processed successfully!', 'success');
-        setShowForm(false);
-        resetForm();
+        closeForm();
         fetchReturns();
         fetchStats();
       } else {
@@ -96,35 +159,13 @@ export default function Returns({ currentUser, invoices = [], showNotification }
     }
   };
 
-  const resetForm = () => {
-    setFormData({
-      billNumber: '',
-      customerName: '',
-      reason: '',
-      items: [{ name: '', quantity: 1, price: 0, productId: '' }]
-    });
-  };
-
-  const addItem = () => {
-    setFormData(prev => ({
-      ...prev,
-      items: [...prev.items, { name: '', quantity: 1, price: 0, productId: '' }]
-    }));
-  };
-
-  const updateItem = (index, field, value) => {
-    setFormData(prev => {
-      const items = [...prev.items];
-      items[index] = { ...items[index], [field]: value };
-      return { ...prev, items };
-    });
-  };
-
-  const removeItem = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      items: prev.items.filter((_, i) => i !== index)
-    }));
+  const closeForm = () => {
+    setShowForm(false);
+    setBillNumber('');
+    setInvoiceData(null);
+    setSelectedItems({});
+    setReason('');
+    setLookupError('');
   };
 
   const filteredReturns = useMemo(() => {
@@ -137,8 +178,6 @@ export default function Returns({ currentUser, invoices = [], showNotification }
     );
   }, [returns, searchTerm]);
 
-  const refundTotal = formData.items.reduce((sum, i) => sum + (i.quantity * i.price), 0);
-
   return (
     <div className="feature-page returns-page">
       <div className="feature-page-header">
@@ -149,7 +188,7 @@ export default function Returns({ currentUser, invoices = [], showNotification }
             <p className="feature-page-subtitle">Process product returns and manage refunds</p>
           </div>
         </div>
-        <Button variant="primary" icon="plus" onClick={() => { resetForm(); setShowForm(true); }}>
+        <Button variant="primary" icon="plus" onClick={() => setShowForm(true)}>
           New Return
         </Button>
       </div>
@@ -252,91 +291,123 @@ export default function Returns({ currentUser, invoices = [], showNotification }
 
       {/* New Return Modal */}
       {showForm && (
-        <Modal isOpen={true} title="Process Return" onClose={() => setShowForm(false)} size="large">
-          <form onSubmit={handleSubmit} className="feature-form">
-            <div className="form-grid-2">
-              <div className="form-group">
-                <label>Invoice / Bill Number</label>
+        <Modal isOpen={true} title="Process Return" onClose={closeForm} size="large">
+          <div className="return-modal-content">
+            {/* Step 1: Invoice Lookup */}
+            <div className="return-lookup-section">
+              <label className="return-lookup-label">
+                <Icon name="search" size={16} />
+                Enter Invoice Number
+              </label>
+              <div className="return-lookup-row">
                 <input
                   type="text"
-                  value={formData.billNumber}
-                  onChange={e => setFormData(prev => ({ ...prev, billNumber: e.target.value }))}
-                  placeholder="e.g. INV-001"
+                  value={billNumber}
+                  onChange={e => { setBillNumber(e.target.value); setLookupError(''); }}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), lookupInvoice())}
+                  placeholder="e.g. INV-2026-0001"
+                  className="return-lookup-input"
+                  autoFocus
                 />
-              </div>
-              <div className="form-group">
-                <label>Customer Name</label>
-                <input
-                  type="text"
-                  value={formData.customerName}
-                  onChange={e => setFormData(prev => ({ ...prev, customerName: e.target.value }))}
-                  placeholder="Customer name"
-                />
-              </div>
-            </div>
-
-            <div className="form-group">
-              <label>Reason for Return *</label>
-              <textarea
-                value={formData.reason}
-                onChange={e => setFormData(prev => ({ ...prev, reason: e.target.value }))}
-                placeholder="Describe the reason for this return..."
-                rows={3}
-                required
-              />
-            </div>
-
-            <div className="return-items-section">
-              <div className="section-header">
-                <h4>Return Items</h4>
-                <Button type="button" variant="secondary" icon="plus" onClick={addItem}>
-                  Add Item
+                <Button 
+                  type="button" 
+                  variant="primary" 
+                  icon="search" 
+                  onClick={lookupInvoice}
+                  disabled={lookupLoading}
+                >
+                  {lookupLoading ? 'Searching...' : 'Find Invoice'}
                 </Button>
               </div>
-              {formData.items.map((item, index) => (
-                <div key={index} className="return-item-row">
-                  <input
-                    type="text"
-                    placeholder="Product name"
-                    value={item.name}
-                    onChange={e => updateItem(index, 'name', e.target.value)}
-                    className="item-name-input"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Qty"
-                    value={item.quantity}
-                    onChange={e => updateItem(index, 'quantity', parseInt(e.target.value) || 0)}
-                    min="1"
-                    className="item-qty-input"
-                  />
-                  <input
-                    type="number"
-                    placeholder="Price"
-                    value={item.price}
-                    onChange={e => updateItem(index, 'price', parseFloat(e.target.value) || 0)}
-                    min="0"
-                    step="0.01"
-                    className="item-price-input"
-                  />
-                  <span className="item-total">{formatCurrency0(item.quantity * item.price)}</span>
-                  {formData.items.length > 1 && (
-                    <button type="button" className="item-remove-btn" onClick={() => removeItem(index)}>
-                      <Icon name="x" size={16} />
-                    </button>
-                  )}
+              {lookupError && (
+                <div className="return-lookup-error">
+                  <Icon name="alert-circle" size={14} /> {lookupError}
                 </div>
-              ))}
-              <div className="return-total">
-                <strong>Total Refund: {formatCurrency0(refundTotal)}</strong>
-              </div>
+              )}
             </div>
 
-            <div className="form-actions">
-              <Button type="button" variant="secondary" onClick={() => setShowForm(false)}>Cancel</Button>
-              <Button type="submit" variant="primary" icon="check">Process Return</Button>
-            </div>
-          </form>
+            {/* Step 2: Invoice Found - Show Products */}
+            {invoiceData && (
+              <form onSubmit={handleSubmit}>
+                <div className="return-invoice-info">
+                  <div className="return-invoice-details">
+                    <span><strong>Invoice:</strong> {invoiceData.billNumber}</span>
+                    <span><strong>Customer:</strong> {invoiceData.customerName}</span>
+                    <span><strong>Date:</strong> {new Date(invoiceData.billDate).toLocaleDateString()}</span>
+                    <span><strong>Total:</strong> {formatCurrency0(invoiceData.grandTotal)}</span>
+                  </div>
+                </div>
+
+                <div className="return-items-section">
+                  <h4>Select Items to Return</h4>
+                  <div className="return-select-items">
+                    {invoiceData.items.map((item, index) => {
+                      const isSelected = selectedItems[index] !== undefined;
+                      return (
+                        <div key={index} className={`return-select-item ${isSelected ? 'selected' : ''}`}>
+                          <label className="return-item-checkbox">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleItemSelection(index)}
+                            />
+                            <span className="return-item-info">
+                              <span className="return-item-name">{item.productName}</span>
+                              <span className="return-item-meta">
+                                Purchased: {item.quantity} × {formatCurrency0(item.unitPrice)} = {formatCurrency0(item.lineSubtotal)}
+                              </span>
+                            </span>
+                          </label>
+                          {isSelected && (
+                            <div className="return-qty-control">
+                              <label>Return Qty:</label>
+                              <input
+                                type="number"
+                                min={1}
+                                max={item.quantity}
+                                value={selectedItems[index]}
+                                onChange={e => updateReturnQty(index, e.target.value)}
+                                className="return-qty-input"
+                              />
+                              <span className="return-qty-max">/ {item.quantity}</span>
+                              <span className="return-item-refund">
+                                Refund: {formatCurrency0(selectedItems[index] * item.unitPrice)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {selectedCount > 0 && (
+                  <>
+                    <div className="return-total-bar">
+                      <span>{selectedCount} item{selectedCount > 1 ? 's' : ''} selected</span>
+                      <span className="return-total-amount">Total Refund: {formatCurrency0(refundTotal)}</span>
+                    </div>
+
+                    <div className="form-group" style={{ marginTop: '16px' }}>
+                      <label>Reason for Return *</label>
+                      <textarea
+                        value={reason}
+                        onChange={e => setReason(e.target.value)}
+                        placeholder="Describe the reason for this return..."
+                        rows={3}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-actions">
+                      <Button type="button" variant="secondary" onClick={closeForm}>Cancel</Button>
+                      <Button type="submit" variant="primary" icon="check">Process Return</Button>
+                    </div>
+                  </>
+                )}
+              </form>
+            )}
+          </div>
         </Modal>
       )}
     </div>

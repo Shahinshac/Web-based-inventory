@@ -14,23 +14,6 @@ export default function Header({
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [darkMode, setDarkMode] = useState(() => {
-    return localStorage.getItem('darkMode') === 'true';
-  });
-
-  const toggleDarkMode = () => {
-    const newValue = !darkMode;
-    setDarkMode(newValue);
-    localStorage.setItem('darkMode', String(newValue));
-    document.documentElement.classList.toggle('dark-mode', newValue);
-  };
-
-  // Apply dark mode on mount
-  React.useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark-mode');
-    }
-  }, []);
 
   const getRoleDisplay = () => {
     if (isAdmin || userRole === 'admin') return '👑 Admin';
@@ -69,14 +52,6 @@ export default function Header({
               </div>
             )}
           </div>
-
-          <button
-            className="dark-mode-toggle-btn"
-            onClick={toggleDarkMode}
-            title={darkMode ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
-          >
-            <Icon name={darkMode ? 'sun' : 'moon'} size={20} />
-          </button>
 
           <div className="user-menu-container">
             <button 
@@ -160,16 +135,6 @@ export default function Header({
                           <div className="settings-info-row">
                             <span className="settings-label">Status</span>
                             <span className="settings-value">{isOnline ? '🟢 Online' : '🔴 Offline'}</span>
-                          </div>
-                        </div>
-                        <div className="settings-section">
-                          <h4><Icon name="moon" size={16} /> Appearance</h4>
-                          <div className="settings-info-row">
-                            <span className="settings-label">Dark Mode</span>
-                            <label className="toggle-switch">
-                              <input type="checkbox" checked={darkMode} onChange={toggleDarkMode} />
-                              <span className="toggle-slider"></span>
-                            </label>
                           </div>
                         </div>
                       </div>

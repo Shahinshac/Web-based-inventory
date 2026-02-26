@@ -557,7 +557,6 @@ Esc: Close modals/dialogs`;
         return (
           <Returns
             currentUser={currentUser}
-            invoices={invoices}
             showNotification={showNotification}
           />
         );

@@ -53,6 +53,45 @@ router.get('/', async (req, res) => {
 });
 
 /**
+ * GET /api/returns/lookup-invoice/:billNumber
+ * Look up an invoice by bill number for returns processing
+ */
+router.get('/lookup-invoice/:billNumber', async (req, res) => {
+  try {
+    const { billNumber } = req.params;
+    const db = getDB();
+    
+    const invoice = await db.collection('bills').findOne({ 
+      billNumber: { $regex: new RegExp('^' + billNumber.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '$', 'i') }
+    });
+    
+    if (!invoice) {
+      return res.status(404).json({ error: 'Invoice not found' });
+    }
+    
+    res.json({
+      id: invoice._id.toString(),
+      billNumber: invoice.billNumber,
+      customerName: invoice.customerName,
+      customerPhone: invoice.customerPhone,
+      billDate: invoice.billDate,
+      grandTotal: invoice.grandTotal,
+      items: (invoice.items || []).map(item => ({
+        productId: item.productId?.toString() || null,
+        productName: item.productName,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        costPrice: item.costPrice || 0,
+        lineSubtotal: item.lineSubtotal
+      }))
+    });
+  } catch (e) {
+    logger.error('Invoice lookup error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
  * POST /api/returns
  * Process a new return/refund
  */
