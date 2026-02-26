@@ -19,6 +19,7 @@ export default function Header({
   const [showSettings, setShowSettings] = useState(false);
   const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+  const [photoError, setPhotoError] = useState(false);
   const fileInputRef = useRef(null);
 
   const getRoleDisplay = () => {
@@ -65,6 +66,7 @@ export default function Header({
       if (!response.ok) throw new Error('Failed to upload photo');
       const result = await response.json();
       if (onPhotoUpdate) onPhotoUpdate(result.photo);
+      setPhotoError(false);
       alert('Profile photo updated successfully!');
     } catch (error) {
       console.error('Photo upload error:', error);
@@ -122,11 +124,12 @@ export default function Header({
               className="user-menu-btn"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              {photoUrl ? (
+              {photoUrl && !photoError ? (
                 <div className="user-avatar">
                   <img 
                     src={photoUrl} 
-                    alt="Profile" 
+                    alt="" 
+                    onError={() => setPhotoError(true)}
                   />
                 </div>
               ) : (
@@ -146,11 +149,10 @@ export default function Header({
                 <div 
                   className="user-dropdown-backdrop" 
                   onClick={() => { setShowUserMenu(false); setShowSettings(false); }}
-                  style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 99998 }}
                 />
                 <div className="user-dropdown">
                   {!showSettings ? (
-                    <>
+                    <div className="user-dropdown-content">
                       <div className="user-dropdown-header">
                         <div className="user-dropdown-avatar-section">
                           <div 
@@ -159,8 +161,8 @@ export default function Header({
                             onDragLeave={handleDragLeave}
                             onDrop={handleDrop}
                           >
-                            {photoUrl ? (
-                              <img src={photoUrl} alt={currentUser?.username} />
+                            {photoUrl && !photoError ? (
+                              <img src={photoUrl} alt="" onError={() => setPhotoError(true)} />
                             ) : (
                               <Icon name="user" size={32} />
                             )}
@@ -213,7 +215,7 @@ export default function Header({
                           <span>Logout</span>
                         </button>
                       </div>
-                    </>
+                    </div>
                   ) : (
                     <div className="settings-panel">
                       <div className="settings-panel-header">

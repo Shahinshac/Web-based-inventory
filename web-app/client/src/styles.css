@@ -9401,14 +9401,28 @@ button {
   position: absolute;
   top: calc(100% + 0.5rem);
   right: 0;
-  min-width: 280px;
+  width: 280px;
   background: #ffffff;
-  border-radius: 1rem;
+  border-radius: 16px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 8px 24px rgba(0, 0, 0, 0.15);
   border: 1px solid #e2e8f0;
   overflow: hidden;
   z-index: 99999;
   animation: slideDown 0.2s ease-out;
+}
+
+.user-dropdown-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 99998;
+}
+
+.user-dropdown-content {
+  display: flex;
+  flex-direction: column;
 }
 
 @keyframes slideDown {
@@ -9423,12 +9437,12 @@ button {
 }
 
 .user-dropdown-header {
-  padding: 1.5rem;
+  padding: 20px 20px 16px;
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 1rem;
+  gap: 10px;
 }
 
 .user-dropdown-avatar-section {
@@ -9437,8 +9451,8 @@ button {
 }
 
 .user-dropdown-avatar {
-  width: 5rem;
-  height: 5rem;
+  width: 4rem;
+  height: 4rem;
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.2);
   display: flex;
@@ -9487,9 +9501,9 @@ button {
 
 .user-dropdown-info strong {
   display: block;
-  font-size: 1.125rem;
+  font-size: 1rem;
   color: #ffffff;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   font-weight: 700;
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   letter-spacing: 0.02em;
@@ -9499,10 +9513,10 @@ button {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  font-size: 0.8125rem;
+  font-size: 0.75rem;
   color: #ffffff;
   background: rgba(255, 255, 255, 0.2);
-  padding: 0.375rem 0.875rem;
+  padding: 0.25rem 0.75rem;
   border-radius: 2rem;
   font-weight: 600;
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
@@ -9517,18 +9531,20 @@ button {
 
 .user-dropdown-item {
   width: 100%;
-  display: flex;
+  display: flex !important;
   align-items: center;
   gap: 12px;
   padding: 12px 20px;
-  background: #ffffff;
+  background: #ffffff !important;
   border: none;
   font-size: 14px;
   font-weight: 500;
-  color: #334155;
+  color: #334155 !important;
   cursor: pointer;
   transition: all 0.15s ease;
   text-align: left;
+  min-height: 44px;
+  box-sizing: border-box;
 }
 
 .user-dropdown-item span {
@@ -9566,6 +9582,8 @@ button {
 .user-dropdown-menu-section {
   padding: 8px 0;
   background: #ffffff;
+  display: flex;
+  flex-direction: column;
 }
 
 .photo-upload-loading {
@@ -9746,21 +9764,21 @@ button {
   padding: 0;
   list-style: none;
   height: 100%;
-  gap: 4px;
+  gap: 2px;
 }
 
 .tab-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 7px;
-  padding: 0 16px;
+  gap: 6px;
+  padding: 0 14px;
   height: 34px;
   background: transparent;
   border: 1px solid transparent;
   border-radius: 8px;
   color: rgba(255, 255, 255, 0.55);
-  font-size: 13px;
+  font-size: 12.5px;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -12818,7 +12836,7 @@ button {
   border-bottom: 1px solid var(--border, #e2e8f0);
 }
 
-.user-avatar {
+.user-card-header .user-avatar {
   width: 56px;
   height: 56px;
   border-radius: 14px;
@@ -12832,18 +12850,18 @@ button {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-.user-avatar img {
+.user-card-header .user-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.user-info {
+.user-card-header .user-info {
   flex: 1;
   min-width: 0;
 }
 
-.user-name {
+.user-card-header .user-name {
   font-size: 17px;
   font-weight: 700;
   color: var(--text, #0f172a);
@@ -12862,7 +12880,7 @@ button {
   font-weight: 600;
 }
 
-.user-email {
+.user-card-header .user-email {
   font-size: 13px;
   color: var(--text-secondary, #64748b);
   margin: 0;
