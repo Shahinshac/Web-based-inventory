@@ -4,13 +4,11 @@ import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { formatCurrency } from '../../constants';
-import { normalizePhotoUrl } from '../../utils/api';
 
 export default function ProductCard({ 
   product, 
   onEdit, 
   onDelete, 
-  onUploadPhoto,
   canViewProfit 
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -28,42 +26,6 @@ export default function ProductCard({
     : product.quantity < product.minStock 
     ? 'low-stock' 
     : 'in-stock';
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (file && onUploadPhoto) {
-      try {
-        const result = await onUploadPhoto(product.id, file);
-        if (result && !result.success) {
-          alert('Failed to upload photo: ' + (result.error || 'Unknown error'));
-        } else {
-          setImageError(false); // Reset error state to show new photo
-        }
-      } catch (err) {
-        console.error('Photo upload error:', err);
-        alert('Failed to upload photo. Please try again.');
-      }
-    }
-  };
-
-  const [imageError, setImageError] = useState(false);
-
-  const handleImageError = () => {
-    console.warn('Failed to load image for product:', product.name, 'Photos:', product.photos, 'Legacy photo:', product.photo);
-    setImageError(true);
-  };
-
-  // Log photo info for debugging
-  React.useEffect(() => {
-    if (product.photos && product.photos.length > 0) {
-      console.log('Product photo info:', {
-        productName: product.name,
-        photosCount: product.photos.length,
-        firstPhoto: product.photos[0],
-        normalizedUrl: normalizePhotoUrl(product.photos[0].url)
-      });
-    }
-  }, [product.photos, product.name]);
 
   // Generate and download barcode
   const downloadBarcode = useCallback(() => {
@@ -240,42 +202,9 @@ export default function ProductCard({
     <>
       <div className={`product-card ${stockStatus}`}>
         <div className="product-card-image">
-          {product.photos && product.photos.length > 0 ? (
-            // Show first photo from photos array
-            <img 
-              src={normalizePhotoUrl(product.photos[0].url)} 
-              alt={product.name}
-              onError={handleImageError}
-            />
-          ) : product.photo && !imageError ? (
-            // Fallback to legacy single photo
-            <img 
-              src={normalizePhotoUrl(product.photo)} 
-              alt={product.name}
-              onError={handleImageError}
-            />
-          ) : (
-            <div className="product-placeholder">
-              <Icon name="package" size={48} color="#cbd5e1" />
-            </div>
-          )}
-          {product.photos && product.photos.length > 1 && (
-            <div className="photo-count-badge">
-              <Icon name="image" size={12} />
-              <span>{product.photos.length}</span>
-            </div>
-          )}
-          {onUploadPhoto && (
-            <label className="photo-upload-btn" title="Upload photo">
-              <Icon name="camera" size={16} />
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handlePhotoUpload}
-                style={{ display: 'none' }}
-              />
-            </label>
-          )}
+          <div className="product-placeholder">
+            <Icon name="package" size={48} color="#cbd5e1" />
+          </div>
           <div className={`stock-badge ${stockStatus}`}>
             {product.quantity === 0 ? (
               <>

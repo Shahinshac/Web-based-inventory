@@ -1,7 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import Icon from '../../Icon';
 import TabNavigation from './TabNavigation';
-import { API, normalizePhotoUrl, getAuthHeaders } from '../../utils/api';
 
 export default function Header({ 
   activeTab, 
@@ -10,17 +9,11 @@ export default function Header({
   isAdmin, 
   userRole,
   onLogout, 
-  profilePhoto,
-  onPhotoUpdate,
   isOnline,
   offlineCount
 }) {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [dragActive, setDragActive] = useState(false);
-  const [photoError, setPhotoError] = useState(false);
-  const fileInputRef = useRef(null);
 
   const getRoleDisplay = () => {
     if (isAdmin || userRole === 'admin') return '👑 Admin';
@@ -28,65 +21,6 @@ export default function Header({
     if (userRole === 'cashier') return '💼 Cashier';
     return '👤 User';
   };
-
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    await uploadPhoto(file);
-  };
-
-  const uploadPhoto = async (file) => {
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
-      return;
-    }
-
-    setUploadingPhoto(true);
-    try {
-      const userId = currentUser?.id || currentUser?._id;
-      const formData = new FormData();
-      formData.append('photo', file);
-      formData.append('userId', userId);
-      formData.append('username', currentUser?.username);
-
-      const response = await fetch(API(`/api/users/${userId}/photo`), {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: formData
-      });
-
-      if (!response.ok) throw new Error('Failed to upload photo');
-      const result = await response.json();
-      if (onPhotoUpdate) onPhotoUpdate(result.photo);
-      setPhotoError(false);
-      alert('Profile photo updated successfully!');
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      alert('Failed to upload photo. Please try again.');
-    } finally {
-      setUploadingPhoto(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
-
-  const handleDragOver = (e) => { e.preventDefault(); setDragActive(true); };
-  const handleDragLeave = () => setDragActive(false);
-  const handleDrop = (e) => {
-    e.preventDefault();
-    setDragActive(false);
-    const file = e.dataTransfer.files?.[0];
-    if (file) uploadPhoto(file);
-  };
-
-  const photoUrl = profilePhoto ? normalizePhotoUrl(profilePhoto) : null;
 
   return (
     <header className="app-header">
@@ -124,19 +58,9 @@ export default function Header({
               className="user-menu-btn"
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
-              {photoUrl && !photoError ? (
-                <div className="user-avatar">
-                  <img 
-                    src={photoUrl} 
-                    alt="" 
-                    onError={() => setPhotoError(true)}
-                  />
-                </div>
-              ) : (
-                <div className="user-avatar-placeholder">
-                  <Icon name="user" size={20} />
-                </div>
-              )}
+              <div className="user-avatar-placeholder">
+                <Icon name="user" size={20} />
+              </div>
               <div className="user-info">
                 <span className="user-name">{currentUser?.username || 'User'}</span>
                 <span className="user-role">{getRoleDisplay()}</span>
@@ -155,31 +79,9 @@ export default function Header({
                     <div className="user-dropdown-content">
                       <div className="user-dropdown-header">
                         <div className="user-dropdown-avatar-section">
-                          <div 
-                            className={`user-dropdown-avatar ${dragActive ? 'drag-active' : ''}`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                          >
-                            {photoUrl && !photoError ? (
-                              <img src={photoUrl} alt="" onError={() => setPhotoError(true)} />
-                            ) : (
-                              <Icon name="user" size={32} />
-                            )}
-                            {dragActive && (
-                              <div className="drag-overlay">
-                                <Icon name="upload" size={20} />
-                              </div>
-                            )}
+                          <div className="user-dropdown-avatar">
+                            <Icon name="user" size={32} />
                           </div>
-                          <button 
-                            className="user-dropdown-avatar-edit"
-                            onClick={handlePhotoClick}
-                            title="Change profile photo"
-                            disabled={uploadingPhoto}
-                          >
-                            <Icon name={uploadingPhoto ? "loader" : "camera"} size={14} />
-                          </button>
                         </div>
                         <div className="user-dropdown-info">
                           <strong>{currentUser?.username}</strong>
@@ -188,18 +90,6 @@ export default function Header({
                       </div>
                       
                       <div className="user-dropdown-menu-section">
-                        {uploadingPhoto && (
-                          <div className="photo-upload-loading">
-                            <Icon name="loader" size={16} />
-                            <span>Uploading photo...</span>
-                          </div>
-                        )}
-                        
-                        <button className="user-dropdown-item" onClick={handlePhotoClick} disabled={uploadingPhoto}>
-                          <Icon name="camera" size={18} />
-                          <span>Change Photo</span>
-                        </button>
-                        
                         <button className="user-dropdown-item" onClick={() => setShowSettings(true)}>
                           <Icon name="settings" size={18} />
                           <span>Settings</span>
@@ -247,35 +137,12 @@ export default function Header({
                             <span className="settings-value">{isOnline ? '🟢 Online' : '🔴 Offline'}</span>
                           </div>
                         </div>
-                        <div className="settings-section">
-                          <h4><Icon name="image" size={16} /> Profile Photo</h4>
-                          <div
-                            className={`photo-drop-zone ${dragActive ? 'active' : ''}`}
-                            onDragOver={handleDragOver}
-                            onDragLeave={handleDragLeave}
-                            onDrop={handleDrop}
-                            onClick={handlePhotoClick}
-                          >
-                            <Icon name="upload-cloud" size={28} />
-                            <p>Drag & drop an image here or <strong>click to browse</strong></p>
-                            <span className="photo-drop-hint">JPG, PNG or WebP (max 5MB)</span>
-                          </div>
-                        </div>
                       </div>
                     </div>
                   )}
                 </div>
               </>
             )}
-            
-            {/* Hidden file input for photo upload */}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              style={{ display: 'none' }}
-            />
           </div>
         </div>
       </div>

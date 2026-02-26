@@ -2,9 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Modal from '../Common/Modal';
 import Input from '../Common/Input';
 import Button from '../Common/Button';
-import ConfirmDialog from '../Common/ConfirmDialog';
 import Icon from '../../Icon';
-import { getApiBaseUrl, getAuthHeaders } from '../../utils/api';
 import './ProductForm.css';
 
 export default function ProductForm({ product, onSubmit, onClose }) {
@@ -16,13 +14,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     hsnCode: '9999',
     minStock: 10,
     serialNo: '',
-    barcode: '',
-    photos: [] // Array of product photos
+    barcode: ''
   });
 
   const [errors, setErrors] = useState({});
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const [deleteConfirm, setDeleteConfirm] = useState(null); // Stores { photoId, photoUrl } for confirmation
 
   useEffect(() => {
     if (product) {
@@ -34,8 +29,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
         serialNo: product.serialNo || '',
-        barcode: product.barcode || '',
-        photos: product.photos || [] // Load existing photos
+        barcode: product.barcode || ''
       });
     }
   }, [product]);
@@ -90,119 +84,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
   };
 
   const stockStatus = getStockStatus();
-
-  // Handle photo upload
-  const handlePhotoUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    // Only allow upload if product exists (has ID)
-    if (!product || !product.id) {
-      alert('Please save the product first before uploading photos');
-      return;
-    }
-
-    setUploadingPhoto(true);
-
-    try {
-      // Get current user info from localStorage
-      let storedUserId = '';
-      let storedUsername = '';
-      try {
-        const storedUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
-        storedUserId = storedUser.id || storedUser._id || '';
-        storedUsername = storedUser.username || '';
-      } catch (e) { /* ignore parse errors */ }
-
-      // Upload each file
-      for (const file of files) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('photo', file);
-        formDataUpload.append('userId', storedUserId);
-        formDataUpload.append('username', storedUsername);
-
-        const response = await fetch(`${getApiBaseUrl()}/api/products/${product.id}/photo`, {
-          method: 'POST',
-          headers: getAuthHeaders(),
-          body: formDataUpload
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Failed to upload photo');
-        }
-
-        const data = await response.json();
-        console.log('✅ Photo upload response:', data);
-        
-        // Fetch updated product to get the complete photo object
-        if (data.success) {
-          const productResponse = await fetch(`${getApiBaseUrl()}/api/products`, {
-            headers: getAuthHeaders()
-          });
-          if (productResponse.ok) {
-            const products = await productResponse.json();
-            const updatedProduct = products.find(p => p.id === product.id);
-            
-            if (updatedProduct && updatedProduct.photos) {
-              console.log('✅ Updated product photos:', updatedProduct.photos);
-              setFormData(prev => ({
-                ...prev,
-                photos: updatedProduct.photos
-              }));
-            }
-          }
-        }
-      }
-      
-      alert('Photos uploaded successfully!');
-    } catch (error) {
-      console.error('❌ Error uploading photo:', error);
-      alert('Failed to upload photo: ' + error.message);
-    } finally {
-      setUploadingPhoto(false);
-      // Clear the input so same file can be uploaded again if needed
-      e.target.value = '';
-    }
-  };
-
-  // Handle photo deletion with confirmation
-  const handleDeletePhoto = (photoId, photoUrl) => {
-    setDeleteConfirm({ photoId, photoUrl });
-  };
-
-  const confirmDeletePhoto = async () => {
-    if (!deleteConfirm || !product || !product.id) return;
-
-    try {
-      const userId = localStorage.getItem('userId') || '';
-      const username = localStorage.getItem('username') || '';
-      
-      const response = await fetch(
-        `${getApiBaseUrl()}/api/products/${product.id}/photo/${deleteConfirm.photoId}?userId=${userId}&username=${username}&confirmed=true`,
-        {
-          method: 'DELETE',
-          headers: getAuthHeaders()
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error('Failed to delete photo');
-      }
-
-      // Remove photo from formData
-      setFormData(prev => ({
-        ...prev,
-        photos: prev.photos.filter(p => p.id !== deleteConfirm.photoId)
-      }));
-
-      // Close confirmation dialog
-      setDeleteConfirm(null);
-    } catch (error) {
-      console.error('Error deleting photo:', error);
-      alert('Failed to delete photo: ' + error.message);
-    }
-  };
 
   return (
     <div className="product-form-modal">
@@ -373,79 +254,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             />
           </div>
 
-          {/* Section 5: Product Photos */}
-          <div className="form-section photos">
-            <div className="form-section-bar" />
-            <div className="form-section-header">
-              <div className="form-section-icon">
-                <Icon name="image" size={20} color="white" />
-              </div>
-              <h3 className="form-section-title">Product Photos</h3>
-            </div>
-
-            {product && product.id ? (
-              <>
-                {/* Photo Upload */}
-                <div className="photo-upload-section">
-                  <input
-                    type="file"
-                    id="photo-upload"
-                    accept="image/*"
-                    multiple
-                    onChange={handlePhotoUpload}
-                    style={{ display: 'none' }}
-                    disabled={uploadingPhoto}
-                  />
-                  <label htmlFor="photo-upload" className={`photo-upload-btn ${uploadingPhoto ? 'uploading' : ''}`}>
-                    <Icon name={uploadingPhoto ? 'loader' : 'upload'} size={20} />
-                    <span>{uploadingPhoto ? 'Uploading...' : 'Upload Photos'}</span>
-                  </label>
-                  <p className="photo-upload-hint">
-                    Click to upload product photos. Supports multiple images.
-                  </p>
-                </div>
-
-                {/* Photo Grid */}
-                {formData.photos && formData.photos.length > 0 ? (
-                  <div className="photo-grid">
-                    {formData.photos.map((photo) => (
-                      <div key={photo.id} className="photo-item">
-                        <img 
-                          src={`${getApiBaseUrl()}${photo.url}`} 
-                          alt={product.name}
-                          className="photo-preview"
-                        />
-                        <button
-                          type="button"
-                          className="photo-delete-btn"
-                          onClick={() => handleDeletePhoto(photo.id, photo.url)}
-                          title="Remove photo"
-                        >
-                          <Icon name="x" size={16} color="white" />
-                        </button>
-                        <div className="photo-info">
-                          <span className="photo-date">
-                            {new Date(photo.uploadedAt).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="photo-empty">
-                    <Icon name="image" size={48} color="#cbd5e1" />
-                    <p>No photos uploaded yet</p>
-                  </div>
-                )}
-              </>
-            ) : (
-              <div className="photo-save-first">
-                <Icon name="info" size={24} color="#3b82f6" />
-                <p>Please save the product first before uploading photos</p>
-              </div>
-            )}
-          </div>
-
           {/* Action Buttons */}
           <div className="form-actions">
             <Button 
@@ -465,18 +273,6 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             </Button>
           </div>
         </form>
-
-        {/* Photo Delete Confirmation Dialog */}
-        <ConfirmDialog
-          isOpen={deleteConfirm !== null}
-          onClose={() => setDeleteConfirm(null)}
-          onConfirm={confirmDeletePhoto}
-          title="Delete Photo?"
-          message="Are you sure you want to delete this photo? This action cannot be undone."
-          confirmText="Delete Photo"
-          cancelText="Cancel"
-          variant="danger"
-        />
       </Modal>
     </div>
   );

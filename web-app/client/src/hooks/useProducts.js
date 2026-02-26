@@ -10,9 +10,7 @@ import {
   updateProduct as updateProductAPI,
   updateProductStock as updateStockAPI,
   deleteProduct as deleteProductAPI,
-  searchProductByBarcode,
-  uploadProductPhoto as uploadPhotoAPI,
-  deleteProductPhoto as deletePhotoAPI
+  searchProductByBarcode
 } from '../services/productService'
 
 export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => {
@@ -134,34 +132,6 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     }
   }
 
-  // Upload photo
-  const uploadPhoto = async (productId, file) => {
-    try {
-      const userId = currentUser?.id || null
-      const username = isAdmin ? 'admin' : currentUser?.username
-      
-      await uploadPhotoAPI(productId, file, userId, username)
-      await fetchProducts()
-      return { success: true }
-    } catch (err) {
-      return { success: false, error: err.message }
-    }
-  }
-
-  // Delete photo
-  const deletePhoto = async (productId) => {
-    try {
-      const userId = currentUser?.id || null
-      const username = isAdmin ? 'admin' : currentUser?.username
-      
-      await deletePhotoAPI(productId, userId, username)
-      await fetchProducts()
-      return { success: true }
-    } catch (err) {
-      return { success: false, error: err.message }
-    }
-  }
-
   // Filter and sort products
   const getFilteredProducts = () => {
     let filtered = [...products]
@@ -232,8 +202,6 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     updateStock,
     deleteProduct,
     searchByBarcode,
-    uploadPhoto,
-    deletePhoto,
     getFilteredProducts
   }
 }

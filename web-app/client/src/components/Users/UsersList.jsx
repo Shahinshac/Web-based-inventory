@@ -103,7 +103,6 @@ export default function UsersList({
               onForceLogout={onForceLogout}
               onRevokeAccess={onRevokeAccess}
               onResetPassword={onResetPassword}
-              onPhotoUpdate={onRefreshUsers}
             />
           ))
         ) : (

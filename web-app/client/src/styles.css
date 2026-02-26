@@ -11281,8 +11281,9 @@ button {
   margin-top: 6px;
 }
 
-/* Analytics Summary Cards */
-.analytics-summary {
+/* Analytics & Products Summary Cards */
+.analytics-summary,
+.products-summary {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 20px;
@@ -11926,7 +11927,8 @@ button {
     width: 320px;
   }
   
-  .analytics-summary {
+  .analytics-summary,
+  .products-summary {
     grid-template-columns: repeat(2, 1fr);
   }
 }
@@ -12029,7 +12031,8 @@ button {
     grid-template-columns: 1fr;
   }
   
-  .analytics-summary {
+  .analytics-summary,
+  .products-summary {
     grid-template-columns: 1fr;
     gap: 12px;
   }

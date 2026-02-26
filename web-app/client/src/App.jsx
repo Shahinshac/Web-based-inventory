@@ -64,16 +64,14 @@ export default function App() {
     isAdmin, 
     currentUser, 
     userRole,
-    profilePhoto,
     handleLogin: login, 
     handleLogout: logout,
-    handleRegister: register,
-    handlePhotoUpdate: updateProfilePhoto
+    handleRegister: register
   } = useAuth();
 
   const { isOnline, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
   
-  const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct, uploadPhoto: uploadProductPhoto } = 
+  const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct } = 
     useProducts(isOnline, isAuthenticated, currentUser, isAdmin);
   
   const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, getCustomerPurchases } = 
@@ -493,7 +491,6 @@ Esc: Close modals/dialogs`;
             onAddProduct={addProduct}
             onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
-            onUploadPhoto={uploadProductPhoto}
             canEdit={canEdit()}
             canDelete={canDelete()}
             canViewProfit={canViewProfit()}
@@ -593,8 +590,6 @@ Esc: Close modals/dialogs`;
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
-        profilePhoto={profilePhoto}
-        onPhotoUpdate={updateProfilePhoto}
         isOnline={isOnline}
         offlineCount={offlineTransactions.length}
       />

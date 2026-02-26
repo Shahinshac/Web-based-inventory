@@ -1,9 +1,8 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
-import { normalizePhotoUrl, API, getAuthHeaders } from '../../utils/api';
 
 export default function UserCard({ 
   user, 
@@ -11,70 +10,15 @@ export default function UserCard({
   onDelete,
   onForceLogout,
   onRevokeAccess,
-  onResetPassword,
-  onPhotoUpdate
+  onResetPassword
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showRevokeConfirm, setShowRevokeConfirm] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] = useState(false);
-  const fileInputRef = useRef(null);
 
   const isCurrentUser = currentUser?.id === user.id || currentUser?._id === user._id;
-
-  const handlePhotoClick = () => {
-    fileInputRef.current?.click();
-  };
-
-  const handlePhotoUpload = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('Please select an image file');
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert('Image size must be less than 5MB');
-      return;
-    }
-
-    setUploadingPhoto(true);
-    try {
-      const userId = user.id || user._id;
-      const formData = new FormData();
-      formData.append('photo', file);
-      formData.append('userId', currentUser?.id || currentUser?._id);
-      formData.append('username', currentUser?.username);
-
-      const response = await fetch(API(`/api/users/${userId}/photo`), {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: formData
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || 'Failed to upload photo');
-      }
-
-      alert('Photo updated successfully!');
-      if (onPhotoUpdate) {
-        onPhotoUpdate();
-      }
-    } catch (error) {
-      console.error('Photo upload error:', error);
-      alert('Failed to upload photo. Please try again.');
-    } finally {
-      setUploadingPhoto(false);
-      if (fileInputRef.current) {
-        fileInputRef.current.value = '';
-      }
-    }
-  };
 
   const getRoleIcon = (role) => {
     switch (role) {
@@ -100,31 +44,8 @@ export default function UserCard({
         <div className="user-card-header">
           <div className="user-avatar-section">
             <div className="user-avatar">
-              {user.photo ? (
-                <img 
-                  src={normalizePhotoUrl(user.photo)} 
-                  alt={user.username}
-                  onError={(e) => { e.target.style.display = 'none'; }}
-                />
-              ) : (
-                <Icon name="user" size={32} />
-              )}
+              <Icon name="user" size={32} />
             </div>
-            <button 
-              className="user-avatar-edit"
-              onClick={handlePhotoClick}
-              title="Change photo"
-              disabled={uploadingPhoto}
-            >
-              <Icon name={uploadingPhoto ? "loader" : "camera"} size={12} />
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoUpload}
-              style={{ display: 'none' }}
-            />
           </div>
           <div className="user-info">
             <h3 className="user-name">
