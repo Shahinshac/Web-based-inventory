@@ -11,7 +11,7 @@ const allTabs = [
   { id: 'invoices', label: 'Invoices', icon: 'file-text', roles: ['admin', 'manager', 'cashier'] },
   { id: 'analytics', label: 'Analytics', icon: 'bar-chart-2', roles: ['admin', 'manager'] },
   { id: 'reports', label: 'Reports', icon: 'pie-chart', roles: ['admin', 'manager'] },
-  { id: 'audit', label: 'Audit Logs', icon: 'shield', roles: ['admin'], adminOnly: true },
+  { id: 'audit', label: 'Audit', icon: 'shield', roles: ['admin'], adminOnly: true },
   { id: 'users', label: 'Users', icon: 'user-check', roles: ['admin'], adminOnly: true },
 ];
 
