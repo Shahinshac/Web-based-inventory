@@ -3,7 +3,6 @@ import Icon from '../../Icon';
 import Modal from '../Common/Modal';
 import Button from '../Common/Button';
 import SearchBar from '../Common/SearchBar';
-import ConfirmDialog from '../Common/ConfirmDialog';
 import { API, getAuthHeaders } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 
@@ -13,7 +12,6 @@ export default function Returns({ currentUser, invoices = [], showNotification }
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
 
   // Form state
   const [formData, setFormData] = useState({

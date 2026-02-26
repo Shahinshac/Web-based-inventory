@@ -15,7 +15,6 @@ import AuditLogs from './components/AuditLogs/AuditLogs';
 import StockManagement from './components/Inventory/StockManagement';
 import Returns from './components/Returns/Returns';
 import Expenses from './components/Expenses/Expenses';
-import Coupons from './components/Coupons/Coupons';
 import ExportData from './components/ExportData/ExportData';
 import { useAuth } from './hooks/useAuth';
 
@@ -550,8 +549,6 @@ Esc: Close modals/dialogs`;
             invoices={invoices}
             products={products}
             customers={customers}
-            onExportCSV={() => { window.open(API('/api/backup/invoices-csv'), '_blank'); showNotification('Downloading invoices CSV...', 'success') }}
-            onExportPDF={() => { window.open(API('/api/backup/json'), '_blank'); showNotification('Downloading JSON backup...', 'success') }}
             canViewProfit={canViewProfit()}
           />
         );
@@ -572,15 +569,6 @@ Esc: Close modals/dialogs`;
             showNotification={showNotification}
             canEdit={canEdit()}
             canDelete={canDelete()}
-          />
-        );
-
-      case 'coupons':
-        return (
-          <Coupons
-            currentUser={currentUser}
-            showNotification={showNotification}
-            canEdit={canEdit()}
           />
         );
 

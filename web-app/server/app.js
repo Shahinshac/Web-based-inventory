@@ -29,7 +29,6 @@ const adminRoutes = require('./routes/admin');
 const backupRoutes = require('./routes/backup');
 const publicRoutes = require('./routes/public');
 const returnsRoutes = require('./routes/returns');
-const couponsRoutes = require('./routes/coupons');
 const exportsRoutes = require('./routes/exports');
 
 // Create Express app
@@ -157,7 +156,6 @@ app.use('/api/invoices', authenticateToken, checkoutRoutes);
 app.use('/api/analytics', authenticateToken, analyticsRoutes);
 app.use('/api/expenses', authenticateToken, expensesRoutes);
 app.use('/api/returns', authenticateToken, returnsRoutes);
-app.use('/api/coupons', authenticateToken, couponsRoutes);
 app.use('/api/exports', authenticateToken, exportsRoutes);
 app.use('/api/admin', authenticateToken, requireAdmin, adminRoutes);
 app.use('/api/audit-logs', authenticateToken, requireAdmin, adminRoutes);

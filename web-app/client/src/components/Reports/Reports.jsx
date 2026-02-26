@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import DateRangeSelector from './DateRangeSelector';
-import ExportButtons from './ExportButtons';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
 
@@ -8,8 +7,6 @@ export default function Reports({
   invoices, 
   products,
   customers,
-  onExportCSV,
-  onExportPDF,
   canViewProfit
 }) {
   const [startDate, setStartDate] = useState('');
@@ -110,12 +107,6 @@ export default function Reports({
           </div>
         </div>
       </div>
-
-      <ExportButtons 
-        reportData={reportData}
-        onExportCSV={onExportCSV}
-        onExportPDF={onExportPDF}
-      />
     </div>
   );
 }
