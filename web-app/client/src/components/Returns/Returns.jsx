@@ -6,7 +6,7 @@ import SearchBar from '../Common/SearchBar';
 import { API, getAuthHeaders } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 
-export default function Returns({ currentUser, showNotification }) {
+export default function Returns({ currentUser, isAdmin, userRole, showNotification }) {
   const [returns, setReturns] = useState([]);
   const [stats, setStats] = useState({});
   const [loading, setLoading] = useState(true);
@@ -161,7 +161,7 @@ export default function Returns({ currentUser, showNotification }) {
     }
   };
 
-  const isAdminOrManager = currentUser?.role === 'admin' || currentUser?.role === 'manager' || currentUser?.role === 'superadmin';
+  const isAdminOrManager = isAdmin || userRole === 'manager' || userRole === 'superadmin' || currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
   const handleDeleteReturn = async () => {
     if (!deleteConfirmId) return;

@@ -561,6 +561,8 @@ Esc: Close modals/dialogs`;
         return (
           <Returns
             currentUser={currentUser}
+            isAdmin={isAdmin}
+            userRole={userRole}
             showNotification={showNotification}
           />
         );
