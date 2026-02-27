@@ -75,9 +75,15 @@ export default function ImageUpload({
 
     setLoading(true);
     try {
-      await onUpload(file);
+      const savedUrl = await onUpload(file);
       setSuccess(true);
-      // Keep the preview visible; parent will pass new currentImageUrl
+      // If the upload handler returns a CDN URL, switch the preview to it
+      // so the correct URL is shown even after component remount
+      if (savedUrl && typeof savedUrl === 'string') {
+        URL.revokeObjectURL(localUrl);
+        setPreview(savedUrl);
+      }
+      // else keep the blob preview until parent passes updated currentImageUrl
     } catch (err) {
       setError(err?.message || 'Upload failed — please try again');
       setPreview(null);   // revert preview on failure
