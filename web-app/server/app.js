@@ -87,6 +87,18 @@ app.get('/api/ping', (req, res) => {
   res.json({ ok: true });
 });
 
+// Cloudinary configuration check (admin-only diagnostic)
+app.get('/api/cloudinary-status', authenticateToken, (req, res) => {
+  const { isConfigured } = require('./services/cloudinaryService');
+  const configured = isConfigured();
+  res.json({
+    configured,
+    cloudName: process.env.CLOUDINARY_CLOUD_NAME ? '✓ set' : '✗ missing',
+    apiKey:    process.env.CLOUDINARY_API_KEY    ? '✓ set' : '✗ missing',
+    apiSecret: process.env.CLOUDINARY_API_SECRET ? '✓ set' : '✗ missing'
+  });
+});
+
 // Stats endpoint (legacy support - could be moved to analytics)
 app.get('/api/stats', authenticateToken, async (req, res) => {
   try {

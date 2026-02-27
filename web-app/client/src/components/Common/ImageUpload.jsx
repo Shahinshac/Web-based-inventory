@@ -85,6 +85,7 @@ export default function ImageUpload({
       }
       // else keep the blob preview until parent passes updated currentImageUrl
     } catch (err) {
+      console.error('[ImageUpload] Upload failed:', err);
       setError(err?.message || 'Upload failed — please try again');
       setPreview(null);   // revert preview on failure
     } finally {

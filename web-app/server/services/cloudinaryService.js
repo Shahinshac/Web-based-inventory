@@ -28,6 +28,13 @@ cloudinary.config({
   secure: true // Always use HTTPS for all generated URLs
 });
 
+// Log configuration status at startup
+if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
+  logger.info(`Cloudinary configured ✓  (cloud: ${process.env.CLOUDINARY_CLOUD_NAME})`);
+} else {
+  logger.warn('Cloudinary NOT configured — image uploads will be disabled. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET.');
+}
+
 // ---------------------------------------------------------------------------
 // Validation helpers
 // ---------------------------------------------------------------------------
@@ -75,6 +82,11 @@ function validateFile(file) {
  */
 function uploadBuffer(buffer, mimetype, opts = {}) {
   return new Promise((resolve, reject) => {
+    // Guard: ensure SDK is configured before attempting upload
+    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+      return reject(new Error('Cloudinary is not configured. Please set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET environment variables.'));
+    }
+
     const uploadOptions = {
       folder:        opts.folder || 'inventory/misc',
       resource_type: 'image',
@@ -130,8 +142,8 @@ function uploadBuffer(buffer, mimetype, opts = {}) {
 async function uploadUserPhoto(buffer, mimetype, userId) {
   validateFile({ buffer, mimetype });
   return uploadBuffer(buffer, mimetype, {
-    folder:    `inventory/users`,
-    publicId:  `inventory/users/${userId}`,  // overwrite same file on re-upload
+    folder:    'inventory/users',
+    publicId:  userId,  // folder + publicId → inventory/users/{userId}
     overwrite: true,
     width:     400,
     height:    400
@@ -152,8 +164,8 @@ async function uploadProductPhoto(buffer, mimetype, productId) {
   // Unique ID per image → allows multiple photos per product
   const uniqueId = `${productId}-${Date.now()}`;
   return uploadBuffer(buffer, mimetype, {
-    folder:    `inventory/products`,
-    publicId:  `inventory/products/${uniqueId}`,
+    folder:    'inventory/products',
+    publicId:  uniqueId,  // folder + publicId → inventory/products/{uniqueId}
     overwrite: false,
     width:     800,
     height:    800
