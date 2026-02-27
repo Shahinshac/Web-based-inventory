@@ -240,6 +240,7 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
     ]);
     
     const formatted = users.map(u => ({
+      id: u._id.toString(),   // consistent with login response
       _id: u._id.toString(),
       username: u.username,
       email: u.email,
