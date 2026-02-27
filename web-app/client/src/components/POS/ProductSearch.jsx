@@ -1,5 +1,4 @@
-import React, { useState, useMemo } from 'react';
-import SearchBar from '../Common/SearchBar';
+import React, { useState, useMemo, useRef } from 'react';
 import Icon from '../../Icon';
 import { formatCurrency } from '../../constants';
 import { normalizePhotoUrl } from '../../utils/api';
@@ -7,6 +6,7 @@ import { normalizePhotoUrl } from '../../utils/api';
 export default function ProductSearch({ products, onProductSelect }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const inputRef = useRef(null);
 
   // Get unique categories from products
   const categories = useMemo(() => {
@@ -29,87 +29,105 @@ export default function ProductSearch({ products, onProductSelect }) {
   }, [products, searchQuery, selectedCategory]);
 
   return (
-    <div className="product-search">
-      <div className="search-controls">
-        <SearchBar 
+    <div className="pos-product-search">
+      {/* ── Modern search bar ── */}
+      <div className="pos-search-bar" onClick={() => inputRef.current?.focus()}>
+        <Icon name="search" size={20} className="pos-search-icon" />
+        <input
+          ref={inputRef}
+          type="text"
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search products by name, serial, or barcode..."
+          onChange={e => setSearchQuery(e.target.value)}
+          placeholder="Search products by name..."
           autoFocus
         />
-        
-        {categories.length > 1 && (
-          <div className="category-filter">
-            {categories.map(cat => (
-              <button
-                key={cat}
-                className={`category-btn ${selectedCategory === cat ? 'active' : ''}`}
-                onClick={() => setSelectedCategory(cat)}
-              >
-                {cat === 'all' ? 'All' : cat}
-              </button>
-            ))}
-          </div>
+        {searchQuery && (
+          <button className="pos-search-clear" onClick={() => setSearchQuery('')}>
+            <Icon name="x" size={16} />
+          </button>
         )}
       </div>
 
-      <div className="products-grid">
-        {filteredProducts.length > 0 ? (
-          filteredProducts.map(product => (
-            <div 
-              key={product.id}
-              className={`product-card ${product.quantity === 0 ? 'out-of-stock' : ''}`}
-              onClick={() => product.quantity > 0 && onProductSelect(product)}
+      {/* ── Category pills ── */}
+      {categories.length > 1 && (
+        <div className="pos-category-strip">
+          {categories.map(cat => (
+            <button
+              key={cat}
+              className={`pos-cat-pill ${selectedCategory === cat ? 'active' : ''}`}
+              onClick={() => setSelectedCategory(cat)}
             >
-              {product.photo && (
-                <div className="product-image">
-                  <img 
-                    src={normalizePhotoUrl(product.photo)} 
-                    alt={product.name}
-                    onError={(e) => { e.target.parentElement.style.display = 'none'; }}
-                  />
-                </div>
-              )}
-              <div className="product-info">
-                <h4 className="product-name">{product.name}</h4>
-                <div className="product-meta">
-                  <span className="product-price">{formatCurrency(product.price)}</span>
-                  <span className={`product-stock ${product.quantity === 0 ? 'out' : product.quantity < product.minStock ? 'low' : ''}`}>
-                    {product.quantity === 0 ? (
-                      <>
-                        <Icon name="x-circle" size={14} />
-                        Out of Stock
-                      </>
-                    ) : product.quantity < product.minStock ? (
-                      <>
-                        <Icon name="alert-triangle" size={14} />
-                        {product.quantity} left
-                      </>
-                    ) : (
-                      <>
-                        <Icon name="check-circle" size={14} />
-                        {product.quantity} in stock
-                      </>
-                    )}
+              {cat === 'all' ? 'All Products' : cat}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* ── Product grid ── */}
+      <div className="pos-products-grid">
+        {filteredProducts.length > 0 ? (
+          filteredProducts.map(product => {
+            const isOut = product.quantity === 0;
+            const isLow = product.quantity > 0 && product.quantity < (product.minStock || 5);
+            const photoUrl = normalizePhotoUrl(product.photo);
+
+            return (
+              <div 
+                key={product.id || product._id}
+                className={`pos-product-card ${isOut ? 'out-of-stock' : ''}`}
+                onClick={() => !isOut && onProductSelect(product)}
+                role="button"
+                tabIndex={0}
+                onKeyDown={e => e.key === 'Enter' && !isOut && onProductSelect(product)}
+              >
+                {/* Thumbnail */}
+                <div className="pos-card-thumb">
+                  {photoUrl ? (
+                    <img
+                      src={photoUrl}
+                      alt={product.name}
+                      loading="lazy"
+                      onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                  ) : null}
+                  <span className="pos-card-thumb-placeholder" style={{ display: photoUrl ? 'none' : 'flex' }}>
+                    <Icon name="package" size={28} />
                   </span>
+
+                  {/* Stock badge overlay */}
+                  {isOut && <span className="pos-stock-badge out">Out of Stock</span>}
+                  {isLow && <span className="pos-stock-badge low">{product.quantity} left</span>}
                 </div>
+
+                {/* Info area */}
+                <div className="pos-card-body">
+                  <span className="pos-card-name">{product.name}</span>
+                  <div className="pos-card-footer">
+                    <span className="pos-card-price">{formatCurrency(product.price)}</span>
+                    {!isOut && (
+                      <span className="pos-card-stock">
+                        <Icon name="check-circle" size={12} />
+                        {product.quantity}
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Quick-add button */}
+                {!isOut && (
+                  <button className="pos-add-btn" aria-label="Add to cart" onClick={e => { e.stopPropagation(); onProductSelect(product); }}>
+                    <Icon name="plus" size={16} />
+                  </button>
+                )}
               </div>
-              {product.quantity > 0 && (
-                <button className="add-to-cart-btn">
-                  <Icon name="plus" size={18} />
-                </button>
-              )}
-            </div>
-          ))
+            );
+          })
         ) : (
           <div className="empty-state">
-            <Icon name="package" size={64} color="#cbd5e1" />
-            <p>No products found</p>
+            <Icon name="package" size={56} color="#cbd5e1" />
+            <p>{searchQuery ? 'No products match your search' : 'No products found'}</p>
             {searchQuery && (
-              <button 
-                className="clear-search-btn"
-                onClick={() => setSearchQuery('')}
-              >
+              <button className="pos-clear-btn" onClick={() => setSearchQuery('')}>
                 Clear search
               </button>
             )}
