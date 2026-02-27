@@ -402,6 +402,25 @@ Esc: Close modals/dialogs`;
     }
   };
 
+  const changeUserRole = async (userId, newRole) => {
+    try {
+      const res = await fetch(API(`/api/users/${userId}/role`), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
+        body: JSON.stringify({ role: newRole })
+      });
+      if (res.ok) {
+        showNotification(`✅ Role updated to ${newRole}`, 'success');
+        setUsers(prev => prev.map(u => (u.id === userId || u._id === userId) ? { ...u, role: newRole } : u));
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'Failed to update role', 'error');
+      }
+    } catch {
+      showNotification('Failed to update role', 'error');
+    }
+  };
+
   const forceLogoutUser = async (username) => {
     if (!confirm(`Force logout ${username}? You will need to enter admin password to confirm.`)) return;
     const adminPassword = prompt('Enter your admin password to confirm force logout:');
@@ -605,6 +624,7 @@ Esc: Close modals/dialogs`;
             onResetPassword={resetUserPassword}
             onApproveUser={approveUser}
             onDeleteUser={deleteUser}
+            onChangeRole={changeUserRole}
             onForceLogout={forceLogoutUser}
             onRevokeAccess={revokeUserAccess}
             onRefreshUsers={fetchUsers}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
@@ -9,6 +9,7 @@ export default function UserCard({
   user, 
   currentUser,
   onDelete,
+  onChangeRole,
   onForceLogout,
   onRevokeAccess,
   onResetPassword
@@ -18,6 +19,19 @@ export default function UserCard({
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [showNewPassword, setShowNewPassword] = useState(false);
+  const [pendingRole, setPendingRole] = useState(user.role);
+  const [roleChanging, setRoleChanging] = useState(false);
+
+  // Sync local state when parent refreshes user.role after a successful save
+  useEffect(() => { setPendingRole(user.role); }, [user.role]);
+
+  const roleChanged = pendingRole !== user.role;
+
+  const handleRoleChange = async () => {
+    setRoleChanging(true);
+    await onChangeRole?.(user.id || user._id, pendingRole);
+    setRoleChanging(false);
+  };
 
   const isCurrentUser = currentUser?.id === user.id || currentUser?._id === user._id;
 
@@ -68,7 +82,34 @@ export default function UserCard({
         </div>
 
         <div className="user-card-body">
-          <RoleSelector role={user.role} readOnly />
+          {onChangeRole && !isCurrentUser ? (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0 8px' }}>
+              <select
+                value={pendingRole}
+                onChange={e => setPendingRole(e.target.value)}
+                className="role-select"
+                disabled={roleChanging}
+                style={{ flex: 1, fontSize: 13 }}
+              >
+                <option value="admin">👑 Admin</option>
+                <option value="manager">👔 Manager</option>
+                <option value="cashier">💼 Cashier</option>
+              </select>
+              {roleChanged && (
+                <Button
+                  variant="primary"
+                  size="small"
+                  onClick={handleRoleChange}
+                  disabled={roleChanging}
+                  icon="check"
+                >
+                  {roleChanging ? 'Saving…' : 'Save'}
+                </Button>
+              )}
+            </div>
+          ) : (
+            <RoleSelector role={user.role} readOnly />
+          )}
 
           <div className="user-status">
             {user.approved !== false ? (

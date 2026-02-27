@@ -13,6 +13,7 @@ export default function UsersList({
   onResetPassword,
   onApproveUser,
   onDeleteUser,
+  onChangeRole,
   onForceLogout,
   onRevokeAccess,
   onRefreshUsers
@@ -100,6 +101,7 @@ export default function UsersList({
               user={user}
               currentUser={currentUser}
               onDelete={onDeleteUser}
+              onChangeRole={onChangeRole}
               onForceLogout={onForceLogout}
               onRevokeAccess={onRevokeAccess}
               onResetPassword={onResetPassword}
