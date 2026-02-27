@@ -61,21 +61,35 @@ export const deleteProduct = async (productId, userId, username) => {
 }
 
 /**
- * Upload product photo
+ * Upload a product photo (stored on Cloudinary via the backend).
+ * Returns { success, photo: { id, url, storage } }
  */
 export const uploadProductPhoto = async (productId, file, userId, username) => {
   const formData = new FormData()
   formData.append('photo', file)
-  formData.append('userId', userId)
-  formData.append('username', username)
-  
+  if (userId)   formData.append('userId',   userId)
+  if (username) formData.append('username', username)
+
   return await apiUpload(`/api/products/${productId}/photo`, formData)
 }
 
 /**
- * Delete product photo
+ * Delete a specific product photo by its Cloudinary public_id / photo entry id.
+ * Requires confirmed=true query flag (server-side safety check).
  */
-export const deleteProductPhoto = async (productId, userId, username) => {
+export const deleteProductPhoto = async (productId, photoId, userId, username) => {
+  const params = new URLSearchParams({
+    confirmed: 'true',
+    ...(userId   && { userId }),
+    ...(username && { username })
+  })
+  return await apiDelete(`/api/products/${productId}/photo/${encodeURIComponent(photoId)}?${params}`)
+}
+
+/**
+ * Delete the legacy single-photo field on a product.
+ */
+export const deleteProductLegacyPhoto = async (productId, userId, username) => {
   return await apiDelete(`/api/products/${productId}/photo?userId=${userId}&username=${username}`)
 }
 

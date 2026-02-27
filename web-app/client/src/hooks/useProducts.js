@@ -10,7 +10,9 @@ import {
   updateProduct as updateProductAPI,
   updateProductStock as updateStockAPI,
   deleteProduct as deleteProductAPI,
-  searchProductByBarcode
+  searchProductByBarcode,
+  uploadProductPhoto as uploadProductPhotoAPI,
+  deleteProductPhoto as deleteProductPhotoAPI
 } from '../services/productService'
 
 export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => {
@@ -132,6 +134,51 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     }
   }
 
+  /**
+   * Upload a photo for a product.
+   * Sends the file to the backend (Cloudinary) and refreshes the product list.
+   * @param {string} productId
+   * @param {File}   file
+   * @returns {string} Cloudinary CDN URL of the uploaded photo
+   */
+  const uploadProductPhoto = async (productId, file) => {
+    const userId   = currentUser?.id       || null
+    const username = currentUser?.username || 'unknown'
+    const result   = await uploadProductPhotoAPI(productId, file, userId, username)
+    // Optimistically update local state so the card re-renders immediately
+    setProducts(prev => prev.map(p => {
+      if ((p.id || p._id) !== productId) return p
+      const newPhoto = result?.photo || {}
+      return {
+        ...p,
+        photo:  newPhoto.url || p.photo,
+        photos: [...(p.photos || []), { id: newPhoto.id, url: newPhoto.url, storage: 'cloudinary', cloudinaryPublicId: newPhoto.id }]
+      }
+    }))
+    return result?.photo?.url || null
+  }
+
+  /**
+   * Delete a specific photo from a product.
+   * @param {string} productId
+   * @param {string} photoId   – Cloudinary public_id or photo entry id
+   */
+  const deleteProductPhoto = async (productId, photoId) => {
+    const userId   = currentUser?.id       || null
+    const username = currentUser?.username || 'unknown'
+    await deleteProductPhotoAPI(productId, photoId, userId, username)
+    // Optimistically remove from local state
+    setProducts(prev => prev.map(p => {
+      if ((p.id || p._id) !== productId) return p
+      const updatedPhotos = (p.photos || []).filter(ph => ph.id !== photoId && ph.cloudinaryPublicId !== photoId)
+      return {
+        ...p,
+        photos: updatedPhotos,
+        photo:  updatedPhotos.length > 0 ? updatedPhotos[updatedPhotos.length - 1].url : null
+      }
+    }))
+  }
+
   // Filter and sort products
   const getFilteredProducts = () => {
     let filtered = [...products]
@@ -201,6 +248,8 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     updateProduct,
     updateStock,
     deleteProduct,
+    uploadProductPhoto,
+    deleteProductPhoto,
     searchByBarcode,
     getFilteredProducts
   }

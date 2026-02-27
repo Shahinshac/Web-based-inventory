@@ -8,6 +8,7 @@ const app = require('./app');
 const { connectDB, getDB } = require('./db');
 const logger = require('./logger');
 const { ADMIN_USERNAME, ADMIN_PASSWORD, PORT } = require('./config/constants');
+const { isConfigured: isCloudinaryConfigured } = require('./services/cloudinaryService');
 
 /**
  * Initialize admin user on server startup
@@ -87,6 +88,13 @@ async function startServer() {
       logger.info(`🚀 Inventory API listening on port ${port}`);
       logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
       logger.info(`📍 Server URL: http://localhost:${port}`);
+
+      // Warn operators if Cloudinary is not configured (images won't upload)
+      if (isCloudinaryConfigured()) {
+        logger.info('☁️  Cloudinary image storage: configured ✅');
+      } else {
+        logger.warn('⚠️  Cloudinary image storage: NOT configured — set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, CLOUDINARY_API_SECRET in environment variables');
+      }
     });
   } catch (error) {
     logger.error('Failed to start server:', error);

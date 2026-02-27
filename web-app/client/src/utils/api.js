@@ -16,40 +16,49 @@ export const API = (path) => {
 }
 
 /**
- * Normalize photo URLs to use the client's API base URL
- * This handles cases where the server stores photos with different domains
+ * Normalize photo URLs to a usable absolute URL.
+ *
+ * Priority:
+ *   1. Cloudinary CDN URLs (res.cloudinary.com) — returned as-is (already absolute)
+ *   2. Relative /api/ paths — prefixed with API base URL
+ *   3. Absolute URLs containing /api/ — extract the /api/ path and prefix
+ *   4. Any other absolute URL — returned as-is (external CDN, etc.)
+ *   5. null / undefined — returns null
  */
 export const normalizePhotoUrl = (photoUrl) => {
-  if (!photoUrl) return null
-  
-  const baseUrl = getApiBaseUrl()
-  
-  // If it's already a relative path, prepend API base
+  if (!photoUrl) return null;
+
+  // ── Cloudinary CDN URL ── already fully qualified, serve directly
+  if (photoUrl.includes('res.cloudinary.com') || photoUrl.includes('cloudinary.com')) {
+    return photoUrl;
+  }
+
+  const baseUrl = getApiBaseUrl();
+
+  // ── Relative /api/ path ──
   if (photoUrl.startsWith('/api/')) {
-    return baseUrl + photoUrl
+    return baseUrl + photoUrl;
   }
-  
-  // Extract the /api/... path from absolute URLs (handles photoId-based URLs)
-  // Preserve query string parameters (e.g., ?t= for cache-busting)
-  const apiPathMatch = photoUrl.match(/\/api\/(products|users)\/[a-f0-9]+\/photo(\/[a-f0-9]+)?(\?[^\s]*)?/i)
-  if (apiPathMatch) {
-    return baseUrl + apiPathMatch[0]
-  }
-  
-  // If URL already has our base URL, return as-is
+
+  // ── Already includes our base URL ──
   if (photoUrl.startsWith(baseUrl)) {
-    return photoUrl
+    return photoUrl;
   }
-  
-  // For any other absolute URL with /api/ in it, extract and rebuild
+
+  // ── Absolute URL containing /api/ ── extract and rebuild
   if (photoUrl.includes('/api/')) {
-    const pathStart = photoUrl.indexOf('/api/')
-    return baseUrl + photoUrl.substring(pathStart)
+    const pathStart = photoUrl.indexOf('/api/');
+    // Preserve any query string (cache-buster, etc.)
+    return baseUrl + photoUrl.substring(pathStart);
   }
-  
-  // Return as-is for external URLs
-  return photoUrl
-}
+
+  // ── Any other absolute URL ── pass through unchanged (e.g. external CDN)
+  if (photoUrl.startsWith('http://') || photoUrl.startsWith('https://')) {
+    return photoUrl;
+  }
+
+  return photoUrl;
+};
 
 /**
  * Generic fetch wrapper with error handling

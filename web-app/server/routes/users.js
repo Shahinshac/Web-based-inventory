@@ -17,6 +17,7 @@ const { validateUserRegistration } = require('../validators');
 const upload = require('../middleware/upload');
 const { logAudit } = require('../services/auditService');
 const { savePhotoToDatabase, getPhotoFromDatabase, deletePhotoFromDatabase, deletePhotoFile, ensureUploadDir } = require('../services/photoService');
+const { uploadUserPhoto, deleteCloudinaryAsset, isConfigured: isCloudinaryConfigured } = require('../services/cloudinaryService');
 const { sanitizeObject } = require('../services/helpers');
 const { ALLOW_ADMIN_PASSWORD_CHANGE, JWT_SECRET, JWT_EXPIRES_IN } = require('../config/constants');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
@@ -174,7 +175,10 @@ router.post('/login', async (req, res) => {
         role: user.role,
         approved: user.approved,
         sessionVersion,
-        photo: user.photo ? `/api/users/${user._id.toString()}/photo` : null
+        // Return direct CDN URL for Cloudinary photos; fall back to API proxy for legacy
+        photo: user.photo
+          ? (user.photoStorage === 'cloudinary' ? user.photo : `/api/users/${user._id.toString()}/photo`)
+          : null
       }
     });
   } catch (e) {
@@ -240,7 +244,10 @@ router.get('/', authenticateToken, requireAdmin, async (req, res) => {
       username: u.username,
       email: u.email,
       role: u.role,
-      photo: u.photo ? `/api/users/${u._id.toString()}/photo` : null,
+      // Direct CDN URL for Cloudinary; API proxy for legacy binary/FS storage
+      photo: u.photo
+        ? (u.photoStorage === 'cloudinary' ? u.photo : `/api/users/${u._id.toString()}/photo`)
+        : null,
       approved: u.approved,
       sessionVersion: u.sessionVersion || 1,
       createdAt: u.createdAt,
@@ -506,101 +513,74 @@ router.patch('/change-password', authenticateToken, async (req, res) => {
 
 /**
  * POST /api/users/:id/photo
- * Upload user profile photo
+ * Upload / replace user profile photo.
+ * Images are stored on Cloudinary CDN (not in the database or filesystem).
  */
 router.post('/:id/photo', authenticateToken, upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, username } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({ error: 'No photo uploaded' });
     }
 
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({ error: 'Image storage is not configured. Please contact your administrator.' });
+    }
+
     const db = getDB();
     const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
-    
+
     if (!user) {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Delete previous photo record if exists
-    if (user.photo) {
-      try {
-        if (user.photoStorage === 'db' || user.photoDbId) {
-          const photoId = user.photoDbId || String(user.photo).replace(/^db:/, '');
-          if (photoId) await deletePhotoFromDatabase(db, 'user_images', photoId);
-        } else {
-          const filename = user.photoFilename || (user.photo && path.basename(user.photo));
-          if (filename) await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'users', filename));
-        }
-      } catch (err) { 
-        logger.warn('Failed to delete old user photo:', err.message); 
+    // Only allow the user themselves (or an admin) to change the photo
+    if (req.user.userId !== id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorised to update this profile photo' });
+    }
+
+    // Delete the previous Cloudinary asset (avoids orphaned files)
+    if (user.cloudinaryPublicId) {
+      await deleteCloudinaryAsset(user.cloudinaryPublicId);
+    }
+
+    // Upload new image to Cloudinary
+    let cloudinaryResult;
+    try {
+      cloudinaryResult = await uploadUserPhoto(req.file.buffer, req.file.mimetype, id);
+    } catch (uploadErr) {
+      logger.error('Cloudinary user photo upload failed:', uploadErr.message);
+      return res.status(422).json({ error: uploadErr.message });
+    }
+
+    const { url: photoUrl, publicId: cloudinaryPublicId } = cloudinaryResult;
+
+    // Persist CDN URL + public_id in the user document
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $set: {
+          photo:              photoUrl,          // Cloudinary CDN URL
+          cloudinaryPublicId: cloudinaryPublicId,
+          photoStorage:       'cloudinary',
+          photoUpdatedAt:     new Date(),
+          lastModified:       new Date(),
+          lastModifiedBy:     userId || null,
+          lastModifiedByUsername: username || 'Unknown'
+        },
+        $unset: { photoDbId: '', photoFilename: '' }
       }
-    }
+    );
 
-    // Ensure upload dir exists
-    await ensureUploadDir(path.join(__dirname, '..', 'uploads', 'users'));
-
-    // Store relative photo URL with timestamp for cache-busting
-    // This ensures browser cache is invalidated when photo is updated
-    const photoTimestamp = Date.now();
-    let photoUrl = `/api/users/${id}/photo?t=${photoTimestamp}`;
-    
-    const storageMode = String(req.query.storage || '').toLowerCase();
-    const useDbStorage = (storageMode !== 'fs'); // default to DB
-    
-    if (useDbStorage) {
-      const photoId = await savePhotoToDatabase(
-        db,
-        'user_images',
-        id,
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname || req.file.filename
-      );
-
-      await db.collection('users').updateOne(
-        { _id: new ObjectId(id) },
-        { 
-          $set: { 
-            photo: photoUrl, 
-            photoStorage: 'db', 
-            photoDbId: photoId,
-            photoUpdatedAt: new Date(),
-            lastModified: new Date(), 
-            lastModifiedBy: userId || null, 
-            lastModifiedByUsername: username || 'Unknown' 
-          } 
-        }
-      );
-    } else {
-      // Filesystem-backed
-      const filename = `${id}-${Date.now()}${path.extname(req.file.originalname)}`;
-      const filePath = path.join(__dirname, '..', 'uploads', 'users', filename);
-      await fs.writeFile(filePath, req.file.buffer);
-      
-      await db.collection('users').updateOne(
-        { _id: new ObjectId(id) },
-        { 
-          $set: { 
-            photo: photoUrl, 
-            photoStorage: 'fs', 
-            photoFilename: filename,
-            photoUpdatedAt: new Date(),
-            lastModified: new Date(), 
-            lastModifiedBy: userId || null, 
-            lastModifiedByUsername: username || 'Unknown' 
-          } 
-        }
-      );
-    }
-
-    await logAudit(db, 'USER_PHOTO_UPDATED', userId || null, username || 'system', { 
-      userId: id 
+    await logAudit(db, 'USER_PHOTO_UPDATED', userId || null, username || 'system', {
+      userId: id,
+      cloudinaryPublicId
     });
 
-    res.json({ success: true, photo: photoUrl, message: 'User photo uploaded' });
+    logger.info(`User photo uploaded to Cloudinary for user ${id}: ${cloudinaryPublicId}`);
+    res.json({ success: true, photo: photoUrl, message: 'Profile photo updated successfully' });
   } catch (e) {
     logger.error('User photo upload error:', e);
     res.status(500).json({ error: e.message });
@@ -609,39 +589,47 @@ router.post('/:id/photo', authenticateToken, upload.single('photo'), async (req,
 
 /**
  * GET /api/users/:id/photo
- * Serve user profile photo
- * Note: Query parameter ?t= is used for cache-busting and is ignored
+ * Serve user profile photo.
+ *
+ * New uploads → redirect to Cloudinary CDN URL (fast, cached globally).
+ * Legacy uploads (DB binary / filesystem) → served directly for backward compatibility.
  */
 router.get('/:id/photo', async (req, res) => {
   try {
     const { id } = req.params;
-    // Ignore ?t= timestamp parameter - it's only for cache-busting
     const db = getDB();
     const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
-    
+
     if (!user) return res.status(404).json({ error: 'User not found' });
 
+    // ── Cloudinary-stored photo (new) ──────────────────────────────────────
+    if (user.photoStorage === 'cloudinary' && user.photo && user.photo.startsWith('http')) {
+      // Redirect browser to CDN — no bandwidth cost on our server
+      return res.redirect(302, user.photo);
+    }
+
+    // ── Legacy: DB-stored binary ───────────────────────────────────────────
     if (user.photoStorage === 'db' || user.photoDbId) {
       const imgId = user.photoDbId || String(user.photo || '').replace(/^db:/, '');
-      if (!imgId) return res.status(404).json({ error: 'No DB-stored photo' });
-      
+      if (!imgId) return res.status(404).json({ error: 'No stored photo' });
+
       const photoData = await getPhotoFromDatabase(db, 'user_images', imgId);
       if (!photoData) return res.status(404).json({ error: 'Image not found' });
-      
+
       res.setHeader('Content-Type', photoData.contentType);
-      // Cache for 24 hours - timestamp in URL ensures cache invalidation on update
       res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(photoData.data);
     }
 
+    // ── Legacy: filesystem-stored ──────────────────────────────────────────
     const filename = user.photoFilename || (user.photo && path.basename(user.photo));
     if (!filename) return res.status(404).json({ error: 'No photo available' });
-    
+
     const imgPath = path.join(__dirname, '..', 'uploads', 'users', filename);
     return res.sendFile(imgPath, err => {
-      if (err) { 
-        logger.warn('Failed to send user photo:', err.message); 
-        res.status(404).json({ error: 'Image not found' }); 
+      if (err) {
+        logger.warn('Failed to send user photo file:', err.message);
+        res.status(404).json({ error: 'Image not found' });
       }
     });
   } catch (e) {
@@ -649,10 +637,11 @@ router.get('/:id/photo', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
+});
 
 /**
  * DELETE /api/users/:id/photo
- * Delete user profile photo
+ * Delete user profile photo (removes from Cloudinary + clears DB fields).
  */
 router.delete('/:id/photo', authenticateToken, async (req, res) => {
   try {
@@ -663,39 +652,46 @@ router.delete('/:id/photo', authenticateToken, async (req, res) => {
     const user = await db.collection('users').findOne({ _id: new ObjectId(id) });
     if (!user) return res.status(404).json({ error: 'User not found' });
 
-    if (user.photo) {
-      if (String(user.photo).startsWith('db:') || user.photoDbId) {
-        const photoId = user.photoDbId || String(user.photo).replace(/^db:/, '');
+    // Only the owner or an admin may delete the photo
+    if (req.user.userId !== id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Not authorised to delete this profile photo' });
+    }
+
+    // Remove from Cloudinary (new storage)
+    if (user.cloudinaryPublicId) {
+      await deleteCloudinaryAsset(user.cloudinaryPublicId);
+    }
+
+    // Remove legacy DB-stored binary
+    if ((user.photoStorage === 'db' || user.photoDbId) && !user.cloudinaryPublicId) {
+      try {
+        const photoId = user.photoDbId || String(user.photo || '').replace(/^db:/, '');
         if (photoId) await deletePhotoFromDatabase(db, 'user_images', photoId);
-      } else {
-        try { 
-          await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'users', path.basename(user.photo))); 
-        } catch (err) { 
-          logger.warn('Failed to delete user photo file:', err.message); 
-        }
+      } catch (err) {
+        logger.warn('Failed to delete legacy DB user photo:', err.message);
+      }
+    }
+
+    // Remove legacy filesystem photo
+    if (user.photoStorage === 'fs' && user.photoFilename) {
+      try {
+        await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'users', user.photoFilename));
+      } catch (err) {
+        logger.warn('Failed to delete legacy FS user photo:', err.message);
       }
     }
 
     await db.collection('users').updateOne(
       { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          photo: null, 
-          lastModified: new Date(), 
-          lastModifiedBy: userId || null, 
-          lastModifiedByUsername: username || 'Unknown' 
-        }, 
-        $unset: { 
-          photoFilename: '', 
-          photoDbId: '', 
-          photoStorage: '' 
-        } 
+      {
+        $set:   { photo: null, lastModified: new Date(), lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown' },
+        $unset: { cloudinaryPublicId: '', photoFilename: '', photoDbId: '', photoStorage: '' }
       }
     );
 
     await logAudit(db, 'USER_PHOTO_DELETED', userId || null, username || 'system', { userId: id });
 
-    res.json({ success: true, message: 'User photo deleted' });
+    res.json({ success: true, message: 'Profile photo removed' });
   } catch (e) {
     logger.error('Delete user photo error:', e);
     res.status(500).json({ error: e.message });

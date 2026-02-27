@@ -16,6 +16,7 @@ const upload = require('../middleware/upload');
 const { logAudit } = require('../services/auditService');
 const { generateProductBarcode, generateBarcodeImage, generateQRCode } = require('../services/barcodeService');
 const { savePhotoToDatabase, getPhotoFromDatabase, deletePhotoFromDatabase, deletePhotoFile, ensureUploadDir } = require('../services/photoService');
+const { uploadProductPhoto, deleteCloudinaryAsset, isConfigured: isCloudinaryConfigured } = require('../services/cloudinaryService');
 const { sanitizeObject } = require('../services/helpers');
 
 /**
@@ -455,128 +456,87 @@ router.get('/:id/barcode', async (req, res) => {
 
 /**
  * POST /api/products/:id/photo
- * Upload product photo (database or filesystem storage)
+ * Upload a product photo — stored on Cloudinary CDN.
+ * Multiple photos per product are supported (each upload appends to the `photos` array).
  */
 router.post('/:id/photo', upload.single('photo'), async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, username } = req.body;
-    
+
     if (!req.file) {
       return res.status(400).json({ error: 'No photo file uploaded' });
     }
-    
+
+    if (!isCloudinaryConfigured()) {
+      return res.status(503).json({ error: 'Image storage is not configured. Please contact your administrator.' });
+    }
+
     const db = getDB();
     const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
-    
+
     if (!product) {
       return res.status(404).json({ error: 'Product not found' });
     }
-    
-    // DO NOT delete old photos - we're adding to the array, not replacing
-    // This ensures images are NEVER deleted automatically
-    
-    // Default photo storage: DB unless explicitly requested 'fs'
-    const storageMode = String(req.query.storage || '').toLowerCase();
-    const useDbStorage = (storageMode !== 'fs');
-    
-    let photoId = null;
-    let photoUrl = null;
-    
-    if (useDbStorage) {
-      // Store in database
-      photoId = await savePhotoToDatabase(
-        db, 
-        'product_images', 
-        id, 
-        req.file.buffer,
-        req.file.mimetype,
-        req.file.originalname || req.file.filename
-      );
 
-      // Store relative photo URL with the actual photoId for retrieval
-      photoUrl = `/api/products/${id}/photo/${photoId}`;
-
-      // ADD to photos array (never replace existing photos)
-      await db.collection('products').updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $push: {
-            photos: {
-              id: photoId,
-              url: photoUrl,
-              storage: 'db',
-              dbId: photoId,
-              filename: req.file.originalname || req.file.filename,
-              uploadedAt: new Date(),
-              uploadedBy: userId || null,
-              uploadedByUsername: username || 'Unknown'
-            }
-          },
-          $set: {
-            photo: photoUrl, // Keep legacy field updated for backward compatibility
-            lastModifiedBy: userId || null,
-            lastModifiedByUsername: username || 'Unknown',
-            lastModified: new Date()
-          }
-        }
-      );
-    } else {
-      // Filesystem-backed - save file to disk
-      await ensureUploadDir(path.join(__dirname, '..', 'uploads', 'products'));
-      const filename = `${id}-${Date.now()}${path.extname(req.file.originalname)}`;
-      const filePath = path.join(__dirname, '..', 'uploads', 'products', filename);
-      await fs.writeFile(filePath, req.file.buffer);
-      photoId = filename;
-      photoUrl = `/api/products/${id}/photo/${filename}`;
-      
-      // ADD to photos array (never replace existing photos)
-      await db.collection('products').updateOne(
-        { _id: new ObjectId(id) },
-        {
-          $push: {
-            photos: {
-              id: filename,
-              url: photoUrl,
-              storage: 'fs',
-              filename: filename,
-              uploadedAt: new Date(),
-              uploadedBy: userId || null,
-              uploadedByUsername: username || 'Unknown'
-            }
-          },
-          $set: {
-            photo: photoUrl, // Keep legacy field updated for backward compatibility
-            lastModifiedBy: userId || null,
-            lastModifiedByUsername: username || 'Unknown',
-            lastModified: new Date()
-          }
-        }
-      );
+    // Upload to Cloudinary
+    let cloudinaryResult;
+    try {
+      cloudinaryResult = await uploadProductPhoto(req.file.buffer, req.file.mimetype, id);
+    } catch (uploadErr) {
+      logger.error('Cloudinary product photo upload failed:', uploadErr.message);
+      return res.status(422).json({ error: uploadErr.message });
     }
-    
-    // Log audit trail
-    await logAudit(db, 'PRODUCT_PHOTO_UPDATED', userId, username, {
-      productId: id,
-      productName: product.name,
-      photoUrl: photoUrl,
-      photoId: photoId,
-      storage: useDbStorage ? 'db' : 'fs'
+
+    const { url: photoUrl, publicId: cloudinaryPublicId } = cloudinaryResult;
+
+    // Build the photo entry for the `photos` array
+    const photoEntry = {
+      id:                 cloudinaryPublicId,
+      url:                photoUrl,
+      storage:            'cloudinary',
+      cloudinaryPublicId: cloudinaryPublicId,
+      filename:           req.file.originalname || req.file.fieldname,
+      uploadedAt:         new Date(),
+      uploadedBy:         userId || null,
+      uploadedByUsername: username || 'Unknown'
+    };
+
+    // Append to photos array; also update legacy `photo` field for backward compat
+    await db.collection('products').updateOne(
+      { _id: new ObjectId(id) },
+      {
+        $push: { photos: photoEntry },
+        $set:  {
+          photo:               photoUrl,   // legacy field — points to latest photo
+          lastModifiedBy:      userId || null,
+          lastModifiedByUsername: username || 'Unknown',
+          lastModified:        new Date()
+        }
+      }
+    );
+
+    await logAudit(db, 'PRODUCT_PHOTO_UPLOADED', userId, username, {
+      productId:          id,
+      productName:        product.name,
+      photoUrl,
+      cloudinaryPublicId,
+      storage:            'cloudinary'
     });
-    
-    logger.info(`✅ Photo uploaded successfully for product ${id}: ${photoUrl}`);
-    
-    res.json({ 
-      success: true, 
+
+    logger.info(`Product photo uploaded to Cloudinary for product ${id}: ${cloudinaryPublicId}`);
+
+    res.json({
+      success: true,
       photo: {
-        id: photoId,
-        url: photoUrl,
-        storage: useDbStorage ? 'db' : 'fs'
+        id:      cloudinaryPublicId,
+        url:     photoUrl,
+        storage: 'cloudinary'
       },
-      message: 'Product photo uploaded successfully' 
+      message: 'Product photo uploaded successfully'
     });
   } catch (e) {
-    logger.error('❌ Photo upload error:', e);
+    logger.error('Product photo upload error:', e);
     res.status(500).json({ error: e.message });
   }
 });
@@ -594,7 +554,12 @@ router.get('/:id/photo', async (req, res) => {
 
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
-    // If DB-backed image
+    // ── Cloudinary URL (new): redirect to CDN ─────────────────────────────
+    if (product.photo && product.photo.startsWith('http')) {
+      return res.redirect(302, product.photo);
+    }
+
+    // ── Legacy: DB-stored binary ───────────────────────────────────────────
     if (product.photoStorage === 'db' || product.photoDbId) {
       const imgId = product.photoDbId || String(product.photo || '').replace(/^db:/, '');
       if (!imgId) return res.status(404).json({ error: 'No DB-stored photo found' });
@@ -603,11 +568,11 @@ router.get('/:id/photo', async (req, res) => {
       if (!photoData) return res.status(404).json({ error: 'Image data not found' });
 
       res.setHeader('Content-Type', photoData.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+      res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(photoData.data);
     }
 
-    // Filesystem-backed image
+    // ── Legacy: filesystem-backed ──────────────────────────────────────────
     const filename = product.photoFilename || (product.photo && path.basename(product.photo));
     if (!filename) return res.status(404).json({ error: 'No photo available for this product' });
 
@@ -637,24 +602,28 @@ router.get('/:id/photo/:photoId', async (req, res) => {
     if (!product) return res.status(404).json({ error: 'Product not found' });
 
     // Find the specific photo in the photos array
-    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId);
-    
+    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId || p.cloudinaryPublicId === photoId);
+
     if (!photo) {
-      // Fallback to legacy single photo for backward compatibility
       return res.status(404).json({ error: 'Photo not found' });
     }
 
-    // If DB-backed image
+    // ── Cloudinary photo (new) ─────────────────────────────────────────────
+    if (photo.storage === 'cloudinary' && photo.url) {
+      return res.redirect(302, photo.url);
+    }
+
+    // ── Legacy: DB-backed ─────────────────────────────────────────────────
     if (photo.storage === 'db' && photo.dbId) {
       const photoData = await getPhotoFromDatabase(db, 'product_images', photo.dbId);
       if (!photoData) return res.status(404).json({ error: 'Image data not found' });
 
       res.setHeader('Content-Type', photoData.contentType);
-      res.setHeader('Cache-Control', 'public, max-age=86400'); // 24 hours
+      res.setHeader('Cache-Control', 'public, max-age=86400');
       return res.send(photoData.data);
     }
 
-    // Filesystem-backed image
+    // ── Legacy: filesystem-backed ─────────────────────────────────────────
     if (photo.storage === 'fs' && photo.filename) {
       const imgPath = path.join(__dirname, '..', 'uploads', 'products', photo.filename);
       return res.sendFile(imgPath, err => {
@@ -674,62 +643,48 @@ router.get('/:id/photo/:photoId', async (req, res) => {
 
 /**
  * DELETE /api/products/:id/photo
- * Delete product photo (legacy endpoint - deletes all photos)
+ * Delete the legacy `photo` field (single photo). Clears only the top-level photo pointer.
  */
 router.delete('/:id/photo', async (req, res) => {
   try {
     const { id } = req.params;
     const { userId, username } = req.query;
     const db = getDB();
-    
+
     const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    // Remove from Cloudinary if the top-level photo was a Cloudinary asset
+    // (Only for legacy single-photo products — normally photos array handles this)
+    const legacyPublicId = product.cloudinaryPublicId || null;
+    if (legacyPublicId) {
+      await deleteCloudinaryAsset(legacyPublicId);
     }
-    
-    if (product.photo) {
-      // If photo references DB-stored image, remove from product_images collection
-      if (String(product.photo).startsWith('db:') || product.photoDbId) {
-        const photoId = product.photoDbId || String(product.photo).replace(/^db:/, '');
-        try {
-          await deletePhotoFromDatabase(db, 'product_images', photoId);
-        } catch (err) {
-          logger.warn('Failed to delete DB-stored product photo:', err.message);
-        }
-      } else {
-        // filesystem-backed image
-        try {
-          await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', path.basename(product.photo)));
-        } catch (err) {
-          logger.warn('Failed to delete photo file:', err.message);
-        }
-      }
+
+    // Legacy DB cleanup
+    if ((product.photoStorage === 'db' || product.photoDbId) && !legacyPublicId) {
+      try {
+        const photoId = product.photoDbId || String(product.photo || '').replace(/^db:/, '');
+        if (photoId) await deletePhotoFromDatabase(db, 'product_images', photoId);
+      } catch (err) { logger.warn('Failed to delete legacy DB product photo:', err.message); }
+    }
+
+    // Legacy filesystem cleanup
+    if (product.photoStorage === 'fs' && product.photoFilename) {
+      try { await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', product.photoFilename)); }
+      catch (err) { logger.warn('Failed to delete legacy FS product photo:', err.message); }
     }
 
     await db.collection('products').updateOne(
       { _id: new ObjectId(id) },
-      { 
-        $set: { 
-          photo: null,
-          lastModifiedBy: userId || null,
-          lastModifiedByUsername: username || 'Unknown',
-          lastModified: new Date()
-        },
-        $unset: {
-          photoFilename: "",
-          photoDbId: "",
-          photoStorage: ""
-        }
+      {
+        $set:   { photo: null, lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown', lastModified: new Date() },
+        $unset: { photoFilename: '', photoDbId: '', photoStorage: '', cloudinaryPublicId: '' }
       }
     );
-    
-    // Log audit trail
-    await logAudit(db, 'PRODUCT_PHOTO_DELETED', userId, username, {
-      productId: id,
-      productName: product.name
-    });
-    
+
+    await logAudit(db, 'PRODUCT_PHOTO_DELETED', userId, username, { productId: id, productName: product.name });
+
     res.json({ success: true, message: 'Product photo deleted successfully' });
   } catch (e) {
     logger.error(e);
@@ -739,76 +694,59 @@ router.delete('/:id/photo', async (req, res) => {
 
 /**
  * DELETE /api/products/:id/photo/:photoId
- * Delete a specific photo from product's photos array
- * REQUIRES: confirmed=true query parameter to prevent accidental deletion
+ * Delete a specific photo from product's photos array.
+ * Requires ?confirmed=true to prevent accidental deletion.
  */
 router.delete('/:id/photo/:photoId', async (req, res) => {
   try {
     const { id, photoId } = req.params;
     const { userId, username, confirmed } = req.query;
-    
-    // STRICT DELETION RULE: Require explicit confirmation
+
     if (confirmed !== 'true') {
-      return res.status(400).json({ 
+      return res.status(400).json({
         error: 'Photo deletion requires explicit confirmation',
-        message: 'Please confirm deletion by adding ?confirmed=true to the request'
+        message: 'Add ?confirmed=true to the request URL'
       });
     }
-    
+
     const db = getDB();
     const product = await db.collection('products').findOne({ _id: new ObjectId(id) });
-    
-    if (!product) {
-      return res.status(404).json({ error: 'Product not found' });
+    if (!product) return res.status(404).json({ error: 'Product not found' });
+
+    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId || p.cloudinaryPublicId === photoId);
+    if (!photo) return res.status(404).json({ error: 'Photo not found' });
+
+    // ── Remove from Cloudinary (new) ──────────────────────────────────────
+    if (photo.storage === 'cloudinary' && photo.cloudinaryPublicId) {
+      await deleteCloudinaryAsset(photo.cloudinaryPublicId);
     }
-    
-    // Find the photo to delete
-    const photo = (product.photos || []).find(p => p.id === photoId || p.dbId === photoId);
-    
-    if (!photo) {
-      return res.status(404).json({ error: 'Photo not found' });
+
+    // ── Remove from DB (legacy) ───────────────────────────────────────────
+    if (photo.storage === 'db' && photo.dbId) {
+      try { await deletePhotoFromDatabase(db, 'product_images', photo.dbId); }
+      catch (err) { logger.warn('Failed to delete DB product photo:', err.message); }
     }
-    
-    // Delete the actual file/data
-    try {
-      if (photo.storage === 'db' && photo.dbId) {
-        await deletePhotoFromDatabase(db, 'product_images', photo.dbId);
-      } else if (photo.storage === 'fs' && photo.filename) {
-        await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', photo.filename));
-      }
-    } catch (err) {
-      logger.warn('Failed to delete photo file/data:', err.message);
-      // Continue with removal from array even if file deletion fails
+
+    // ── Remove from FS (legacy) ───────────────────────────────────────────
+    if (photo.storage === 'fs' && photo.filename) {
+      try { await deletePhotoFile(path.join(__dirname, '..', 'uploads', 'products', photo.filename)); }
+      catch (err) { logger.warn('Failed to delete FS product photo:', err.message); }
     }
-    
-    // Remove photo from photos array
+
+    // Pull from the photos array using the id field
     await db.collection('products').updateOne(
       { _id: new ObjectId(id) },
-      { 
-        $pull: { 
-          photos: { id: photoId }
-        },
-        $set: {
-          lastModifiedBy: userId || null,
-          lastModifiedByUsername: username || 'Unknown',
-          lastModified: new Date()
-        }
+      {
+        $pull: { photos: { id: photo.id } },
+        $set:  { lastModifiedBy: userId || null, lastModifiedByUsername: username || 'Unknown', lastModified: new Date() }
       }
     );
-    
-    // Log audit trail
+
     await logAudit(db, 'PRODUCT_PHOTO_DELETED', userId, username, {
-      productId: id,
-      productName: product.name,
-      photoId: photoId,
-      filename: photo.filename || 'unknown'
+      productId: id, productName: product.name, photoId, storage: photo.storage
     });
-    
-    res.json({ 
-      success: true, 
-      message: 'Photo deleted successfully',
-      photoId: photoId
-    });
+
+    res.json({ success: true, message: 'Photo deleted successfully', photoId });
   } catch (e) {
     logger.error(e);
     res.status(500).json({ error: e.message });

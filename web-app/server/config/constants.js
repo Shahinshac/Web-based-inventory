@@ -62,6 +62,19 @@ const NODE_ENV = process.env.NODE_ENV || 'development';
  */
 const CORS_ORIGIN = process.env.CORS_ORIGIN || '*';
 
+/**
+ * Cloudinary Configuration
+ * Required for cloud image storage (user profile photos + product images).
+ * Sign up at https://cloudinary.com and add credentials to your .env / hosting env vars.
+ *
+ *   CLOUDINARY_CLOUD_NAME  – Your Cloudinary cloud name
+ *   CLOUDINARY_API_KEY     – API key (from Cloudinary dashboard)
+ *   CLOUDINARY_API_SECRET  – API secret (keep private, server-side only)
+ */
+const CLOUDINARY_CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME || '';
+const CLOUDINARY_API_KEY    = process.env.CLOUDINARY_API_KEY    || '';
+const CLOUDINARY_API_SECRET = process.env.CLOUDINARY_API_SECRET || '';
+
 module.exports = {
   JWT_SECRET,
   JWT_EXPIRES_IN,
@@ -77,5 +90,8 @@ module.exports = {
   ADMIN_PASSWORD,
   PORT,
   NODE_ENV,
-  CORS_ORIGIN
+  CORS_ORIGIN,
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET
 };

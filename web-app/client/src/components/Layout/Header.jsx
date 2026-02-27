@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import Icon from '../../Icon';
 import TabNavigation from './TabNavigation';
+import ImageUpload from '../Common/ImageUpload';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function Header({ 
   activeTab, 
@@ -9,6 +11,8 @@ export default function Header({
   isAdmin, 
   userRole,
   onLogout, 
+  onUpdateUserPhoto,
+  onDeleteUserPhoto,
   isOnline,
   offlineCount
 }) {
@@ -59,7 +63,18 @@ export default function Header({
               onClick={() => setShowUserMenu(!showUserMenu)}
             >
               <div className="user-avatar-placeholder">
-                <Icon name="user" size={20} />
+                {currentUser?.photo
+                  ? (
+                    <img
+                      src={normalizePhotoUrl(currentUser.photo)}
+                      alt={currentUser.username}
+                      style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', display: 'block' }}
+                      onError={e => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'flex'; }}
+                    />
+                  ) : null}
+                <span style={{ display: currentUser?.photo ? 'none' : 'flex' }}>
+                  <Icon name="user" size={20} />
+                </span>
               </div>
               <div className="user-info">
                 <span className="user-name">{currentUser?.username || 'User'}</span>
@@ -80,7 +95,17 @@ export default function Header({
                       <div className="user-dropdown-header">
                         <div className="user-dropdown-avatar-section">
                           <div className="user-dropdown-avatar">
-                            <Icon name="user" size={32} />
+                            {currentUser?.photo
+                              ? (
+                                <img
+                                  src={normalizePhotoUrl(currentUser.photo)}
+                                  alt={currentUser.username}
+                                  style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
+                                  onError={e => { e.target.style.display = 'none'; }}
+                                />
+                              )
+                              : <Icon name="user" size={32} />
+                            }
                           </div>
                         </div>
                         <div className="user-dropdown-info">
@@ -117,6 +142,21 @@ export default function Header({
                       <div className="settings-panel-body">
                         <div className="settings-section">
                           <h4><Icon name="user" size={16} /> Profile</h4>
+
+                          {/* Profile photo upload */}
+                          {onUpdateUserPhoto && (
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 12 }}>
+                              <ImageUpload
+                                currentImageUrl={normalizePhotoUrl(currentUser?.photo)}
+                                onUpload={onUpdateUserPhoto}
+                                onDelete={onDeleteUserPhoto}
+                                shape="circle"
+                                size={80}
+                                label="Update photo"
+                              />
+                            </div>
+                          )}
+
                           <div className="settings-info-row">
                             <span className="settings-label">Username</span>
                             <span className="settings-value">{currentUser?.username || 'N/A'}</span>

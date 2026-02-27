@@ -12,6 +12,8 @@ export default function ProductsList({
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
+  onUploadPhoto,   // async (productId, file) => photoUrl
+  onDeletePhoto,   // async (productId, photoId) => void
   canEdit,
   canDelete,
   canViewProfit
@@ -198,7 +200,10 @@ export default function ProductsList({
               product={product}
               onEdit={canEdit ? handleEdit : null}
               onDelete={canDelete ? onDeleteProduct : null}
+              onUploadPhoto={canEdit ? onUploadPhoto : null}
+              onDeletePhoto={canEdit ? onDeletePhoto : null}
               canViewProfit={canViewProfit}
+              canEdit={canEdit}
             />
           ))
         ) : (

@@ -12,6 +12,8 @@ export default function Returns({ currentUser, showNotification }) {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  const [deleting, setDeleting] = useState(false);
 
   // Invoice lookup state
   const [billNumber, setBillNumber] = useState('');
@@ -159,6 +161,32 @@ export default function Returns({ currentUser, showNotification }) {
     }
   };
 
+  const isAdminOrManager = currentUser?.role === 'admin' || currentUser?.role === 'manager' || currentUser?.role === 'superadmin';
+
+  const handleDeleteReturn = async () => {
+    if (!deleteConfirmId) return;
+    try {
+      setDeleting(true);
+      const res = await fetch(API(`/api/returns/${deleteConfirmId}`), {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
+      if (res.ok) {
+        showNotification?.('Return record deleted successfully', 'success');
+        setReturns(prev => prev.filter(r => r.id !== deleteConfirmId));
+        fetchStats();
+      } else {
+        const err = await res.json();
+        showNotification?.(err.error || 'Failed to delete return', 'error');
+      }
+    } catch {
+      showNotification?.('Failed to delete return', 'error');
+    } finally {
+      setDeleting(false);
+      setDeleteConfirmId(null);
+    }
+  };
+
   const closeForm = () => {
     setShowForm(false);
     setBillNumber('');
@@ -264,6 +292,7 @@ export default function Returns({ currentUser, showNotification }) {
                 <th>Reason</th>
                 <th>Date</th>
                 <th>Processed By</th>
+                {isAdminOrManager && <th style={{ width: 60 }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -282,12 +311,41 @@ export default function Returns({ currentUser, showNotification }) {
                   <td><span className="table-reason">{ret.reason}</span></td>
                   <td>{ret.createdAt ? new Date(ret.createdAt).toLocaleDateString() : 'N/A'}</td>
                   <td>{ret.processedByUsername || 'N/A'}</td>
+                  {isAdminOrManager && (
+                    <td>
+                      <button
+                        className="icon-btn icon-btn-danger"
+                        title="Delete return record"
+                        onClick={() => setDeleteConfirmId(ret.id)}
+                      >
+                        <Icon name="trash-2" size={15} />
+                      </button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
           </table>
         )}
       </div>
+
+      {/* Delete Confirmation */}
+      {deleteConfirmId && (
+        <Modal isOpen={true} title="Delete Return Record" onClose={() => setDeleteConfirmId(null)} size="small">
+          <div style={{ padding: '8px 0' }}>
+            <p style={{ marginBottom: 16, color: 'var(--text-secondary)' }}>
+              Are you sure you want to delete this return record?<br />
+              <strong>This will reverse the stock restoration</strong> (items will be deducted again).
+            </p>
+            <div className="form-actions">
+              <Button variant="secondary" onClick={() => setDeleteConfirmId(null)} disabled={deleting}>Cancel</Button>
+              <Button variant="danger" icon="trash-2" onClick={handleDeleteReturn} disabled={deleting}>
+                {deleting ? 'Deleting...' : 'Delete Record'}
+              </Button>
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {/* New Return Modal */}
       {showForm && (

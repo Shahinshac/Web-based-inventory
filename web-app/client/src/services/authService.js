@@ -3,7 +3,7 @@
  * Handles login, registration, and session management
  */
 
-import { API, apiPost, apiGet } from '../utils/api'
+import { API, apiPost, apiGet, apiUpload, apiDelete } from '../utils/api'
 
 /**
  * Login user
@@ -108,7 +108,7 @@ export const checkUserValidity = async (userId) => {
   }
 }
 /**
- * Update user's photo in localStorage
+ * Update user's photo in localStorage (optimistic local state)
  */
 export const updateUserPhoto = (photoUrl) => {
   try {
@@ -121,4 +121,22 @@ export const updateUserPhoto = (photoUrl) => {
   } catch (error) {
     console.error('Error updating user photo:', error)
   }
+}
+
+/**
+ * Upload a new profile photo for the given user ID.
+ * Sends the file to the backend which uploads to Cloudinary.
+ * Returns { success, photo: <Cloudinary CDN URL> }
+ */
+export const uploadUserProfilePhoto = async (userId, file) => {
+  const formData = new FormData()
+  formData.append('photo', file)
+  return await apiUpload(`/api/users/${userId}/photo`, formData)
+}
+
+/**
+ * Delete the profile photo for the given user ID.
+ */
+export const deleteUserProfilePhoto = async (userId) => {
+  return await apiDelete(`/api/users/${userId}/photo`)
 }

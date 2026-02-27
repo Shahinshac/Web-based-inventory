@@ -13,7 +13,10 @@ import {
   isUserAdmin,
   getUserRole,
   validateSession,
-  checkUserValidity
+  checkUserValidity,
+  updateUserPhoto,
+  uploadUserProfilePhoto,
+  deleteUserProfilePhoto
 } from '../services/authService'
 
 export const useAuth = () => {
@@ -107,6 +110,32 @@ export const useAuth = () => {
     setUserRole('cashier')
   }
 
+  /**
+   * Upload a new profile photo for the current user.
+   * Sends the file to the backend (Cloudinary), then updates local state.
+   * @param {File} file
+   * @returns {Promise<string>} The new Cloudinary CDN URL
+   */
+  const handleUpdateUserPhoto = async (file) => {
+    if (!currentUser?.id) throw new Error('Not logged in')
+    const result = await uploadUserProfilePhoto(currentUser.id, file)
+    if (result?.photo) {
+      updateUserPhoto(result.photo)
+      setCurrentUser(prev => ({ ...prev, photo: result.photo }))
+    }
+    return result?.photo || null
+  }
+
+  /**
+   * Remove the current user's profile photo.
+   */
+  const handleDeleteUserPhoto = async () => {
+    if (!currentUser?.id) throw new Error('Not logged in')
+    await deleteUserProfilePhoto(currentUser.id)
+    updateUserPhoto(null)
+    setCurrentUser(prev => ({ ...prev, photo: null }))
+  }
+
   // Permission helpers
   const canViewProfit = () => {
     return userRole === 'admin' || userRole === 'manager' || isAdmin
@@ -134,6 +163,8 @@ export const useAuth = () => {
     handleLogin,
     handleRegister,
     handleLogout,
+    handleUpdateUserPhoto,
+    handleDeleteUserPhoto,
     canViewProfit,
     canEdit,
     canDelete,

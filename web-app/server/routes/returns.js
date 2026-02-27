@@ -159,6 +159,62 @@ router.post('/', async (req, res) => {
 });
 
 /**
+ * DELETE /api/returns/:id
+ * Delete a return record (admin/manager only). Reverses the stock restoration.
+ */
+router.delete('/:id', async (req, res) => {
+  try {
+    const { role, id: userId, username } = req.user;
+    if (role !== 'admin' && role !== 'manager' && role !== 'superadmin') {
+      return res.status(403).json({ error: 'Only admins and managers can delete return records' });
+    }
+
+    const { id } = req.params;
+    const db = getDB();
+
+    let returnDoc;
+    try {
+      returnDoc = await db.collection('returns').findOne({ _id: new ObjectId(id) });
+    } catch {
+      return res.status(400).json({ error: 'Invalid return ID' });
+    }
+
+    if (!returnDoc) {
+      return res.status(404).json({ error: 'Return record not found' });
+    }
+
+    // Reverse stock: re-deduct quantities that were previously restored
+    for (const item of (returnDoc.items || [])) {
+      if (item.productId) {
+        try {
+          await db.collection('products').updateOne(
+            { _id: new ObjectId(item.productId) },
+            { $inc: { quantity: -item.quantity } }
+          );
+        } catch {
+          // product may have been deleted — skip silently
+        }
+      }
+    }
+
+    await db.collection('returns').deleteOne({ _id: new ObjectId(id) });
+
+    await logAudit(db, 'RETURN_DELETED', userId, username, {
+      returnId: id,
+      billNumber: returnDoc.billNumber,
+      refundAmount: returnDoc.refundAmount,
+      reason: returnDoc.reason
+    });
+
+    logger.info(`Return ${id} deleted by ${username}`);
+    res.json({ success: true, id });
+  } catch (e) {
+    logger.error('Return delete error:', e);
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/**
  * GET /api/returns/stats
  * Get return statistics
  */

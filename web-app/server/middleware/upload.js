@@ -1,45 +1,46 @@
 /**
  * File Upload Middleware Module
- * Multer configuration for photo uploads
+ * Multer configuration for photo uploads (memory storage → Cloudinary)
+ *
+ * Validation:
+ *   - Allowed types : JPG / JPEG / PNG / WEBP
+ *   - Max size      : 2 MB  (enforced here; also re-validated in cloudinaryService)
  */
 
 const multer = require('multer');
 const path = require('path');
 
 /**
- * Multer storage configuration
- * Using memory storage for flexibility with database or filesystem storage
+ * Memory storage — buffers are handed off to Cloudinary; nothing hits disk.
  */
 const storage = multer.memoryStorage();
 
+/** Allowed MIME types (must match cloudinaryService.ALLOWED_MIME_TYPES) */
+const ALLOWED_MIME = new Set(['image/jpeg', 'image/jpg', 'image/png', 'image/webp']);
+
 /**
- * File filter to accept only images
- * @param {Object} req - Express request object
- * @param {Object} file - Uploaded file object
- * @param {Function} cb - Callback function
+ * File filter — reject any non-image or disallowed format early.
  */
 function fileFilter(req, file, cb) {
-  const allowedTypes = /jpeg|jpg|png|gif|webp/;
-  const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
-  const mimetype = allowedTypes.test(file.mimetype);
+  const extOk = /\.(jpe?g|png|webp)$/i.test(path.extname(file.originalname));
+  const mimeOk = ALLOWED_MIME.has(file.mimetype);
 
-  if (mimetype && extname) {
+  if (mimeOk && extOk) {
     return cb(null, true);
-  } else {
-    cb(new Error('Only image files are allowed (jpeg, jpg, png, gif, webp)'));
   }
+  cb(new Error('Invalid file type. Allowed formats: JPG, PNG, WEBP'));
 }
 
 /**
- * Multer upload instance
- * Configured with memory storage and 10MB file size limit
+ * Multer instance — 2 MB hard cap, memory storage, image-only filter.
  */
-const upload = multer({ 
-  storage: storage,
-  limits: { 
-    fileSize: 10 * 1024 * 1024 // 10MB limit
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 2 * 1024 * 1024 // 2 MB
   },
-  fileFilter: fileFilter
+  fileFilter
 });
 
 module.exports = upload;
+

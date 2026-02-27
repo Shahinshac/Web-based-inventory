@@ -3,6 +3,7 @@ import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function UserCard({ 
   user, 
@@ -44,7 +45,17 @@ export default function UserCard({
         <div className="user-card-header">
           <div className="user-avatar-section">
             <div className="user-avatar">
-              <Icon name="user" size={32} />
+              {user.photo ? (
+                <img
+                  src={normalizePhotoUrl(user.photo)}
+                  alt={user.username}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '50%' }}
+                  onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+                />
+              ) : null}
+              <span style={{ display: user.photo ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+                <Icon name="user" size={32} />
+              </span>
             </div>
           </div>
           <div className="user-info">

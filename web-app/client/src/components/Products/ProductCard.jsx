@@ -3,13 +3,18 @@ import JsBarcode from 'jsbarcode';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import ImageUpload from '../Common/ImageUpload';
 import { formatCurrency } from '../../constants';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function ProductCard({ 
   product, 
   onEdit, 
-  onDelete, 
-  canViewProfit 
+  onDelete,
+  onUploadPhoto,   // async (productId, file) => photoUrl
+  onDeletePhoto,   // async (productId, photoId) => void
+  canViewProfit,
+  canEdit: canEditProp
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showDetails, setShowDetails] = useState(false);
@@ -202,9 +207,53 @@ export default function ProductCard({
     <>
       <div className={`product-card ${stockStatus}`}>
         <div className="product-card-image">
-          <div className="product-placeholder">
-            <Icon name="package" size={48} color="#cbd5e1" />
-          </div>
+          {/* ── Product thumbnail (Cloudinary CDN or placeholder) ────────── */}
+          {(() => {
+            const firstPhoto = product.photos?.find(p => p.url)?.url || product.photo;
+            const thumb = normalizePhotoUrl(firstPhoto);
+
+            if (thumb && onUploadPhoto && canEditProp) {
+              // Editable thumbnail — clicking opens the file picker
+              return (
+                <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <ImageUpload
+                    currentImageUrl={thumb}
+                    onUpload={(file) => onUploadPhoto(product.id || product._id, file)}
+                    shape="square"
+                    size={160}
+                    label=""
+                  />
+                </div>
+              );
+            }
+            if (thumb) {
+              return (
+                <img
+                  src={thumb}
+                  alt={product.name}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  onError={e => { e.target.style.display = 'none'; }}
+                />
+              );
+            }
+            // No photo — show placeholder + upload button if allowed
+            return (
+              <div style={{ position: 'relative', width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {onUploadPhoto && canEditProp ? (
+                  <ImageUpload
+                    currentImageUrl={null}
+                    onUpload={(file) => onUploadPhoto(product.id || product._id, file)}
+                    shape="square"
+                    size={100}
+                    label="Add photo"
+                  />
+                ) : (
+                  <Icon name="package" size={48} color="#cbd5e1" />
+                )}
+              </div>
+            );
+          })()}
+
           <div className={`stock-badge ${stockStatus}`}>
             {product.quantity === 0 ? (
               <>
@@ -311,6 +360,53 @@ export default function ProductCard({
                 <div className="detail-row">
                   <span>Cost Price:</span>
                   <span>{formatCurrency(product.costPrice)}</span>
+                </div>
+              )}
+
+              {/* ── Product Photos Gallery ─────────────────────────────── */}
+              {(product.photos?.length > 0 || onUploadPhoto) && (
+                <div className="product-photos-section" style={{ marginTop: 12 }}>
+                  <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#6b7280', marginBottom: 6 }}>
+                    📷 Product Photos
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'flex-start' }}>
+                    {/* Existing photos */}
+                    {(product.photos || []).filter(p => p.url).map((photo, idx) => (
+                      <div key={photo.id || idx} style={{ position: 'relative' }}>
+                        <img
+                          src={normalizePhotoUrl(photo.url)}
+                          alt={`Photo ${idx + 1}`}
+                          style={{ width: 72, height: 72, objectFit: 'cover', borderRadius: 6, border: '1px solid #e5e7eb' }}
+                          onError={e => { e.target.style.display = 'none'; }}
+                        />
+                        {onDeletePhoto && canEditProp && (
+                          <button
+                            onClick={() => onDeletePhoto(product.id || product._id, photo.id || photo.cloudinaryPublicId)}
+                            style={{
+                              position: 'absolute', top: -4, right: -4, width: 18, height: 18,
+                              borderRadius: '50%', background: '#ef4444', border: '2px solid #fff',
+                              color: '#fff', fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 0
+                            }}
+                            title="Remove photo"
+                          >
+                            ✕
+                          </button>
+                        )}
+                      </div>
+                    ))}
+
+                    {/* Add-photo upload box */}
+                    {onUploadPhoto && canEditProp && (
+                      <ImageUpload
+                        currentImageUrl={null}
+                        onUpload={(file) => onUploadPhoto(product.id || product._id, file)}
+                        shape="square"
+                        size={72}
+                        label="Add"
+                      />
+                    )}
+                  </div>
                 </div>
               )}
               

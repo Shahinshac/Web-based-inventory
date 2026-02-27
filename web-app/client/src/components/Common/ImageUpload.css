@@ -1,0 +1,218 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   ImageUpload.css
+   Styles for the reusable ImageUpload React component.
+   ───────────────────────────────────────────────────────────────────────────── */
+
+/* Root wrapper — positions the delete button absolutely */
+.img-upload-root {
+  --img-upload-size: 96px;   /* overridden via inline style from the component */
+  --img-upload-radius-circle: 50%;
+  --img-upload-radius-square: 10px;
+  --img-upload-accent: #3b82f6;
+  --img-upload-accent-hover: #2563eb;
+  --img-upload-danger: #ef4444;
+  --img-upload-success: #10b981;
+  --img-upload-border: #d1d5db;
+
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ── Hidden file input ───────────────────────────────────────────────────── */
+.img-upload-input {
+  display: none;
+}
+
+/* ── Clickable drop zone ─────────────────────────────────────────────────── */
+.img-upload-zone {
+  position: relative;
+  width: var(--img-upload-size);
+  height: var(--img-upload-size);
+  border: 2px dashed var(--img-upload-border);
+  background: #f9fafb;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
+  padding: 0;
+}
+
+/* Shape variants */
+.img-upload--circle  .img-upload-zone { border-radius: var(--img-upload-radius-circle); }
+.img-upload--square  .img-upload-zone { border-radius: var(--img-upload-radius-square); }
+
+/* Hover / focus */
+.img-upload-zone:hover:not(.img-upload-zone--disabled):not(.img-upload-zone--loading),
+.img-upload-zone:focus-visible {
+  border-color: var(--img-upload-accent);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+  background: #eff6ff;
+  outline: none;
+}
+
+/* Drag-over state */
+.img-upload-zone--drag {
+  border-color: var(--img-upload-accent);
+  background: #dbeafe;
+  scale: 1.03;
+}
+
+/* Disabled */
+.img-upload-zone--disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+/* Loading (cursor change only — spinner handles the visual) */
+.img-upload-zone--loading {
+  cursor: wait;
+}
+
+/* ── Preview image ───────────────────────────────────────────────────────── */
+.img-upload-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  /* Prevents <img> from receiving pointer events so the button click fires */
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Shape on the image itself (important for circle avatars) */
+.img-upload--circle  .img-upload-preview { border-radius: 50%; }
+.img-upload--square  .img-upload-preview { border-radius: calc(var(--img-upload-radius-square) - 2px); }
+
+/* ── Hover overlay on existing image ─────────────────────────────────────── */
+.img-upload-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.18s;
+  pointer-events: none;
+}
+
+.img-upload--circle  .img-upload-overlay { border-radius: 50%; }
+.img-upload--square  .img-upload-overlay { border-radius: calc(var(--img-upload-radius-square) - 2px); }
+
+.img-upload-zone:hover .img-upload-overlay { opacity: 1; }
+
+.img-upload-overlay-icon { font-size: 1.4rem; }
+.img-upload-overlay-text {
+  color: #fff;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+/* ── Placeholder (no image yet) ──────────────────────────────────────────── */
+.img-upload-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.img-upload-placeholder-icon {
+  font-size: calc(var(--img-upload-size) * 0.35);
+  opacity: 0.45;
+  line-height: 1;
+}
+
+/* ── Loading spinner ────────────────────────────────────────────────────── */
+.img-upload-spinner {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+
+.img-upload-spinner-ring {
+  width: calc(var(--img-upload-size) * 0.4);
+  height: calc(var(--img-upload-size) * 0.4);
+  border: 3px solid #d1d5db;
+  border-top-color: var(--img-upload-accent);
+  border-radius: 50%;
+  animation: img-upload-spin 0.75s linear infinite;
+}
+
+@keyframes img-upload-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Status text below the zone ─────────────────────────────────────────── */
+.img-upload-status {
+  max-width: calc(var(--img-upload-size) * 1.6);
+  text-align: center;
+  line-height: 1.3;
+  min-height: 1.3em;
+}
+
+.img-upload-status--hint {
+  font-size: 0.7rem;
+  color: #9ca3af;
+}
+
+.img-upload-status--uploading {
+  font-size: 0.72rem;
+  color: var(--img-upload-accent);
+  font-weight: 500;
+}
+
+.img-upload-status--success {
+  font-size: 0.72rem;
+  color: var(--img-upload-success);
+  font-weight: 600;
+}
+
+.img-upload-status--error {
+  font-size: 0.7rem;
+  color: var(--img-upload-danger);
+  font-weight: 500;
+  word-break: break-word;
+}
+
+/* ── Delete (×) button ──────────────────────────────────────────────────── */
+.img-upload-delete-btn {
+  position: absolute;
+  top: -5px;
+  right: -5px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid #fff;
+  background: var(--img-upload-danger);
+  color: #fff;
+  font-size: 0.65rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  padding: 0;
+  transition: background 0.15s, transform 0.1s;
+  z-index: 2;
+}
+
+.img-upload-delete-btn:hover {
+  background: #b91c1c;
+  transform: scale(1.1);
+}
