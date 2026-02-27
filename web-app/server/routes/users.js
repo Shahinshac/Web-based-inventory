@@ -637,7 +637,6 @@ router.get('/:id/photo', async (req, res) => {
     res.status(500).json({ error: e.message });
   }
 });
-});
 
 /**
  * DELETE /api/users/:id/photo
