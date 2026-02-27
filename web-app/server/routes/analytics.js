@@ -252,6 +252,17 @@ router.get('/revenue-profit', async (req, res) => {
     const totalProfit = bills.reduce((sum, bill) => sum + (bill.totalProfit || 0), 0);
     const totalCost = bills.reduce((sum, bill) => sum + (bill.totalCost || 0), 0);
     const totalSales = bills.length;
+
+    // fetch expense total for same period
+    const expensesCursor = await db.collection('expenses')
+      .aggregate([
+        { $match: { date: { $gte: startDate } } },
+        { $group: { _id: null, total: { $sum: '$amount' } } }
+      ]);
+    const expenseDoc = await expensesCursor.next();
+    const totalExpenses = expenseDoc ? expenseDoc.total : 0;
+
+    const netProfit = totalProfit - totalExpenses;
     
     // Group by date for chart data
     const dailyData = [];
@@ -275,6 +286,8 @@ router.get('/revenue-profit', async (req, res) => {
       totalRevenue: Math.round(totalRevenue),
       totalProfit: Math.round(totalProfit),
       totalCost: Math.round(totalCost),
+      totalExpenses: Math.round(totalExpenses),
+      netProfit: Math.round(netProfit),
       totalSales,
       profitMargin: totalRevenue > 0 ? ((totalProfit / totalRevenue) * 100).toFixed(2) : 0,
       averageOrderValue: totalSales > 0 ? Math.round(totalRevenue / totalSales) : 0,

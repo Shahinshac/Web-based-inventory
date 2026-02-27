@@ -53,15 +53,35 @@ export default function Analytics({
         </div>
         
         {canViewProfit && (
-          <div className="summary-card profit-card">
-            <div className="summary-card-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
-              <Icon name="dollar-sign" size={24} />
+          <>
+            <div className="summary-card profit-card">
+              <div className="summary-card-icon" style={{ background: 'rgba(59, 130, 246, 0.1)', color: '#3b82f6' }}>
+                <Icon name="dollar-sign" size={24} />
+              </div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Total Profit</span>
+                <p className="summary-value">{formatCurrency0(revenueSummary.totalProfit || 0)}</p>
+              </div>
             </div>
-            <div className="summary-card-content">
-              <span className="summary-card-label">Total Profit</span>
-              <p className="summary-value">{formatCurrency0(revenueSummary.totalProfit || 0)}</p>
+            <div className="summary-card expenses-card">
+              <div className="summary-card-icon" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}>
+                <Icon name="credit-card" size={24} />
+              </div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Total Expenses</span>
+                <p className="summary-value">{formatCurrency0(revenueSummary.totalExpenses || 0)}</p>
+              </div>
             </div>
-          </div>
+            <div className="summary-card net-card">
+              <div className="summary-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
+                <Icon name="trending-up" size={24} />
+              </div>
+              <div className="summary-card-content">
+                <span className="summary-card-label">Profit After Expenses</span>
+                <p className="summary-value">{formatCurrency0(revenueSummary.netProfit || 0)}</p>
+              </div>
+            </div>
+          </>
         )}
         
         <div className="summary-card sales-card">

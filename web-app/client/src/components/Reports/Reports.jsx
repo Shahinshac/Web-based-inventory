@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import DateRangeSelector from './DateRangeSelector';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
@@ -11,6 +11,7 @@ export default function Reports({
 }) {
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [totalExpenses, setTotalExpenses] = useState(0);
 
   const filteredInvoices = invoices.filter(inv => {
     if (!startDate || !endDate) return true;
@@ -27,11 +28,39 @@ export default function Reports({
     return sum + itemProfit;
   }, 0);
 
+  // compute expenses for the same period
+  useEffect(() => {
+    const fetchExpenses = async () => {
+      try {
+        const res = await fetch('/api/expenses', { headers: { 'Content-Type': 'application/json' } });
+        if (res.ok) {
+          const data = await res.json();
+          let filtered = data;
+          if (startDate || endDate) {
+            filtered = data.filter(e => {
+              const d = new Date(e.date);
+              if (startDate && d < new Date(startDate)) return false;
+              if (endDate && d > new Date(endDate)) return false;
+              return true;
+            });
+          }
+          const sum = filtered.reduce((s, e) => s + (e.amount || 0), 0);
+          setTotalExpenses(sum);
+        }
+      } catch (err) {
+        console.error('Failed to fetch expenses for report:', err);
+      }
+    };
+    fetchExpenses();
+  }, [startDate, endDate]);
+
   const reportData = {
     period: startDate && endDate ? `${startDate} to ${endDate}` : 'All Time',
     totalInvoices: filteredInvoices.length,
     totalRevenue,
     totalProfit,
+    totalExpenses,
+    netProfit: totalProfit - totalExpenses,
     totalProducts: products.length,
     totalCustomers: customers.length,
     lowStockCount: products.filter(p => p.quantity < p.minStock).length
@@ -79,15 +108,31 @@ export default function Reports({
               <strong>{formatCurrency0(reportData.totalRevenue)}</strong>
             </div>
           </div>
-          
+
           {canViewProfit && (
-            <div className="summary-item">
-              <Icon name="trending-up" size={24} />
-              <div>
-                <span>Total Profit</span>
-                <strong>{formatCurrency0(reportData.totalProfit)}</strong>
+            <>
+              <div className="summary-item">
+                <Icon name="trending-up" size={24} />
+                <div>
+                  <span>Total Profit</span>
+                  <strong>{formatCurrency0(reportData.totalProfit)}</strong>
+                </div>
               </div>
-            </div>
+              <div className="summary-item">
+                <Icon name="credit-card" size={24} />
+                <div>
+                  <span>Total Expenses</span>
+                  <strong>{formatCurrency0(reportData.totalExpenses)}</strong>
+                </div>
+              </div>
+              <div className="summary-item">
+                <Icon name="dollar-sign" size={24} />
+                <div>
+                  <span>Net Profit</span>
+                  <strong>{formatCurrency0(reportData.netProfit)}</strong>
+                </div>
+              </div>
+            </>
           )}
           
           <div className="summary-item">
