@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { initAnalytics, trackPageView, trackEvent } from './analytics';
 import Login from './Login';
-import Toast from './components/Common/Toast';
-import Header from './components/Layout/Header';
-import Dashboard from './components/Dashboard/Dashboard';
+import Sidebar from './components/Layout/Sidebar';
 import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
 import CustomersList from './components/Customers/CustomersList';
@@ -639,17 +637,13 @@ Esc: Close modals/dialogs`;
 
   return (
     <div className="app">
-      <Header 
+      <Sidebar 
         activeTab={tab}
         onTabChange={handleTabChange}
         currentUser={currentUser}
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
-        onUpdateUserPhoto={handleUpdateUserPhoto}
-        onDeleteUserPhoto={handleDeleteUserPhoto}
-        isOnline={isOnline}
-        offlineCount={offlineTransactions.length}
       />
 
       <main className="app-content">

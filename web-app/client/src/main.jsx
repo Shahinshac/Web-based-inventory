@@ -12,6 +12,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import './styles.css';
 import './theme-modern.css';
+import './bento-theme.css';
 
 /**
  * Application configuration

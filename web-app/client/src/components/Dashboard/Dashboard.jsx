@@ -108,205 +108,162 @@ export default function Dashboard({
   ];
 
   return (
-    <div className="modern-dashboard">
+    <div className="modern-dashboard" style={{ padding: '0 16px' }}>
       {/* Welcome Section */}
-      <div className="dashboard-welcome">
-        <div className="welcome-content">
+      <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
+        <div className="welcome-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="welcome-text">
-            <span className="welcome-greeting">{greeting}! 👋</span>
-            <h1 className="welcome-title">Dashboard Overview</h1>
-            <p className="welcome-subtitle">Here's what's happening with your business today</p>
+            <h1 className="welcome-title" style={{ fontSize: '32px', fontWeight: 800, margin: 0, color: 'white' }}>{greeting}! 👋</h1>
+            <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#94a3b8', marginTop: '8px' }}>Here's what's happening today</p>
           </div>
           <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-            <div className="date-display">
-              <Icon name="calendar" size={20} />
-              <span>{currentTime.toLocaleDateString('en-IN', { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
-              })}</span>
-            </div>
             {isAdmin && (
               <button
                 onClick={handleClearDatabase}
                 disabled={clearing}
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  padding: '10px 20px',
-                  background: clearing ? '#9ca3af' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '10px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: clearing ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease',
-                  boxShadow: clearing ? 'none' : '0 4px 12px rgba(239, 68, 68, 0.3)',
-                  opacity: clearing ? 0.7 : 1
-                }}
-                onMouseOver={(e) => {
-                  if (!clearing) {
-                    e.currentTarget.style.transform = 'translateY(-2px)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(239, 68, 68, 0.4)';
-                  }
-                }}
-                onMouseOut={(e) => {
-                  if (!clearing) {
-                    e.currentTarget.style.transform = 'translateY(0)';
-                    e.currentTarget.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)';
-                  }
+                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
+                  background: clearing ? '#475569' : 'rgba(239, 68, 68, 0.1)',
+                  color: clearing ? '#94a3b8' : '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
+                  borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: clearing ? 'not-allowed' : 'pointer',
+                  transition: 'all 0.2s ease', backdropFilter: 'blur(10px)'
                 }}
               >
                 <Icon name={clearing ? "loader" : "trash-2"} size={18} />
-                <span>{clearing ? 'Clearing Database...' : 'Clear Database'}</span>
+                <span>{clearing ? 'Clearing...' : 'Wipe Data'}</span>
               </button>
             )}
+            <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '10px 16px', borderRadius: '12px', color: 'white', fontWeight: 600 }}>
+              <Icon name="calendar" size={18} />
+              <span>{currentTime.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="stats-container">
-        {quickStats.map((stat, index) => (
-          <div key={index} className="modern-stat-card" style={{ '--card-gradient': stat.gradient }}>
-            <div className="stat-card-bg"></div>
-            <div className="stat-card-content">
-              <div className="stat-icon-wrap">
-                <Icon name={stat.icon} size={24} />
-              </div>
-              <div className="stat-info">
-                <span className="stat-label">{stat.title}</span>
-                <span className="stat-value">{stat.value}</span>
-                {stat.change && (
-                  <span className={`stat-change ${stat.changeType}`}>
-                    <Icon name="arrow-up" size={14} />
-                    {stat.change}
-                  </span>
-                )}
-                {stat.subtitle && <span className="stat-subtitle">{stat.subtitle}</span>}
-              </div>
-            </div>
+      <div className="bento-dashboard">
+        {/* Total Revenue Bento */}
+        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(99, 102, 241, 0.2)' }}>
+          <div className="bento-title">
+            <div className="bento-title-icon"><Icon name="trending-up" size={16} /></div>
+            Total Revenue
           </div>
-        ))}
-      </div>
-
-      {/* Quick Actions */}
-      {canEdit && (
-        <div className="quick-actions-section">
-          <h2 className="section-heading">
-            <Icon name="zap" size={20} />
-            Quick Actions
-          </h2>
-          <div className="quick-actions-grid">
-            <button className="action-card" onClick={() => onNavigate('pos')}>
-              <div className="action-icon" style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}>
-                <Icon name="shopping-cart" size={24} />
-              </div>
-              <span className="action-label">New Sale</span>
-            </button>
-            <button className="action-card" onClick={onAddProduct}>
-              <div className="action-icon" style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}>
-                <Icon name="plus" size={24} />
-              </div>
-              <span className="action-label">Add Product</span>
-            </button>
-            <button className="action-card" onClick={onAddCustomer}>
-              <div className="action-icon" style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}>
-                <Icon name="user-plus" size={24} />
-              </div>
-              <span className="action-label">Add Customer</span>
-            </button>
-            <button className="action-card" onClick={() => onNavigate('products')}>
-              <div className="action-icon" style={{ background: 'linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)' }}>
-                <Icon name="package" size={24} />
-              </div>
-              <span className="action-label">View Products</span>
-            </button>
+          <div className="bento-number" style={{ background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {formatCurrency0(stats.totalRevenue || 0)}
           </div>
+          <div className="bento-sparkline" style={{ marginTop: '24px', height: '40px', background: 'linear-gradient(90deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.3) 100%)', borderRadius: '8px' }}></div>
         </div>
-      )}
 
-      {/* Two Column Layout */}
-      <div className="dashboard-grid">
-        {/* Low Stock Alerts */}
-        <div className="dashboard-card alerts-card">
-          <div className="card-header">
-            <div className="card-title">
-              <Icon name="alert-triangle" size={20} />
-              <span>Low Stock Alerts</span>
-            </div>
-            <span className="card-badge">{lowStockProducts?.length || 0}</span>
+        {/* Sales Bento */}
+        <div className="bento-card" style={{ '--bento-glow': 'rgba(52, 211, 153, 0.2)' }}>
+          <div className="bento-title">
+            <div className="bento-title-icon"><Icon name="shopping-cart" size={16} /></div>
+            Total Sales
           </div>
-          <div className="card-body">
+          <div className="bento-number">{stats.totalSales || 0}</div>
+        </div>
+
+        {/* Customers Bento */}
+        <div className="bento-card" style={{ '--bento-glow': 'rgba(56, 189, 248, 0.2)' }}>
+          <div className="bento-title">
+            <div className="bento-title-icon"><Icon name="users" size={16} /></div>
+            Customers
+          </div>
+          <div className="bento-number">{stats.totalCustomers || 0}</div>
+        </div>
+
+        {/* Low Stock Alerts Bento */}
+        <div className="bento-card bento-col-2 bento-row-2" style={{ '--bento-glow': 'rgba(244, 63, 94, 0.15)' }}>
+          <div className="bento-title" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: '#f43f5e' }}><Icon name="alert-triangle" size={16} /></div>
+              Low Stock Alerts
+            </div>
+            <span style={{ background: '#f43f5e', color: 'white', padding: '4px 8px', borderRadius: '8px', fontSize: '12px' }}>{lowStockProducts?.length || 0} items</span>
+          </div>
+          <div className="card-body" style={{ marginTop: '16px' }}>
             {lowStockProducts && lowStockProducts.length > 0 ? (
-              <div className="alert-list">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {lowStockProducts.slice(0, 5).map((product, index) => (
-                  <div key={product.id || index} className="alert-item">
-                    <div className="alert-product">
-                      <div className="product-avatar">
-                        <Icon name="package" size={16} />
-                      </div>
-                      <div className="product-details">
-                        <span className="product-name">{product.name}</span>
-                        <span className="product-meta">
-                          Stock: <strong>{product.quantity}</strong> / Min: {product.minStock}
-                        </span>
+                  <div key={product.id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                      <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}><Icon name="package" size={16} /></div>
+                      <div>
+                        <div style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>{product.name}</div>
+                        <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px' }}>Stock: {product.quantity} / Min: {product.minStock}</div>
                       </div>
                     </div>
-                    <span className={`status-badge ${product.quantity === 0 ? 'danger' : 'warning'}`}>
+                    <span style={{ color: product.quantity === 0 ? '#ef4444' : '#f59e0b', fontSize: '12px', fontWeight: 600, padding: '4px 8px', background: product.quantity === 0 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', borderRadius: '6px' }}>
                       {product.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state">
-                <div className="empty-icon success">
-                  <Icon name="check-circle" size={48} />
-                </div>
-                <h4>All Stocked Up! 🎉</h4>
-                <p>All products are well stocked</p>
-              </div>
+              <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>All products are well stocked! 🎉</div>
             )}
           </div>
         </div>
 
-        {/* Recent Activity */}
-        <div className="dashboard-card activity-card">
-          <div className="card-header">
-            <div className="card-title">
-              <Icon name="activity" size={20} />
-              <span>Recent Activity</span>
-            </div>
-            <button className="card-action">View All</button>
+        {/* Recent Activity Bento */}
+        <div className="bento-card bento-col-2 bento-row-2" style={{ '--bento-glow': 'rgba(168, 85, 247, 0.15)' }}>
+          <div className="bento-title">
+            <div className="bento-title-icon"><Icon name="activity" size={16} /></div>
+            Recent Activity
           </div>
-          <div className="card-body">
+          <div className="card-body" style={{ marginTop: '16px' }}>
             {recentActivity && recentActivity.length > 0 ? (
-              <div className="activity-timeline">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {recentActivity.slice(0, 6).map((activity, index) => (
-                  <div key={index} className="timeline-item">
-                    <div className="timeline-dot"></div>
-                    <div className="timeline-content">
-                      <span className="timeline-text">{activity.text}</span>
-                      <span className="timeline-time">{activity.time}</span>
+                  <div key={index} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', marginTop: '6px' }}></div>
+                    <div>
+                      <div style={{ color: 'white', fontSize: '14px' }}>{activity.text}</div>
+                      <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>{activity.time}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div className="empty-state">
-                <div className="empty-icon">
-                  <Icon name="inbox" size={48} />
-                </div>
-                <h4>No Recent Activity</h4>
-                <p>Start making sales to see activity here</p>
-              </div>
+              <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>No recent activity to display.</div>
             )}
           </div>
         </div>
+
+        {/* Quick Actions Bento */}
+        {canEdit && (
+          <div className="bento-card bento-col-4" style={{ '--bento-glow': 'rgba(255, 255, 255, 0.1)' }}>
+            <div className="bento-title">
+              <div className="bento-title-icon"><Icon name="zap" size={16} /></div>
+              Quick Actions
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '16px' }}>
+              {[
+                { label: 'New Sale', icon: 'shopping-cart', onClick: () => onNavigate('pos'), color: '#6366f1' },
+                { label: 'Add Product', icon: 'plus', onClick: onAddProduct, color: '#ec4899' },
+                { label: 'Add Customer', icon: 'user-plus', onClick: onAddCustomer, color: '#0ea5e9' },
+                { label: 'View Products', icon: 'package', onClick: () => onNavigate('products'), color: '#10b981' }
+              ].map((action, i) => (
+                <button 
+                  key={i} 
+                  onClick={action.onClick}
+                  style={{ 
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', 
+                    padding: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', 
+                    borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s ease', color: 'white', fontWeight: 600
+                  }}
+                  onMouseOver={(e) => { e.currentTarget.style.background = `rgba(${action.color.replace('#', '')}, 0.1)`; e.currentTarget.style.transform = 'translateY(-2px)' }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                >
+                  <div style={{ background: action.color, color: 'white', padding: '12px', borderRadius: '12px', boxShadow: `0 4px 12px ${action.color}40` }}>
+                    <Icon name={action.icon} size={24} />
+                  </div>
+                  {action.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

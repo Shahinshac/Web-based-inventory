@@ -1,0 +1,10 @@
+flask
+flask-cors
+flask-restful
+pymongo
+python-dotenv
+pyjwt
+bcrypt
+cloudinary
+reportlab
+pandas
