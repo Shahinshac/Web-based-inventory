@@ -51,4 +51,5 @@ web-app/server/uploads/**/*
 *.tmp
 *.temp
 .cache/
+.venv/
 
