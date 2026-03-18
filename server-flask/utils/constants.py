@@ -1,0 +1,9 @@
+COMPANY_NAME = "26:07 Electronics"
+COMPANY_PHONE = "+91 9999999999"
+COMPANY_ADDRESS = "Trivandrum, Kerala"
+COMPANY_EMAIL = "contact@2607electronics.com"
+COMPANY_GSTIN = "32AAAAA0000A1Z5"
+
+# Security
+ALLOW_ADMIN_PASSWORD_CHANGE = True
+JWT_EXPIRES_IN = 7 * 24 * 60 * 60 # 7 days

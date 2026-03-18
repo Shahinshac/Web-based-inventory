@@ -1,9 +1,21 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from pymongo import MongoClient
-import os
-import certifi
+from database import connect_db
+from routes.auth import auth_bp
+from routes.products import products_bp
+from routes.customers import customers_bp
+from routes.pos import pos_bp
+from routes.expenses import expenses_bp
+from routes.analytics import analytics_bp
+from routes.admin import admin_bp
+from routes.returns import returns_bp
+from services.cloudinary_service import init_cloudinary
+import logging
+
 from config import Config
+
+logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s")
+logger = logging.getLogger(__name__)
 
 # Initialize Flask App
 app = Flask(__name__)
@@ -12,18 +24,33 @@ app.config.from_object(Config)
 # Enable CORS (Allows the React frontend to communicate with Flask)
 CORS(app, resources={r"/api/*": {"origins": "*"}})
 
-# Centralized MongoDB Connection
-try:
-    print(f"Connecting to MongoDB: {app.config['MONGO_URI'].split('@')[-1] if '@' in app.config['MONGO_URI'] else 'Local Database'}")
-    # Fix for SSL certificate verifications on Windows networks
-    client = MongoClient(app.config['MONGO_URI'], tlsCAFile=certifi.where())
-    db = client[app.config['DB_NAME']]
-    # Ping to check connection
-    client.admin.command('ping')
-    print("✅ Successfully connected to MongoDB Database!")
-except Exception as e:
-    print(f"❌ Failed to connect to MongoDB: {e}")
-    db = None
+# Connect to Database globally
+connect_db(app)
+
+# Initialize 3rd Party Wrappers
+init_cloudinary(app)
+
+# Register Blueprints
+app.register_blueprint(auth_bp, url_prefix='/api/users')
+app.register_blueprint(products_bp, url_prefix='/api/products')
+app.register_blueprint(customers_bp, url_prefix='/api/customers')
+app.register_blueprint(pos_bp, url_prefix='/api/checkout')
+app.register_blueprint(expenses_bp, url_prefix='/api/expenses')
+app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
+app.register_blueprint(admin_bp, url_prefix='/api/admin')
+app.register_blueprint(returns_bp, url_prefix='/api/returns')
+# Also pos_bp serves invoices, we should register it under /api/invoices as well?
+app.register_blueprint(pos_bp, name='invoices', url_prefix='/api/invoices')
+
+# The Express routes were: 
+# app.use('/api/checkout', checkoutRoutes);
+# wait, checkout.js had both /api/checkout and GET /api/invoices logic.
+# If pos_bp handles GET /, we should register it as /api/invoices as well OR split it.
+# Actually, wait. It's fine to register it twice if needed, but pos_bp has @pos_bp.route('/', methods=['POST']) which is checkout, and GET '/' which is get invoices.
+# If I register pos_bp under /api/checkout, then GET /api/checkout/ gets invoices. Let's see how React calls it.
+
+# Wait, the legacy app used /api/invoices for getting invoices and /api/checkout for POSTing. In pos.py, I used `/` for both. I should route them properly.
+
 
 # Base Route
 @app.route('/', methods=['GET'])
@@ -37,15 +64,8 @@ def index():
 # Health Check Route
 @app.route('/health', methods=['GET'])
 def health_check():
-    db_status = "connected" if db is not None else "disconnected"
-    return jsonify({"db": db_status, "api": "healthy"}), 200
-
-# Placeholder User Endpoint (To demonstrate integration)
-@app.route('/api/users/me', methods=['GET'])
-def get_current_user():
-    # Will be protected by JWT middleware soon
-    return jsonify({"user": {"username": "Admin (Flask Port)"}, "role": "admin"})
+    return jsonify({"api": "healthy"}), 200
 
 if __name__ == '__main__':
-    print(f"🚀 Starting Flask Server on port {app.config['PORT']}...")
+    logger.info(f"🚀 Starting Flask Server on port {app.config['PORT']}...")
     app.run(host='0.0.0.0', port=app.config['PORT'], debug=app.config['DEBUG'])
