@@ -7,14 +7,14 @@ from pymongo import MongoClient
 from datetime import datetime
 
 # MongoDB connection
-MONGO_URI = 'mongodb://localhost:27017/'
+MONGO_URI = 'mongodb+srv://shahinshac123_db_user:41jUFKehGuWqR5a6@cluster0.majmsqd.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
 DB_NAME = 'inventorydb'
 
 def create_admin_user():
     """Create an admin user in the database"""
     try:
         # Connect to MongoDB
-        client = MongoClient(MONGO_URI)
+        client = MongoClient(MONGO_URI, tlsCAFile=__import__('certifi').where())
         db = client[DB_NAME]
         
         # Check if admin user already exists
