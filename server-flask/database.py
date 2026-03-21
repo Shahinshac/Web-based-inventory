@@ -24,13 +24,24 @@ def connect_db(app):
         return None
 
     try:
-        # Construct MongoClient with TLS certificate verification fallback for Windows
-        client = MongoClient(
-            mongo_uri, 
-            tlsCAFile=certifi.where(),
-            serverSelectionTimeoutMS=10000,
-            socketTimeoutMS=45000,
-        )
+        # Construct MongoClient
+        # For localhost MongoDB, we don't need TLS
+        is_local = 'localhost' in mongo_uri or '127.0.0.1' in mongo_uri
+        
+        if is_local:
+            client = MongoClient(
+                mongo_uri,
+                serverSelectionTimeoutMS=10000,
+                socketTimeoutMS=45000,
+            )
+        else:
+            # For remote MongoDB (like MongoDB Atlas), use TLS
+            client = MongoClient(
+                mongo_uri, 
+                tlsCAFile=certifi.where(),
+                serverSelectionTimeoutMS=10000,
+                socketTimeoutMS=45000,
+            )
         # Test connection
         client.admin.command('ping')
         

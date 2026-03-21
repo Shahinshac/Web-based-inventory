@@ -6,7 +6,7 @@ load_dotenv()
 class Config:
     # Flask app config
     SECRET_KEY = os.environ.get('JWT_SECRET') or 'super-secret-python-key'
-    DEBUG = os.environ.get('NODE_ENV') != 'production'
+    DEBUG = False  # Disable debug mode to avoid reloader issues
     PORT = int(os.environ.get('PORT', 5000))
 
     # MongoDB config
