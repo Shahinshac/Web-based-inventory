@@ -78,8 +78,15 @@ export const apiFetch = async (endpoint, options = {}) => {
     })
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || `API error: ${response.status}`)
+      let errorMessage = `API error: ${response.status}`
+      try {
+        const error = await response.json()
+        errorMessage = error.error || errorMessage
+      } catch (e) {
+        // Response body is not JSON, use status text
+        errorMessage = response.statusText || errorMessage
+      }
+      throw new Error(errorMessage)
     }
 
     return await response.json()

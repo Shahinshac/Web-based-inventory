@@ -12,7 +12,7 @@ def log_audit(db, action, user_id, username, details=None):
         details = {}
         
     try:
-        if not db:
+        if db is None:
             logger.warning("📝 Audit log skipped: No database connection available.")
             return
 
