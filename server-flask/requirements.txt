@@ -8,3 +8,4 @@ bcrypt
 cloudinary
 reportlab
 pandas
+gunicorn

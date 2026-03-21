@@ -1,13 +1,13 @@
 services:
   - type: web
     name: inventory-api
-    env: node
+    env: python
     plan: free
-    rootDir: web-app/server
+    rootDir: server-flask
     region: singapore
-    buildCommand: npm install
-    startCommand: npm start
-    healthCheckPath: /api/ping
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app -w 4 -b 0.0.0.0:$PORT
+    healthCheckPath: /health
     envVars:
       - key: NODE_ENV
         value: production
