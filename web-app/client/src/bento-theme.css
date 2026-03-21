@@ -9,16 +9,15 @@
   height: 100vh !important;
   width: 100vw !important;
   overflow: hidden !important;
-  background: #0f172a !important; /* Deep Dark Space */
 }
 
 .app-content {
   flex: 1 !important;
   margin: 16px 16px 16px 0 !important;
-  background: #020617 !important; /* Total pitch black inside */
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid rgba(0, 0, 0, 0.05) !important;
   border-radius: 24px !important;
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1) !important;
   overflow-y: auto !important;
   padding: 32px !important;
   position: relative;
@@ -27,23 +26,16 @@
 
 /* Base Typo & Accents */
 :root {
-  --bento-bg: #0f172a;
-  --bento-card: #1e293b;
-  --bento-border: rgba(255, 255, 255, 0.05);
-  --bento-glow: rgba(99, 102, 241, 0.15);
-  --bento-text: #f8fafc;
-  --bento-text-muted: #94a3b8;
+  --bento-bg: #f8fafc;
+  --bento-card: #ffffff;
+  --bento-border: rgba(0, 0, 0, 0.05);
+  --bento-glow: rgba(99, 102, 241, 0.05);
+  --bento-text: #0f172a;
+  --bento-text-muted: #64748b;
   --bento-accent: #6366f1;
 }
 
-/* Force dark mode colors globally inside app-content */
-.app-content * {
-  color: var(--bento-text) !important;
-}
-
-.app-content p, .app-content span {
-  color: var(--bento-text-muted) !important;
-}
+/* Removed forced dark mode globally */
 
 /* Floating Sidebar CSS */
 .premium-sidebar {
@@ -105,7 +97,7 @@
   gap: 16px;
   background: transparent;
   border: none;
-  color: #94a3b8;
+  color: #475569;
   padding: 14px 20px;
   border-radius: 16px;
   font-size: 15px;
@@ -117,8 +109,8 @@
 }
 
 .nav-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: white;
+  background: rgba(0, 0, 0, 0.05);
+  color: #0f172a;
   transform: translateX(4px);
 }
 
@@ -241,8 +233,8 @@
 
 .bento-card:hover {
   transform: translateY(-4px) scale(1.01) !important;
-  border-color: rgba(255, 255, 255, 0.15) !important;
-  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.7), 0 0 20px rgba(99, 102, 241, 0.2) !important;
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 20px 40px -10px rgba(0,0,0,0.1), 0 0 20px rgba(99, 102, 241, 0.1) !important;
 }
 
 .bento-card:hover::before {
@@ -297,42 +289,36 @@
   z-index: 2;
 }
 
-/* Modals and Tables inside Dark Mode */
-.data-table, table {
-  background: transparent !important;
-  border: none !important;
-  box-shadow: none !important;
-}
-
+/* Modals and Tables override */
 .data-table th, table th {
-  background: rgba(255, 255, 255, 0.03) !important;
+  background: rgba(0, 0, 0, 0.03) !important;
   color: var(--bento-text) !important;
   border-bottom: 1px solid var(--bento-border) !important;
 }
 
 .data-table td, table td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.02) !important;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
   color: var(--bento-text-muted) !important;
 }
 
 .data-table tr:hover td {
-  background: rgba(255, 255, 255, 0.02) !important;
-  color: white !important;
+  background: rgba(0, 0, 0, 0.02) !important;
+  color: var(--bento-text) !important;
 }
 
-/* Scrollbar override for dark mode */
+/* Scrollbar override for bento layout */
 .app-content::-webkit-scrollbar {
   width: 10px;
 }
 .app-content::-webkit-scrollbar-track {
-  background: #020617;
+  background: #f1f5f9;
   border-radius: 20px;
 }
 .app-content::-webkit-scrollbar-thumb {
-  background: #1e293b;
+  background: #cbd5e1;
   border-radius: 20px;
-  border: 2px solid #020617;
+  border: 2px solid #f1f5f9;
 }
 .app-content::-webkit-scrollbar-thumb:hover {
-  background: #334155;
+  background: #94a3b8;
 }
