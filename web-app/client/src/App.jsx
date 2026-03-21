@@ -653,8 +653,6 @@ Esc: Close modals/dialogs`;
 
       <div className="app-main">
         <Header
-          activeTab={tab}
-          onTabChange={handleTabChange}
           currentUser={currentUser}
           isAdmin={isAdmin}
           userRole={userRole}

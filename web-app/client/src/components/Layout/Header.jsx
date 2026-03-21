@@ -1,12 +1,9 @@
 import React, { useState } from 'react';
 import Icon from '../../Icon';
-import TabNavigation from './TabNavigation';
 import ImageUpload from '../Common/ImageUpload';
 import { normalizePhotoUrl } from '../../utils/api';
 
 export default function Header({ 
-  activeTab, 
-  onTabChange, 
   currentUser, 
   isAdmin, 
   userRole,
@@ -186,8 +183,6 @@ export default function Header({
           </div>
         </div>
       </div>
-
-      <TabNavigation activeTab={activeTab} onTabChange={onTabChange} isAdmin={isAdmin} userRole={userRole} />
     </header>
   );
 }
