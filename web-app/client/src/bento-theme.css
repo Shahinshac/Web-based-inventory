@@ -77,7 +77,7 @@
 }
 
 .brand-name {
-  color: white;
+  color: var(--bento-text);
   font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -165,7 +165,7 @@
 }
 
 .user-details .name {
-  color: white;
+  color: var(--bento-text);
   font-weight: 600;
   font-size: 14px;
 }
@@ -194,7 +194,7 @@
 
 .logout-btn:hover {
   background: #ef4444;
-  color: white;
+  color: #ffffff;
 }
 
 /* =========================================================
@@ -277,7 +277,7 @@
   position: relative;
   z-index: 2;
   font-variant-numeric: tabular-nums;
-  background: linear-gradient(to right, #fff, #94a3b8);
+  background: linear-gradient(to right, #0f172a, #475569);
   -webkit-background-clip: text;
   background-clip: text;
   -webkit-text-fill-color: transparent;

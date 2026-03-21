@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { initAnalytics, trackPageView, trackEvent } from './analytics';
+import { SpeedInsights } from '@vercel/speed-insights/react';
+import { Analytics } from '@vercel/analytics/react';
 import Login from './Login';
 import Sidebar from './components/Layout/Sidebar';
 import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
 import CustomersList from './components/Customers/CustomersList';
 import InvoicesList from './components/Invoices/InvoicesList';
-import Analytics from './components/Analytics/Analytics';
+import AnalyticsPage from './components/Analytics/Analytics';
 import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
 import AuditLogs from './components/AuditLogs/AuditLogs';
@@ -26,7 +28,7 @@ import { useAnalytics } from './hooks/useAnalytics';
 import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
-import { DEFAULT_GST, GST_PERCENT, PAYMENT_MODES } from './constants';
+// Removed unused constants import
 import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
 import { generatePublicInvoiceUrl, generateWhatsAppLink } from './services/invoiceService';
 import './styles.css';
@@ -72,11 +74,11 @@ export default function App() {
     handleRegister: register,
     handleUpdateUserPhoto,
     handleDeleteUserPhoto
-  } = useAuth();
+   } = useAuth();
 
-  const { isOnline, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
+  const { isOnline } = useOffline(isAuthenticated);
   
-  const { products, loading: productsLoading, fetchProducts, addProduct, updateProduct, deleteProduct, uploadProductPhoto, deleteProductPhoto } = 
+  const { products, fetchProducts, addProduct, updateProduct, deleteProduct, uploadProductPhoto, deleteProductPhoto } = 
     useProducts(isOnline, isAuthenticated, currentUser, isAdmin);
   
   const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, getCustomerPurchases } = 
@@ -559,7 +561,7 @@ Esc: Close modals/dialogs`;
 
       case 'analytics':
         return (
-          <Analytics 
+          <AnalyticsPage 
             analyticsData={analyticsData}
             dateRange={dateRange}
             onDateRangeChange={setDateRange}
@@ -671,6 +673,8 @@ Esc: Close modals/dialogs`;
           </div>
         </div>
       )}
+      <SpeedInsights />
+      <Analytics />
     </div>
   );
 }

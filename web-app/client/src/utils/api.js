@@ -84,6 +84,9 @@ export const apiFetch = async (endpoint, options = {}) => {
 
     return await response.json()
   } catch (error) {
+    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+      error.message = 'Unable to connect to the server. Please ensure the backend is running and accessible.';
+    }
     console.error(`API fetch error for ${endpoint}:`, error)
     throw error
   }
