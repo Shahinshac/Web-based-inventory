@@ -113,8 +113,8 @@ export default function Dashboard({
       <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
         <div className="welcome-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div className="welcome-text">
-            <h1 className="welcome-title" style={{ fontSize: '32px', fontWeight: 800, margin: 0, color: 'white' }}>{greeting}! 👋</h1>
-            <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#94a3b8', marginTop: '8px' }}>Here's what's happening today</p>
+            <h1 className="welcome-title" style={{ fontSize: '32px', fontWeight: 800, margin: 0, color: '#1e293b' }}>{greeting}! 👋</h1>
+            <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#64748b', marginTop: '8px' }}>Here's what's happening today</p>
           </div>
           <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             {isAdmin && (
@@ -133,7 +133,7 @@ export default function Dashboard({
                 <span>{clearing ? 'Clearing...' : 'Wipe Data'}</span>
               </button>
             )}
-            <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(255,255,255,0.05)', padding: '10px 16px', borderRadius: '12px', color: 'white', fontWeight: 600 }}>
+            <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '10px 16px', borderRadius: '12px', color: '#1e293b', fontWeight: 600 }}>
               <Icon name="calendar" size={18} />
               <span>{currentTime.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
             </div>
@@ -185,15 +185,15 @@ export default function Dashboard({
             {lowStockProducts && lowStockProducts.length > 0 ? (
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {lowStockProducts.slice(0, 5).map((product, index) => (
-                  <div key={product.id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={product.id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <div style={{ padding: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '8px' }}><Icon name="package" size={16} /></div>
+                      <div style={{ padding: '8px', background: '#e0e7ff', borderRadius: '8px', color: '#4f46e5' }}><Icon name="package" size={16} /></div>
                       <div>
-                        <div style={{ color: 'white', fontWeight: 600, fontSize: '14px' }}>{product.name}</div>
-                        <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px' }}>Stock: {product.quantity} / Min: {product.minStock}</div>
+                        <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '14px' }}>{product.name}</div>
+                        <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>Stock: {product.quantity} / Min: {product.minStock}</div>
                       </div>
                     </div>
-                    <span style={{ color: product.quantity === 0 ? '#ef4444' : '#f59e0b', fontSize: '12px', fontWeight: 600, padding: '4px 8px', background: product.quantity === 0 ? 'rgba(239,68,68,0.1)' : 'rgba(245,158,11,0.1)', borderRadius: '6px' }}>
+                    <span style={{ color: product.quantity === 0 ? '#ef4444' : '#d97706', fontSize: '12px', fontWeight: 600, padding: '4px 8px', background: product.quantity === 0 ? '#fee2e2' : '#fef3c7', borderRadius: '6px' }}>
                       {product.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
                     </span>
                   </div>
@@ -218,8 +218,8 @@ export default function Dashboard({
                   <div key={index} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', marginTop: '6px', flexShrink: 0 }}></div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ color: '#f1f5f9', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}>{activity.text}</div>
-                      <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px', fontWeight: 400 }}>{activity.time}</div>
+                      <div style={{ color: '#1e293b', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}>{activity.text}</div>
+                      <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', fontWeight: 400 }}>{activity.time}</div>
                     </div>
                   </div>
                 ))}
@@ -249,11 +249,11 @@ export default function Dashboard({
                   onClick={action.onClick}
                   style={{ 
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', 
-                    padding: '20px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', 
-                    borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s ease', color: 'white', fontWeight: 600
+                    padding: '20px', background: '#f8fafc', border: '1px solid #e2e8f0', 
+                    borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s ease', color: '#1e293b', fontWeight: 600
                   }}
                   onMouseOver={(e) => { e.currentTarget.style.background = `rgba(${action.color.replace('#', '')}, 0.1)`; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.03)'; e.currentTarget.style.transform = 'translateY(0)' }}
+                  onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.transform = 'translateY(0)' }}
                 >
                   <div style={{ background: action.color, color: 'white', padding: '12px', borderRadius: '12px', boxShadow: `0 4px 12px ${action.color}40` }}>
                     <Icon name={action.icon} size={24} />
