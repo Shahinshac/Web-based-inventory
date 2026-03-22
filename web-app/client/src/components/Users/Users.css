@@ -38,6 +38,36 @@
 .users-controls .search-bar {
   flex: 1;
   min-width: 250px;
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.2s ease;
+}
+
+.users-controls .search-bar:focus-within {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+}
+
+.users-controls .search-bar input {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  color: #0f172a;
+  width: 100%;
+}
+
+.users-controls .search-bar input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.users-controls .search-bar svg {
+  color: #64748b;
+  margin-right: 8px;
 }
 
 .filter-select {
