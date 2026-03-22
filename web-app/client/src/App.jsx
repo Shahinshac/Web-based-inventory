@@ -4,7 +4,6 @@ import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import Login from './Login';
 import Sidebar from './components/Layout/Sidebar';
-import Header from './components/Layout/Header';
 import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
 import CustomersList from './components/Customers/CustomersList';
@@ -694,11 +693,6 @@ Esc: Close modals/dialogs`;
       />
 
       <div className="app-main">
-        <Header
-          isOnline={isOnline}
-          offlineCount={0}
-        />
-
         <main className="app-content">
           {renderActiveTab()}
         </main>

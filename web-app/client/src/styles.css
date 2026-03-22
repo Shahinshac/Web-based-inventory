@@ -1488,8 +1488,8 @@ html { background: var(--bg, #ffffff); }
 .sidebar-nav { display:flex; flex-direction:column; gap:6px; margin-top:12px }
 .sidebar-nav button { display:flex; align-items:center; gap:12px; padding:13px 14px; border-radius:11px; border:none; cursor:pointer; transition:all 0.25s cubic-bezier(.2,.9,.2,1); color:#0f172a; background:transparent; font-weight:700; font-size:14px; text-align:left }
 .sidebar-nav button svg { opacity:0.9 }
-.sidebar-nav button:hover { background: rgba(11, 92, 255, 0.06); transform: translateX(5px); box-shadow: 0 2px 8px rgba(11, 92, 255, 0.08); }
-.sidebar-nav button.active { background: linear-gradient(135deg, rgba(11, 92, 255, 0.1), rgba(30, 144, 255, 0.08)); border-left:4px solid var(--accent-primary); padding-left:11px; color:var(--accent-primary); box-shadow: 0 6px 18px rgba(11, 92, 255, 0.12), inset 0 1px 3px rgba(11, 92, 255, 0.1); transform: translateX(3px); }
+.sidebar-nav button:hover { background: rgba(0, 0, 0, 0.05); transform: translateX(5px); }
+.sidebar-nav button.active { background: rgba(0, 0, 0, 0.08); color: #0f172a; font-weight: 800; transform: translateX(3px); }
 
 .sidebar-bottom { margin-top: 28px }
 .profile-area { display:flex; align-items:center; gap:12px; padding:14px; border-radius:13px; background:linear-gradient(135deg, #ffffff, #fafbff); border:1px solid rgba(226,232,240,0.8); box-shadow: 0 4px 12px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04); }

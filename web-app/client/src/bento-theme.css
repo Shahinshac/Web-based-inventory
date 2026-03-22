@@ -103,6 +103,27 @@
   flex-direction: column;
   gap: 8px;
   flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  min-height: 0;
+  padding-right: 4px;
+}
+
+.sidebar-nav::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-nav::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+}
+
+.sidebar-nav::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.3);
 }
 
 .nav-btn {
@@ -129,8 +150,9 @@
 }
 
 .nav-btn.active {
-  background: rgba(99, 102, 241, 0.15);
-  color: #818cf8;
+  background: rgba(0, 0, 0, 0.08);
+  color: #0f172a;
+  font-weight: 700;
 }
 
 .active-indicator {
@@ -139,8 +161,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: #818cf8;
-  box-shadow: 0 0 10px #818cf8;
+  background: #0f172a;
 }
 
 .sidebar-footer {
