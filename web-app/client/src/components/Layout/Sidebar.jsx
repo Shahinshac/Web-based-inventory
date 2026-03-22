@@ -30,8 +30,15 @@ export default function Sidebar({
     <aside className={`premium-sidebar ${collapsed ? 'collapsed' : ''}`}>
       <div className="sidebar-header">
         <div className="brand" onClick={() => setCollapsed(!collapsed)} style={{ cursor: 'pointer' }}>
-          <div className="logo-icon">⚡</div>
-          {!collapsed && <span className="brand-name">26:07 Inventory</span>}
+          <div className="logo-icon">
+            <Icon name="package" size={24} />
+          </div>
+          {!collapsed && (
+            <div className="brand-info">
+              <span className="brand-name">26-07 Inventory</span>
+              <span className="brand-phone">📞 7594012761</span>
+            </div>
+          )}
         </div>
       </div>
       
