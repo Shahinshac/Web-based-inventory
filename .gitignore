@@ -52,3 +52,11 @@ web-app/server/uploads/**/*
 .cache/
 .venv/
 
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+*.pyd
+
