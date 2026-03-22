@@ -100,14 +100,27 @@ def clear_database():
         return jsonify({"error": "Invalid admin credentials"}), 401
 
     results = {}
-    collections_to_drop = ['products', 'customers', 'bills', 'invoices', 'expenses', 'audit_logs', 'product_images', 'user_images', 'returns']
+    collections_to_drop = [
+        'products', 'customers', 'bills', 'invoices', 'expenses', 
+        'audit_logs', 'product_images', 'user_images', 'returns',
+        'public_invoice_links', 'notifications', 'categories'
+    ]
     
     for coll in collections_to_drop:
-        res = getattr(db, coll).delete_many({})
-        results[coll] = res.deleted_count
+        try:
+            res = getattr(db, coll).delete_many({})
+            results[coll] = res.deleted_count
+        except Exception as e:
+            results[coll] = 0
+            logger.warning(f"Failed to clear {coll}: {e}")
         
-    usr_res = db.users.delete_many({"role": {"$ne": "admin"}})
-    results['users'] = usr_res.deleted_count
+    try:
+        usr_res = db.users.delete_many({"role": {"$ne": "admin"}})
+        results['users'] = usr_res.deleted_count
+    except Exception as e:
+        results['users'] = 0
+        logger.warning(f"Failed to clear non-admin users: {e}")
+
     results['photos'] = 0
     total = sum(results.values())
 

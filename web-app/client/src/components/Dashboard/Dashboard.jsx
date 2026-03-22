@@ -20,7 +20,7 @@ export default function Dashboard({
   const [clearing, setClearing] = useState(false);
 
   const handleClearDatabase = async () => {
-    if (!window.confirm('⚠️ WARNING: This will permanently delete ALL data!\n\n• Products\n• Customers\n• Invoices\n• Expenses\n• Audit Logs\n\nAdmin users will be preserved.\n\nAre you absolutely sure?')) {
+    if (!window.confirm('⚠️ WARNING: This will permanently delete ALL data!\n\n• Products\n• Customers\n• Invoices\n• Expenses\n• Returns\n• Audit Logs\n• Notifications\n\nAdmin users will be preserved.\n\nAre you absolutely sure?')) {
       return;
     }
 
