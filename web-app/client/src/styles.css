@@ -9214,10 +9214,10 @@ button {
    ============================================ */
 
 .app-header {
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  background: white;
   flex-shrink: 0;
   z-index: 1000;
-  box-shadow: 0 2px 24px rgba(99, 102, 241, 0.3), 0 1px 4px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
   position: sticky;
   top: 0;
   display: flex;
@@ -9230,7 +9230,7 @@ button {
   align-items: center;
   justify-content: space-between;
   padding: 12px 28px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid #e5e7eb;
   overflow: visible;
   min-height: 60px;
   height: 60px;
@@ -9262,7 +9262,7 @@ button {
 .company-name {
   font-size: 17px;
   font-weight: 700;
-  color: white;
+  color: #1a1a1a;
   margin: 0;
   line-height: 1.2;
   letter-spacing: 0.3px;
@@ -9271,7 +9271,7 @@ button {
 .company-tagline {
   font-size: 11px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.75);
+  color: #6b7280;
   margin: 0;
   line-height: 1.2;
 }
@@ -9806,7 +9806,7 @@ button {
    ============================================ */
 
 .tab-navigation {
-  background: linear-gradient(180deg, rgba(79, 70, 180, 0.4) 0%, rgba(15, 12, 50, 0.85) 100%);
+  background: white;
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   display: flex;
@@ -9818,8 +9818,8 @@ button {
   scrollbar-width: none;
   height: 50px;
   flex-shrink: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.18);
+  border-top: 1px solid #e5e7eb;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.05);
 }
 
 .tab-navigation::-webkit-scrollbar {
@@ -9850,7 +9850,7 @@ button {
   border: none;
   border-bottom: 3px solid transparent;
   border-radius: 0;
-  color: rgba(255, 255, 255, 0.45);
+  color: #6b7280;
   font-size: 11.5px;
   font-weight: 500;
   cursor: pointer;
@@ -9872,8 +9872,9 @@ button {
 }
 
 .tab-btn:hover {
-  color: rgba(255, 255, 255, 0.92);
-  border-bottom-color: rgba(255, 255, 255, 0.18);
+  color: #1a1a1a;
+  border-bottom-color: #d1d5db;
+  background-color: #f3f4f6;
 }
 
 .tab-btn:hover::before {
@@ -9881,11 +9882,11 @@ button {
 }
 
 .tab-btn.active {
-  color: #ffffff;
+  color: #6366f1;
   font-weight: 600;
   border-bottom-color: transparent;
-  background: linear-gradient(180deg, rgba(139, 92, 246, 0.18) 0%, rgba(139, 92, 246, 0.04) 100%);
-  text-shadow: 0 0 24px rgba(167, 139, 250, 0.5);
+  background: #f5f3ff;
+  text-shadow: none;
 }
 
 .tab-btn.active::before {

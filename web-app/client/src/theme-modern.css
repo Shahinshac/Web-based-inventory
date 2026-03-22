@@ -86,13 +86,11 @@ body {
 }
 
 .company-name {
-  color: var(--text) !important;
+  color: #1a1a1a !important;
   font-weight: 800 !important;
   font-size: 22px !important;
-  background: var(--gradient-primary);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  background: none !important;
+  -webkit-text-fill-color: initial !important;
 }
 
 .company-tagline {

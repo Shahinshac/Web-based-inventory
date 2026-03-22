@@ -19,11 +19,6 @@ export default function Header({
                 )}
               </div>
             )}
-            {isOnline && (
-              <div className="online-indicator" title="Connected">
-                <Icon name="wifi" size={18} />
-              </div>
-            )}
           </div>
         </div>
       </div>
