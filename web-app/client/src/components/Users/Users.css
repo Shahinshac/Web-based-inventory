@@ -53,16 +53,18 @@
 }
 
 .users-controls .search-bar input {
-  background: transparent;
-  border: none;
+  background: transparent !important;
+  border: none !important;
   font-size: 14px;
-  color: #0f172a;
+  color: #0f172a !important;
   width: 100%;
+  box-shadow: none !important;
 }
 
 .users-controls .search-bar input:focus {
-  outline: none;
-  box-shadow: none;
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
 }
 
 .users-controls .search-bar svg {

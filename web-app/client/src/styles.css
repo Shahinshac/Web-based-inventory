@@ -187,6 +187,20 @@ input, textarea, select {
 }
 
 /* Override with semantic classes */
+/* Global Search Bar Input Reset - Fix for theme overrides */
+.search-bar .search-input {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: #0f172a !important;
+}
+
+.search-bar .search-input:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
 .text-secondary {
   color: #475569 !important;
 }
