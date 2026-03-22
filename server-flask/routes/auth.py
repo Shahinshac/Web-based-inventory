@@ -317,9 +317,95 @@ def change_password():
     log_audit(db, "USER_PASSWORD_CHANGED", str(user['_id']), user['username'])
     return jsonify({"success": True, "message": "Password changed successfully"})
 
-# Note: Cloudinary image uploads/deletes for profiles are abstracted here for now. 
-# A separate service could handle Cloudinary logic.
 @auth_bp.route('/<id>/photo', methods=['POST', 'GET', 'DELETE'])
 @authenticate_token
 def manage_photo(id):
-    return jsonify({"error": "Cloudinary photo endpoints in Flask to be implemented based on exact credentials."}), 501
+    """Handle user photo upload, retrieval, and deletion"""
+    from services.cloudinary_service import upload_user_photo, delete_cloudinary_asset, is_configured
+
+    db = get_db()
+    user = db.users.find_one({"_id": ObjectId(id)})
+
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+
+    # POST: Upload photo
+    if request.method == 'POST':
+        if 'photo' not in request.files:
+            return jsonify({"error": "No photo file provided"}), 400
+
+        file = request.files['photo']
+        if not file or file.filename == '':
+            return jsonify({"error": "No file selected"}), 400
+
+        try:
+            # Check if Cloudinary is configured
+            if not is_configured():
+                return jsonify({"error": "Cloudinary is not configured. Please set CLOUDINARY environment variables."}), 500
+
+            # Delete old photo if exists
+            if user.get('photoPublicId'):
+                delete_cloudinary_asset(user['photoPublicId'])
+
+            # Upload new photo
+            result = upload_user_photo(file, id)
+
+            # Update user document
+            db.users.update_one(
+                {"_id": ObjectId(id)},
+                {
+                    "$set": {
+                        "photo": result['url'],
+                        "photoPublicId": result['publicId'],
+                        "photoStorage": "cloudinary"
+                    }
+                }
+            )
+
+            log_audit(db, "USER_PHOTO_UPLOADED", str(user['_id']), user['username'], {
+                "photoUrl": result['url']
+            })
+
+            return jsonify({
+                "success": True,
+                "message": "Photo uploaded successfully",
+                "photoUrl": result['url']
+            })
+
+        except ValueError as e:
+            return jsonify({"error": str(e)}), 400
+        except Exception as e:
+            logger.error(f"Photo upload error: {e}")
+            return jsonify({"error": f"Failed to upload photo: {str(e)}"}), 500
+
+    # GET: Retrieve photo (for legacy non-cloudinary photos stored in DB)
+    elif request.method == 'GET':
+        if user.get('photoStorage') == 'cloudinary':
+            return jsonify({"photoUrl": user.get('photo')})
+
+        # For backward compatibility with base64 photos
+        photo = user.get('photo')
+        if not photo:
+            return jsonify({"error": "No photo found"}), 404
+
+        return jsonify({"photoUrl": photo})
+
+    # DELETE: Remove photo
+    elif request.method == 'DELETE':
+        if user.get('photoPublicId'):
+            delete_cloudinary_asset(user['photoPublicId'])
+
+        db.users.update_one(
+            {"_id": ObjectId(id)},
+            {
+                "$unset": {
+                    "photo": "",
+                    "photoPublicId": "",
+                    "photoStorage": ""
+                }
+            }
+        )
+
+        log_audit(db, "USER_PHOTO_DELETED", str(user['_id']), user['username'])
+
+        return jsonify({"success": True, "message": "Photo deleted successfully"})
