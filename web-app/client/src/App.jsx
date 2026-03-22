@@ -657,9 +657,12 @@ Esc: Close modals/dialogs`;
           return <div className="error-message">Admin access required</div>;
         }
         return (
-          <UsersList 
+          <UsersList
             users={users}
             currentUser={currentUser}
+            isAdmin={isAdmin}
+            userRole={userRole}
+            isOnline={isOnline}
             onCreateUser={createUser}
             onResetPassword={resetUserPassword}
             onApproveUser={approveUser}
@@ -668,6 +671,9 @@ Esc: Close modals/dialogs`;
             onForceLogout={forceLogoutUser}
             onRevokeAccess={revokeUserAccess}
             onRefreshUsers={fetchUsers}
+            onLogout={logout}
+            onUpdateUserPhoto={handleUpdateUserPhoto}
+            onDeleteUserPhoto={handleDeleteUserPhoto}
           />
         );
 
@@ -689,12 +695,6 @@ Esc: Close modals/dialogs`;
 
       <div className="app-main">
         <Header
-          currentUser={currentUser}
-          isAdmin={isAdmin}
-          userRole={userRole}
-          onLogout={logout}
-          onUpdateUserPhoto={handleUpdateUserPhoto}
-          onDeleteUserPhoto={handleDeleteUserPhoto}
           isOnline={isOnline}
           offlineCount={0}
         />

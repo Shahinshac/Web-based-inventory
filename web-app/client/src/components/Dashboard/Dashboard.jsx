@@ -216,10 +216,10 @@ export default function Dashboard({
               <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
                 {recentActivity.slice(0, 6).map((activity, index) => (
                   <div key={index} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', marginTop: '6px' }}></div>
-                    <div>
-                      <div style={{ color: 'white', fontSize: '14px' }}>{activity.text}</div>
-                      <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>{activity.time}</div>
+                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', marginTop: '6px', flexShrink: 0 }}></div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ color: '#f1f5f9', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}>{activity.text}</div>
+                      <div style={{ color: '#94a3b8', fontSize: '12px', marginTop: '4px', fontWeight: 400 }}>{activity.time}</div>
                     </div>
                   </div>
                 ))}
