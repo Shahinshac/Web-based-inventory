@@ -14,6 +14,7 @@ import {
   uploadProductPhoto as uploadProductPhotoAPI,
   deleteProductPhoto as deleteProductPhotoAPI
 } from '../services/productService'
+import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh'
 
 export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => {
   const [products, setProducts] = useState([])
@@ -233,6 +234,16 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     fetchProducts()
   }, [isOnline])
 
+  // Auto-refresh every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    fetchProducts,
+    30000, // 30 seconds
+    isOnline && isAuthenticated
+  )
+
+  // Refresh when tab becomes visible
+  useVisibilityRefresh(fetchProducts)
+
   return {
     products,
     loading,
@@ -251,6 +262,10 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
     uploadProductPhoto,
     deleteProductPhoto,
     searchByBarcode,
-    getFilteredProducts
+    getFilteredProducts,
+    // Auto-refresh additions
+    manualRefresh,
+    isRefreshing,
+    lastRefreshTime
   }
 }

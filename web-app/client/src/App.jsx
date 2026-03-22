@@ -78,15 +78,42 @@ export default function App() {
    } = useAuth();
 
   const { isOnline } = useOffline(isAuthenticated);
-  
-  const { products, fetchProducts, addProduct, updateProduct, deleteProduct, uploadProductPhoto, deleteProductPhoto } = 
-    useProducts(isOnline, isAuthenticated, currentUser, isAdmin);
-  
-  const { customers, fetchCustomers, addCustomer, updateCustomer, deleteCustomer, getCustomerPurchases } = 
-    useCustomers(isOnline, isAuthenticated);
-  
-  const { invoices, fetchInvoices, createInvoice, deleteInvoice, filterInvoices } = 
-    useInvoices(isOnline, isAuthenticated, tab);
+
+  const {
+    products,
+    fetchProducts,
+    addProduct,
+    updateProduct,
+    deleteProduct,
+    uploadProductPhoto,
+    deleteProductPhoto,
+    manualRefresh: refreshProducts,
+    isRefreshing: isRefreshingProducts,
+    lastRefreshTime: productsLastRefresh
+  } = useProducts(isOnline, isAuthenticated, currentUser, isAdmin);
+
+  const {
+    customers,
+    fetchCustomers,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    getCustomerPurchases,
+    manualRefresh: refreshCustomers,
+    isRefreshing: isRefreshingCustomers,
+    lastRefreshTime: customersLastRefresh
+  } = useCustomers(isOnline, isAuthenticated);
+
+  const {
+    invoices,
+    fetchInvoices,
+    createInvoice,
+    deleteInvoice,
+    filterInvoices,
+    manualRefresh: refreshInvoices,
+    isRefreshing: isRefreshingInvoices,
+    lastRefreshTime: invoicesLastRefresh
+  } = useInvoices(isOnline, isAuthenticated, tab);
   
   const { cart, addToCart, setQuantity: updateCartItem, removeFromCart, clearCart, selectedCustomer, setSelectedCustomer: selectCustomer, errors: cartErrors } = 
     useCart(products);
@@ -514,13 +541,16 @@ Esc: Close modals/dialogs`;
 
       case 'products':
         return (
-          <ProductsList 
+          <ProductsList
             products={products}
             onAddProduct={addProduct}
             onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
             onUploadPhoto={uploadProductPhoto}
             onDeletePhoto={deleteProductPhoto}
+            onRefresh={refreshProducts}
+            isRefreshing={isRefreshingProducts}
+            lastRefreshTime={productsLastRefresh}
             canEdit={canEdit()}
             canDelete={canDelete()}
             canViewProfit={canViewProfit()}
@@ -538,12 +568,15 @@ Esc: Close modals/dialogs`;
 
       case 'customers':
         return (
-          <CustomersList 
+          <CustomersList
             customers={customers}
             onAddCustomer={addCustomer}
             onUpdateCustomer={updateCustomer}
             onDeleteCustomer={deleteCustomer}
             onViewHistory={getCustomerPurchases}
+            onRefresh={refreshCustomers}
+            isRefreshing={isRefreshingCustomers}
+            lastRefreshTime={customersLastRefresh}
             canEdit={canEdit()}
             canDelete={canDelete()}
           />
@@ -551,11 +584,14 @@ Esc: Close modals/dialogs`;
 
       case 'invoices':
         return (
-          <InvoicesList 
+          <InvoicesList
             invoices={invoices}
             onDeleteInvoice={deleteInvoice}
             onExportPDF={handleExportPDF}
             onShareWhatsApp={handleShareWhatsApp}
+            onRefresh={refreshInvoices}
+            isRefreshing={isRefreshingInvoices}
+            lastRefreshTime={invoicesLastRefresh}
             canDelete={canDelete()}
           />
         );

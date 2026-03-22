@@ -5,12 +5,15 @@ import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
 
-export default function CustomersList({ 
-  customers, 
+export default function CustomersList({
+  customers,
   onAddCustomer,
   onUpdateCustomer,
   onDeleteCustomer,
   onViewHistory,
+  onRefresh,       // Manual refresh function
+  isRefreshing,    // Refreshing state
+  lastRefreshTime, // Last refresh timestamp
   canEdit,
   canDelete
 }) {
@@ -52,17 +55,35 @@ export default function CustomersList({
       <div className="customers-header">
         <div>
           <h2 className="customers-title">👥 Customers</h2>
-          <p className="customers-subtitle">{customers.length} registered customers</p>
+          <p className="customers-subtitle">
+            {customers.length} registered customers
+            {lastRefreshTime && (
+              <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
+                • Last updated: {new Date(lastRefreshTime).toLocaleTimeString()}
+              </span>
+            )}
+          </p>
         </div>
-        {canEdit && (
+        <div style={{ display: 'flex', gap: '12px' }}>
           <Button
-            variant="primary"
-            onClick={() => setShowAddForm(true)}
-            icon="user-plus"
+            variant="secondary"
+            onClick={onRefresh}
+            icon="refresh-cw"
+            disabled={isRefreshing}
+            title="Refresh customers list"
           >
-            Add Customer
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
-        )}
+          {canEdit && (
+            <Button
+              variant="primary"
+              onClick={() => setShowAddForm(true)}
+              icon="user-plus"
+            >
+              Add Customer
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="customers-controls">

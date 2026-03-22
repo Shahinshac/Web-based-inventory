@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API, getAuthHeaders } from '../utils/api';
+import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh';
 
 export function useInvoices(isOnline, isAuthenticated, activeTab) {
   const [invoices, setInvoices] = useState([]);
@@ -175,6 +176,16 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
     }
   }, [isAuthenticated, fetchInvoices]);
 
+  // Auto-refresh every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    () => fetchInvoices(true),
+    30000,
+    isOnline && isAuthenticated
+  );
+
+  // Refresh when tab becomes visible
+  useVisibilityRefresh(() => fetchInvoices(true));
+
   return {
     invoices,
     loading,
@@ -182,6 +193,10 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
     fetchInvoices,
     createInvoice,
     deleteInvoice,
-    filterInvoices
+    filterInvoices,
+    // Auto-refresh additions
+    manualRefresh,
+    isRefreshing,
+    lastRefreshTime
   };
 }

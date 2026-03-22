@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API, getAuthHeaders } from '../utils/api';
+import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh';
 
 export function useCustomers(isOnline, isAuthenticated) {
   const [customers, setCustomers] = useState([]);
@@ -128,6 +129,16 @@ export function useCustomers(isOnline, isAuthenticated) {
     }
   }, [isAuthenticated, fetchCustomers]);
 
+  // Auto-refresh every 30 seconds
+  const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(
+    fetchCustomers,
+    30000,
+    isOnline && isAuthenticated
+  );
+
+  // Refresh when tab becomes visible
+  useVisibilityRefresh(fetchCustomers);
+
   return {
     customers,
     loading,
@@ -136,6 +147,10 @@ export function useCustomers(isOnline, isAuthenticated) {
     addCustomer,
     updateCustomer,
     deleteCustomer,
-    getCustomerPurchases
+    getCustomerPurchases,
+    // Auto-refresh additions
+    manualRefresh,
+    isRefreshing,
+    lastRefreshTime
   };
 }

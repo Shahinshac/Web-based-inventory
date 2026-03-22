@@ -2,14 +2,18 @@ import React, { useState, useMemo } from 'react';
 import InvoiceCard from './InvoiceCard';
 import InvoiceDetails from './InvoiceDetails';
 import SearchBar from '../Common/SearchBar';
+import Button from '../Common/Button';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
 
-export default function InvoicesList({ 
-  invoices, 
+export default function InvoicesList({
+  invoices,
   onDeleteInvoice,
   onExportPDF,
   onShareWhatsApp,
+  onRefresh,       // Manual refresh function
+  isRefreshing,    // Refreshing state
+  lastRefreshTime, // Last refresh timestamp
   canDelete
 }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,16 +85,32 @@ export default function InvoicesList({
           </h2>
           <p className="invoices-subtitle">
             {filteredInvoices.length} invoices &bull; Total: {formatCurrency0(totalRevenue)}
+            {lastRefreshTime && (
+              <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
+                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString()}
+              </span>
+            )}
           </p>
         </div>
-        <div className="invoices-stats-pills">
-          <div className="stat-pill">
-            <Icon name="calendar" size={14} />
-            <span>Today: <strong>{todayCount}</strong></span>
-          </div>
-          <div className="stat-pill">
-            <Icon name="shopping-bag" size={14} />
-            <span>All: <strong>{invoices.length}</strong></span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Button
+            variant="secondary"
+            onClick={onRefresh}
+            icon="refresh-cw"
+            disabled={isRefreshing}
+            title="Refresh invoices list"
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+          <div className="invoices-stats-pills">
+            <div className="stat-pill">
+              <Icon name="calendar" size={14} />
+              <span>Today: <strong>{todayCount}</strong></span>
+            </div>
+            <div className="stat-pill">
+              <Icon name="shopping-bag" size={14} />
+              <span>All: <strong>{invoices.length}</strong></span>
+            </div>
           </div>
         </div>
       </div>
