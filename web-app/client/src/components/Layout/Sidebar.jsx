@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Icon from '../../Icon';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function Sidebar({ 
   activeTab, 
@@ -58,9 +59,24 @@ export default function Sidebar({
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-profile">
-          <div className="avatar">
-            <Icon name="user" size={18} />
+        <div className="user-profile" title={collapsed ? currentUser?.username || 'Admin' : ''}>
+          <div className="avatar" style={{
+            width: '32px', height: '32px', borderRadius: '50%',
+            overflow: 'hidden', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
+            flexShrink: 0
+          }}>
+            {currentUser?.photo ? (
+              <img
+                src={normalizePhotoUrl(currentUser.photo)}
+                alt={currentUser.username}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              />
+            ) : null}
+            <span style={{ display: currentUser?.photo ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <Icon name="user" size={18} />
+            </span>
           </div>
           {!collapsed && (
             <div className="user-details">
