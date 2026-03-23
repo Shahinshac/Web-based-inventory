@@ -32,11 +32,12 @@ def checkout():
 
     split_payment_details = None
     if payment_mode == 'split':
+        spd = data.get('splitPaymentDetails', {})
         split_payment_details = {
-            "cashAmount": float(data.get('cashAmount', 0)),
-            "upiAmount": float(data.get('upiAmount', 0)),
-            "cardAmount": float(data.get('cardAmount', 0)),
-            "totalAmount": float(data.get('totalAmount') or data.get('total') or 0)
+            "cashAmount": float(spd.get('cash', data.get('cashAmount', 0))),
+            "upiAmount": float(spd.get('upi', data.get('upiAmount', 0))),
+            "cardAmount": float(spd.get('card', data.get('cardAmount', 0))),
+            "totalAmount": float(data.get('total') or data.get('totalAmount') or 0)
         }
 
     db = get_db()
@@ -210,6 +211,7 @@ def get_invoices():
     
     formatted = []
     for b in bills:
+        spd = b.get("splitPaymentDetails")
         formatted.append({
             "id": str(b["_id"]),
             "billNumber": b.get("billNumber", str(b["_id"])),
@@ -217,14 +219,21 @@ def get_invoices():
             "customerName": b.get("customerName", "Walk-in Customer"),
             "customerPhone": b.get("customerPhone"),
             "customerPlace": b.get("customerPlace"),
+            "customerAddress": b.get("customerAddress", ""),
             "subtotal": b.get("subtotal", 0),
-            "taxRate": 18 if (b.get("cgst", 0)>0 or b.get("igst", 0)>0) else 0,
+            "discountPercent": b.get("discountPercent", 0),
+            "discountAmount": b.get("discountAmount", 0),
+            "taxRate": 18 if (b.get("cgst", 0) > 0 or b.get("igst", 0) > 0) else 0,
             "taxAmount": b.get("gstAmount", 0),
             "cgst": b.get("cgst", 0),
             "sgst": b.get("sgst", 0),
             "igst": b.get("igst", 0),
+            "gstAmount": b.get("gstAmount", 0),
             "grandTotal": b.get("grandTotal", 0),
-            "paymentMode": b.get("paymentMode", "Cash"),
+            "total": b.get("grandTotal", 0),
+            "paymentMode": b.get("paymentMode", "cash"),
+            "paymentStatus": b.get("paymentStatus", "Paid"),
+            "splitPaymentDetails": spd,
             "items": [{
                 "productId": str(i.get("productId")) if i.get("productId") else None,
                 "name": i.get("productName", "Unknown"),
@@ -233,7 +242,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": b.get("billDate", b.get("created_at", b.get("billDate", datetime.utcnow()))).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate")),
+            "date": b.get("billDate", datetime.utcnow()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
