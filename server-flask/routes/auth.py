@@ -25,7 +25,9 @@ def create_user():
     data = request.get_json()
     username = data.get('username', '').lower()
     password = data.get('password')
-    email = data.get('email', '').lower()
+    email = data.get('email', '').strip().lower()
+    if not email:
+        email = None
     role = data.get('role', 'cashier')
 
     if not username or not password:
