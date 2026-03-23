@@ -158,7 +158,28 @@ def logout():
 @auth_bp.route('/session', methods=['GET'])
 @authenticate_token
 def verify_session():
-    return jsonify({"valid": True, "user": g.user})
+    db = get_db()
+    user = db.users.find_one({"_id": ObjectId(g.user.get('userId'))})
+    
+    if not user:
+        return jsonify({"valid": False, "error": "User not found"}), 404
+
+    photo_url = user.get('photo')
+    if user.get('photoStorage') != 'cloudinary' and photo_url:
+        photo_url = f"/api/users/{str(user['_id'])}/photo"
+
+    return jsonify({
+        "valid": True, 
+        "user": {
+            "id": str(user['_id']),
+            "username": user['username'],
+            "email": user.get('email', ''),
+            "role": user.get('role'),
+            "approved": user.get('approved'),
+            "sessionVersion": user.get('sessionVersion', 1),
+            "photo": photo_url
+        }
+    })
 
 @auth_bp.route('/', methods=['GET'])
 @authenticate_token

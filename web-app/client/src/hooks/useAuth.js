@@ -29,14 +29,33 @@ export const useAuth = () => {
 
   // Check authentication on mount
   useEffect(() => {
-    const user = getCurrentUser()
-    if (user) {
-      setIsAuthenticated(true)
-      setCurrentUser(user)
-      setIsAdmin(isUserAdmin())
-      setUserRole(getUserRole())
+    const initAuth = async () => {
+      const user = getCurrentUser()
+      if (user) {
+        setIsAuthenticated(true)
+        setCurrentUser(user)
+        setIsAdmin(isUserAdmin())
+        setUserRole(getUserRole())
+
+        // Refresh user seamlessly to pull latest photo & info
+        try {
+          const session = await validateSession()
+          if (session && session.valid && session.user) {
+            setCurrentUser(session.user)
+            localStorage.setItem('currentUser', JSON.stringify(session.user))
+            localStorage.setItem('isAdmin', session.user.role === 'admin' ? 'true' : 'false')
+            localStorage.setItem('userRole', session.user.role || 'cashier')
+          } else if (session && !session.valid) {
+            handleLogout()
+          }
+        } catch (e) {
+          console.error('Initial session fetch failed', e)
+        }
+      }
+      setLoading(false)
     }
-    setLoading(false)
+    
+    initAuth()
   }, [])
 
   // Validate session periodically
