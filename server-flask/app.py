@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 
 # Initialize Flask App
 app = Flask(__name__)
+app.url_map.strict_slashes = False
 app.config.from_object(Config)
 
 # Enable CORS (Allows the React frontend to communicate with Flask)
