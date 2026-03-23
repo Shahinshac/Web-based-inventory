@@ -1,7 +1,9 @@
 flask
 flask-cors
 flask-restful
-pymongo
+pymongo[srv]
+certifi
+dnspython
 python-dotenv
 pyjwt
 bcrypt
