@@ -45,21 +45,6 @@ export default function App() {
     logo: '⚡'
   });
   
-  // Live India time
-  const [indiaTime, setIndiaTime] = useState(() => {
-    const now = new Date();
-    return new Intl.DateTimeFormat('en-IN', { 
-      hour: 'numeric', minute: 'numeric', second: 'numeric', 
-      hour12: true, timeZone: 'Asia/Kolkata' 
-    }).format(now);
-  });
-  const [indiaDate, setIndiaDate] = useState(() => {
-    const now = new Date();
-    return new Intl.DateTimeFormat('en-IN', { 
-      weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', 
-      timeZone: 'Asia/Kolkata' 
-    }).format(now);
-  });
   const [recentActivity, setRecentActivity] = useState([]);
 
   // Custom hooks
@@ -153,24 +138,6 @@ Ctrl+H: Show Shortcuts
 
 General:
 Esc: Close modals/dialogs`;
-
-  // Clock update
-  useEffect(() => {
-    const tick = () => {
-      const now = new Date();
-      setIndiaTime(new Intl.DateTimeFormat('en-IN', { 
-        hour: 'numeric', minute: 'numeric', second: 'numeric', 
-        hour12: true, timeZone: 'Asia/Kolkata' 
-      }).format(now));
-      setIndiaDate(new Intl.DateTimeFormat('en-IN', { 
-        weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', 
-        timeZone: 'Asia/Kolkata' 
-      }).format(now));
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
 
   // Initialize analytics
   useEffect(() => {

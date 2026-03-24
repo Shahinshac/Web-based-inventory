@@ -116,7 +116,7 @@ export default function Dashboard({
             <h1 className="welcome-title" style={{ fontSize: '32px', fontWeight: 800, margin: 0, color: '#1e293b' }}>{greeting}! 👋</h1>
             <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#64748b', marginTop: '8px' }}>Here's what's happening today</p>
           </div>
-          <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             {isAdmin && (
               <button
                 onClick={handleClearDatabase}
@@ -133,9 +133,14 @@ export default function Dashboard({
                 <span>{clearing ? 'Clearing...' : 'Wipe Data'}</span>
               </button>
             )}
+            {/* Live Clock */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '10px 16px', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '15px', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
+              <Icon name="clock" size={18} />
+              <span>{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}</span>
+            </div>
             <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '10px 16px', borderRadius: '12px', color: '#1e293b', fontWeight: 600 }}>
               <Icon name="calendar" size={18} />
-              <span>{currentTime.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}</span>
+              <span>{currentTime.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
             </div>
           </div>
         </div>

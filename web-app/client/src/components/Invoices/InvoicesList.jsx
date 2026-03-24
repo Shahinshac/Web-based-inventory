@@ -90,7 +90,7 @@ export default function InvoicesList({
             {filteredInvoices.length} invoices &bull; Total: {formatCurrency0(totalRevenue)}
             {lastRefreshTime && (
               <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
-                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString()}
+                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
               </span>
             )}
           </p>

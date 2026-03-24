@@ -47,6 +47,7 @@
   background: transparent;
   transition: width 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .premium-sidebar.collapsed {
@@ -54,7 +55,8 @@
 }
 
 .sidebar-header {
-  margin-bottom: 40px;
+  margin-bottom: 24px;
+  flex-shrink: 0;
 }
 
 .brand {
@@ -101,16 +103,17 @@
 .sidebar-nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
   min-height: 0;
   padding-right: 4px;
+  padding-bottom: 8px;
 }
 
 .sidebar-nav::-webkit-scrollbar {
-  width: 6px;
+  width: 5px;
 }
 
 .sidebar-nav::-webkit-scrollbar-track {
@@ -118,12 +121,12 @@
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 10px;
 }
 
 .sidebar-nav::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 .nav-btn {
@@ -133,14 +136,15 @@
   background: transparent;
   border: none;
   color: #475569;
-  padding: 14px 20px;
-  border-radius: 16px;
-  font-size: 15px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
+  flex-shrink: 0;
 }
 
 .nav-btn:hover {
@@ -165,19 +169,22 @@
 }
 
 .sidebar-footer {
-  margin-top: auto;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  margin-top: 8px;
 }
 
 .user-profile {
   display: flex;
   align-items: center;
   gap: 16px;
-  padding: 16px;
+  padding: 14px;
   background: rgba(255, 255, 255, 0.03);
-  border-radius: 20px;
+  border-radius: 16px;
   border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
@@ -220,11 +227,12 @@
   background: rgba(239, 68, 68, 0.1);
   color: #ef4444;
   border: 1px solid rgba(239, 68, 68, 0.2);
-  padding: 14px;
-  border-radius: 16px;
+  padding: 12px;
+  border-radius: 14px;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.3s ease;
+  font-size: 14px;
 }
 
 .logout-btn:hover {
