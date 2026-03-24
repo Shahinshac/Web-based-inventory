@@ -30,7 +30,6 @@ import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 // Removed unused constants import
 import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
-import { generatePublicInvoiceUrl, generateWhatsAppLink } from './services/invoiceService';
 import './styles.css';
 
 export default function App() {
@@ -297,44 +296,426 @@ Esc: Close modals/dialogs`;
   };
 
   // Export functions (simplified - implement full logic as needed)
-  const handleExportPDF = async (invoice) => {
+  const handleExportPDF = (invoice) => {
     try {
-      const res = await generatePublicInvoiceUrl(invoice.id || invoice._id, currentUser?.username, companyInfo);
-      if (res?.publicUrl) {
-        // Open printable page and trigger print via query param
-        window.open(res.publicUrl + '?print=1', '_blank');
-        showNotification('Opening printable invoice...', 'success');
+      const date = new Date(invoice.createdAt || invoice.date || invoice.billDate);
+      const formattedDate = date.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      });
+      const formattedTime = date.toLocaleTimeString('en-IN', {
+        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+      });
+
+      const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';
+      const customerPhone = invoice.customer?.phone || invoice.customerPhone || '';
+      const customerAddress = invoice.customer?.address || invoice.customerAddress || '';
+      const customerPlace = invoice.customer?.place || invoice.customerPlace || '';
+      const salesperson = invoice.createdByUsername || 'N/A';
+      const paymentMode = invoice.paymentMode || 'cash';
+      const billNumber = invoice.billNumber || invoice.id;
+
+      const subtotal = Number(invoice.subtotal || invoice.total || 0);
+      const discountAmt = Number(invoice.discountAmount || 0);
+      const discountPct = Number(invoice.discountPercent || 0);
+      const gstAmount = Number(invoice.gstAmount || 0);
+      const cgst = Number(invoice.cgst || 0);
+      const sgst = Number(invoice.sgst || 0);
+      const igst = Number(invoice.igst || 0);
+      const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
+
+      const items = (invoice.items || []).map((item, i) => `
+        <tr>
+          <td style="text-align:center;color:#64748b;font-weight:500;">${i + 1}</td>
+          <td>
+            <div style="font-weight:600;color:#0f172a;">${item.name || item.productName}</div>
+            ${item.hsnCode ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">HSN: ${item.hsnCode}</div>` : ''}
+          </td>
+          <td style="text-align:center;">${item.quantity}</td>
+          <td style="text-align:right;">₹${Number(item.price || item.unitPrice || 0).toFixed(2)}</td>
+          <td style="text-align:right;font-weight:600;">₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(2)}</td>
+        </tr>
+      `).join('');
+
+      // Split payment info
+      let splitInfo = '';
+      if (paymentMode === 'split' && invoice.splitPaymentDetails) {
+        const spd = invoice.splitPaymentDetails;
+        splitInfo = `
+          <div style="margin-top:6px;font-size:13px;color:#475569;">
+            ${Number(spd.cash || 0) > 0 ? `<div>Cash: ₹${Number(spd.cash).toFixed(2)}</div>` : ''}
+            ${Number(spd.upi || 0) > 0 ? `<div>UPI: ₹${Number(spd.upi).toFixed(2)}</div>` : ''}
+            ${Number(spd.card || 0) > 0 ? `<div>Card: ₹${Number(spd.card).toFixed(2)}</div>` : ''}
+          </div>`;
+      }
+
+      const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Invoice ${billNumber} - ${companyInfo.name}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+    
+    *{margin:0;padding:0;box-sizing:border-box;}
+    
+    @page{size:A4;margin:0;}
+    
+    body{
+      font-family:'Inter',system-ui,-apple-system,sans-serif;
+      background:#f1f5f9;
+      color:#0f172a;
+      display:flex;
+      justify-content:center;
+      padding:20px;
+      -webkit-print-color-adjust:exact!important;
+      print-color-adjust:exact!important;
+    }
+    
+    .invoice-page{
+      width:210mm;
+      min-height:297mm;
+      background:#fff;
+      padding:0;
+      position:relative;
+      overflow:hidden;
+    }
+    
+    /* Top accent bar */
+    .accent-bar{
+      height:6px;
+      background:linear-gradient(90deg,#4f46e5,#7c3aed,#6366f1);
+    }
+    
+    .invoice-inner{
+      padding:40px 44px 30px;
+    }
+    
+    /* Header */
+    .inv-header{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:32px;
+      padding-bottom:24px;
+      border-bottom:2px solid #e2e8f0;
+    }
+    
+    .company-block h1{
+      font-size:26px;
+      font-weight:800;
+      color:#4f46e5;
+      letter-spacing:-0.5px;
+      margin-bottom:6px;
+    }
+    .company-block p{
+      font-size:12.5px;
+      color:#64748b;
+      line-height:1.6;
+    }
+    .company-block .gstin{
+      font-weight:600;
+      color:#334155;
+      margin-top:4px;
+    }
+    
+    .inv-title-block{text-align:right;}
+    .inv-title-block h2{
+      font-size:22px;
+      font-weight:800;
+      color:#0f172a;
+      text-transform:uppercase;
+      letter-spacing:2px;
+      margin-bottom:12px;
+    }
+    .meta-table{font-size:12.5px;text-align:right;}
+    .meta-table td{padding:3px 0;}
+    .meta-label{color:#94a3b8;font-weight:500;padding-right:14px;}
+    .meta-value{color:#0f172a;font-weight:700;}
+    
+    /* Billing Grid */
+    .bill-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+      margin-bottom:28px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:20px 24px;
+    }
+    .bill-grid h3{
+      font-size:11px;
+      text-transform:uppercase;
+      letter-spacing:1.2px;
+      color:#4f46e5;
+      font-weight:700;
+      margin-bottom:10px;
+      padding-bottom:6px;
+      border-bottom:2px solid #e0e7ff;
+      display:inline-block;
+    }
+    .bill-grid p{font-size:13px;color:#334155;line-height:1.7;}
+    .bill-grid .cust-name{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:2px;}
+    
+    /* Items Table */
+    .items-table{
+      width:100%;
+      border-collapse:separate;
+      border-spacing:0;
+      margin-bottom:28px;
+      font-size:13px;
+    }
+    .items-table th{
+      background:#f1f5f9;
+      color:#64748b;
+      text-transform:uppercase;
+      font-size:11px;
+      font-weight:700;
+      letter-spacing:0.5px;
+      padding:12px 14px;
+      border-bottom:2px solid #e2e8f0;
+    }
+    .items-table th:first-child{border-radius:8px 0 0 8px;text-align:center;width:40px;}
+    .items-table th:last-child{border-radius:0 8px 8px 0;text-align:right;}
+    .items-table td{
+      padding:14px;
+      border-bottom:1px solid #f1f5f9;
+      color:#334155;
+      vertical-align:top;
+    }
+    .items-table tr:last-child td{border-bottom:none;}
+    
+    /* Summary */
+    .summary-section{
+      display:flex;
+      justify-content:flex-end;
+    }
+    .summary-box{
+      width:300px;
+      background:#f8fafc;
+      border:1px solid #e2e8f0;
+      border-radius:10px;
+      padding:20px 24px;
+    }
+    .sum-row{
+      display:flex;
+      justify-content:space-between;
+      font-size:13px;
+      color:#64748b;
+      padding:6px 0;
+    }
+    .sum-row.discount{color:#10b981;font-weight:600;}
+    .sum-row.total{
+      margin-top:10px;
+      padding-top:12px;
+      border-top:2px solid #e2e8f0;
+      font-size:18px;
+      font-weight:800;
+      color:#4f46e5;
+    }
+    
+    /* Footer */
+    .inv-footer{
+      position:absolute;
+      bottom:0;
+      left:0;
+      right:0;
+      padding:20px 44px 24px;
+      text-align:center;
+      border-top:1px solid #e2e8f0;
+      background:#fafbfc;
+    }
+    .inv-footer .thanks{
+      font-weight:700;
+      font-size:14px;
+      color:#0f172a;
+      margin-bottom:4px;
+    }
+    .inv-footer p{font-size:12px;color:#94a3b8;line-height:1.5;}
+    
+    /* Print overrides */
+    @media print{
+      body{background:#fff;padding:0;}
+      .invoice-page{
+        width:100%;
+        min-height:auto;
+        box-shadow:none;
+      }
+      .no-print{display:none!important;}
+    }
+    
+    /* Print button bar */
+    .print-bar{
+      position:fixed;
+      top:0;left:0;right:0;
+      background:linear-gradient(135deg,#4f46e5,#7c3aed);
+      padding:14px 24px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:16px;
+      z-index:999;
+      box-shadow:0 4px 20px rgba(79,70,229,0.3);
+    }
+    .print-bar span{color:#fff;font-size:14px;font-weight:500;}
+    .print-bar button{
+      background:#fff;
+      color:#4f46e5;
+      border:none;
+      padding:10px 28px;
+      border-radius:8px;
+      font-weight:700;
+      font-size:14px;
+      cursor:pointer;
+      transition:all 0.2s;
+    }
+    .print-bar button:hover{transform:scale(1.05);box-shadow:0 4px 12px rgba(0,0,0,0.15);}
+  </style>
+</head>
+<body>
+  <div class="print-bar no-print">
+    <span>📄 Invoice ${billNumber}</span>
+    <button onclick="window.print()">🖨️ Print / Save PDF</button>
+    <button onclick="window.close()" style="background:#f1f5f9;color:#475569;">✕ Close</button>
+  </div>
+  
+  <div class="invoice-page" style="margin-top:70px;">
+    <div class="accent-bar"></div>
+    <div class="invoice-inner">
+      
+      <div class="inv-header">
+        <div class="company-block">
+          <h1>${companyInfo.logo || '⚡'} ${companyInfo.name}</h1>
+          <p>${companyInfo.address || ''}</p>
+          <p>Phone: ${companyInfo.phone || ''} ${companyInfo.email ? `| ${companyInfo.email}` : ''}</p>
+          ${companyInfo.gstin ? `<p class="gstin">GSTIN: ${companyInfo.gstin}</p>` : ''}
+        </div>
+        <div class="inv-title-block">
+          <h2>Tax Invoice</h2>
+          <table class="meta-table">
+            <tr><td class="meta-label">Invoice No:</td><td class="meta-value">${billNumber}</td></tr>
+            <tr><td class="meta-label">Date:</td><td class="meta-value">${formattedDate}</td></tr>
+            <tr><td class="meta-label">Time:</td><td class="meta-value">${formattedTime}</td></tr>
+            <tr><td class="meta-label">Sales Person:</td><td class="meta-value">${salesperson}</td></tr>
+          </table>
+        </div>
+      </div>
+      
+      <div class="bill-grid">
+        <div>
+          <h3>Billed To</h3>
+          <p class="cust-name">${customerName}</p>
+          ${customerPhone ? `<p>Phone: ${customerPhone}</p>` : ''}
+          ${customerAddress ? `<p>${customerAddress}</p>` : ''}
+          ${customerPlace ? `<p>${customerPlace}</p>` : ''}
+        </div>
+        <div>
+          <h3>Payment Info</h3>
+          <p><strong>Method:</strong> ${paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1)}</p>
+          ${splitInfo}
+          <p style="margin-top:6px;"><strong>Status:</strong> <span style="color:#10b981;font-weight:700;">Paid ✓</span></p>
+        </div>
+      </div>
+      
+      <table class="items-table">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Item Description</th>
+            <th style="text-align:center;">Qty</th>
+            <th style="text-align:right;">Unit Price</th>
+            <th style="text-align:right;">Amount</th>
+          </tr>
+        </thead>
+        <tbody>${items}</tbody>
+      </table>
+      
+      <div class="summary-section">
+        <div class="summary-box">
+          <div class="sum-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+          ${discountAmt > 0 ? `<div class="sum-row discount"><span>Discount${discountPct > 0 ? ` (${discountPct}%)` : ''}</span><span>-₹${discountAmt.toFixed(2)}</span></div>` : ''}
+          ${cgst > 0 ? `<div class="sum-row"><span>CGST (9%)</span><span>₹${cgst.toFixed(2)}</span></div><div class="sum-row"><span>SGST (9%)</span><span>₹${sgst.toFixed(2)}</span></div>` : ''}
+          ${igst > 0 ? `<div class="sum-row"><span>IGST (18%)</span><span>₹${igst.toFixed(2)}</span></div>` : ''}
+          ${cgst === 0 && igst === 0 && gstAmount > 0 ? `<div class="sum-row"><span>GST (18%)</span><span>₹${gstAmount.toFixed(2)}</span></div>` : ''}
+          <div class="sum-row total"><span>Grand Total</span><span>₹${grandTotal.toFixed(2)}</span></div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="inv-footer">
+      <div class="thanks">Thank you for your business!</div>
+      <p>For queries, contact us at ${companyInfo.phone || ''}${companyInfo.email ? ` or ${companyInfo.email}` : ''}</p>
+      <p style="font-size:10px;margin-top:8px;color:#cbd5e1;">This is a computer-generated invoice and does not require a physical signature.</p>
+    </div>
+  </div>
+  
+  <script>
+    // Auto-print after font loads
+    document.fonts.ready.then(function() { setTimeout(function() {}, 500); });
+  </script>
+</body>
+</html>`;
+
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(html);
+        printWindow.document.close();
+        showNotification('📄 Invoice opened — click Print/Save PDF', 'success');
       } else {
-        showNotification('Failed to generate printable invoice', 'error');
+        showNotification('Pop-up blocked! Please allow pop-ups for this site.', 'error');
       }
     } catch (e) {
-      showNotification('Failed to generate printable invoice', 'error');
+      showNotification('Failed to generate invoice: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
     }
   };
 
-  const handleShareWhatsApp = async (invoice) => {
+  const handleShareWhatsApp = (invoice) => {
     try {
-      // Validate customer phone exists
-      if (!invoice.customerPhone || invoice.customerPhone.trim() === '') {
-        showNotification('❌ Cannot send WhatsApp: Customer phone number is missing', 'error');
-        return;
-      }
+      const customerPhone = invoice.customerPhone || invoice.customer?.phone || '';
+      const customerName = invoice.customerName || invoice.customer?.name || 'Customer';
+      const billNumber = invoice.billNumber || invoice.id;
+      const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
-      const res = await generateWhatsAppLink(invoice.id || invoice._id, currentUser?.username, companyInfo);
-      if (res?.whatsappUrl) {
-        window.open(res.whatsappUrl, '_blank');
+      // Build message
+      const itemsList = (invoice.items || [])
+        .map((item, i) => `${i + 1}. ${item.name || item.productName} x${item.quantity} = ₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(0)}`)
+        .join('\n');
+
+      const message = [
+        `📄 *Invoice #${billNumber}*`,
+        `From: *${companyInfo.name}*`,
+        `Date: ${new Date(invoice.createdAt || invoice.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}`,
+        '',
+        `👤 Customer: ${customerName}`,
+        '',
+        `📦 *Items:*`,
+        itemsList,
+        '',
+        invoice.discountAmount > 0 ? `💰 Discount: -₹${Number(invoice.discountAmount).toFixed(0)}` : '',
+        invoice.gstAmount > 0 ? `📊 GST: ₹${Number(invoice.gstAmount).toFixed(0)}` : '',
+        `💵 *Total: ₹${grandTotal.toFixed(0)}*`,
+        '',
+        `Payment: ${(invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1)} ✓`,
+        '',
+        `Thank you for your purchase! 🙏`,
+        `— ${companyInfo.name}`,
+        companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
+      ].filter(Boolean).join('\n');
+
+      if (customerPhone && customerPhone.trim()) {
+        let cleanPhone = customerPhone.replace(/\D/g, '');
+        if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
+        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
         showNotification('✅ Opening WhatsApp...', 'success');
-      } else if (res?.publicUrl) {
-        // Fallback: open WhatsApp without pre-filled number
-        const message = `Invoice #${invoice.billNumber || invoice.id} - Total: ₹${invoice.grandTotal || invoice.total} - ${res.publicUrl}`;
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-        showNotification('⚠️ Opening WhatsApp (please select contact manually)', 'warning');
       } else {
-        showNotification('❌ Failed to create WhatsApp link', 'error');
+        // No phone — open WhatsApp with just the text (user picks contact)
+        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+        showNotification('⚠️ No phone number — please select contact manually', 'warning');
       }
     } catch (e) {
-      showNotification('❌ Failed to create WhatsApp link: ' + (e.message || 'Unknown error'), 'error');
+      showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
     }
   };

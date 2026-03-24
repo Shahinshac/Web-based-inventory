@@ -26,8 +26,11 @@ export default function InvoicesList({
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
         invoice.id?.toString().includes(query) ||
+        invoice.billNumber?.toLowerCase().includes(query) ||
         invoice.customer?.name?.toLowerCase().includes(query) ||
         invoice.customer?.phone?.includes(query) ||
+        invoice.customerName?.toLowerCase().includes(query) ||
+        invoice.customerPhone?.includes(query) ||
         invoice.createdByUsername?.toLowerCase().includes(query);
 
       const invoiceDate = new Date(invoice.createdAt || invoice.billDate || invoice.date);

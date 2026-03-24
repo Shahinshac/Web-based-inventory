@@ -2,6 +2,51 @@ import { useState, useEffect, useCallback } from 'react';
 import { API, getAuthHeaders } from '../utils/api';
 import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh';
 
+/**
+ * Normalize invoice data from the API's flat structure into the nested
+ * structure that the UI components expect.
+ */
+const normalizeInvoice = (inv) => {
+  // Build nested customer object from flat fields
+  const customer = (inv.customerName && inv.customerName !== 'Walk-in Customer')
+    ? {
+        name: inv.customerName,
+        phone: inv.customerPhone || '',
+        address: inv.customerAddress || '',
+        place: inv.customerPlace || '',
+        gstin: inv.customerGstin || ''
+      }
+    : null;
+
+  // Normalize splitPaymentDetails keys (backend sends cashAmount/upiAmount/cardAmount)
+  let splitPaymentDetails = inv.splitPaymentDetails || null;
+  if (splitPaymentDetails) {
+    splitPaymentDetails = {
+      cash: splitPaymentDetails.cash ?? splitPaymentDetails.cashAmount ?? 0,
+      upi: splitPaymentDetails.upi ?? splitPaymentDetails.upiAmount ?? 0,
+      card: splitPaymentDetails.card ?? splitPaymentDetails.cardAmount ?? 0,
+    };
+  }
+
+  return {
+    ...inv,
+    customer,
+    splitPaymentDetails,
+    // Ensure createdAt is always set (components use it for dates)
+    createdAt: inv.createdAt || inv.date || inv.billDate,
+    // Keep flat fields too for handlers that use them directly
+    customerPhone: inv.customerPhone || customer?.phone || '',
+    customerName: inv.customerName || customer?.name || 'Walk-in Customer',
+    // Map subtotal / total correctly
+    subtotal: inv.subtotal ?? inv.total ?? 0,
+    total: inv.total ?? inv.grandTotal ?? 0,
+    gstAmount: inv.gstAmount ?? inv.taxAmount ?? 0,
+    discountAmount: inv.discountAmount ?? 0,
+  };
+};
+
+const normalizeInvoices = (data) => data.map(normalizeInvoice);
+
 export function useInvoices(isOnline, isAuthenticated, activeTab) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -15,7 +60,8 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
       if (isOnline) {
         const res = await fetch(API('/api/invoices'), { headers: getAuthHeaders() });
         if (res.ok) {
-          const data = await res.json();
+          const rawData = await res.json();
+          const data = normalizeInvoices(rawData);
           
           // Only update visible invoice list when appropriate
           if (force || activeTab !== 'invoices') {
