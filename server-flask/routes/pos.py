@@ -350,20 +350,8 @@ def whatsapp_link(id):
             }
         })
 
-        # Build public URL using frontend origin (Referer/Origin) so it works on deployed environments
-        frontend_origin = None
-        referer = request.headers.get('Referer', '')
-        origin = request.headers.get('Origin', '')
-        if referer:
-            from urllib.parse import urlparse
-            parsed = urlparse(referer)
-            frontend_origin = f"{parsed.scheme}://{parsed.netloc}"
-        elif origin:
-            frontend_origin = origin.rstrip('/')
-
-        # Fallback to request.host_url (works for local dev)
-        base_url = frontend_origin or request.host_url.rstrip('/')
-        public_url = f"{base_url}/public/invoice/{token}"
+        # Public invoice page is served by this Flask backend, so use the backend URL
+        public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
         message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
 
