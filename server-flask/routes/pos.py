@@ -188,7 +188,7 @@ def checkout():
         "customerPhone": customer_phone,
         "customerPlace": customer_place,
         "paymentMode": payment_mode,
-        "billDate": bill_date.isoformat(),
+        "billDate": bill_date.isoformat() + ("Z" if not bill_date.tzinfo else ""),
         "items": [{
             "productName": i["productName"],
             "quantity": i["quantity"],
@@ -242,7 +242,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": b.get("billDate", datetime.utcnow()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
+            "date": (b.get("billDate", datetime.utcnow()).isoformat() + ("Z" if not b.get("billDate", datetime.utcnow()).tzinfo else "")) if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -265,7 +265,7 @@ def get_invoice(id):
         "customerName": invoice.get("customerName"),
         "customerPhone": invoice.get("customerPhone"),
         "customerAddress": invoice.get("customerAddress"),
-        "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDate": (invoice.get("billDate").isoformat() + ("Z" if not invoice.get("billDate").tzinfo else "")) if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
         "items": [{
              "productName": i.get("productName"),
              "quantity": i.get("quantity"),

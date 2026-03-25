@@ -638,14 +638,35 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  const handleShareWhatsApp = (invoice) => {
+  const handleShareWhatsApp = async (invoice) => {
     try {
       const customerPhone = invoice.customerPhone || invoice.customer?.phone || '';
       const customerName = invoice.customerName || invoice.customer?.name || 'Customer';
       const billNumber = invoice.billNumber || invoice.id;
       const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
-      // Build message
+      // Call backend to get public invoice link
+      let publicUrl = '';
+      let backendWhatsAppUrl = null;
+      try {
+        const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
+          requestedBy: currentUser?.username || 'system',
+          company: companyInfo.name
+        });
+        publicUrl = linkData.publicUrl || '';
+        backendWhatsAppUrl = linkData.whatsappUrl || null;
+      } catch (linkErr) {
+        console.warn('Could not generate public link:', linkErr);
+      }
+
+      // If backend returned a full whatsapp URL (has phone), use it directly
+      if (backendWhatsAppUrl) {
+        window.open(backendWhatsAppUrl, '_blank');
+        showNotification('✅ Opening WhatsApp...', 'success');
+        return;
+      }
+
+      // Build message with public link included
       const itemsList = (invoice.items || [])
         .map((item, i) => `${i + 1}. ${item.name || item.productName} x${item.quantity} = ₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(0)}`)
         .join('\n');
@@ -665,6 +686,8 @@ Esc: Close modals/dialogs`;
         `💵 *Total: ₹${grandTotal.toFixed(0)}*`,
         '',
         `Payment: ${(invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1)} ✓`,
+        '',
+        publicUrl ? `🔗 View Invoice: ${publicUrl}` : '',
         '',
         `Thank you for your purchase! 🙏`,
         `— ${companyInfo.name}`,
