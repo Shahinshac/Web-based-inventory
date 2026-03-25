@@ -1,6 +1,7 @@
 import logging
 import os
 import secrets
+import urllib.parse
 from datetime import datetime, timedelta
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, g, url_for
@@ -318,52 +319,69 @@ def create_public_link(id):
 
 @pos_bp.route('/<id>/whatsapp-link', methods=['POST'])
 def whatsapp_link(id):
-    db = get_db()
     try:
-        invoice = db.bills.find_one({"_id": ObjectId(id)})
-    except Exception:
-        invoice = db.bills.find_one({"billNumber": id})
+        db = get_db()
+        try:
+            invoice = db.bills.find_one({"_id": ObjectId(id)})
+        except Exception:
+            invoice = db.bills.find_one({"billNumber": id})
 
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
 
-    customer_phone = invoice.get('customerPhone')
-    if not customer_phone and invoice.get('customerId'):
-        cust = db.customers.find_one({"_id": invoice.get('customerId')})
-        if cust:
-            customer_phone = cust.get('phone')
+        customer_phone = invoice.get('customerPhone')
+        if not customer_phone and invoice.get('customerId'):
+            cust = db.customers.find_one({"_id": invoice.get('customerId')})
+            if cust:
+                customer_phone = cust.get('phone')
 
-    # Create link
-    token = secrets.token_hex(16)
-    expires = datetime.utcnow() + timedelta(days=1)
-    db.public_invoice_links.insert_one({
-        "token": token,
-        "invoiceId": str(invoice["_id"]),
-        "createdAt": datetime.utcnow(),
-        "expiresAt": expires,
-        "createdBy": "system",
-        "companySnapshot": {
-            "name": COMPANY_NAME,
-            "phone": COMPANY_PHONE
-        }
-    })
+        # Create link
+        token = secrets.token_hex(16)
+        expires = datetime.utcnow() + timedelta(days=1)
+        db.public_invoice_links.insert_one({
+            "token": token,
+            "invoiceId": str(invoice["_id"]),
+            "createdAt": datetime.utcnow(),
+            "expiresAt": expires,
+            "createdBy": "system",
+            "companySnapshot": {
+                "name": COMPANY_NAME,
+                "phone": COMPANY_PHONE
+            }
+        })
 
-    public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
-    
-    import urllib.parse
-    message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
-    
-    whatsapp_url = None
-    if customer_phone:
-        clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
-        if len(clean_phone) == 10:
-            clean_phone = f"91{clean_phone}"
-        whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+        # Build public URL using frontend origin (Referer/Origin) so it works on deployed environments
+        frontend_origin = None
+        referer = request.headers.get('Referer', '')
+        origin = request.headers.get('Origin', '')
+        if referer:
+            from urllib.parse import urlparse
+            parsed = urlparse(referer)
+            frontend_origin = f"{parsed.scheme}://{parsed.netloc}"
+        elif origin:
+            frontend_origin = origin.rstrip('/')
 
-    return jsonify({
-        "publicUrl": public_url,
-        "whatsappUrl": whatsapp_url,
-        "token": token,
-        "hasPhone": bool(customer_phone),
-        "customerName": invoice.get('customerName', 'Customer')
-    })
+        # Fallback to request.host_url (works for local dev)
+        base_url = frontend_origin or request.host_url.rstrip('/')
+        public_url = f"{base_url}/public/invoice/{token}"
+
+        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
+
+        whatsapp_url = None
+        if customer_phone:
+            clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
+            if len(clean_phone) == 10:
+                clean_phone = f"91{clean_phone}"
+            whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+
+        return jsonify({
+            "publicUrl": public_url,
+            "whatsappUrl": whatsapp_url,
+            "token": token,
+            "hasPhone": bool(customer_phone),
+            "customerName": invoice.get('customerName', 'Customer')
+        })
+    except Exception as e:
+        logger.error(f"WhatsApp link error: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to generate WhatsApp link: {str(e)}"}), 500
+
