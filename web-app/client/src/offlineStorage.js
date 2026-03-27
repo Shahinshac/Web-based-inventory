@@ -563,6 +563,9 @@ class OfflineStorage {
 // Create and export global instance
 const offlineStorage = new OfflineStorage();
 
+// Expose globally so hooks can access via window.offlineStorage
+window.offlineStorage = offlineStorage;
+
 // CommonJS export for compatibility
 if (typeof module !== 'undefined' && module.exports) {
   module.exports = OfflineStorage;
