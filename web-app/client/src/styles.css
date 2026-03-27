@@ -15757,3 +15757,91 @@ body.dark-theme .pos-card-price {
     height: 90px;
   }
 }
+
+/* PWA Install Banner */
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 1rem 1.5rem;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: slideUp 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.pwa-banner-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem;
+}
+
+.pwa-banner-content span {
+  font-weight: 600;
+  color: var(--text-main);
+  font-size: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.pwa-banner-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.pwa-banner-actions button {
+  padding: 0.6rem 1.2rem;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.pwa-banner-actions button:first-child {
+  background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
+  color: white;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+}
+
+.pwa-banner-actions button:first-child:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.4);
+}
+
+.pwa-banner-actions button:last-child {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.pwa-banner-actions button:last-child:hover {
+  background: #e2e8f0;
+  color: #1e293b;
+}
+
+@keyframes slideUp {
+  0% { transform: translateY(100%); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+
+@media (max-width: 640px) {
+  .pwa-banner-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 1rem;
+  }
+  .pwa-banner-actions {
+    width: 100%;
+  }
+  .pwa-banner-actions button {
+    flex: 1;
+    padding: 0.8rem;
+  }
+}

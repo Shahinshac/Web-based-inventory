@@ -1057,7 +1057,12 @@ Esc: Close modals/dialogs`;
           <div className="pwa-banner-content">
             <span>📱 Install app for offline access and better experience</span>
             <div className="pwa-banner-actions">
-              <button onClick={installPWA}>Install</button>
+              <button onClick={async () => {
+                const result = await installPWA();
+                if (result) {
+                  showNotification(result.message, result.success ? 'success' : 'info');
+                }
+              }}>Install</button>
               <button onClick={dismissInstallPrompt}>Later</button>
             </div>
           </div>
