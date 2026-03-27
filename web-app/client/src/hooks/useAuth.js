@@ -22,6 +22,7 @@ import {
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
   const [isAdmin, setIsAdmin] = useState(false)
+  const [isCustomer, setIsCustomer] = useState(false)
   const [currentUser, setCurrentUser] = useState(null)
   const [userRole, setUserRole] = useState('cashier')
   const [loading, setLoading] = useState(true)
@@ -35,7 +36,9 @@ export const useAuth = () => {
         setIsAuthenticated(true)
         setCurrentUser(user)
         setIsAdmin(isUserAdmin())
-        setUserRole(getUserRole())
+        const role = getUserRole()
+        setUserRole(role)
+        setIsCustomer(role === 'customer')
 
         // Refresh user seamlessly to pull latest photo & info
         try {
@@ -45,6 +48,7 @@ export const useAuth = () => {
             localStorage.setItem('currentUser', JSON.stringify(session.user))
             localStorage.setItem('isAdmin', session.user.role === 'admin' ? 'true' : 'false')
             localStorage.setItem('userRole', session.user.role || 'cashier')
+            setIsCustomer(session.user.role === 'customer')
           } else if (session && !session.valid) {
             handleLogout()
           }
@@ -54,7 +58,7 @@ export const useAuth = () => {
       }
       setLoading(false)
     }
-    
+
     initAuth()
   }, [])
 
@@ -92,17 +96,19 @@ export const useAuth = () => {
     return () => clearInterval(intervalId)
   }, [isAuthenticated, isAdmin, currentUser])
 
-  const handleLogin = async (username, password) => {
+  const handleLogin = async (username, password, userMode = 'staff') => {
     try {
       setError(null)
-      const response = await loginUser(username, password)
+      const response = await loginUser(username, password, userMode)
 
       const user = response.user
       setIsAuthenticated(true)
       setCurrentUser(user)
       setIsAdmin(user.role === 'admin')
-      setUserRole(user.role || 'cashier')
-      
+      const role = user.role || (userMode === 'customer' ? 'customer' : 'cashier')
+      setUserRole(role)
+      setIsCustomer(role === 'customer')
+
       return { success: true, user }
     } catch (err) {
       setError(err.message || 'Login failed')
@@ -125,6 +131,7 @@ export const useAuth = () => {
     logoutUser()
     setIsAuthenticated(false)
     setIsAdmin(false)
+    setIsCustomer(false)
     setCurrentUser(null)
     setUserRole('cashier')
   }
@@ -175,6 +182,7 @@ export const useAuth = () => {
   return {
     isAuthenticated,
     isAdmin,
+    isCustomer,
     currentUser,
     userRole,
     loading,

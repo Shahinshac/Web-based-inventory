@@ -6895,6 +6895,45 @@ textarea:focus-visible {
   flex: 1;
 }
 
+/* Mode Selector */
+.mode-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
 /* Tabs */
 .login-tabs {
   display: flex;
@@ -6993,6 +7032,17 @@ textarea:focus-visible {
   transition: all 0.2s;
 }
 
+.login-form input[type="tel"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
 .login-form input:hover {
   border-color: #cbd5e1;
 }
@@ -7058,6 +7108,41 @@ textarea:focus-visible {
 
 .error-msg svg {
   flex-shrink: 0;
+}
+
+.field-hint {
+  font-size: 12px;
+  margin-top: -2px;
+  margin-left: 2px;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.form-footer p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 6px;
+}
+
+.switch-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.switch-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
+}
 }
 
 /* Submit Button - Compact Size */

@@ -8,9 +8,10 @@ import { API, apiPost, apiGet, apiUpload, apiDelete } from '../utils/api'
 /**
  * Login user
  */
-export const loginUser = async (username, password) => {
-  const response = await apiPost('/api/users/login', { username, password })
-  
+export const loginUser = async (username, password, userMode = 'staff') => {
+  const endpoint = userMode === 'customer' ? '/api/users/login-customer' : '/api/users/login'
+  const response = await apiPost(endpoint, { username, password })
+
   if (response.user) {
     // Store JWT token
     if (response.token) {
@@ -22,7 +23,7 @@ export const loginUser = async (username, password) => {
     localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
     localStorage.setItem('userRole', response.user.role || 'cashier')
   }
-  
+
   return response
 }
 

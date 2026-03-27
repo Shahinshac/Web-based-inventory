@@ -3,6 +3,7 @@ import { initAnalytics, trackPageView, trackEvent } from './analytics';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import Login from './Login';
+import CustomerPortal from './components/CustomerPortal/CustomerPortal';
 import Sidebar from './components/Layout/Sidebar';
 import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
@@ -48,12 +49,13 @@ export default function App() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   // Custom hooks
-  const { 
-    isAuthenticated, 
-    isAdmin, 
-    currentUser, 
+  const {
+    isAuthenticated,
+    isAdmin,
+    isCustomer,
+    currentUser,
     userRole,
-    handleLogin: login, 
+    handleLogin: login,
     handleLogout: logout,
     handleRegister: register,
     handleUpdateUserPhoto,
@@ -946,6 +948,11 @@ Esc: Close modals/dialogs`;
   // If not authenticated, show login page
   if (!isAuthenticated) {
     return <Login onLogin={login} />;
+  }
+
+  // Customer Portal Route
+  if (isCustomer) {
+    return <CustomerPortal currentUser={currentUser} onLogout={logout} />;
   }
 
   // Render active tab
