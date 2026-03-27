@@ -214,7 +214,7 @@ def revenue_profit():
     exp_list = list(expenses_cursor)
     total_expenses = exp_list[0]['total'] if exp_list else 0
 
-    net_profit = total_prof - total_expenses
+    net_profit = total_rev - total_expenses
 
     daily_map = {}
     for bill in bills:

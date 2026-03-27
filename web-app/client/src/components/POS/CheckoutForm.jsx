@@ -31,9 +31,9 @@ export default function CheckoutForm({
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
-  const afterDiscount = subtotal - discountAmount;
-  const gstAmount = (afterDiscount * GST_PERCENT) / 100;
-  const finalTotal = afterDiscount + gstAmount;
+  const finalTotal = subtotal - discountAmount;
+  // Calculate backwards for inclusive GST display
+  const gstAmount = finalTotal - (finalTotal / (1 + (GST_PERCENT / 100)));
 
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {

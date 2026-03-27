@@ -127,7 +127,21 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             
             <div className="form-row">
               <Input
-                label="Selling Price (₹)"
+                label="Base Price (Excl. 18% GST) (₹)"
+                type="number"
+                value={formData.price ? (formData.price / 1.18).toFixed(2) : ''}
+                onChange={(e) => {
+                  const base = parseFloat(e.target.value) || 0;
+                  handleChange('price', Math.round(base * 1.18 * 100) / 100);
+                }}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+              />
+
+              <Input
+                label="Final Selling Price (Incl. GST) (₹)"
                 type="number"
                 value={formData.price}
                 onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
@@ -137,7 +151,9 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 required
                 error={errors.price}
               />
+            </div>
 
+            <div className="form-row">
               <Input
                 label="Cost Price (₹)"
                 type="number"
