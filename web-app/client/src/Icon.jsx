@@ -335,6 +335,124 @@ const Icon = ({
 
   // ==================== ADDITIONAL ICONS ====================
 
+  if (name === 'map-pin') {
+    return (
+      <svg {...svgProps}>
+        <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z" />
+        <circle cx="12" cy="10" r="3" />
+      </svg>
+    );
+  }
+
+  if (name === 'home') {
+    return (
+      <svg {...svgProps}>
+        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
+        <polyline points="9 22 9 12 15 12 15 22" />
+      </svg>
+    );
+  }
+
+  if (name === 'briefcase') {
+    return (
+      <svg {...svgProps}>
+        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+      </svg>
+    );
+  }
+
+  if (name === 'award') {
+    return (
+      <svg {...svgProps}>
+        <circle cx="12" cy="8" r="6" />
+        <path d="M15.477 12.89L17 22l-5-3-5 3 1.523-9.11" />
+      </svg>
+    );
+  }
+
+  if (name === 'trash-2') {
+    return (
+      <svg {...svgProps}>
+        <polyline points="3 6 5 6 21 6" />
+        <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+        <path d="M10 11v6" />
+        <path d="M14 11v6" />
+        <path d="M9 6V4h6v2" />
+      </svg>
+    );
+  }
+
+  if (name === 'refresh-cw') {
+    return (
+      <svg {...svgProps}>
+        <polyline points="23 4 23 10 17 10" />
+        <polyline points="1 20 1 14 7 14" />
+        <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+      </svg>
+    );
+  }
+
+  if (name === 'x') {
+    return (
+      <svg {...svgProps}>
+        <line x1="18" y1="6" x2="6" y2="18" />
+        <line x1="6" y1="6" x2="18" y2="18" />
+      </svg>
+    );
+  }
+
+  if (name === 'info') {
+    return (
+      <svg {...svgProps}>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" />
+        <line x1="12" y1="16" x2="12.01" y2="16" />
+      </svg>
+    );
+  }
+
+  if (name === 'globe') {
+    return (
+      <svg {...svgProps}>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="2" y1="12" x2="22" y2="12" />
+        <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+      </svg>
+    );
+  }
+
+  if (name === 'smartphone') {
+    return (
+      <svg {...svgProps}>
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2" />
+        <line x1="12" y1="18" x2="12.01" y2="18" />
+      </svg>
+    );
+  }
+
+  if (name === 'credit-card') {
+    return (
+      <svg {...svgProps}>
+        <rect x="1" y="4" width="22" height="16" rx="2" ry="2" />
+        <line x1="1" y1="10" x2="23" y2="10" />
+      </svg>
+    );
+  }
+
+  if (name === 'list') {
+    return (
+      <svg {...svgProps}>
+        <line x1="8" y1="6" x2="21" y2="6" />
+        <line x1="8" y1="12" x2="21" y2="12" />
+        <line x1="8" y1="18" x2="21" y2="18" />
+        <line x1="3" y1="6" x2="3.01" y2="6" />
+        <line x1="3" y1="12" x2="3.01" y2="12" />
+        <line x1="3" y1="18" x2="3.01" y2="18" />
+      </svg>
+    );
+  }
+
   if (name === 'layers') {
     return (
       <svg {...svgProps}>

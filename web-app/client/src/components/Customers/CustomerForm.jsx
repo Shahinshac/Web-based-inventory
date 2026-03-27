@@ -9,8 +9,14 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
+    email: '',
+    company: '',
+    position: '',
+    website: '',
     address: '',
     place: '',
+    city: '',
+    country: '',
     pincode: '',
     gstin: ''
   });
@@ -22,8 +28,14 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
       setFormData({
         name: customer.name || '',
         phone: customer.phone || '',
+        email: customer.email || '',
+        company: customer.company || '',
+        position: customer.position || '',
+        website: customer.website || '',
         address: customer.address || '',
         place: customer.place || '',
+        city: customer.city || '',
+        country: customer.country || '',
         pincode: customer.pincode || '',
         gstin: customer.gstin || ''
       });
@@ -41,6 +53,14 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
       newErrors.phone = 'Phone number is required';
     } else if (!/^\d{10}$/.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Phone number must be 10 digits';
+    }
+
+    if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
+      newErrors.email = 'Enter a valid email address';
+    }
+
+    if (formData.website && !/^https?:\/\/[^\s$.?#].[^\s]*$/i.test(formData.website)) {
+      newErrors.website = 'Enter a valid URL (e.g. https://example.com)';
     }
 
     if (formData.pincode && !/^\d{6}$/.test(formData.pincode)) {
@@ -111,11 +131,58 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
                 error={errors.phone}
               />
             </div>
+
+            <div className="input-spacer">
+              <Input
+                label="Email Address"
+                type="email"
+                value={formData.email}
+                onChange={(e) => handleChange('email', e.target.value)}
+                placeholder="customer@example.com"
+                error={errors.email}
+              />
+            </div>
           </div>
 
           {/* Show full form only if not quick add */}
           {!quickAdd && (
             <>
+              {/* Section 1b: Professional Information */}
+              <div className="form-section professional">
+                <div className="form-section-bar" />
+                <div className="form-section-header">
+                  <div className="form-section-icon">
+                    <Icon name="briefcase" size={20} color="white" />
+                  </div>
+                  <h3 className="form-section-title">Professional Information</h3>
+                </div>
+
+                <div className="form-row">
+                  <Input
+                    label="Company / Organization"
+                    value={formData.company}
+                    onChange={(e) => handleChange('company', e.target.value)}
+                    placeholder="Company name"
+                  />
+                  <Input
+                    label="Position / Title"
+                    value={formData.position}
+                    onChange={(e) => handleChange('position', e.target.value)}
+                    placeholder="e.g. Manager, CEO"
+                  />
+                </div>
+
+                <div className="input-spacer">
+                  <Input
+                    label="Website"
+                    type="url"
+                    value={formData.website}
+                    onChange={(e) => handleChange('website', e.target.value)}
+                    placeholder="https://example.com"
+                    error={errors.website}
+                  />
+                </div>
+              </div>
               {/* Section 2: Address Details */}
               <div className="form-section address">
                 <div className="form-section-bar" />
@@ -150,6 +217,21 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
                     error={errors.pincode}
                   />
                 </div>
+
+                <div className="form-row">
+                  <Input
+                    label="City"
+                    value={formData.city}
+                    onChange={(e) => handleChange('city', e.target.value)}
+                    placeholder="City"
+                  />
+                  <Input
+                    label="Country"
+                    value={formData.country}
+                    onChange={(e) => handleChange('country', e.target.value)}
+                    placeholder="Country"
+                  />
+                </div>
               </div>
 
               {/* Section 3: Business Information */}
@@ -157,7 +239,7 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
                 <div className="form-section-bar" />
                 <div className="form-section-header">
                   <div className="form-section-icon">
-                    <Icon name="briefcase" size={20} color="white" />
+                    <Icon name="award" size={20} color="white" />
                   </div>
                   <h3 className="form-section-title">Business Information</h3>
                 </div>
