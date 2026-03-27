@@ -315,6 +315,18 @@
   background: #dcfce7;
 }
 
+.vc-action-btn.whatsapp {
+  background: #f0fdf4;
+  color: #15803d;
+  border: 1px solid #86efac;
+}
+
+.vc-action-btn.whatsapp:hover {
+  background: #25D366;
+  color: #ffffff;
+  border-color: #25D366;
+}
+
 /* ===== VISITING CARDS GRID ===== */
 .visiting-cards-grid {
   display: grid;

@@ -7,7 +7,8 @@ export default function CustomerCard({
   customer, 
   onEdit, 
   onDelete,
-  onViewHistory
+  onViewHistory,
+  onShareWhatsApp
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
@@ -78,6 +79,17 @@ export default function CustomerCard({
             </Button>
           )}
           
+          {onShareWhatsApp && (
+            <Button
+              variant="success"
+              size="small"
+              onClick={() => onShareWhatsApp(customer)}
+              icon="share-2"
+            >
+              WhatsApp
+            </Button>
+          )}
+
           {onEdit && (
             <Button
               variant="secondary"

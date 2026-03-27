@@ -4,11 +4,30 @@ export function usePWA() {
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isInstalled, setIsInstalled] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    // Check if already installed (standalone mode)
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+      || window.navigator.standalone === true;
+
+    if (isStandalone) {
       setIsInstalled(true);
+      return;
+    }
+
+    // Detect iOS devices using user agent + additional heuristics for reliability
+    const iosDevice = (
+      /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+      // iPad on iOS 13+ reports itself as MacIntel but has touch support
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+    ) && !window.MSStream;
+    setIsIOS(iosDevice);
+
+    // On iOS, show a manual "Add to Home Screen" prompt since beforeinstallprompt is not supported
+    if (iosDevice) {
+      setShowInstallPrompt(true);
+      return;
     }
 
     const handleBeforeInstallPrompt = (e) => {
@@ -60,6 +79,7 @@ export function usePWA() {
   return {
     showInstallPrompt,
     isInstalled,
+    isIOS,
     installPWA,
     dismissInstallPrompt
   };

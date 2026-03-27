@@ -35,7 +35,8 @@ export default function VisitingCard({
   customer,
   onEdit,
   onDelete,
-  onViewHistory
+  onViewHistory,
+  onShareWhatsApp
 }) {
   const [flipped, setFlipped] = useState(false);
   const [qrDataUrl, setQrDataUrl] = useState(null);
@@ -187,6 +188,12 @@ export default function VisitingCard({
             <button className="vc-action-btn history" onClick={() => onViewHistory(customer)}>
               <Icon name="file-text" size={12} />
               History
+            </button>
+          )}
+          {onShareWhatsApp && (
+            <button className="vc-action-btn whatsapp" onClick={() => onShareWhatsApp(customer)}>
+              <Icon name="share-2" size={12} />
+              WhatsApp
             </button>
           )}
           {onEdit && (

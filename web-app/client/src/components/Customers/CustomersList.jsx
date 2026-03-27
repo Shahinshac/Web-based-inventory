@@ -17,7 +17,8 @@ export default function CustomersList({
   isRefreshing,    // Refreshing state
   lastRefreshTime, // Last refresh timestamp
   canEdit,
-  canDelete
+  canDelete,
+  onShareWhatsApp
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
@@ -126,6 +127,7 @@ export default function CustomersList({
                 onEdit={canEdit ? handleEdit : null}
                 onDelete={canDelete ? onDeleteCustomer : null}
                 onViewHistory={onViewHistory}
+                onShareWhatsApp={onShareWhatsApp}
               />
             ) : (
               <CustomerCard 
@@ -134,6 +136,7 @@ export default function CustomersList({
                 onEdit={canEdit ? handleEdit : null}
                 onDelete={canDelete ? onDeleteCustomer : null}
                 onViewHistory={onViewHistory}
+                onShareWhatsApp={onShareWhatsApp}
               />
             )
           ))

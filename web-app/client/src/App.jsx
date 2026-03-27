@@ -104,7 +104,7 @@ export default function App() {
   const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
     useAnalytics(isOnline, tab);
   
-  const { showInstallPrompt, installPWA, dismissInstallPrompt } = usePWA();
+  const { showInstallPrompt, isIOS, installPWA, dismissInstallPrompt } = usePWA();
 
   // Permission helpers
   const canViewProfit = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
@@ -638,6 +638,68 @@ Esc: Close modals/dialogs`;
     }
   };
 
+  // Helper: open WhatsApp on Android, iOS, or desktop.
+  // On mobile it tries the whatsapp:// deep link first and only falls back to
+  // the wa.me web URL if the browser page remains visible (i.e. the app did NOT open).
+  const openWhatsApp = (phone, message) => {
+    const encodedText = encodeURIComponent(message);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const tryDeepLink = (deepLink, fallbackUrl) => {
+      let fallbackTimer = null;
+
+      // If the WhatsApp app opens, the page loses visibility/focus — cancel the fallback
+      const cancelFallback = () => {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+        window.removeEventListener('blur', cancelFallback);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      };
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') cancelFallback();
+      };
+
+      window.addEventListener('blur', cancelFallback, { once: true });
+      document.addEventListener('visibilitychange', onVisibilityChange, { once: true });
+
+      window.location.href = deepLink;
+
+      // If page stays visible after 1 s, WhatsApp is probably not installed — open wa.me
+      fallbackTimer = setTimeout(() => {
+        window.removeEventListener('blur', cancelFallback);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        window.open(fallbackUrl, '_blank');
+      }, 1000);
+    };
+
+    if (phone && phone.trim()) {
+      let cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
+
+      if (isMobile) {
+        tryDeepLink(
+          `whatsapp://send?phone=${cleanPhone}&text=${encodedText}`,
+          `https://wa.me/${cleanPhone}?text=${encodedText}`
+        );
+      } else {
+        window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, '_blank');
+      }
+    } else {
+      // No phone — user picks the contact
+      if (isMobile) {
+        tryDeepLink(
+          `whatsapp://send?text=${encodedText}`,
+          `https://wa.me/?text=${encodedText}`
+        );
+      } else {
+        window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+      }
+    }
+  };
+
   const handleShareWhatsApp = async (invoice) => {
     try {
       const customerPhone = invoice.customerPhone || invoice.customer?.phone || '';
@@ -659,9 +721,13 @@ Esc: Close modals/dialogs`;
         console.warn('Could not generate public link:', linkErr);
       }
 
-      // If backend returned a full whatsapp URL (has phone), use it directly
+      // If backend returned a full whatsapp URL, route it through openWhatsApp
+      // so the same deep-link logic applies
       if (backendWhatsAppUrl) {
-        window.open(backendWhatsAppUrl, '_blank');
+        const urlObj = new URL(backendWhatsAppUrl);
+        const phone = urlObj.pathname.replace('/', '');
+        const text = urlObj.searchParams.get('text') || '';
+        openWhatsApp(phone, decodeURIComponent(text));
         showNotification('✅ Opening WhatsApp...', 'success');
         return;
       }
@@ -694,16 +760,38 @@ Esc: Close modals/dialogs`;
         companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
       ].filter(Boolean).join('\n');
 
-      if (customerPhone && customerPhone.trim()) {
-        let cleanPhone = customerPhone.replace(/\D/g, '');
-        if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-        showNotification('✅ Opening WhatsApp...', 'success');
-      } else {
-        // No phone — open WhatsApp with just the text (user picks contact)
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-        showNotification('⚠️ No phone number — please select contact manually', 'warning');
-      }
+      openWhatsApp(customerPhone, message);
+      showNotification(
+        customerPhone ? '✅ Opening WhatsApp...' : '⚠️ No phone number — please select contact manually',
+        customerPhone ? 'success' : 'warning'
+      );
+    } catch (e) {
+      showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
+      console.error(e);
+    }
+  };
+
+  const handleShareCustomerWhatsApp = (customer) => {
+    try {
+      const name = customer.name || 'Customer';
+      const lines = [
+        `👤 *${name}*`,
+        customer.position ? `💼 ${customer.position}` : '',
+        customer.company ? `🏢 ${customer.company}` : '',
+        '',
+        customer.phone ? `📞 ${customer.phone}` : '',
+        customer.email ? `✉️ ${customer.email}` : '',
+        customer.place ? `📍 ${customer.place}${customer.pincode ? ` - ${customer.pincode}` : ''}` : '',
+        customer.address ? `🏠 ${customer.address}` : '',
+        customer.website ? `🌐 ${customer.website}` : '',
+        customer.gstin ? `📋 GST: ${customer.gstin}` : '',
+        '',
+        `— Shared from *${companyInfo.name}*`,
+        companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
+      ].filter(Boolean).join('\n');
+
+      openWhatsApp(customer.phone || '', lines);
+      showNotification('✅ Opening WhatsApp...', 'success');
     } catch (e) {
       showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
@@ -949,6 +1037,7 @@ Esc: Close modals/dialogs`;
             lastRefreshTime={customersLastRefresh}
             canEdit={canEdit()}
             canDelete={canDelete()}
+            onShareWhatsApp={handleShareCustomerWhatsApp}
           />
         );
 
@@ -1080,11 +1169,22 @@ Esc: Close modals/dialogs`;
       {showInstallPrompt && (
         <div className="pwa-install-banner">
           <div className="pwa-banner-content">
-            <span>📱 Install app for offline access and better experience</span>
-            <div className="pwa-banner-actions">
-              <button onClick={installPWA}>Install</button>
-              <button onClick={dismissInstallPrompt}>Later</button>
-            </div>
+            {isIOS ? (
+              <>
+                <span>📱 Install this app on your iPhone: tap <strong>Share</strong> <span className="pwa-share-icon" role="img" aria-label="share icon">&#x2B06;</span> then <strong>&ldquo;Add to Home Screen&rdquo;</strong></span>
+                <div className="pwa-banner-actions">
+                  <button onClick={dismissInstallPrompt}>Got it</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span>📱 Install app for offline access and better experience</span>
+                <div className="pwa-banner-actions">
+                  <button onClick={installPWA}>Install</button>
+                  <button onClick={dismissInstallPrompt}>Later</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
