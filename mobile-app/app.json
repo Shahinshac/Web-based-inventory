@@ -1,0 +1,57 @@
+{
+  "expo": {
+    "name": "Inventory Mobile",
+    "slug": "inventory-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#2563eb"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.inventory.mobile",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Camera is used to scan QR codes on customer cards.",
+        "NSContactsUsageDescription": "Contacts access is used to save customer details directly to your phone."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#2563eb"
+      },
+      "package": "com.inventory.mobile",
+      "permissions": [
+        "CAMERA",
+        "READ_CONTACTS",
+        "WRITE_CONTACTS"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Inventory Mobile to access your camera for QR code scanning."
+        }
+      ],
+      [
+        "expo-contacts",
+        {
+          "contactsPermission": "Allow Inventory Mobile to access your contacts to save customer information."
+        }
+      ]
+    ],
+    "scheme": "inventory-mobile",
+    "extra": {
+      "apiBaseUrl": "https://inventory-api.onrender.com"
+    }
+  }
+}
