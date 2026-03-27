@@ -1,6 +1,7 @@
 import logging
 import os
 import secrets
+import urllib.parse
 from datetime import datetime, timedelta
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, g, url_for
@@ -32,11 +33,12 @@ def checkout():
 
     split_payment_details = None
     if payment_mode == 'split':
+        spd = data.get('splitPaymentDetails', {})
         split_payment_details = {
-            "cashAmount": float(data.get('cashAmount', 0)),
-            "upiAmount": float(data.get('upiAmount', 0)),
-            "cardAmount": float(data.get('cardAmount', 0)),
-            "totalAmount": float(data.get('totalAmount') or data.get('total') or 0)
+            "cashAmount": float(spd.get('cash', data.get('cashAmount', 0))),
+            "upiAmount": float(spd.get('upi', data.get('upiAmount', 0))),
+            "cardAmount": float(spd.get('card', data.get('cardAmount', 0))),
+            "totalAmount": float(data.get('total') or data.get('totalAmount') or 0)
         }
 
     db = get_db()
@@ -190,7 +192,7 @@ def checkout():
         "customerPhone": customer_phone,
         "customerPlace": customer_place,
         "paymentMode": payment_mode,
-        "billDate": bill_date.isoformat(),
+        "billDate": bill_date.isoformat() + ("Z" if not bill_date.tzinfo else ""),
         "items": [{
             "productName": i["productName"],
             "quantity": i["quantity"],
@@ -213,6 +215,7 @@ def get_invoices():
     
     formatted = []
     for b in bills:
+        spd = b.get("splitPaymentDetails")
         formatted.append({
             "id": str(b["_id"]),
             "billNumber": b.get("billNumber", str(b["_id"])),
@@ -220,14 +223,21 @@ def get_invoices():
             "customerName": b.get("customerName", "Walk-in Customer"),
             "customerPhone": b.get("customerPhone"),
             "customerPlace": b.get("customerPlace"),
+            "customerAddress": b.get("customerAddress", ""),
             "subtotal": b.get("subtotal", 0),
-            "taxRate": 18 if (b.get("cgst", 0)>0 or b.get("igst", 0)>0) else 0,
+            "discountPercent": b.get("discountPercent", 0),
+            "discountAmount": b.get("discountAmount", 0),
+            "taxRate": 18 if (b.get("cgst", 0) > 0 or b.get("igst", 0) > 0) else 0,
             "taxAmount": b.get("gstAmount", 0),
             "cgst": b.get("cgst", 0),
             "sgst": b.get("sgst", 0),
             "igst": b.get("igst", 0),
+            "gstAmount": b.get("gstAmount", 0),
             "grandTotal": b.get("grandTotal", 0),
-            "paymentMode": b.get("paymentMode", "Cash"),
+            "total": b.get("grandTotal", 0),
+            "paymentMode": b.get("paymentMode", "cash"),
+            "paymentStatus": b.get("paymentStatus", "Paid"),
+            "splitPaymentDetails": spd,
             "items": [{
                 "productId": str(i.get("productId")) if i.get("productId") else None,
                 "name": i.get("productName", "Unknown"),
@@ -236,7 +246,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": b.get("billDate", b.get("created_at", b.get("billDate", datetime.utcnow()))).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate")),
+            "date": (b.get("billDate", datetime.utcnow()).isoformat() + ("Z" if not b.get("billDate", datetime.utcnow()).tzinfo else "")) if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -259,7 +269,7 @@ def get_invoice(id):
         "customerName": invoice.get("customerName"),
         "customerPhone": invoice.get("customerPhone"),
         "customerAddress": invoice.get("customerAddress"),
-        "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDate": (invoice.get("billDate").isoformat() + ("Z" if not invoice.get("billDate").tzinfo else "")) if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
         "items": [{
              "productName": i.get("productName"),
              "quantity": i.get("quantity"),
@@ -312,55 +322,60 @@ def create_public_link(id):
 
 @pos_bp.route('/<id>/whatsapp-link', methods=['POST'])
 def whatsapp_link(id):
-    db = get_db()
     try:
-        invoice = db.bills.find_one({"_id": ObjectId(id)})
-    except Exception:
-        invoice = db.bills.find_one({"billNumber": id})
+        db = get_db()
+        try:
+            invoice = db.bills.find_one({"_id": ObjectId(id)})
+        except Exception:
+            invoice = db.bills.find_one({"billNumber": id})
 
-    if not invoice:
-        return jsonify({"error": "Invoice not found"}), 404
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
 
-    customer_phone = invoice.get('customerPhone')
-    if not customer_phone and invoice.get('customerId'):
-        cust = db.customers.find_one({"_id": invoice.get('customerId')})
-        if cust:
-            customer_phone = cust.get('phone')
+        customer_phone = invoice.get('customerPhone')
+        if not customer_phone and invoice.get('customerId'):
+            cust = db.customers.find_one({"_id": invoice.get('customerId')})
+            if cust:
+                customer_phone = cust.get('phone')
 
-    # Create link
-    token = secrets.token_hex(16)
-    expires = datetime.utcnow() + timedelta(days=1)
-    db.public_invoice_links.insert_one({
-        "token": token,
-        "invoiceId": str(invoice["_id"]),
-        "createdAt": datetime.utcnow(),
-        "expiresAt": expires,
-        "createdBy": "system",
-        "companySnapshot": {
-            "name": COMPANY_NAME,
-            "phone": COMPANY_PHONE,
-            "address": COMPANY_ADDRESS,
-            "email": COMPANY_EMAIL,
-            "gstin": COMPANY_GSTIN
-        }
-    })
+        # Create link
+        token = secrets.token_hex(16)
+        expires = datetime.utcnow() + timedelta(days=1)
+        db.public_invoice_links.insert_one({
+            "token": token,
+            "invoiceId": str(invoice["_id"]),
+            "createdAt": datetime.utcnow(),
+            "expiresAt": expires,
+            "createdBy": "system",
+            "companySnapshot": {
+                "name": COMPANY_NAME,
+                "phone": COMPANY_PHONE,
+                "address": COMPANY_ADDRESS,
+                "email": COMPANY_EMAIL,
+                "gstin": COMPANY_GSTIN
+            }
+        })
 
-    public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
-    
-    import urllib.parse
-    message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
-    
-    whatsapp_url = None
-    if customer_phone:
-        clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
-        if len(clean_phone) == 10:
-            clean_phone = f"91{clean_phone}"
-        whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+        # Public invoice page is served by this Flask backend, so use the backend URL
+        public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
-    return jsonify({
-        "publicUrl": public_url,
-        "whatsappUrl": whatsapp_url,
-        "token": token,
-        "hasPhone": bool(customer_phone),
-        "customerName": invoice.get('customerName', 'Customer')
-    })
+        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
+
+        whatsapp_url = None
+        if customer_phone:
+            clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
+            if len(clean_phone) == 10:
+                clean_phone = f"91{clean_phone}"
+            whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+
+        return jsonify({
+            "publicUrl": public_url,
+            "whatsappUrl": whatsapp_url,
+            "token": token,
+            "hasPhone": bool(customer_phone),
+            "customerName": invoice.get('customerName', 'Customer')
+        })
+    except Exception as e:
+        logger.error(f"WhatsApp link error: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to generate WhatsApp link: {str(e)}"}), 500
+

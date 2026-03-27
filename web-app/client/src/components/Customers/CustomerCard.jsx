@@ -8,7 +8,8 @@ export default function CustomerCard({
   customer,
   onEdit,
   onDelete,
-  onViewHistory
+  onViewHistory,
+  onShareWhatsApp
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
@@ -40,6 +41,15 @@ export default function CustomerCard({
           </div>
           <div className="customer-info">
             <h3 className="customer-name">{customer.name}</h3>
+            {customer.position && (
+              <span className="customer-position">{customer.position}</span>
+            )}
+            {customer.company && (
+              <span className="customer-company">
+                <Icon name="briefcase" size={14} />
+                {customer.company}
+              </span>
+            )}
             {customer.gstin && (
               <span className="customer-gstin">
                 <Icon name="award" size={14} />
@@ -54,6 +64,13 @@ export default function CustomerCard({
             <Icon name="phone" size={16} />
             <span>{customer.phone || 'No phone'}</span>
           </div>
+
+          {customer.email && (
+            <div className="customer-detail">
+              <Icon name="mail" size={16} />
+              <span>{customer.email}</span>
+            </div>
+          )}
 
           {customer.place && (
             <div className="customer-detail">
@@ -93,6 +110,17 @@ export default function CustomerCard({
             </Button>
           )}
           
+          {onShareWhatsApp && (
+            <Button
+              variant="success"
+              size="small"
+              onClick={() => onShareWhatsApp(customer)}
+              icon="share-2"
+            >
+              WhatsApp
+            </Button>
+          )}
+
           {onEdit && (
             <Button
               variant="secondary"

@@ -8,6 +8,7 @@ from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
+from services.customer_service import build_vcard
 
 logger = logging.getLogger(__name__)
 
@@ -25,11 +26,18 @@ def get_customers():
             "id": str(c['_id']),
             "name": c.get('name'),
             "phone": c.get('phone'),
+            "email": c.get('email', ''),
+            "company": c.get('company', ''),
+            "position": c.get('position', ''),
+            "website": c.get('website', ''),
             "pincode": c.get('pincode', ''),
             "place": c.get('place', ''),
+            "city": c.get('city', ''),
+            "country": c.get('country', ''),
             "address": c.get('address'),
             "state": c.get('state', 'Same'),
-            "gstin": c.get('gstin', '')
+            "gstin": c.get('gstin', ''),
+            "image_url": c.get('image_url', '')
         })
     
     return jsonify(formatted)
@@ -40,8 +48,14 @@ def add_customer():
     data = request.get_json()
     name = data.get('name', '').strip()
     phone = data.get('phone', '').strip()
+    email = data.get('email', '').strip()
+    company = data.get('company', '').strip()
+    position = data.get('position', '').strip()
+    website = data.get('website', '').strip()
     address = data.get('address', '').strip()
     place = data.get('place', '').strip()
+    city = data.get('city', '').strip()
+    country = data.get('country', '').strip()
     pincode = data.get('pincode', '').strip()
     gstin = data.get('gstin', '').strip()
 
@@ -55,8 +69,14 @@ def add_customer():
     customer = {
         "name": name,
         "phone": phone,
+        "email": email,
+        "company": company,
+        "position": position,
+        "website": website,
         "address": address,
         "place": place,
+        "city": city,
+        "country": country,
         "pincode": pincode,
         "gstin": gstin,
         "purchasesCount": 0,
@@ -76,9 +96,11 @@ def add_customer():
     })
 
     customer['id'] = customer_id
-    # Remove _id from dict to make it JSON serializable if needed
     if '_id' in customer:
         del customer['_id']
+    # Convert datetime to string for JSON serialisation
+    if customer.get('createdAt') and hasattr(customer['createdAt'], 'isoformat'):
+        customer['createdAt'] = customer['createdAt'].isoformat()
 
     return jsonify(customer)
 
@@ -88,8 +110,14 @@ def update_customer(id):
     data = request.get_json()
     name = data.get('name', '').strip()
     phone = data.get('phone', '').strip()
+    email = data.get('email', '').strip()
+    company = data.get('company', '').strip()
+    position = data.get('position', '').strip()
+    website = data.get('website', '').strip()
     address = data.get('address', '').strip()
     place = data.get('place', '').strip()
+    city = data.get('city', '').strip()
+    country = data.get('country', '').strip()
     pincode = data.get('pincode', '').strip()
     gstin = data.get('gstin', '').strip()
 
@@ -107,8 +135,14 @@ def update_customer(id):
     updated_data = {
         "name": name,
         "phone": phone,
+        "email": email,
+        "company": company,
+        "position": position,
+        "website": website,
         "address": address,
         "place": place,
+        "city": city,
+        "country": country,
         "pincode": pincode,
         "gstin": gstin,
         "updatedAt": datetime.utcnow(),
@@ -121,14 +155,17 @@ def update_customer(id):
     log_audit(db, "CUSTOMER_UPDATED", user_id, username, {
         "customerId": id,
         "customerName": name,
-        "changes": updated_data
+        "changes": list(updated_data.keys())
     })
 
-    # Return merged object
     existing_customer.update(updated_data)
     existing_customer['id'] = id
     if '_id' in existing_customer:
         del existing_customer['_id']
+    # Serialise datetime fields
+    for key in ('createdAt', 'updatedAt'):
+        if key in existing_customer and hasattr(existing_customer[key], 'isoformat'):
+            existing_customer[key] = existing_customer[key].isoformat()
 
     return jsonify(existing_customer)
 
@@ -158,26 +195,27 @@ def delete_customer(id):
 
     return jsonify({"success": True, "message": "Customer deleted successfully"})
 
+
 @customers_bp.route('/<id>/whatsapp-share', methods=['POST'])
 @authenticate_token
 def customer_whatsapp_share(id):
     """Generate WhatsApp share link for customer card"""
     db = get_db()
-    
+
     try:
         customer = db.customers.find_one({"_id": ObjectId(id)})
     except Exception:
         return jsonify({"error": "Invalid customer ID"}), 400
-    
+
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
-    
+
     customer_phone = customer.get('phone')
-    
+
     # Create public customer card link
     token = secrets.token_hex(16)
     expires = datetime.utcnow() + timedelta(days=7)  # Valid for 7 days
-    
+
     db.public_customer_cards.insert_one({
         "token": token,
         "customerId": str(customer["_id"]),
@@ -188,19 +226,19 @@ def customer_whatsapp_share(id):
             "phone": COMPANY_PHONE
         }
     })
-    
+
     public_url = f"{request.host_url.rstrip('/')}/public/customer-card/{token}"
-    
+
     import urllib.parse
     message = f"Hi {customer.get('name', 'Customer')}, here's your customer card from {COMPANY_NAME}. View: {public_url}"
-    
+
     whatsapp_url = None
     if customer_phone:
         clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
         if len(clean_phone) == 10:
             clean_phone = f"91{clean_phone}"
         whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
-    
+
     return jsonify({
         "publicUrl": public_url,
         "whatsappUrl": whatsapp_url,
@@ -208,3 +246,19 @@ def customer_whatsapp_share(id):
         "hasPhone": bool(customer_phone),
         "customerName": customer.get('name', 'Customer')
     })
+
+@customers_bp.route('/<id>/vcard', methods=['GET'])
+@authenticate_token
+def get_customer_vcard(id):
+    """Return vCard 3.0 formatted text for the given customer."""
+    db = get_db()
+    customer = db.customers.find_one({"_id": ObjectId(id)})
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 404
+
+    vcard_text = build_vcard(customer)
+    return vcard_text, 200, {
+        'Content-Type': 'text/vcard; charset=utf-8',
+        'Content-Disposition': f'attachment; filename="{customer.get("name", "contact").replace(" ", "_")}.vcf"'
+    }
+

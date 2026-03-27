@@ -26,8 +26,11 @@ export default function InvoicesList({
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
         invoice.id?.toString().includes(query) ||
+        invoice.billNumber?.toLowerCase().includes(query) ||
         invoice.customer?.name?.toLowerCase().includes(query) ||
         invoice.customer?.phone?.includes(query) ||
+        invoice.customerName?.toLowerCase().includes(query) ||
+        invoice.customerPhone?.includes(query) ||
         invoice.createdByUsername?.toLowerCase().includes(query);
 
       const invoiceDate = new Date(invoice.createdAt || invoice.billDate || invoice.date);
@@ -87,7 +90,7 @@ export default function InvoicesList({
             {filteredInvoices.length} invoices &bull; Total: {formatCurrency0(totalRevenue)}
             {lastRefreshTime && (
               <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
-                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString()}
+                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
               </span>
             )}
           </p>

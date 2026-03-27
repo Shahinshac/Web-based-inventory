@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import { normalizePhotoUrl } from '../../utils/api';
 
 export default function Sidebar({ 
   activeTab, 
@@ -10,11 +11,25 @@ export default function Sidebar({
   onLogout 
 }) {
   const [collapsed, setCollapsed] = useState(false);
+  const [liveTime, setLiveTime] = useState('');
+
+  // Live clock - update every second
+  useEffect(() => {
+    const tick = () => {
+      setLiveTime(new Intl.DateTimeFormat('en-IN', {
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: true, timeZone: 'Asia/Kolkata'
+      }).format(new Date()));
+    };
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: 'grid', show: true },
     { id: 'pos', label: 'Point of Sale', icon: 'shopping-cart', show: true },
-    { id: 'products', label: 'Inventory array', icon: 'package', show: true },
+    { id: 'products', label: 'Inventory', icon: 'package', show: true },
     { id: 'customers', label: 'Customers', icon: 'users', show: true },
     { id: 'invoices', label: 'Invoices', icon: 'file-text', show: true },
     { id: 'analytics', label: 'Analytics', icon: 'pie-chart', show: true },
@@ -40,6 +55,20 @@ export default function Sidebar({
             </div>
           )}
         </div>
+        {/* Live Time in Sidebar */}
+        {!collapsed && (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: '8px',
+            marginTop: '16px', padding: '8px 14px',
+            background: 'rgba(99, 102, 241, 0.08)',
+            borderRadius: '12px', fontSize: '13px', fontWeight: 600,
+            color: '#6366f1', fontVariantNumeric: 'tabular-nums'
+          }}>
+            <Icon name="clock" size={14} />
+            <span>{liveTime}</span>
+            <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: 'auto' }}>IST</span>
+          </div>
+        )}
       </div>
       
       <nav className="sidebar-nav">
@@ -58,9 +87,24 @@ export default function Sidebar({
       </nav>
 
       <div className="sidebar-footer">
-        <div className="user-profile">
-          <div className="avatar">
-            <Icon name="user" size={18} />
+        <div className="user-profile" title={collapsed ? currentUser?.username || 'Admin' : ''}>
+          <div className="avatar" style={{
+            width: '32px', height: '32px', borderRadius: '50%',
+            overflow: 'hidden', display: 'flex', alignItems: 'center',
+            justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
+            flexShrink: 0
+          }}>
+            {currentUser?.photo ? (
+              <img
+                src={normalizePhotoUrl(currentUser.photo)}
+                alt={currentUser.username}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
+              />
+            ) : null}
+            <span style={{ display: currentUser?.photo ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
+              <Icon name="user" size={18} />
+            </span>
           </div>
           {!collapsed && (
             <div className="user-details">

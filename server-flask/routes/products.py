@@ -40,8 +40,21 @@ def get_products():
 
     formatted = []
     for p in products_cursor:
-        cost_price = p.get('costPrice', 0)
-        price = p.get('price', 0)
+        try:
+            cost_price = float(p.get('costPrice', 0) or 0)
+        except (ValueError, TypeError):
+            cost_price = 0.0
+            
+        try:
+            price = float(p.get('price', 0) or 0)
+        except (ValueError, TypeError):
+            price = 0.0
+            
+        try:
+            quantity = int(p.get('quantity', 0) or 0)
+        except (ValueError, TypeError):
+            quantity = 0
+
         profit = price - cost_price
         profit_percent = round(((profit / price) * 100), 2) if price > 0 else 0
 
@@ -49,7 +62,7 @@ def get_products():
             "id": str(p['_id']),
             "_id": str(p['_id']),
             "name": p.get('name'),
-            "quantity": p.get('quantity', 0),
+            "quantity": quantity,
             "price": price,
             "costPrice": cost_price,
             "hsnCode": p.get('hsnCode', '9999'),
@@ -153,7 +166,10 @@ def update_stock(id):
     if not product:
         return jsonify({"error": "Product not found"}), 404
 
-    old_quantity = product.get('quantity', 0)
+    try:
+        old_quantity = int(product.get('quantity', 0) or 0)
+    except (ValueError, TypeError):
+        old_quantity = 0
     
     db.products.update_one(
         {"_id": ObjectId(id)},
@@ -167,7 +183,11 @@ def update_stock(id):
 
     # Restock expense
     added_qty = new_quantity - old_quantity
-    cost_price = product.get('costPrice', 0)
+    try:
+        cost_price = float(product.get('costPrice', 0) or 0)
+    except (ValueError, TypeError):
+        cost_price = 0.0
+        
     if added_qty > 0 and cost_price > 0:
         db.expenses.insert_one({
             "description": f"Restock: {product.get('name')} (+{added_qty} units x Rs{cost_price})",
@@ -229,7 +249,12 @@ def full_update_product(id):
     db.products.update_one({"_id": ObjectId(id)}, {"$set": update_data})
 
     # Restock expense
-    added_qty = quantity - old_product.get('quantity', 0)
+    try:
+        old_qty = int(old_product.get('quantity', 0) or 0)
+    except (ValueError, TypeError):
+        old_qty = 0
+        
+    added_qty = quantity - old_qty
     if added_qty > 0 and cost_price > 0:
         db.expenses.insert_one({
             "description": f"Restock: {name} (+{added_qty} units x Rs{cost_price})",

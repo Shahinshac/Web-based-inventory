@@ -20,17 +20,25 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
     timeZone: 'Asia/Kolkata'
   });
 
+  const billNumber = invoice.billNumber || invoice.id;
+  const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';
+  const customerPhone = invoice.customer?.phone || invoice.customerPhone || '';
+  const customerAddress = invoice.customer?.address || invoice.customerAddress || '';
+  const customerPlace = invoice.customer?.place || invoice.customerPlace || '';
+  const customerGstin = invoice.customer?.gstin || invoice.customerGstin || '';
+  const hasCustomer = customerName && customerName !== 'Walk-in Customer';
+
   return (
     <Modal 
       isOpen={true}
       onClose={onClose}
-      title={`Invoice #${invoice.id}`}
+      title={`Invoice #${billNumber}`}
       size="xl"
     >
       <div className="invoice-details">
         <div className="invoice-header">
           <div className="invoice-info">
-            <h3>Invoice #{invoice.id}</h3>
+            <h3>Invoice #{billNumber}</h3>
             <p className="invoice-datetime">
               <Icon name="calendar" size={16} />
               {formattedDate} at {formattedTime}
@@ -43,15 +51,15 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
           />
         </div>
 
-        {invoice.customer && (
+        {hasCustomer && (
           <div className="invoice-section">
             <h4>Customer Details</h4>
             <div className="customer-details">
-              <div><strong>Name:</strong> {invoice.customer.name}</div>
-              <div><strong>Phone:</strong> {invoice.customer.phone}</div>
-              {invoice.customer.address && <div><strong>Address:</strong> {invoice.customer.address}</div>}
-              {invoice.customer.place && <div><strong>Place:</strong> {invoice.customer.place}</div>}
-              {invoice.customer.gstin && <div><strong>GSTIN:</strong> {invoice.customer.gstin}</div>}
+              <div><strong>Name:</strong> {customerName}</div>
+              {customerPhone && <div><strong>Phone:</strong> {customerPhone}</div>}
+              {customerAddress && <div><strong>Address:</strong> {customerAddress}</div>}
+              {customerPlace && <div><strong>Place:</strong> {customerPlace}</div>}
+              {customerGstin && <div><strong>GSTIN:</strong> {customerGstin}</div>}
             </div>
           </div>
         )}
@@ -72,10 +80,10 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
               {invoice.items?.map((item, index) => (
                 <tr key={index}>
                   <td>{index + 1}</td>
-                  <td>{item.name}</td>
+                  <td>{item.name || item.productName}</td>
                   <td>{item.quantity}</td>
-                  <td>{formatCurrency(item.price)}</td>
-                  <td>{formatCurrency(item.price * item.quantity)}</td>
+                  <td>{formatCurrency(item.price || item.unitPrice)}</td>
+                  <td>{formatCurrency((item.price || item.unitPrice) * item.quantity)}</td>
                 </tr>
               ))}
             </tbody>
@@ -91,9 +99,15 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
             </div>
             {invoice.splitPaymentDetails && (
               <div className="split-payment-details">
-                <div><strong>Cash:</strong> {formatCurrency(invoice.splitPaymentDetails.cash)}</div>
-                <div><strong>UPI:</strong> {formatCurrency(invoice.splitPaymentDetails.upi)}</div>
-                <div><strong>Card:</strong> {formatCurrency(invoice.splitPaymentDetails.card)}</div>
+                {Number(invoice.splitPaymentDetails.cash || 0) > 0 && (
+                  <div><strong>Cash:</strong> {formatCurrency(invoice.splitPaymentDetails.cash)}</div>
+                )}
+                {Number(invoice.splitPaymentDetails.upi || 0) > 0 && (
+                  <div><strong>UPI:</strong> {formatCurrency(invoice.splitPaymentDetails.upi)}</div>
+                )}
+                {Number(invoice.splitPaymentDetails.card || 0) > 0 && (
+                  <div><strong>Card:</strong> {formatCurrency(invoice.splitPaymentDetails.card)}</div>
+                )}
               </div>
             )}
             {invoice.createdByUsername && (
@@ -114,7 +128,7 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
             </div>
             {invoice.discountAmount > 0 && (
               <div className="summary-row discount">
-                <span>Discount:</span>
+                <span>Discount{invoice.discountPercent > 0 ? ` (${invoice.discountPercent}%)` : ''}:</span>
                 <span>- {formatCurrency(invoice.discountAmount)}</span>
               </div>
             )}

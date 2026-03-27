@@ -12,13 +12,18 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
   const formattedDate = date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
   const formattedTime = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
 
+  const billNumber = invoice.billNumber || invoice.id;
+  const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';
+  const customerPhone = invoice.customer?.phone || invoice.customerPhone || '';
+  const hasCustomer = customerName && customerName !== 'Walk-in Customer';
+
   return (
     <>
       <div className="invoice-card">
         <div className="invoice-card-header">
           <div className="invoice-number">
             <Icon name="file-text" size={20} />
-            <span>Invoice #{invoice.id}</span>
+            <span>Invoice #{billNumber}</span>
           </div>
           <div className="invoice-date">
             {formattedDate}
@@ -27,12 +32,12 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
         </div>
 
         <div className="invoice-card-body">
-          {invoice.customer ? (
+          {hasCustomer ? (
             <div className="invoice-customer">
               <Icon name="user" size={16} />
               <div>
-                <strong>{invoice.customer.name}</strong>
-                <span>{invoice.customer.phone}</span>
+                <strong>{customerName}</strong>
+                {customerPhone && <span>{customerPhone}</span>}
               </div>
             </div>
           ) : (
@@ -102,7 +107,7 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
           setShowDeleteConfirm(false);
         }}
         title="Delete Invoice"
-        message={`Are you sure you want to delete invoice #${invoice.id}? This action cannot be undone.`}
+        message={`Are you sure you want to delete invoice #${billNumber}? This action cannot be undone.`}
         confirmText="Delete"
         variant="danger"
       />

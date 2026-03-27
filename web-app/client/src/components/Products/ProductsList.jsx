@@ -104,7 +104,7 @@ export default function ProductsList({
             Manage your products, stock levels and pricing
             {lastRefreshTime && (
               <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
-                • Last updated: {new Date(lastRefreshTime).toLocaleTimeString()}
+                • Last updated: {new Date(lastRefreshTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
               </span>
             )}
           </p>
