@@ -104,7 +104,7 @@ export default function App() {
   const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
     useAnalytics(isOnline, tab);
   
-  const { showInstallPrompt, installPWA, dismissInstallPrompt } = usePWA();
+  const { showInstallPrompt, isIOS, installPWA, dismissInstallPrompt } = usePWA();
 
   // Permission helpers
   const canViewProfit = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
@@ -1080,11 +1080,22 @@ Esc: Close modals/dialogs`;
       {showInstallPrompt && (
         <div className="pwa-install-banner">
           <div className="pwa-banner-content">
-            <span>📱 Install app for offline access and better experience</span>
-            <div className="pwa-banner-actions">
-              <button onClick={installPWA}>Install</button>
-              <button onClick={dismissInstallPrompt}>Later</button>
-            </div>
+            {isIOS ? (
+              <>
+                <span>📱 Install this app on your iPhone: tap <strong>Share</strong> <span className="pwa-share-icon" role="img" aria-label="share icon">&#x2B06;</span> then <strong>&ldquo;Add to Home Screen&rdquo;</strong></span>
+                <div className="pwa-banner-actions">
+                  <button onClick={dismissInstallPrompt}>Got it</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span>📱 Install app for offline access and better experience</span>
+                <div className="pwa-banner-actions">
+                  <button onClick={installPWA}>Install</button>
+                  <button onClick={dismissInstallPrompt}>Later</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
