@@ -9,6 +9,8 @@ from routes.expenses import expenses_bp
 from routes.analytics import analytics_bp
 from routes.admin import admin_bp
 from routes.returns import returns_bp
+from routes.public_invoice import public_invoice_bp
+from routes.public_customer_card import public_customer_card_bp
 from services.cloudinary_service import init_cloudinary
 import logging
 
@@ -22,7 +24,7 @@ app = Flask(__name__)
 app.config.from_object(Config)
 
 # Enable CORS (Allows the React frontend to communicate with Flask)
-CORS(app, resources={r"/api/*": {"origins": "*"}})
+CORS(app, resources={r"/api/*": {"origins": "*"}, r"/public/*": {"origins": "*"}})
 
 # Connect to Database globally
 connect_db(app)
@@ -41,6 +43,10 @@ app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(returns_bp, url_prefix='/api/returns')
 # Also pos_bp serves invoices, we should register it under /api/invoices as well?
 app.register_blueprint(pos_bp, name='invoices', url_prefix='/api/invoices')
+# Public invoice viewing (no authentication required)
+app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
+# Public customer card viewing (no authentication required)
+app.register_blueprint(public_customer_card_bp, url_prefix='/public/customer-card')
 
 # The Express routes were: 
 # app.use('/api/checkout', checkoutRoutes);

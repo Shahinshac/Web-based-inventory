@@ -62,17 +62,17 @@ export const searchPlaces = async (query) => {
   try {
     const encodedQuery = encodeURIComponent(query + ', India')
     const url = `https://nominatim.openstreetmap.org/search?q=${encodedQuery}&format=json&addressdetails=1&limit=8&countrycodes=in`
-    
+
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'InventoryManagementApp/1.0'
       }
     })
-    
+
     if (!response.ok) return []
-    
+
     const data = await response.json()
-    
+
     return data.map(result => ({
       display_name: result.display_name,
       place: result.address?.city || result.address?.town || result.address?.village || result.display_name.split(',')[0],
@@ -85,4 +85,11 @@ export const searchPlaces = async (query) => {
     console.error('Place search error:', error)
     return []
   }
+}
+
+/**
+ * Generate WhatsApp share link for customer card
+ */
+export const generateCustomerWhatsAppShare = async (customerId) => {
+  return await apiPost(`/api/customers/${customerId}/whatsapp-share`, {})
 }

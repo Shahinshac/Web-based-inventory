@@ -338,7 +338,10 @@ def whatsapp_link(id):
         "createdBy": "system",
         "companySnapshot": {
             "name": COMPANY_NAME,
-            "phone": COMPANY_PHONE
+            "phone": COMPANY_PHONE,
+            "address": COMPANY_ADDRESS,
+            "email": COMPANY_EMAIL,
+            "gstin": COMPANY_GSTIN
         }
     })
 
