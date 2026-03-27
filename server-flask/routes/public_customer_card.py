@@ -1,6 +1,9 @@
 from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, request, jsonify
+import qrcode
+import io
+import base64
 
 from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
@@ -95,7 +98,31 @@ def public_customer_card_view(token):
     # Get company info from snapshot
     company = public_link.get('companySnapshot', {})
 
-    # PVC Card Style HTML
+    # Generate vCard data for QR code
+    vcard_data = f"""BEGIN:VCARD
+VERSION:3.0
+FN:{customer.get('name', '')}
+TEL;TYPE=CELL:{customer.get('phone', '')}
+{"EMAIL:" + customer.get('email') if customer.get('email') else ""}
+{"ORG:" + customer.get('company') if customer.get('company') else ""}
+{"TITLE:" + customer.get('position') if customer.get('position') else ""}
+{"ADR;TYPE=WORK:;;" + customer.get('address', '') + ";" + customer.get('city', '') + ";;" + customer.get('pincode', '') + ";" + customer.get('country', '') if customer.get('address') else ""}
+{"URL:" + customer.get('website') if customer.get('website') else ""}
+END:VCARD"""
+
+    # Generate QR code
+    qr = qrcode.QRCode(version=1, box_size=10, border=2)
+    qr.add_data(vcard_data)
+    qr.make(fit=True)
+    qr_img = qr.make_image(fill_color="black", back_color="white")
+
+    # Convert QR code to base64
+    buffer = io.BytesIO()
+    qr_img.save(buffer, format='PNG')
+    qr_base64 = base64.b64encode(buffer.getvalue()).decode()
+
+
+    # PVC Card Style HTML with flip feature
     html = f"""
     <!DOCTYPE html>
     <html>
@@ -118,6 +145,17 @@ def public_customer_card_view(token):
                 perspective: 1000px;
                 max-width: 400px;
                 width: 100%;
+                cursor: pointer;
+            }}
+            .card-flipper {{
+                position: relative;
+                width: 100%;
+                height: 100%;
+                transition: transform 0.6s;
+                transform-style: preserve-3d;
+            }}
+            .card-container.flipped .card-flipper {{
+                transform: rotateY(180deg);
             }}
             .pvc-card {{
                 background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
@@ -127,6 +165,17 @@ def public_customer_card_view(token):
                 position: relative;
                 overflow: hidden;
                 border: 2px solid rgba(255,255,255,0.8);
+                backface-visibility: hidden;
+                -webkit-backface-visibility: hidden;
+            }}
+            .card-front, .card-back {{
+                position: absolute;
+                width: 100%;
+                backface-visibility: hidden;
+                -webkit-backface-visibility: hidden;
+            }}
+            .card-back {{
+                transform: rotateY(180deg);
             }}
             .card-header {{
                 text-align: center;
@@ -223,6 +272,49 @@ def public_customer_card_view(token):
                 background: radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%);
                 pointer-events: none;
             }}
+            .qr-container {{
+                text-align: center;
+                padding: 20px;
+            }}
+            .qr-code {{
+                width: 250px;
+                height: 250px;
+                margin: 20px auto;
+                background: white;
+                padding: 15px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            }}
+            .qr-code img {{
+                width: 100%;
+                height: 100%;
+                display: block;
+            }}
+            .qr-instruction {{
+                font-size: 16px;
+                color: #2d3748;
+                margin: 20px 0;
+                font-weight: 600;
+            }}
+            .qr-subtitle {{
+                font-size: 12px;
+                color: #6c757d;
+                margin-bottom: 15px;
+            }}
+            .flip-hint {{
+                position: absolute;
+                bottom: 15px;
+                left: 0;
+                right: 0;
+                text-align: center;
+                font-size: 11px;
+                color: #6c757d;
+                animation: pulse 2s infinite;
+            }}
+            @keyframes pulse {{
+                0%, 100% {{ opacity: 1; }}
+                50% {{ opacity: 0.5; }}
+            }}
             @media (max-width: 480px) {{
                 .pvc-card {{ padding: 20px; }}
                 .customer-name {{ font-size: 20px; }}
@@ -231,70 +323,148 @@ def public_customer_card_view(token):
         </style>
     </head>
     <body>
-        <div class="card-container">
-            <div class="pvc-card">
-                <div class="pattern-overlay"></div>
+        <div class="card-container" onclick="this.classList.toggle('flipped')">
+            <div class="card-flipper">
+                <!-- Front of Card -->
+                <div class="card-front">
+                    <div class="pvc-card">
+                        <div class="pattern-overlay"></div>
 
-                <div class="card-header">
-                    <div class="company-name">{company.get('name', COMPANY_NAME)}</div>
-                    <div class="company-phone">📞 {company.get('phone', COMPANY_PHONE)}</div>
-                </div>
+                        <div class="card-header">
+                            <div class="company-name">{company.get('name', COMPANY_NAME)}</div>
+                            <div class="company-phone">📞 {company.get('phone', COMPANY_PHONE)}</div>
+                        </div>
 
-                <div class="customer-avatar">
-                    {customer.get('name', 'C')[0].upper()}
-                </div>
+                        <div class="customer-avatar">
+                            {customer.get('name', 'C')[0].upper()}
+                        </div>
 
-                <div class="customer-name">
-                    {customer.get('name', 'Customer')}
-                </div>
+                        <div class="customer-name">
+                            {customer.get('name', 'Customer')}
+                        </div>
 
-                <div class="customer-details">
-                    {"" if not customer.get('phone') else f'''
-                    <div class="detail-row">
-                        <div class="detail-icon">📱</div>
-                        <div class="detail-content">
-                            <div class="detail-label">Phone Number</div>
-                            <div class="detail-value">{customer.get('phone')}</div>
+                        <div class="customer-details">
+                            {"" if not customer.get('phone') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">📱</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Phone Number</div>
+                                    <div class="detail-value">{customer.get('phone')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('email') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">📧</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Email</div>
+                                    <div class="detail-value">{customer.get('email')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('company') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">🏢</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Company</div>
+                                    <div class="detail-value">{customer.get('company')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('position') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">💼</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Position</div>
+                                    <div class="detail-value">{customer.get('position')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('place') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">📍</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Location</div>
+                                    <div class="detail-value">{customer.get('place')}{" - " + customer.get('pincode') if customer.get('pincode') else ""}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('address') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">🏠</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Address</div>
+                                    <div class="detail-value">{customer.get('address')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('website') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">🌐</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">Website</div>
+                                    <div class="detail-value">{customer.get('website')}</div>
+                                </div>
+                            </div>
+                            '''}
+
+                            {"" if not customer.get('gstin') else f'''
+                            <div class="detail-row">
+                                <div class="detail-icon">🏆</div>
+                                <div class="detail-content">
+                                    <div class="detail-label">GSTIN</div>
+                                    <div class="detail-value">{customer.get('gstin')}</div>
+                                </div>
+                            </div>
+                            '''}
+                        </div>
+
+                        <div class="card-footer">
+                            <p>Valued Customer</p>
+                            <p style="margin-top: 5px; font-style: italic; opacity: 0.7;">
+                                Thank you for choosing us!
+                            </p>
+                        </div>
+
+                        <div class="flip-hint">
+                            💡 Tap to see QR Code
                         </div>
                     </div>
-                    '''}
-
-                    {"" if not customer.get('place') else f'''
-                    <div class="detail-row">
-                        <div class="detail-icon">📍</div>
-                        <div class="detail-content">
-                            <div class="detail-label">Location</div>
-                            <div class="detail-value">{customer.get('place')}{" - " + customer.get('pincode') if customer.get('pincode') else ""}</div>
-                        </div>
-                    </div>
-                    '''}
-
-                    {"" if not customer.get('address') else f'''
-                    <div class="detail-row">
-                        <div class="detail-icon">🏠</div>
-                        <div class="detail-content">
-                            <div class="detail-label">Address</div>
-                            <div class="detail-value">{customer.get('address')}</div>
-                        </div>
-                    </div>
-                    '''}
-
-                    {"" if not customer.get('gstin') else f'''
-                    <div class="detail-row">
-                        <div class="detail-icon">🏆</div>
-                        <div class="detail-content">
-                            <div class="detail-label">GSTIN</div>
-                            <div class="detail-value">{customer.get('gstin')}</div>
-                        </div>
-                    </div>
-                    '''}
                 </div>
 
-                <div class="card-footer">
-                    <p>Valued Customer</p>
-                    <p style="margin-top: 5px; font-style: italic; opacity: 0.7;">
-                        Thank you for choosing us!
-                    </p>
+                <!-- Back of Card -->
+                <div class="card-back">
+                    <div class="pvc-card">
+                        <div class="pattern-overlay"></div>
+
+                        <div class="card-header">
+                            <div class="company-name">{company.get('name', COMPANY_NAME)}</div>
+                            <div class="company-phone">📞 {company.get('phone', COMPANY_PHONE)}</div>
+                        </div>
+
+                        <div class="qr-container">
+                            <div class="qr-instruction">Scan to Save Contact</div>
+                            <div class="qr-subtitle">Use your phone's camera to scan</div>
+
+                            <div class="qr-code">
+                                <img src="data:image/png;base64,{qr_base64}" alt="QR Code" />
+                            </div>
+
+                            <div class="customer-name" style="margin-top: 15px;">
+                                {customer.get('name', 'Customer')}
+                            </div>
+                        </div>
+
+                        <div class="flip-hint">
+                            💡 Tap to flip back
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
