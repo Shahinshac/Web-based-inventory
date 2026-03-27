@@ -28,6 +28,22 @@ function buildVCard(customer) {
   return lines.filter(Boolean).join('\n');
 }
 
+function buildCardText(customer) {
+  return [
+    `👤 *${customer.name || ''}*`,
+    customer.position ? `💼 ${customer.position}` : '',
+    customer.company ? `🏢 ${customer.company}` : '',
+    '',
+    customer.phone ? `📞 ${customer.phone}` : '',
+    customer.email ? `✉️ ${customer.email}` : '',
+    (customer.city || customer.place)
+      ? `📍 ${[customer.city || customer.place, customer.country].filter(Boolean).join(', ')}`
+      : '',
+    customer.website ? `🌐 ${customer.website}` : '',
+    customer.gstin ? `📋 GST: ${customer.gstin}` : '',
+  ].filter(Boolean).join('\n');
+}
+
 function getInitials(name = '') {
   return name
     .split(' ')
@@ -81,12 +97,37 @@ export default function CustomerCardScreen({ route }) {
   const shareVCard = async () => {
     try {
       await Share.share({
-        title: `${customer.name} – Contact`,
-        message: vCardData,
+        title: `${customer.name} – Contact Card`,
+        message: buildCardText(customer),
       });
     } catch (err) {
       Alert.alert('Error', err.message);
     }
+  };
+
+  const shareViaWhatsApp = () => {
+    const text = buildCardText(customer);
+    const encodedText = encodeURIComponent(text);
+    const phone = customer.phone ? customer.phone.replace(/\D/g, '') : '';
+    const fullPhone = phone.length === 10 ? `91${phone}` : phone;
+
+    const url = fullPhone
+      ? `whatsapp://send?phone=${fullPhone}&text=${encodedText}`
+      : `whatsapp://send?text=${encodedText}`;
+
+    Linking.canOpenURL(url).then(supported => {
+      if (supported) {
+        Linking.openURL(url);
+      } else {
+        // Fallback to wa.me
+        const waUrl = fullPhone
+          ? `https://wa.me/${fullPhone}?text=${encodedText}`
+          : `https://wa.me/?text=${encodedText}`;
+        Linking.openURL(waUrl);
+      }
+    }).catch(() => {
+      Alert.alert('WhatsApp not found', 'Please install WhatsApp to use this feature.');
+    });
   };
 
   return (
@@ -204,17 +245,28 @@ export default function CustomerCardScreen({ route }) {
           </Text>
         </TouchableOpacity>
 
+        <TouchableOpacity
+          style={[styles.actionBtn, styles.actionBtnGreen]}
+          onPress={shareViaWhatsApp}
+        >
+          <Text style={[styles.actionBtnText, { color: '#16a34a' }]}>
+            💬  Share via WhatsApp
+          </Text>
+        </TouchableOpacity>
+
         {customer.phone ? (
           <TouchableOpacity
-            style={[styles.actionBtn, styles.actionBtnGreen]}
-            onPress={() =>
-              Linking.openURL(
-                `https://wa.me/${customer.phone.replace(/\D/g, '')}?text=Hi ${customer.name}!`
-              )
-            }
+            style={[styles.actionBtn, styles.actionBtnWhatsApp]}
+            onPress={() => {
+              const phone = customer.phone.replace(/\D/g, '');
+              const fullPhone = phone.length === 10 ? `91${phone}` : phone;
+              Linking.openURL(`whatsapp://send?phone=${fullPhone}`).catch(() =>
+                Linking.openURL(`https://wa.me/${fullPhone}`)
+              );
+            }}
           >
-            <Text style={[styles.actionBtnText, { color: '#16a34a' }]}>
-              💬  WhatsApp
+            <Text style={[styles.actionBtnText, { color: '#ffffff' }]}>
+              📲  Open WhatsApp Chat
             </Text>
           </TouchableOpacity>
         ) : null}
@@ -427,6 +479,9 @@ const styles = StyleSheet.create({
     backgroundColor: '#f0fdf4',
     borderWidth: 1,
     borderColor: '#bbf7d0',
+  },
+  actionBtnWhatsApp: {
+    backgroundColor: '#25D366',
   },
   actionBtnText: {
     fontSize: 14,
