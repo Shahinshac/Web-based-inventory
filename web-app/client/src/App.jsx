@@ -638,35 +638,13 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  const handleShareWhatsApp = async (invoice) => {
+  const handleShareWhatsApp = (invoice) => {
     try {
       const customerPhone = invoice.customerPhone || invoice.customer?.phone || '';
       const customerName = invoice.customerName || invoice.customer?.name || 'Customer';
       const billNumber = invoice.billNumber || invoice.id;
       const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
-      // Call backend to get public invoice link
-      let publicUrl = '';
-      let backendWhatsAppUrl = null;
-      try {
-        const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
-          requestedBy: currentUser?.username || 'system',
-          company: companyInfo.name
-        });
-        publicUrl = linkData.publicUrl || '';
-        backendWhatsAppUrl = linkData.whatsappUrl || null;
-      } catch (linkErr) {
-        console.warn('Could not generate public link:', linkErr);
-      }
-
-      // If backend returned a full whatsapp URL (has phone), use it directly
-      if (backendWhatsAppUrl) {
-        window.open(backendWhatsAppUrl, '_blank');
-        showNotification('✅ Opening WhatsApp...', 'success');
-        return;
-      }
-
-      // Build message with public link included
       const itemsList = (invoice.items || [])
         .map((item, i) => `${i + 1}. ${item.name || item.productName} x${item.quantity} = ₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(0)}`)
         .join('\n');
@@ -687,8 +665,6 @@ Esc: Close modals/dialogs`;
         '',
         `Payment: ${(invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1)} ✓`,
         '',
-        publicUrl ? `🔗 View Invoice: ${publicUrl}` : '',
-        '',
         `Thank you for your purchase! 🙏`,
         `— ${companyInfo.name}`,
         companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
@@ -700,7 +676,6 @@ Esc: Close modals/dialogs`;
         window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
         showNotification('✅ Opening WhatsApp...', 'success');
       } else {
-        // No phone — open WhatsApp with just the text (user picks contact)
         window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
         showNotification('⚠️ No phone number — please select contact manually', 'warning');
       }

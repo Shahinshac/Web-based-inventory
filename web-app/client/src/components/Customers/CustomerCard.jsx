@@ -20,12 +20,6 @@ export default function CustomerCard({
           </div>
           <div className="customer-info">
             <h3 className="customer-name">{customer.name}</h3>
-            {customer.gstin && (
-              <span className="customer-gstin">
-                <Icon name="award" size={14} />
-                GST: {customer.gstin}
-              </span>
-            )}
           </div>
         </div>
 
@@ -38,14 +32,7 @@ export default function CustomerCard({
           {customer.place && (
             <div className="customer-detail">
               <Icon name="map-pin" size={16} />
-              <span>{customer.place}{customer.pincode ? ` - ${customer.pincode}` : ''}</span>
-            </div>
-          )}
-
-          {customer.address && (
-            <div className="customer-detail">
-              <Icon name="home" size={16} />
-              <span>{customer.address}</span>
+              <span>{customer.place}</span>
             </div>
           )}
         </div>
