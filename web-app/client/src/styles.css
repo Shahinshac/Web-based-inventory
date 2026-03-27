@@ -7217,6 +7217,100 @@ textarea:focus-visible {
   text-decoration: underline;
 }
 
+/* OTP AUTHENTICATION STYLES */
+
+.otp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.otp-message {
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+  padding: 12px;
+  background: #f0f4ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.otp-message strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.otp-input {
+  letter-spacing: 8px;
+  font-size: 28px !important;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Courier New', monospace !important;
+}
+
+.otp-timer {
+  font-size: 12px;
+  color: #f59e0b;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.resend-btn {
+  background: #f0f4ff;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.resend-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.security-badge svg {
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.field-hint {
+  font-size: 12px;
+  margin-top: -4px;
+  margin-left: 2px;
+  display: block;
+}
+
+.field-hint.error {
+  color: #dc2626;
+}
+
+.field-hint.success {
+  color: #10b981;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .login-page {

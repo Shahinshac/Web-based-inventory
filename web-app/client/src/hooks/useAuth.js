@@ -4,11 +4,12 @@
  */
 
 import { useState, useEffect } from 'react'
-import { 
-  loginUser, 
-  registerUser, 
-  logoutUser, 
-  getCurrentUser, 
+import {
+  loginUser,
+  loginCustomerWithOTP,
+  registerUser,
+  logoutUser,
+  getCurrentUser,
   isAuthenticated as checkAuth,
   isUserAdmin,
   getUserRole,
@@ -96,11 +97,24 @@ export const useAuth = () => {
     return () => clearInterval(intervalId)
   }, [isAuthenticated, isAdmin, currentUser])
 
-  const handleLogin = async (username, password, userMode = 'staff') => {
+  const handleLogin = async (username, password, userMode = 'staff', otpToken = null) => {
     try {
       setError(null)
-      const response = await loginUser(username, password, userMode)
 
+      // Customer OTP login flow
+      if (userMode === 'customer' && otpToken) {
+        const response = await loginCustomerWithOTP(username, otpToken)
+        const user = response.user
+        setIsAuthenticated(true)
+        setCurrentUser(user)
+        setIsAdmin(false)
+        setUserRole('customer')
+        setIsCustomer(true)
+        return { success: true, user }
+      }
+
+      // Staff login flow
+      const response = await loginUser(username, password, userMode)
       const user = response.user
       setIsAuthenticated(true)
       setCurrentUser(user)

@@ -1,54 +1,49 @@
 /**
  * @file Login.jsx
- * @description Authentication component with login and registration
- * Self-contained component that manages its own form state
+ * @description Secure authentication component with dual modes
+ * - Staff: Username + Password
+ * - Customer: Email + OTP (One-Time Password) - SAFEST METHOD
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
 
-/**
- * Login Component
- * 
- * Self-contained authentication component with:
- * - Login form with username/password
- * - Registration form with username/email/password
- * - Remember me functionality
- * - Password visibility toggle
- * - Form validation
- * - Loading states
- * - Error display
- */
 const Login = ({ onLogin }) => {
   // ==================== STATE ====================
 
-  // Login form state
-  const [authUsername, setAuthUsername] = useState('');
-  const [authPassword, setAuthPassword] = useState('');
-  const [authError, setAuthError] = useState('');
-  const [userMode, setUserMode] = useState('staff'); // 'staff' or 'customer'
-  const [isRegistering, setIsRegistering] = useState(false);
+  // Staff login state
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [staffError, setStaffError] = useState('');
+
+  // Customer login state - OTP based
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [otpCode, setOtpCode] = useState('');
+  const [customerError, setCustomerError] = useState('');
+  const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
+  const [otpTimer, setOtpTimer] = useState(0);
+
+  // Customer registration state
   const [registerEmail, setRegisterEmail] = useState('');
-  const [registerPassword, setRegisterPassword] = useState('');
-  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [registerName, setRegisterName] = useState('');
+  const [registerPhone, setRegisterPhone] = useState('');
   const [registerError, setRegisterError] = useState('');
 
   // UI state
+  const [userMode, setUserMode] = useState('staff'); // 'staff' or 'customer'
+  const [isRegistering, setIsRegistering] = useState(false);
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
   // ==================== EFFECTS ====================
 
-  /**
-   * Load remembered username on mount
-   */
   useEffect(() => {
     try {
-      const remembered = localStorage.getItem('rememberedUser');
+      const remembered = localStorage.getItem('rememberedStaff');
       if (remembered) {
-        setAuthUsername(remembered);
+        setStaffUsername(remembered);
         setRememberMe(true);
       }
     } catch (error) {
@@ -56,134 +51,219 @@ const Login = ({ onLogin }) => {
     }
   }, []);
 
-  /**
-   * Save/remove remembered username based on checkbox
-   */
   useEffect(() => {
     try {
-      if (rememberMe && authUsername) {
-        localStorage.setItem('rememberedUser', authUsername);
+      if (rememberMe && staffUsername) {
+        localStorage.setItem('rememberedStaff', staffUsername);
       } else if (!rememberMe) {
-        localStorage.removeItem('rememberedUser');
+        localStorage.removeItem('rememberedStaff');
       }
     } catch (error) {
       console.error('Failed to update remembered user:', error);
     }
-  }, [rememberMe, authUsername]);
+  }, [rememberMe, staffUsername]);
+
+  // OTP Timer
+  useEffect(() => {
+    if (otpTimer <= 0) return;
+    const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpTimer]);
 
   // ==================== HANDLERS ====================
 
   /**
-   * Handle login form submission
+   * STAFF LOGIN: Username + Password
    */
-  const onLoginSubmit = useCallback(async (e) => {
+  const onStaffLoginSubmit = useCallback(async (e) => {
     e.preventDefault();
-    setAuthError('');
+    setStaffError('');
 
-    if (!authUsername || !authPassword) {
-      setAuthError('Please fill in all fields');
+    if (!staffUsername || !staffPassword) {
+      setStaffError('Please fill in all fields');
       return;
     }
 
     setLoading(true);
     try {
-      const result = await onLogin(authUsername, authPassword, userMode);
+      const result = await onLogin(staffUsername, staffPassword, 'staff');
       if (result && result.error) {
-        setAuthError(result.error);
+        setStaffError(result.error);
       }
     } catch (error) {
-      setAuthError(error.message || 'Login failed. Please try again.');
+      setStaffError(error.message || 'Login failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [authUsername, authPassword, userMode, onLogin]);
+  }, [staffUsername, staffPassword, onLogin]);
 
   /**
-   * Handle customer registration
+   * CUSTOMER LOGIN - STEP 1: Send OTP to Email
+   */
+  const onSendOTP = useCallback(async (e) => {
+    e.preventDefault();
+    setCustomerError('');
+
+    if (!customerEmail) {
+      setCustomerError('Please enter your email');
+      return;
+    }
+
+    if (!customerEmail.includes('@')) {
+      setCustomerError('Please enter a valid email address');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Call backend to send OTP
+      const response = await fetch(
+        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/send-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: customerEmail, type: 'login' })
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to send OTP');
+      }
+
+      // Move to OTP entry step
+      setOtpStep('otp');
+      setOtpTimer(300); // 5 minutes timer
+    } catch (error) {
+      setCustomerError(error.message || 'Failed to send OTP. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [customerEmail]);
+
+  /**
+   * CUSTOMER LOGIN - STEP 2: Verify OTP and Login
+   */
+  const onVerifyOTP = useCallback(async (e) => {
+    e.preventDefault();
+    setCustomerError('');
+
+    if (!otpCode || otpCode.length !== 6) {
+      setCustomerError('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Call backend to verify OTP
+      const response = await fetch(
+        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/verify-otp',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email: customerEmail, otp: otpCode })
+        }
+      );
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Invalid OTP');
+      }
+
+      const data = await response.json();
+
+      // Auto-login after OTP verification
+      const result = await onLogin(customerEmail, null, 'customer', data.token);
+      if (result && result.error) {
+        setCustomerError(result.error);
+      }
+    } catch (error) {
+      setCustomerError(error.message || 'OTP verification failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [customerEmail, otpCode, onLogin]);
+
+  /**
+   * CUSTOMER REGISTRATION
    */
   const onRegisterSubmit = useCallback(async (e) => {
     e.preventDefault();
     setRegisterError('');
 
-    if (!authUsername || !registerEmail || !registerPassword || !registerConfirmPassword) {
+    if (!registerEmail || !registerName || !registerPhone) {
       setRegisterError('Please fill in all fields');
       return;
     }
 
-    if (registerPassword !== registerConfirmPassword) {
-      setRegisterError('Passwords do not match');
+    if (!registerEmail.includes('@')) {
+      setRegisterError('Please enter a valid email');
       return;
     }
 
-    if (registerPassword.length < 6) {
-      setRegisterError('Password must be at least 6 characters');
-      return;
-    }
-
-    if (userMode === 'customer' && authUsername.length !== 10) {
-      setRegisterError('Phone number must be 10 digits');
+    if (registerPhone.length !== 10) {
+      setRegisterError('Phone must be 10 digits');
       return;
     }
 
     setLoading(true);
     try {
-      // Register as customer or staff
-      const endpoint = userMode === 'customer' ? '/api/users/register-customer' : '/api/users/register';
-      const response = await fetch((import.meta.env.VITE_API_URL || 'http://localhost:5000') + endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          username: authUsername,
-          email: registerEmail,
-          password: registerPassword,
-          role: userMode === 'customer' ? 'customer' : 'staff'
-        })
-      });
+      const response = await fetch(
+        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/register-customer',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: registerEmail,
+            name: registerName,
+            phone: registerPhone,
+            role: 'customer'
+          })
+        }
+      );
 
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Registration failed');
       }
 
-      // Auto-login after successful registration
-      const result = await onLogin(authUsername, registerPassword, userMode);
-      if (result && result.error) {
-        setRegisterError(result.error);
-      } else {
-        setIsRegistering(false);
-      }
+      // Switch to login after successful registration
+      setIsRegistering(false);
+      setCustomerEmail(registerEmail);
+      setRegisterEmail('');
+      setRegisterName('');
+      setRegisterPhone('');
+      setCustomerError('Registration successful! Check your email for OTP.');
+      setOtpStep('email'); // Reset to email step
     } catch (error) {
       setRegisterError(error.message || 'Registration failed. Please try again.');
     } finally {
       setLoading(false);
     }
-  }, [authUsername, registerEmail, registerPassword, registerConfirmPassword, userMode, onLogin]);
-
-  /**
-   * Toggle password visibility
-   */
-  const togglePasswordVisibility = useCallback(() => {
-    setShowPassword(prev => !prev);
-  }, []);
+  }, [registerEmail, registerName, registerPhone]);
 
   /**
    * Switch between login modes
    */
   const switchMode = useCallback((newMode) => {
     setUserMode(newMode);
+    setStaffUsername('');
+    setStaffPassword('');
+    setStaffError('');
+    setCustomerEmail('');
+    setOtpCode('');
+    setCustomerError('');
     setIsRegistering(false);
-    setAuthUsername('');
-    setAuthPassword('');
-    setAuthError('');
-    setRegisterEmail('');
-    setRegisterPassword('');
-    setRegisterConfirmPassword('');
-    setRegisterError('');
+    setOtpStep('email');
+    setOtpTimer(0);
+  }, []);
+
+  const togglePasswordVisibility = useCallback(() => {
+    setShowPassword(prev => !prev);
   }, []);
 
   // ==================== RENDER HELPERS ====================
 
-  const isLoginValid = authUsername && authPassword;
   const currentYear = new Date().getFullYear();
 
   // ==================== RENDER ====================
@@ -191,20 +271,14 @@ const Login = ({ onLogin }) => {
   return (
     <div className="login-page">
       <div className="login-wrapper">
-        
         {/* ==================== BRANDING SIDE ==================== */}
         <div className="login-brand-side">
           <div className="brand-inner">
-            {/* Logo */}
             <div className="brand-logo-box">
               <Icon name="spark" size={36} />
             </div>
-            
-            {/* Brand name */}
             <h1 className="brand-name">26:07 Electronics</h1>
             <p className="brand-tagline">Premium Electronics & Smart Solutions</p>
-            
-            {/* Features list */}
             <div className="brand-list">
               <div className="brand-list-item">
                 <Icon name="check" size={16} />
@@ -258,18 +332,17 @@ const Login = ({ onLogin }) => {
                   <p>Staff login</p>
                 </div>
 
-                <form onSubmit={onLoginSubmit} className="login-form">
-                  {/* Username field */}
+                <form onSubmit={onStaffLoginSubmit} className="login-form">
                   <div className="field">
-                    <label htmlFor="login-username">
+                    <label htmlFor="staff-username">
                       <Icon name="customers" size={14} />
                       Username
                     </label>
                     <input
-                      id="login-username"
+                      id="staff-username"
                       type="text"
-                      value={authUsername}
-                      onChange={(e) => setAuthUsername(e.target.value)}
+                      value={staffUsername}
+                      onChange={(e) => setStaffUsername(e.target.value)}
                       placeholder="Enter username"
                       required
                       autoFocus
@@ -277,18 +350,17 @@ const Login = ({ onLogin }) => {
                     />
                   </div>
 
-                  {/* Password field */}
                   <div className="field">
-                    <label htmlFor="login-password">
+                    <label htmlFor="staff-password">
                       <Icon name="lock" size={14} />
                       Password
                     </label>
                     <div className="password-field">
                       <input
-                        id="login-password"
+                        id="staff-password"
                         type={showPassword ? "text" : "password"}
-                        value={authPassword}
-                        onChange={(e) => setAuthPassword(e.target.value)}
+                        value={staffPassword}
+                        onChange={(e) => setStaffPassword(e.target.value)}
                         placeholder="Enter password"
                         required
                         autoComplete="current-password"
@@ -304,10 +376,9 @@ const Login = ({ onLogin }) => {
                     </div>
                   </div>
 
-                  {/* Remember me checkbox */}
-                  <label className="remember-me" htmlFor="remember-me">
+                  <label className="remember-me" htmlFor="remember-staff">
                     <input
-                      id="remember-me"
+                      id="remember-staff"
                       type="checkbox"
                       checked={rememberMe}
                       onChange={(e) => setRememberMe(e.currentTarget.checked)}
@@ -315,25 +386,22 @@ const Login = ({ onLogin }) => {
                     <span>Remember me</span>
                   </label>
 
-                  {/* Error message */}
-                  {authError && (
+                  {staffError && (
                     <div className="error-msg" role="alert">
-                      <Icon name="close" size={14} />
-                      {authError}
+                      <Icon name="alert-circle" size={14} />
+                      {staffError}
                     </div>
                   )}
 
-                  {/* Submit button */}
                   <button
                     type="submit"
                     className="submit-btn"
-                    disabled={loading || !authUsername || !authPassword}
+                    disabled={loading || !staffUsername || !staffPassword}
                   >
                     {loading ? 'Logging in...' : 'Login'}
                   </button>
                 </form>
 
-                {/* Notice */}
                 <div className="notice">
                   <Icon name="lock" size={14} />
                   <span>Contact your admin if you need an account</span>
@@ -346,13 +414,43 @@ const Login = ({ onLogin }) => {
               <div className="login-content">
                 <div className="login-header">
                   <h2>{isRegistering ? 'Create Account' : 'Customer Login'}</h2>
-                  <p>{isRegistering ? 'Join our community' : 'View your purchases and warranties'}</p>
+                  <p>{isRegistering ? 'Register to get started' : 'Secure login with OTP'}</p>
                 </div>
 
                 {isRegistering ? (
-                  /* Registration form */
+                  /* REGISTRATION FORM */
                   <form onSubmit={onRegisterSubmit} className="login-form">
-                    {/* Phone number field */}
+                    <div className="field">
+                      <label htmlFor="register-name">
+                        <Icon name="user" size={14} />
+                        Full Name
+                      </label>
+                      <input
+                        id="register-name"
+                        type="text"
+                        value={registerName}
+                        onChange={(e) => setRegisterName(e.target.value)}
+                        placeholder="Your full name"
+                        required
+                        autoFocus
+                      />
+                    </div>
+
+                    <div className="field">
+                      <label htmlFor="register-email">
+                        <Icon name="mail" size={14} />
+                        Email Address
+                      </label>
+                      <input
+                        id="register-email"
+                        type="email"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        required
+                      />
+                    </div>
+
                     <div className="field">
                       <label htmlFor="register-phone">
                         <Icon name="call" size={14} />
@@ -361,174 +459,164 @@ const Login = ({ onLogin }) => {
                       <input
                         id="register-phone"
                         type="tel"
-                        value={authUsername}
-                        onChange={(e) => setAuthUsername(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        placeholder="10 digit phone number"
+                        value={registerPhone}
+                        onChange={(e) => setRegisterPhone(e.target.value.replace(/\D/g, '').slice(0, 10))}
+                        placeholder="10-digit phone number"
                         required
-                        autoFocus
                         maxLength="10"
                       />
-                      {authUsername.length !== 10 && authUsername && (
-                        <p className="field-hint" style={{color: '#ff6b6b'}}>Phone number must be 10 digits</p>
+                      {registerPhone.length > 0 && registerPhone.length !== 10 && (
+                        <p className="field-hint error">Must be 10 digits</p>
                       )}
                     </div>
 
-                    {/* Email field */}
-                    <div className="field">
-                      <label htmlFor="register-email">
-                        <Icon name="mail" size={14} />
-                        Email (optional)
-                      </label>
-                      <input
-                        id="register-email"
-                        type="email"
-                        value={registerEmail}
-                        onChange={(e) => setRegisterEmail(e.target.value)}
-                        placeholder="your@email.com"
-                      />
-                    </div>
-
-                    {/* Password field */}
-                    <div className="field">
-                      <label htmlFor="register-password">
-                        <Icon name="lock" size={14} />
-                        Password
-                      </label>
-                      <input
-                        id="register-password"
-                        type="password"
-                        value={registerPassword}
-                        onChange={(e) => setRegisterPassword(e.target.value)}
-                        placeholder="Minimum 6 characters"
-                        required
-                      />
-                    </div>
-
-                    {/* Confirm password field */}
-                    <div className="field">
-                      <label htmlFor="register-confirm">
-                        <Icon name="lock" size={14} />
-                        Confirm Password
-                      </label>
-                      <input
-                        id="register-confirm"
-                        type="password"
-                        value={registerConfirmPassword}
-                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
-                        placeholder="Re-enter password"
-                        required
-                      />
-                    </div>
-
-                    {/* Error message */}
                     {registerError && (
                       <div className="error-msg" role="alert">
-                        <Icon name="close" size={14} />
+                        <Icon name="alert-circle" size={14} />
                         {registerError}
                       </div>
                     )}
 
-                    {/* Submit button */}
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={loading}
+                      disabled={loading || !registerEmail || !registerName || !registerPhone}
                     >
                       {loading ? 'Creating account...' : 'Create Account'}
                     </button>
 
-                    {/* Switch to login */}
                     <div className="form-footer">
                       <p>Already have an account?</p>
                       <button
                         type="button"
                         className="switch-link"
-                        onClick={() => {
-                          setIsRegistering(false);
-                          setRegisterError('');
-                        }}
+                        onClick={() => setIsRegistering(false)}
                       >
                         Login here
                       </button>
                     </div>
                   </form>
-                ) : (
-                  /* Login form */
-                  <form onSubmit={onLoginSubmit} className="login-form">
-                    {/* Phone number field */}
+                ) : otpStep === 'email' ? (
+                  /* OTP STEP 1: EMAIL ENTRY */
+                  <form onSubmit={onSendOTP} className="login-form">
                     <div className="field">
-                      <label htmlFor="customer-phone">
-                        <Icon name="call" size={14} />
-                        Phone Number
+                      <label htmlFor="customer-email">
+                        <Icon name="mail" size={14} />
+                        Email Address
                       </label>
                       <input
-                        id="customer-phone"
-                        type="tel"
-                        value={authUsername}
-                        onChange={(e) => setAuthUsername(e.target.value.replace(/\D/g, '').slice(0, 10))}
-                        placeholder="10 digit phone number"
+                        id="customer-email"
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="your@email.com"
                         required
                         autoFocus
-                        maxLength="10"
                       />
                     </div>
 
-                    {/* Password field */}
-                    <div className="field">
-                      <label htmlFor="customer-password">
-                        <Icon name="lock" size={14} />
-                        Password
-                      </label>
-                      <div className="password-field">
-                        <input
-                          id="customer-password"
-                          type={showPassword ? "text" : "password"}
-                          value={authPassword}
-                          onChange={(e) => setAuthPassword(e.target.value)}
-                          placeholder="Enter password"
-                          required
-                          autoComplete="current-password"
-                        />
-                        <button
-                          type="button"
-                          className="eye-btn"
-                          onClick={togglePasswordVisibility}
-                          aria-label={showPassword ? "Hide password" : "Show password"}
-                        >
-                          <Icon name={showPassword ? "lock" : "eye"} size={16} />
-                        </button>
-                      </div>
+                    <div className="security-badge">
+                      <Icon name="shield" size={16} />
+                      <span>Secure OTP login - No password stored</span>
                     </div>
 
-                    {/* Error message */}
-                    {authError && (
+                    {customerError && (
                       <div className="error-msg" role="alert">
-                        <Icon name="close" size={14} />
-                        {authError}
+                        <Icon name="alert-circle" size={14} />
+                        {customerError}
                       </div>
                     )}
 
-                    {/* Submit button */}
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={loading || !authUsername || !authPassword}
+                      disabled={loading || !customerEmail}
                     >
-                      {loading ? 'Logging in...' : 'Login'}
+                      {loading ? 'Sending OTP...' : 'Send OTP to Email'}
                     </button>
 
-                    {/* Switch to register */}
                     <div className="form-footer">
                       <p>Don't have an account?</p>
                       <button
                         type="button"
                         className="switch-link"
+                        onClick={() => setIsRegistering(true)}
+                      >
+                        Register here
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  /* OTP STEP 2: OTP VERIFICATION */
+                  <form onSubmit={onVerifyOTP} className="login-form">
+                    <div className="otp-section">
+                      <p className="otp-message">
+                        Enter the 6-digit OTP sent to <strong>{customerEmail}</strong>
+                      </p>
+
+                      <div className="field">
+                        <label htmlFor="otp-code">
+                          <Icon name="shield" size={14} />
+                          One-Time Password
+                        </label>
+                        <input
+                          id="otp-code"
+                          type="text"
+                          value={otpCode}
+                          onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                          placeholder="000000"
+                          maxLength="6"
+                          required
+                          autoFocus
+                          inputMode="numeric"
+                          className="otp-input"
+                        />
+                      </div>
+
+                      {otpTimer > 0 && (
+                        <p className="otp-timer">
+                          OTP expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                        </p>
+                      )}
+
+                      {otpTimer === 0 && (
+                        <button
+                          type="button"
+                          className="resend-btn"
+                          onClick={onSendOTP}
+                        >
+                          <Icon name="refresh" size={14} />
+                          Resend OTP
+                        </button>
+                      )}
+                    </div>
+
+                    {customerError && (
+                      <div className="error-msg" role="alert">
+                        <Icon name="alert-circle" size={14} />
+                        {customerError}
+                      </div>
+                    )}
+
+                    <button
+                      type="submit"
+                      className="submit-btn"
+                      disabled={loading || otpCode.length !== 6}
+                    >
+                      {loading ? 'Verifying...' : 'Verify OTP & Login'}
+                    </button>
+
+                    <div className="form-footer">
+                      <button
+                        type="button"
+                        className="switch-link"
                         onClick={() => {
-                          setIsRegistering(true);
-                          setAuthError('');
+                          setOtpStep('email');
+                          setOtpCode('');
+                          setCustomerError('');
                         }}
                       >
-                        Create one here
+                        Use different email
                       </button>
                     </div>
                   </form>
@@ -547,9 +635,6 @@ const Login = ({ onLogin }) => {
   );
 };
 
-/**
- * PropTypes validation
- */
 Login.propTypes = {
   onLogin: PropTypes.func.isRequired,
 };

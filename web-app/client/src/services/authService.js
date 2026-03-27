@@ -6,18 +6,16 @@
 import { API, apiPost, apiGet, apiUpload, apiDelete } from '../utils/api'
 
 /**
- * Login user
+ * Login user (Staff)
  */
 export const loginUser = async (username, password, userMode = 'staff') => {
   const endpoint = userMode === 'customer' ? '/api/users/login-customer' : '/api/users/login'
   const response = await apiPost(endpoint, { username, password })
 
   if (response.user) {
-    // Store JWT token
     if (response.token) {
       localStorage.setItem('authToken', response.token)
     }
-    // Store user data
     const isAdmin = response.user.role === 'admin'
     localStorage.setItem('currentUser', JSON.stringify(response.user))
     localStorage.setItem('isAdmin', isAdmin ? 'true' : 'false')
@@ -28,7 +26,51 @@ export const loginUser = async (username, password, userMode = 'staff') => {
 }
 
 /**
- * Register new user
+ * Login customer with OTP (called after OTP verification)
+ */
+export const loginCustomerWithOTP = async (email, token) => {
+  const response = await apiPost('/api/users/login-customer-otp', { email, token })
+
+  if (response.user) {
+    if (response.token) {
+      localStorage.setItem('authToken', response.token)
+    }
+    localStorage.setItem('currentUser', JSON.stringify(response.user))
+    localStorage.setItem('isAdmin', 'false')
+    localStorage.setItem('userRole', 'customer')
+  }
+
+  return response
+}
+
+/**
+ * Send OTP to email
+ */
+export const sendOTP = async (email, type = 'login') => {
+  return await apiPost('/api/users/send-otp', { email, type })
+}
+
+/**
+ * Verify OTP
+ */
+export const verifyOTP = async (email, otp) => {
+  return await apiPost('/api/users/verify-otp', { email, otp })
+}
+
+/**
+ * Register new customer
+ */
+export const registerCustomer = async (email, name, phone) => {
+  return await apiPost('/api/users/register-customer', {
+    email,
+    name,
+    phone,
+    role: 'customer'
+  })
+}
+
+/**
+ * Register new staff user
  */
 export const registerUser = async (username, password, email) => {
   return await apiPost('/api/users/register', { username, password, email })
@@ -90,7 +132,6 @@ export const validateSession = async () => {
     const response = await apiGet('/api/users/session')
     return response
   } catch (error) {
-    // Token invalid / expired
     logoutUser()
     return null
   }
@@ -108,6 +149,7 @@ export const checkUserValidity = async (userId) => {
     return false
   }
 }
+
 /**
  * Update user's photo in localStorage (optimistic local state)
  */
@@ -125,9 +167,7 @@ export const updateUserPhoto = (photoUrl) => {
 }
 
 /**
- * Upload a new profile photo for the given user ID.
- * Sends the file to the backend which uploads to Cloudinary.
- * Returns { success, photo: <Cloudinary CDN URL> }
+ * Upload a new profile photo for the given user ID
  */
 export const uploadUserProfilePhoto = async (userId, file) => {
   const formData = new FormData()
@@ -136,7 +176,7 @@ export const uploadUserProfilePhoto = async (userId, file) => {
 }
 
 /**
- * Delete the profile photo for the given user ID.
+ * Delete the profile photo for the given user ID
  */
 export const deleteUserProfilePhoto = async (userId) => {
   return await apiDelete(`/api/users/${userId}/photo`)
