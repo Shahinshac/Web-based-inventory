@@ -1,6 +1,11 @@
 /**
  * Business calculation utilities
  * GST, discount, profit, and total calculations
+ *
+ * IMPORTANT: GST is NOT company revenue/profit
+ * - Company Revenue = afterDiscount (price after discount, before GST)
+ * - Grand Total = afterDiscount + GST (customer pays this, but GST goes to government)
+ * - Profit = calculated before GST (GST is not profit)
  */
 
 // Constants

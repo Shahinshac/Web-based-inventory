@@ -145,17 +145,20 @@ def checkout():
     discount_amount = (subtotal * discount_percent) / 100
     after_discount = subtotal - discount_amount
 
+    # GST Calculation (GST is collected for government, not company revenue)
+    # Company revenue = afterDiscount, NOT grandTotal
     cgst = sgst = igst = gst_amount = 0.0
     if is_same_state:
-        cgst = after_discount * 0.09
-        sgst = after_discount * 0.09
+        cgst = after_discount * 0.09  # 9% CGST
+        sgst = after_discount * 0.09  # 9% SGST
         gst_amount = cgst + sgst
     else:
-        igst = after_discount * 0.18
+        igst = after_discount * 0.18  # 18% IGST
         gst_amount = igst
 
     grand_total = after_discount + gst_amount
-    total_profit = subtotal - total_cost - discount_amount  # Profit after discount before tax
+    # Profit calculation: Does NOT include GST (GST is not company profit)
+    total_profit = subtotal - total_cost - discount_amount
 
     bill["subtotal"] = round(subtotal, 2)
     bill["discountAmount"] = round(discount_amount, 2)
