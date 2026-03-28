@@ -8,6 +8,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
+import { API } from './utils/api.js';
 
 const Login = ({ onLogin }) => {
   // ==================== STATE ====================
@@ -117,14 +118,11 @@ const Login = ({ onLogin }) => {
     setLoading(true);
     try {
       // Call backend to send OTP
-      const response = await fetch(
-        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/send-otp',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: customerEmail, type: 'login' })
-        }
-      );
+      const response = await fetch(API('/api/users/send-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: customerEmail, type: 'login' })
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -156,14 +154,11 @@ const Login = ({ onLogin }) => {
     setLoading(true);
     try {
       // Call backend to verify OTP
-      const response = await fetch(
-        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/verify-otp',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email: customerEmail, otp: otpCode })
-        }
-      );
+      const response = await fetch(API('/api/users/verify-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: customerEmail, otp: otpCode })
+      });
 
       if (!response.ok) {
         const error = await response.json();
@@ -208,19 +203,16 @@ const Login = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(
-        (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/api/users/register-customer',
-        {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: registerEmail,
-            name: registerName,
-            phone: registerPhone,
-            role: 'customer'
-          })
-        }
-      );
+      const response = await fetch(API('/api/users/register-customer'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: registerEmail,
+          name: registerName,
+          phone: registerPhone,
+          role: 'customer'
+        })
+      });
 
       if (!response.ok) {
         const error = await response.json();
