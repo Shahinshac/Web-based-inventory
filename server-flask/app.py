@@ -29,7 +29,23 @@ app.url_map.strict_slashes = False
 app.config.from_object(Config)
 
 # Enable CORS (Allows the React frontend to communicate with Flask)
-CORS(app, resources={r"/api/*": {"origins": "*"}, r"/public/*": {"origins": "*"}})
+CORS(app,
+     resources={
+         r"/api/*": {
+             "origins": [
+                 "https://26-07inventory.vercel.app",  # Production Vercel frontend
+                 "http://localhost:3000",               # Local development
+                 "http://localhost:5173",               # Vite dev server
+                 "http://127.0.0.1:3000",
+                 "http://127.0.0.1:5173"
+             ],
+             "methods": ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+             "allow_headers": ["Content-Type", "Authorization"],
+             "supports_credentials": True
+         },
+         r"/public/*": {"origins": "*"}
+     }
+)
 
 # Connect to Database globally
 connect_db(app)
