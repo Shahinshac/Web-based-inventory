@@ -71,6 +71,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle health check requests (for offline detection)
+  if (url.pathname === '/health') {
+    event.respondWith(handleHealthCheck(request));
+    return;
+  }
+
   // Handle navigation requests (pages)
   if (request.mode === 'navigate') {
     event.respondWith(handleNavigationRequest(request));
@@ -122,6 +128,27 @@ async function handleApiRequest(request) {
   }
 }
 
+// Health check handler - Network only (no cache)
+async function handleHealthCheck(request) {
+  try {
+    const networkResponse = await fetch(request);
+    return networkResponse;
+  } catch (error) {
+    // Return offline response if health check fails
+    console.log('🔌 Health check failed - offline');
+    return new Response(
+      JSON.stringify({
+        error: 'Offline',
+        offline: true
+      }),
+      {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' }
+      }
+    );
+  }
+}
+
 // Navigation request handler - Cache first for SPA
 async function handleNavigationRequest(request) {
   try {
@@ -164,13 +191,14 @@ async function handleStaticAssetRequest(request) {
     return networkResponse;
   } catch (error) {
     console.log('❌ Failed to fetch asset:', request.url);
-    
+
     // Return a fallback for images
     if (request.destination === 'image') {
       return new Response('', { status: 204 });
     }
-    
-    throw error;
+
+    // For other assets, return 503 instead of throwing
+    return new Response('Asset not available', { status: 503 });
   }
 }
 
