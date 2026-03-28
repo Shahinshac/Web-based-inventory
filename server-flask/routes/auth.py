@@ -448,7 +448,23 @@ def send_otp():
         return jsonify({"error": "Valid email address is required"}), 400
 
     try:
-        logger.info(f"Generating OTP for email: {email}")
+        db = get_db()
+
+        logger.info(f"Generating OTP for email: {email}, type: {otp_type}")
+
+        # For login: verify customer exists in database
+        if otp_type == 'login':
+            customer = db.customers.find_one({"email": email})
+            if not customer:
+                logger.warning(f"Login attempt with non-existent customer email: {email}")
+                return jsonify({"error": "Email not found in customer database. Please register first."}), 404
+
+        # For register: check if customer already exists
+        if otp_type == 'register':
+            customer = db.customers.find_one({"email": email})
+            if customer:
+                logger.warning(f"Registration attempt with existing email: {email}")
+                return jsonify({"error": "Email already registered. Please login instead."}), 400
 
         # Generate OTP
         otp = generate_otp()
