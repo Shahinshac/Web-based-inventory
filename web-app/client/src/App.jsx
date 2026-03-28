@@ -32,6 +32,7 @@ import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 // Removed unused constants import
 import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
+import { createPaymentLink } from './services/paymentLinkService';
 import './styles.css';
 
 export default function App() {
@@ -240,6 +241,25 @@ Esc: Close modals/dialogs`;
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 5000);
+  };
+
+  // Payment Link handler
+  const handleGeneratePaymentLink = async (linkData) => {
+    try {
+      const result = await createPaymentLink(
+        linkData.amount,
+        linkData.customerName,
+        linkData.customerPhone,
+        linkData.description
+      );
+      if (result && result.success) {
+        return { success: true, paymentLink: result };
+      } else {
+        return { success: false, error: result?.error || 'Failed to generate payment link' };
+      }
+    } catch (error) {
+      return { success: false, error: error.message || 'Error generating payment link' };
+    }
   };
 
   // Checkout handler
@@ -1007,7 +1027,7 @@ Esc: Close modals/dialogs`;
 
       case 'pos':
         return (
-          <POSSystem 
+          <POSSystem
             products={products}
             customers={customers}
             cart={cart}
@@ -1019,6 +1039,7 @@ Esc: Close modals/dialogs`;
             onSelectCustomer={selectCustomer}
             onAddCustomer={addCustomer}
             onCheckout={handleCheckout}
+            onGeneratePaymentLink={handleGeneratePaymentLink}
             isOnline={isOnline}
             companyInfo={companyInfo}
             cartErrors={cartErrors}
