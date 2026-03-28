@@ -33,3 +33,10 @@ class Config:
     MAIL_USERNAME = os.environ.get('MAIL_USERNAME')
     MAIL_PASSWORD = os.environ.get('MAIL_PASSWORD')
     MAIL_DEFAULT_SENDER = os.environ.get('MAIL_DEFAULT_SENDER', 'noreply@2607electronics.com')
+
+    # Payment Configuration (UPI for payment links)
+    # Your actual UPI ID that's registered with your bank/UPI provider
+    # Format: phonenumber@bankname or username@upi
+    # Examples: 9876543210@okhdfcbank, merchant@paytm, business@airtel
+    COMPANY_UPI = os.environ.get('COMPANY_UPI', '7594012761@super')
+    COMPANY_NAME = os.environ.get('COMPANY_NAME', '26:07 Electronics')

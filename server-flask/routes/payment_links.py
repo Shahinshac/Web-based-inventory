@@ -20,9 +20,6 @@ payment_links_bp = Blueprint('payment_links', __name__)
 
 # ==================== CONSTANTS ====================
 
-# Company UPI details
-COMPANY_UPI = '7594012761@super'
-COMPANY_NAME = '26:07 Electronics'
 PAYMENT_LINK_EXPIRY_DAYS = 30
 
 # ==================== HELPERS ====================
@@ -103,8 +100,12 @@ def create_payment_link():
         # Create transaction ID
         transaction_id = f"PAY-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{customer_phone[-4:]}"
 
+        # Get UPI config from Flask config (will use env variables or defaults)
+        company_upi = current_app.config.get('COMPANY_UPI', '7594012761@super')
+        company_name = current_app.config.get('COMPANY_NAME', '26:07 Electronics')
+
         # Generate UPI string
-        upi_string = generate_upi_string(COMPANY_UPI, COMPANY_NAME, amount, transaction_id)
+        upi_string = generate_upi_string(company_upi, company_name, amount, transaction_id)
 
         # Generate QR code
         qr_code = generate_qr_code(upi_string)
