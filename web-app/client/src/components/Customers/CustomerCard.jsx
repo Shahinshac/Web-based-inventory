@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
-import { generateCustomerWhatsAppShare } from '../../services/customerService';
+import { generateCustomerWhatsAppShare, downloadPvcCardPdf } from '../../services/customerService';
 
 export default function CustomerCard({
   customer,
@@ -12,6 +12,7 @@ export default function CustomerCard({
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleWhatsAppShare = async () => {
     setIsSharing(true);
@@ -28,6 +29,18 @@ export default function CustomerCard({
       console.error('WhatsApp share error:', error);
     } finally {
       setIsSharing(false);
+    }
+  };
+
+  const handleDownloadCard = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPvcCardPdf(customer.id, customer.name);
+    } catch (err) {
+      alert('Failed to download card PDF. Please try again.');
+      console.error('PVC card download error:', err);
+    } finally {
+      setIsDownloading(false);
     }
   };
 
@@ -96,6 +109,17 @@ export default function CustomerCard({
             title="Share customer card via WhatsApp"
           >
             {isSharing ? 'Sharing...' : 'Share'}
+          </Button>
+
+          <Button
+            variant="secondary"
+            size="small"
+            onClick={handleDownloadCard}
+            disabled={isDownloading}
+            icon="download"
+            title="Download PVC card as PDF"
+          >
+            {isDownloading ? '...' : 'Card PDF'}
           </Button>
 
           {onViewHistory && (

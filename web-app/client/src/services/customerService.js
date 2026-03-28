@@ -93,3 +93,25 @@ export const searchPlaces = async (query) => {
 export const generateCustomerWhatsAppShare = async (customerId) => {
   return await apiPost(`/api/customers/${customerId}/whatsapp-share`, {})
 }
+
+/**
+ * Download PVC (credit-card sized) PDF for a customer
+ */
+export const downloadPvcCardPdf = async (customerId, customerName) => {
+  const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken')
+  const response = await fetch(`/api/customers/${customerId}/pvc-card-pdf`, {
+    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
+  })
+  if (!response.ok) {
+    throw new Error('Failed to download customer card PDF')
+  }
+  const blob = await response.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${(customerName || 'customer').replace(/\s+/g, '_')}_card.pdf`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}

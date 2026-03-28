@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import Icon from '../../Icon';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import { downloadPvcCardPdf } from '../../services/customerService';
 import './VisitingCard.css';
 
 function getInitials(name = '') {
@@ -42,6 +43,7 @@ export default function VisitingCard({
   const [qrDataUrl, setQrDataUrl] = useState(null);
   const [qrError, setQrError] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const canvasRef = useRef(null);
 
   // Generate QR code when card is flipped for the first time
@@ -72,6 +74,18 @@ export default function VisitingCard({
   const displayCity = customer.city || customer.place || '';
   const displayCountry = customer.country || '';
   const location = [displayCity, displayCountry].filter(Boolean).join(', ');
+
+  const handleDownloadCard = async () => {
+    setIsDownloading(true);
+    try {
+      await downloadPvcCardPdf(customer.id, customer.name);
+    } catch (err) {
+      alert('Failed to download card PDF. Please try again.');
+      console.error('PVC card download error:', err);
+    } finally {
+      setIsDownloading(false);
+    }
+  };
 
   return (
     <>
@@ -136,6 +150,12 @@ export default function VisitingCard({
                       {location}
                     </span>
                   )}
+                  {customer.address && (
+                    <span className="vc-contact-item">
+                      <Icon name="home" size={12} className="vc-contact-icon" />
+                      {customer.address}
+                    </span>
+                  )}
                   {customer.website && (
                     <a
                       className="vc-contact-item"
@@ -196,6 +216,15 @@ export default function VisitingCard({
               WhatsApp
             </button>
           )}
+          <button
+            className="vc-action-btn download"
+            onClick={handleDownloadCard}
+            disabled={isDownloading}
+            title="Download PVC card as PDF"
+          >
+            <Icon name="download" size={12} />
+            {isDownloading ? '...' : 'Card PDF'}
+          </button>
           {onEdit && (
             <button className="vc-action-btn edit" onClick={() => onEdit(customer)}>
               <Icon name="edit" size={12} />

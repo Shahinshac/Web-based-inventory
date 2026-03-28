@@ -327,6 +327,23 @@
   border-color: #25D366;
 }
 
+.vc-action-btn.download {
+  background: #fdf4ff;
+  color: #7c3aed;
+  border: 1px solid #e9d5ff;
+}
+
+.vc-action-btn.download:hover {
+  background: #7c3aed;
+  color: #ffffff;
+  border-color: #7c3aed;
+}
+
+.vc-action-btn.download:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ===== VISITING CARDS GRID ===== */
 .visiting-cards-grid {
   display: grid;
