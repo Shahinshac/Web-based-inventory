@@ -10,7 +10,7 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, current_app, g
 
 from database import get_db
-from utils.auth_middleware import authenticate_token, require_customer
+from utils.auth_middleware import authenticate_token
 
 logger = logging.getLogger(__name__)
 

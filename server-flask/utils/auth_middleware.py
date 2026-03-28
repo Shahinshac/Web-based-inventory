@@ -35,6 +35,17 @@ def require_admin(f):
         # We assume authenticate_token was called BEFORE require_admin.
         if not hasattr(g, 'user') or g.user.get('role') != 'admin':
             return jsonify({'error': 'Admin privileges required'}), 403
-            
+
+        return f(*args, **kwargs)
+    return decorated
+
+
+def require_customer(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # We assume authenticate_token was called BEFORE require_customer.
+        if not hasattr(g, 'user') or g.user.get('role') != 'customer':
+            return jsonify({'error': 'Customer authentication required'}), 403
+
         return f(*args, **kwargs)
     return decorated
