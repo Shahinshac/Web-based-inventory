@@ -12,6 +12,7 @@ class Config:
     # MongoDB Atlas Configuration (Cloud Database - REQUIRED)
     # Must be set via environment variable
     # NO localhost fallback - Atlas is mandatory
+    # Production: Uses MONGODB_URI from Render environment variables
     MONGO_URI = os.environ.get('MONGODB_URI')
     if not MONGO_URI:
         raise ValueError("MONGODB_URI environment variable is required. Please set your Atlas connection string.")
