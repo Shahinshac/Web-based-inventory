@@ -16,12 +16,23 @@ export const useOffline = (isAuthenticated) => {
     // Test actual connectivity by pinging the API
     const testConnection = async () => {
       try {
-        const test = await fetch(
-          (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/health',
-          { method: 'HEAD', mode: 'no-cors' }
-        )
-        setIsOnline(true)
+        const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/health'
+        console.log('🔍 Testing connection to:', apiUrl)
+
+        const test = await fetch(apiUrl, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        })
+
+        if (test.ok) {
+          console.log('✅ Backend is online')
+          setIsOnline(true)
+        } else {
+          console.log('❌ Backend returned status:', test.status)
+          setIsOnline(false)
+        }
       } catch (error) {
+        console.log('❌ Connection test failed:', error.message)
         setIsOnline(false)
       }
     }
