@@ -9,11 +9,12 @@ class Config:
     DEBUG = False  # Disable debug mode to avoid reloader issues
     PORT = int(os.environ.get('PORT', 5000))
 
-    # MongoDB Atlas Configuration (Cloud Database)
-    # On Render: Set MONGODB_URI env variable with your Atlas connection string
-    # Format: mongodb+srv://username:password@cluster.mongodb.net/database?retryWrites=true&w=majority
-    # Local dev: Falls back to localhost for development only
-    MONGO_URI = os.environ.get('MONGODB_URI') or 'mongodb://localhost:27017/inventorydb'
+    # MongoDB Atlas Configuration (Cloud Database - REQUIRED)
+    # Must be set via environment variable
+    # NO localhost fallback - Atlas is mandatory
+    MONGO_URI = os.environ.get('MONGODB_URI')
+    if not MONGO_URI:
+        raise ValueError("MONGODB_URI environment variable is required. Please set your Atlas connection string.")
     DB_NAME = os.environ.get('DB_NAME', 'inventorydb')
 
     # Cloudinary Integration

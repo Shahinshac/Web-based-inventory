@@ -182,7 +182,7 @@ def delete_customer(id):
         return jsonify({"error": "Customer not found"}), 404
 
     # Check for linked invoices before deleting
-    invoice_count = db.bills.count_documents({"customerId": ObjectId(id)})
+    invoice_count = db.invoices.count_documents({"customerId": ObjectId(id)})
     if invoice_count > 0:
         return jsonify({"error": f"Cannot delete customer with {invoice_count} existing invoices. Archive customer instead."}), 400
 

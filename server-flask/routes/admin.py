@@ -101,9 +101,10 @@ def clear_database():
 
     results = {}
     collections_to_drop = [
-        'products', 'customers', 'bills', 'invoices', 'expenses', 
+        'products', 'customers', 'bills', 'invoices', 'expenses',
         'audit_logs', 'product_images', 'user_images', 'returns',
-        'public_invoice_links', 'notifications', 'categories'
+        'public_invoice_links', 'notifications', 'categories',
+        'warranties', 'payment_links', 'otp_codes'  # New collections for new features
     ]
     
     for coll in collections_to_drop:
