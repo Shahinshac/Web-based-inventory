@@ -13,6 +13,13 @@ export default function Analytics({
 }) {
   const { topProducts, lowStock, revenueSummary } = analyticsData;
 
+  const totalProfit =
+    Number(revenueSummary.totalProfit) ||
+    Number(revenueSummary.profit) ||
+    (Array.isArray(revenueSummary.dailyData)
+      ? revenueSummary.dailyData.reduce((sum, item) => sum + (Number(item.profit) || 0), 0)
+      : 0);
+
   const avgOrderValue = revenueSummary.totalSales > 0 
     ? Math.round(revenueSummary.totalRevenue / revenueSummary.totalSales) 
     : 0;
@@ -60,7 +67,7 @@ export default function Analytics({
               </div>
               <div className="summary-card-content">
                 <span className="summary-card-label">Total Profit</span>
-                <p className="summary-value">{formatCurrency0(revenueSummary.totalProfit || 0)}</p>
+                <p className="summary-value">{formatCurrency0(totalProfit)}</p>
               </div>
             </div>
             <div className="summary-card expenses-card">
@@ -70,15 +77,6 @@ export default function Analytics({
               <div className="summary-card-content">
                 <span className="summary-card-label">Total Expenses</span>
                 <p className="summary-value">{formatCurrency0(revenueSummary.totalExpenses || 0)}</p>
-              </div>
-            </div>
-            <div className="summary-card net-card">
-              <div className="summary-card-icon" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>
-                <Icon name="trending-up" size={24} />
-              </div>
-              <div className="summary-card-content">
-                <span className="summary-card-label">Profit After Expenses</span>
-                <p className="summary-value">{formatCurrency0(revenueSummary.netProfit || 0)}</p>
               </div>
             </div>
           </>

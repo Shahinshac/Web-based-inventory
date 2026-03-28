@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import CustomerCard from './CustomerCard';
+import VisitingCard from './VisitingCard';
 import CustomerForm from './CustomerForm';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
+import './VisitingCard.css';
 
 export default function CustomersList({
   customers,
@@ -15,11 +17,13 @@ export default function CustomersList({
   isRefreshing,    // Refreshing state
   lastRefreshTime, // Last refresh timestamp
   canEdit,
-  canDelete
+  canDelete,
+  onShareWhatsApp
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'visiting'
 
   const filteredCustomers = customers.filter(customer => {
     const query = searchQuery.toLowerCase();
@@ -64,7 +68,26 @@ export default function CustomersList({
             )}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {/* View mode toggle */}
+          <div className="customers-view-toggle">
+            <button
+              className={`view-toggle-btn${viewMode === 'cards' ? ' active' : ''}`}
+              onClick={() => setViewMode('cards')}
+              title="List view"
+            >
+              <Icon name="list" size={14} />
+              List
+            </button>
+            <button
+              className={`view-toggle-btn${viewMode === 'visiting' ? ' active' : ''}`}
+              onClick={() => setViewMode('visiting')}
+              title="Visiting card view"
+            >
+              <Icon name="credit-card" size={14} />
+              Cards
+            </button>
+          </div>
           <Button
             variant="secondary"
             onClick={onRefresh}
@@ -94,16 +117,28 @@ export default function CustomersList({
         />
       </div>
 
-      <div className="customers-grid">
+      <div className={viewMode === 'visiting' ? 'visiting-cards-grid' : 'customers-grid'}>
         {filteredCustomers.length > 0 ? (
           filteredCustomers.map(customer => (
-            <CustomerCard 
-              key={customer.id}
-              customer={customer}
-              onEdit={canEdit ? handleEdit : null}
-              onDelete={canDelete ? onDeleteCustomer : null}
-              onViewHistory={onViewHistory}
-            />
+            viewMode === 'visiting' ? (
+              <VisitingCard
+                key={customer.id}
+                customer={customer}
+                onEdit={canEdit ? handleEdit : null}
+                onDelete={canDelete ? onDeleteCustomer : null}
+                onViewHistory={onViewHistory}
+                onShareWhatsApp={onShareWhatsApp}
+              />
+            ) : (
+              <CustomerCard 
+                key={customer.id}
+                customer={customer}
+                onEdit={canEdit ? handleEdit : null}
+                onDelete={canDelete ? onDeleteCustomer : null}
+                onViewHistory={onViewHistory}
+                onShareWhatsApp={onShareWhatsApp}
+              />
+            )
           ))
         ) : (
           <div className="empty-state">

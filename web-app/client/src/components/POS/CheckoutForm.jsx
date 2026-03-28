@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
 import SplitPaymentForm from './SplitPaymentForm';
+import PaymentLinkModal from './PaymentLinkModal';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
 import CustomerForm from '../Customers/CustomerForm';
 import { formatCurrency, formatCurrency0, GST_PERCENT, PAYMENT_MODES, validateSplitPayment } from '../../constants';
 
-export default function CheckoutForm({ 
+export default function CheckoutForm({
   cart,
   cartTotal,
   customers,
@@ -13,6 +14,7 @@ export default function CheckoutForm({
   onSelectCustomer,
   onAddCustomer,
   onCheckout,
+  onGeneratePaymentLink,
   isOnline,
   companyInfo,
   currentUser
@@ -28,6 +30,8 @@ export default function CheckoutForm({
   const [checkoutError, setCheckoutError] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
+  const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
+  const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
@@ -78,6 +82,22 @@ export default function CheckoutForm({
     } catch (error) {
       console.error('Failed to create customer:', error);
       setShowCustomerForm(false);
+    }
+  };
+
+  // Handle payment link generation
+  const handleGeneratePaymentLink = async (linkData) => {
+    setPaymentLinkLoading(true);
+    try {
+      if (onGeneratePaymentLink) {
+        const result = await onGeneratePaymentLink(linkData);
+        return result;
+      }
+    } catch (error) {
+      console.error('Failed to generate payment link:', error);
+      throw error;
+    } finally {
+      setPaymentLinkLoading(false);
     }
   };
 
@@ -365,7 +385,7 @@ export default function CheckoutForm({
             ))}
           </div>
         ) : (
-          <SplitPaymentForm 
+          <SplitPaymentForm
             cashAmount={cashAmount}
             upiAmount={upiAmount}
             cardAmount={cardAmount}
@@ -374,6 +394,19 @@ export default function CheckoutForm({
             onCardChange={setCardAmount}
             total={finalTotal}
           />
+        )}
+
+        {/* Generate Payment Link Button for UPI */}
+        {paymentMode === PAYMENT_MODES.UPI && selectedCustomer && (
+          <button
+            className="generate-payment-link-btn"
+            onClick={() => setShowPaymentLinkModal(true)}
+            type="button"
+          >
+            <Icon name="link" size={16} />
+            <span>Generate Payment Link</span>
+            <Icon name="arrow-right" size={16} />
+          </button>
         )}
       </div>
 
@@ -442,6 +475,16 @@ export default function CheckoutForm({
           quickAdd={true}
         />
       )}
+
+      {/* Payment Link Generator Modal */}
+      <PaymentLinkModal
+        isOpen={showPaymentLinkModal}
+        onClose={() => setShowPaymentLinkModal(false)}
+        amount={finalTotal}
+        selectedCustomer={selectedCustomer}
+        onGenerateLink={handleGeneratePaymentLink}
+        loading={paymentLinkLoading}
+      />
     </div>
   );
 }

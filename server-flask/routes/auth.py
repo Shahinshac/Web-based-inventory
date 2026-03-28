@@ -432,3 +432,275 @@ def manage_photo(id):
         log_audit(db, "USER_PHOTO_DELETED", str(user['_id']), user['username'])
 
         return jsonify({"success": True, "message": "Photo deleted successfully"})
+
+# ==================== CUSTOMER AUTHENTICATION ====================
+
+@auth_bp.route('/send-otp', methods=['POST'])
+def send_otp():
+    """Send OTP to customer email for login/registration"""
+    from services.otp_service import generate_otp, store_otp, send_otp_email
+
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp_type = data.get('type', 'login')  # 'login' or 'register'
+
+    if not email or '@' not in email:
+        return jsonify({"error": "Valid email address is required"}), 400
+
+    try:
+        db = get_db()
+
+        logger.info(f"Generating OTP for email: {email}, type: {otp_type}")
+
+        # For login: verify customer exists in database (case-insensitive search)
+        if otp_type == 'login':
+            # Try case-insensitive search
+            customer = db.customers.find_one({
+                "email": {"$regex": f"^{email}$", "$options": "i"}
+            })
+
+            if not customer:
+                logger.warning(f"Login attempt with non-existent customer email: {email}")
+                # Debug: log all customers to help troubleshoot
+                all_customers = list(db.customers.find({}, {"email": 1, "_id": 0}))
+                logger.debug(f"Available customer emails in database: {[c.get('email') for c in all_customers]}")
+                return jsonify({"error": "Email not found in customer database. Please register first."}), 404
+
+        # For register: check if customer already exists (case-insensitive)
+        if otp_type == 'register':
+            customer = db.customers.find_one({
+                "email": {"$regex": f"^{email}$", "$options": "i"}
+            })
+            if customer:
+                logger.warning(f"Registration attempt with existing email: {email}")
+                return jsonify({"error": "Email already registered. Please login instead."}), 400
+
+        # Generate OTP
+        otp = generate_otp()
+        logger.info(f"OTP generated: {otp}")
+
+        # Store OTP in database
+        if not store_otp(email, otp):
+            logger.error(f"Failed to store OTP for {email}")
+            return jsonify({"error": "Failed to generate OTP. Please try again."}), 500
+
+        logger.info(f"OTP stored in database for {email}")
+
+        # Send OTP via email
+        send_result = send_otp_email(email, otp, otp_type)
+
+        if not send_result:
+            logger.warning(f"Failed to send OTP email to {email}")
+            # For development: return the OTP if email fails (remove in production!)
+            # In production, always require successful email send
+            if current_app.config.get('DEBUG'):
+                logger.info("DEBUG mode: returning OTP in response")
+                return jsonify({
+                    "success": True,
+                    "message": "OTP generated (email not configured)",
+                    "otp": otp  # Only for development!
+                })
+            return jsonify({"error": "Failed to send OTP email. Please check your email configuration in Render environment variables."}), 500
+
+        logger.info(f"OTP email sent successfully to {email}")
+        return jsonify({
+            "success": True,
+            "message": f"OTP sent to {email}. Valid for 10 minutes."
+        })
+
+    except Exception as e:
+        logger.error(f"Error in send_otp: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to send OTP: {str(e)}"}), 500
+
+@auth_bp.route('/verify-otp', methods=['POST'])
+def verify_otp_endpoint():
+    """Verify OTP and return token for customer login"""
+    from services.otp_service import verify_otp
+
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    otp = data.get('otp', '').strip()
+
+    if not email or not otp:
+        return jsonify({"error": "Email and OTP are required"}), 400
+
+    if len(otp) != 6 or not otp.isdigit():
+        return jsonify({"error": "OTP must be 6 digits"}), 400
+
+    try:
+        # Verify OTP
+        result = verify_otp(email, otp)
+        if not result.get('valid'):
+            return jsonify({"error": result.get("error", "Invalid OTP")}), 401
+
+        # OTP verified - check if customer exists (case-insensitive search)
+        db = get_db()
+        customer = db.customers.find_one({
+            "email": {"$regex": f"^{email}$", "$options": "i"}
+        })
+
+        if not customer:
+            return jsonify({
+                "error": "Customer account not found",
+                "otp_verified": True,
+                "needs_registration": True
+            }), 404
+
+        # Generate JWT token for customer
+        session_version = customer.get('sessionVersion', 1)
+        token_payload = {
+            "userId": str(customer['_id']),
+            "email": customer.get('email'),
+            "name": customer.get('name'),
+            "role": 'customer',
+            "sessionVersion": session_version,
+            "exp": datetime.utcnow() + timedelta(days=7)
+        }
+
+        token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
+
+        # Log audit
+        ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
+        log_audit(db, "CUSTOMER_LOGIN", str(customer['_id']), customer.get('name'), {"ip": ip_addr})
+
+        return jsonify({
+            "success": True,
+            "token": token,
+            "customer": {
+                "id": str(customer['_id']),
+                "email": customer.get('email'),
+                "name": customer.get('name'),
+                "phone": customer.get('phone'),
+                "role": 'customer'
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"Error in verify_otp: {e}")
+        return jsonify({"error": "OTP verification failed"}), 500
+
+@auth_bp.route('/register-customer', methods=['POST'])
+def register_customer():
+    """Register a new customer account with email and OTP"""
+    from services.otp_service import send_otp_email, generate_otp, store_otp
+
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    name = data.get('name', '').strip()
+    phone = data.get('phone', '').strip()
+
+    # Validation
+    if not email or '@' not in email:
+        return jsonify({"error": "Valid email is required"}), 400
+
+    if not name or len(name) < 2:
+        return jsonify({"error": "Name must be at least 2 characters"}), 400
+
+    if not phone or len(phone) != 10 or not phone.isdigit():
+        return jsonify({"error": "Valid 10-digit phone number is required"}), 400
+
+    try:
+        db = get_db()
+
+        # Check if customer already exists
+        existing = db.customers.find_one(
+            {"$or": [{"email": email}, {"phone": phone}]}
+        )
+        if existing:
+            field = "email" if existing.get('email') == email else "phone"
+            return jsonify({"error": f"Customer with this {field} already exists"}), 400
+
+        # Create new customer
+        customer = {
+            "email": email,
+            "name": name,
+            "phone": phone,
+            "role": 'customer',
+            "approved": True,
+            "createdAt": datetime.utcnow(),
+            "sessionVersion": 1
+        }
+
+        result = db.customers.insert_one(customer)
+        customer_id = str(result.inserted_id)
+
+        # Generate and send OTP
+        otp = generate_otp()
+        store_otp(email, otp)
+
+        # Send OTP email
+        if not send_otp_email(email, otp, 'register'):
+            logger.warning(f"Failed to send registration OTP to {email}")
+            if not current_app.config.get('DEBUG'):
+                # In production, fail if email doesn't send
+                db.customers.delete_one({"_id": result.inserted_id})
+                return jsonify({"error": "Failed to send OTP. Please try again."}), 500
+
+        log_audit(db, "CUSTOMER_REGISTERED", customer_id, name, {
+            "email": email,
+            "phone": phone
+        })
+
+        response = {
+            "success": True,
+            "message": "Registration successful! OTP sent to your email.",
+            "customerId": customer_id,
+            "email": email
+        }
+
+        # For development, include OTP
+        if current_app.config.get('DEBUG'):
+            response["otp"] = otp
+
+        return jsonify(response), 201
+
+    except Exception as e:
+        logger.error(f"Error in register_customer: {e}")
+        return jsonify({"error": "Registration failed"}), 500
+
+@auth_bp.route('/login-customer-otp', methods=['POST'])
+def login_customer_otp():
+    """Finalize customer login after OTP verification (validates token and returns user)"""
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    token = data.get('token', '')
+
+    if not email or not token:
+        return jsonify({"error": "Email and token are required"}), 400
+
+    try:
+        # Decode and validate the JWT token
+        token_payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
+
+        # Verify email matches
+        if token_payload.get('email') != email:
+            return jsonify({"error": "Token email mismatch"}), 401
+
+        # Get customer from database (case-insensitive search)
+        db = get_db()
+        customer = db.customers.find_one({
+            "email": {"$regex": f"^{email}$", "$options": "i"}
+        })
+
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        return jsonify({
+            "success": True,
+            "token": token,
+            "user": {
+                "id": str(customer['_id']),
+                "email": customer.get('email'),
+                "name": customer.get('name'),
+                "phone": customer.get('phone'),
+                "role": 'customer'
+            }
+        })
+
+    except jwt.ExpiredSignatureError:
+        return jsonify({"error": "Token has expired"}), 401
+    except jwt.InvalidTokenError:
+        return jsonify({"error": "Invalid token"}), 401
+    except Exception as e:
+        logger.error(f"Error in login_customer_otp: {e}")
+        return jsonify({"error": "Login finalization failed"}), 500

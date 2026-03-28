@@ -6,23 +6,54 @@
 import { useState, useEffect } from 'react'
 
 export const useOffline = (isAuthenticated) => {
-  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const [isOnline, setIsOnline] = useState(true) // Default to online
   const [offlineTransactions, setOfflineTransactions] = useState([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastDataRefresh, setLastDataRefresh] = useState(null)
 
-  // Handle online/offline events
+  // Handle online/offline events - More reliable detection
   useEffect(() => {
-    const handleOnline = async () => {
+    // Test actual connectivity by pinging the API
+    const testConnection = async () => {
+      try {
+        const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/health'
+        console.log('🔍 Testing connection to:', apiUrl)
+
+        const test = await fetch(apiUrl, {
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' }
+        })
+
+        if (test.ok) {
+          console.log('✅ Backend is online')
+          setIsOnline(true)
+        } else {
+          console.log('❌ Backend returned status:', test.status)
+          setIsOnline(false)
+        }
+      } catch (error) {
+        console.log('❌ Connection test failed:', error.message)
+        setIsOnline(false)
+      }
+    }
+
+    // Test on mount
+    testConnection()
+
+    // Test every 10 seconds
+    const interval = setInterval(testConnection, 10000)
+
+    // Listen to native online/offline events
+    const handleOnline = () => {
       setIsOnline(true)
-      
+
       // Check for offline transactions
       if (window.offlineStorage) {
-        const transactions = await window.offlineStorage.getOfflineTransactions()
-        if (transactions && transactions.length > 0) {
-          // Trigger sync
-          syncOfflineData()
-        }
+        window.offlineStorage.getOfflineTransactions().then(transactions => {
+          if (transactions && transactions.length > 0) {
+            syncOfflineData()
+          }
+        })
       }
     }
 
@@ -34,6 +65,7 @@ export const useOffline = (isAuthenticated) => {
     window.addEventListener('offline', handleOffline)
 
     return () => {
+      clearInterval(interval)
       window.removeEventListener('online', handleOnline)
       window.removeEventListener('offline', handleOffline)
     }
@@ -56,10 +88,10 @@ export const useOffline = (isAuthenticated) => {
     if (!isOnline || !window.offlineStorage) return
 
     setIsSyncing(true)
-    
+
     try {
       const transactions = await window.offlineStorage.getOfflineTransactions()
-      
+
       if (!transactions || transactions.length === 0) {
         setIsSyncing(false)
         return { success: true, synced: 0 }

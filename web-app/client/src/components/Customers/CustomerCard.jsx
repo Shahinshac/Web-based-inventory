@@ -2,14 +2,35 @@ import React, { useState } from 'react';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import { generateCustomerWhatsAppShare } from '../../services/customerService';
 
-export default function CustomerCard({ 
-  customer, 
-  onEdit, 
+export default function CustomerCard({
+  customer,
+  onEdit,
   onDelete,
   onViewHistory
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isSharing, setIsSharing] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+
+  const handleWhatsAppShare = async () => {
+    setIsSharing(true);
+    try {
+      const response = await generateCustomerWhatsAppShare(customer.id);
+
+      if (response.whatsappUrl) {
+        window.open(response.whatsappUrl, '_blank');
+      } else {
+        alert(`Customer card link generated:\n${response.publicUrl}\n\nNote: No phone number found for this customer.`);
+      }
+    } catch (error) {
+      alert('Failed to generate customer card link. Please try again.');
+      console.error('WhatsApp share error:', error);
+    } finally {
+      setIsSharing(false);
+    }
+  };
 
   return (
     <>
@@ -20,6 +41,21 @@ export default function CustomerCard({
           </div>
           <div className="customer-info">
             <h3 className="customer-name">{customer.name}</h3>
+            {customer.position && (
+              <span className="customer-position">{customer.position}</span>
+            )}
+            {customer.company && (
+              <span className="customer-company">
+                <Icon name="briefcase" size={14} />
+                {customer.company}
+              </span>
+            )}
+            {customer.gstin && (
+              <span className="customer-gstin">
+                <Icon name="award" size={14} />
+                GST: {customer.gstin}
+              </span>
+            )}
           </div>
         </div>
 
@@ -29,15 +65,40 @@ export default function CustomerCard({
             <span>{customer.phone || 'No phone'}</span>
           </div>
 
+          {customer.email && (
+            <div className="customer-detail">
+              <Icon name="mail" size={16} />
+              <span>{customer.email}</span>
+            </div>
+          )}
+
           {customer.place && (
             <div className="customer-detail">
               <Icon name="map-pin" size={16} />
-              <span>{customer.place}</span>
+              <span>{customer.place}{customer.pincode ? ` - ${customer.pincode}` : ''}</span>
+            </div>
+          )}
+
+          {customer.address && (
+            <div className="customer-detail">
+              <Icon name="home" size={16} />
+              <span>{customer.address}</span>
             </div>
           )}
         </div>
 
         <div className="customer-card-actions">
+          <Button
+            variant="success"
+            size="small"
+            onClick={handleWhatsAppShare}
+            disabled={isSharing}
+            icon="share-2"
+            title="Share customer card via WhatsApp"
+          >
+            {isSharing ? 'Sharing...' : 'Share'}
+          </Button>
+
           {onViewHistory && (
             <Button
               variant="ghost"
@@ -48,7 +109,7 @@ export default function CustomerCard({
               History
             </Button>
           )}
-          
+
           {onEdit && (
             <Button
               variant="secondary"

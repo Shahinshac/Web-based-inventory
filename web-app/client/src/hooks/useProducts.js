@@ -231,8 +231,10 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
 
   // Load products on mount
   useEffect(() => {
-    fetchProducts()
-  }, [isOnline])
+    if (isAuthenticated) {
+      fetchProducts()
+    }
+  }, [isOnline, isAuthenticated])
 
   // Auto-refresh every 30 seconds
   const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(

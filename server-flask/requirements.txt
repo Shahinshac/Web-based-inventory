@@ -1,6 +1,7 @@
 flask
 flask-cors
 flask-restful
+flask-mail
 pymongo[srv]
 certifi
 dnspython
@@ -11,3 +12,5 @@ cloudinary
 reportlab
 pandas
 gunicorn
+qrcode[pil]
+pillow

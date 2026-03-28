@@ -88,6 +88,19 @@
   background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
 }
 
+/* Professional section - teal/green color */
+.customer-form .form-section.professional {
+  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+}
+
+.customer-form .form-section.professional .form-section-bar {
+  background: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+}
+
+.customer-form .form-section.professional .form-section-icon {
+  background: linear-gradient(135deg, #16a34a 0%, #4ade80 100%);
+}
+
 .customer-form .form-section.business {
   background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
 }

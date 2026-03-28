@@ -3,6 +3,7 @@ import { initAnalytics, trackPageView, trackEvent } from './analytics';
 import { SpeedInsights } from '@vercel/speed-insights/react';
 import { Analytics } from '@vercel/analytics/react';
 import Login from './Login';
+import CustomerPortal from './components/CustomerPortal/CustomerPortal';
 import Sidebar from './components/Layout/Sidebar';
 import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
@@ -30,6 +31,7 @@ import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 // Removed unused constants import
 import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
+import { createPaymentLink } from './services/paymentLinkService';
 import './styles.css';
 
 export default function App() {
@@ -48,12 +50,13 @@ export default function App() {
   const [recentActivity, setRecentActivity] = useState([]);
 
   // Custom hooks
-  const { 
-    isAuthenticated, 
-    isAdmin, 
-    currentUser, 
+  const {
+    isAuthenticated,
+    isAdmin,
+    isCustomer,
+    currentUser,
     userRole,
-    handleLogin: login, 
+    handleLogin: login,
     handleLogout: logout,
     handleRegister: register,
     handleUpdateUserPhoto,
@@ -104,7 +107,7 @@ export default function App() {
   const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
     useAnalytics(isOnline, tab);
   
-  const { showInstallPrompt, installPWA, dismissInstallPrompt } = usePWA();
+  const { showInstallPrompt, isIOS, installPWA, dismissInstallPrompt } = usePWA();
 
   // Permission helpers
   const canViewProfit = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
@@ -237,6 +240,25 @@ Esc: Close modals/dialogs`;
   const showNotification = (message, type = 'success') => {
     setNotification({ message, type });
     setTimeout(() => setNotification(null), 5000);
+  };
+
+  // Payment Link handler
+  const handleGeneratePaymentLink = async (linkData) => {
+    try {
+      const result = await createPaymentLink(
+        linkData.amount,
+        linkData.customerName,
+        linkData.customerPhone,
+        linkData.description
+      );
+      if (result && result.success) {
+        return { success: true, paymentLink: result.paymentLink };
+      } else {
+        return { success: false, error: result?.error || 'Failed to generate payment link' };
+      }
+    } catch (error) {
+      return { success: false, error: error.message || 'Error generating payment link' };
+    }
   };
 
   // Checkout handler
@@ -638,47 +660,181 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  const handleShareWhatsApp = (invoice) => {
+  // Helper: open WhatsApp on Android, iOS, or desktop.
+  // On mobile it tries the whatsapp:// deep link first and only falls back to
+  // the wa.me web URL if the browser page remains visible (i.e. the app did NOT open).
+  const openWhatsApp = (phone, message) => {
+    const encodedText = encodeURIComponent(message);
+    const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
+    const tryDeepLink = (deepLink, fallbackUrl) => {
+      let fallbackTimer = null;
+
+      // If the WhatsApp app opens, the page loses visibility/focus — cancel the fallback
+      const cancelFallback = () => {
+        if (fallbackTimer) {
+          clearTimeout(fallbackTimer);
+          fallbackTimer = null;
+        }
+        window.removeEventListener('blur', cancelFallback);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+      };
+
+      const onVisibilityChange = () => {
+        if (document.visibilityState === 'hidden') cancelFallback();
+      };
+
+      window.addEventListener('blur', cancelFallback, { once: true });
+      document.addEventListener('visibilitychange', onVisibilityChange, { once: true });
+
+      window.location.href = deepLink;
+
+      // If page stays visible after 1 s, WhatsApp is probably not installed — open wa.me
+      fallbackTimer = setTimeout(() => {
+        window.removeEventListener('blur', cancelFallback);
+        document.removeEventListener('visibilitychange', onVisibilityChange);
+        window.open(fallbackUrl, '_blank');
+      }, 1000);
+    };
+
+    if (phone && phone.trim()) {
+      let cleanPhone = phone.replace(/\D/g, '');
+      if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
+
+      if (isMobile) {
+        tryDeepLink(
+          `whatsapp://send?phone=${cleanPhone}&text=${encodedText}`,
+          `https://wa.me/${cleanPhone}?text=${encodedText}`
+        );
+      } else {
+        window.open(`https://wa.me/${cleanPhone}?text=${encodedText}`, '_blank');
+      }
+    } else {
+      // No phone — user picks the contact
+      if (isMobile) {
+        tryDeepLink(
+          `whatsapp://send?text=${encodedText}`,
+          `https://wa.me/?text=${encodedText}`
+        );
+      } else {
+        window.open(`https://wa.me/?text=${encodedText}`, '_blank');
+      }
+    }
+  };
+
+  const handleShareWhatsApp = async (invoice) => {
     try {
       const customerPhone = invoice.customerPhone || invoice.customer?.phone || '';
       const customerName = invoice.customerName || invoice.customer?.name || 'Customer';
       const billNumber = invoice.billNumber || invoice.id;
       const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
+      // Call backend to get public invoice link
+      let publicUrl = '';
+      try {
+        const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
+          requestedBy: currentUser?.username || 'system',
+          company: companyInfo.name
+        });
+        publicUrl = linkData.publicUrl || '';
+      } catch (linkErr) {
+        console.warn('Could not generate public link:', linkErr);
+      }
+
+      // Build detailed message with full invoice breakdown + public link
+      const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
+      const formattedDate = date.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      });
+
       const itemsList = (invoice.items || [])
-        .map((item, i) => `${i + 1}. ${item.name || item.productName} x${item.quantity} = ₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(0)}`)
+        .map((item, i) => {
+          const qty = Number(item.quantity || 0);
+          const price = Number(item.price || item.unitPrice || 0);
+          const lineGst = Number(item.lineGstAmount !== undefined ? item.lineGstAmount : 0);
+          const lineTotal = price * qty + lineGst;
+          return `  ${i + 1}. ${item.name || item.productName} × ${qty} @ ₹${price.toFixed(0)} = ₹${lineTotal.toFixed(0)}`;
+        })
         .join('\n');
 
+      const subtotal = Number(invoice.subtotal || invoice.total || 0);
+      const discountAmt = Number(invoice.discountAmount || 0);
+      const gstAmount = Number(invoice.gstAmount || 0);
+      const cgst = Number(invoice.cgst || 0);
+      const sgst = Number(invoice.sgst || 0);
+      const igst = Number(invoice.igst || 0);
+      const isSameState = invoice.isSameState !== false;
+
+      const summaryLines = [];
+      if (discountAmt > 0) {
+        summaryLines.push(`  Discount (${invoice.discountPercent || 0}%): -₹${discountAmt.toFixed(0)}`);
+      }
+      if (cgst > 0) {
+        summaryLines.push(`  CGST: ₹${cgst.toFixed(0)}  |  SGST: ₹${sgst.toFixed(0)}`);
+      } else if (igst > 0) {
+        summaryLines.push(`  IGST: ₹${igst.toFixed(0)}`);
+      } else if (gstAmount > 0) {
+        summaryLines.push(`  GST: ₹${gstAmount.toFixed(0)}`);
+      }
+
+      const payMode = (invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1);
+
       const message = [
-        `📄 *Invoice #${billNumber}*`,
-        `From: *${companyInfo.name}*`,
-        `Date: ${new Date(invoice.createdAt || invoice.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}`,
+        `📄 *TAX INVOICE #${billNumber}*`,
+        `🏢 *${companyInfo.name}*`,
+        companyInfo.phone ? `📞 ${companyInfo.phone}` : '',
+        companyInfo.gstin ? `GSTIN: ${companyInfo.gstin}` : '',
         '',
-        `👤 Customer: ${customerName}`,
+        `📅 Date: ${formattedDate}`,
+        `👤 Customer: *${customerName}*`,
         '',
         `📦 *Items:*`,
         itemsList,
         '',
-        invoice.discountAmount > 0 ? `💰 Discount: -₹${Number(invoice.discountAmount).toFixed(0)}` : '',
-        invoice.gstAmount > 0 ? `📊 GST: ₹${Number(invoice.gstAmount).toFixed(0)}` : '',
-        `💵 *Total: ₹${grandTotal.toFixed(0)}*`,
+        `Subtotal: ₹${subtotal.toFixed(0)}`,
+        ...summaryLines,
+        `------------------`,
+        `💵 *Grand Total: ₹${grandTotal.toFixed(0)}*`,
+        `💳 Payment: ${payMode} ✓`,
         '',
-        `Payment: ${(invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1)} ✓`,
+        publicUrl ? `🔗 *View Full Invoice:*\n${publicUrl}` : '',
         '',
-        `Thank you for your purchase! 🙏`,
-        `— ${companyInfo.name}`,
+        `Thank you for your business! 🙏`,
+        `— ${companyInfo.name}`
+      ].filter(Boolean).join('\n');
+
+      openWhatsApp(customerPhone, message);
+      showNotification(
+        customerPhone ? '✅ Opening WhatsApp...' : '⚠️ No phone number — please select contact manually',
+        customerPhone ? 'success' : 'warning'
+      );
+    } catch (e) {
+      showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
+      console.error(e);
+    }
+  };
+
+  const handleShareCustomerWhatsApp = (customer) => {
+    try {
+      const name = customer.name || 'Customer';
+      const lines = [
+        `👤 *${name}*`,
+        customer.position ? `💼 ${customer.position}` : '',
+        customer.company ? `🏢 ${customer.company}` : '',
+        '',
+        customer.phone ? `📞 ${customer.phone}` : '',
+        customer.email ? `✉️ ${customer.email}` : '',
+        customer.place ? `📍 ${customer.place}${customer.pincode ? ` - ${customer.pincode}` : ''}` : '',
+        customer.address ? `🏠 ${customer.address}` : '',
+        customer.website ? `🌐 ${customer.website}` : '',
+        customer.gstin ? `📋 GST: ${customer.gstin}` : '',
+        '',
+        `— Shared from *${companyInfo.name}*`,
         companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
       ].filter(Boolean).join('\n');
 
-      if (customerPhone && customerPhone.trim()) {
-        let cleanPhone = customerPhone.replace(/\D/g, '');
-        if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
-        window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(message)}`, '_blank');
-        showNotification('✅ Opening WhatsApp...', 'success');
-      } else {
-        window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
-        showNotification('⚠️ No phone number — please select contact manually', 'warning');
-      }
+      openWhatsApp(customer.phone || '', lines);
+      showNotification('✅ Opening WhatsApp...', 'success');
     } catch (e) {
       showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
@@ -835,6 +991,11 @@ Esc: Close modals/dialogs`;
     return <Login onLogin={login} />;
   }
 
+  // Customer Portal Route
+  if (isCustomer) {
+    return <CustomerPortal currentUser={currentUser} onLogout={logout} />;
+  }
+
   // Render active tab
   const renderActiveTab = () => {
     const stats = {
@@ -865,7 +1026,7 @@ Esc: Close modals/dialogs`;
 
       case 'pos':
         return (
-          <POSSystem 
+          <POSSystem
             products={products}
             customers={customers}
             cart={cart}
@@ -877,6 +1038,7 @@ Esc: Close modals/dialogs`;
             onSelectCustomer={selectCustomer}
             onAddCustomer={addCustomer}
             onCheckout={handleCheckout}
+            onGeneratePaymentLink={handleGeneratePaymentLink}
             isOnline={isOnline}
             companyInfo={companyInfo}
             cartErrors={cartErrors}
@@ -924,6 +1086,7 @@ Esc: Close modals/dialogs`;
             lastRefreshTime={customersLastRefresh}
             canEdit={canEdit()}
             canDelete={canDelete()}
+            onShareWhatsApp={handleShareCustomerWhatsApp}
           />
         );
 
@@ -1055,16 +1218,22 @@ Esc: Close modals/dialogs`;
       {showInstallPrompt && (
         <div className="pwa-install-banner">
           <div className="pwa-banner-content">
-            <span>📱 Install app for offline access and better experience</span>
-            <div className="pwa-banner-actions">
-              <button onClick={async () => {
-                const result = await installPWA();
-                if (result) {
-                  showNotification(result.message, result.success ? 'success' : 'info');
-                }
-              }}>Install</button>
-              <button onClick={dismissInstallPrompt}>Later</button>
-            </div>
+            {isIOS ? (
+              <>
+                <span>📱 Install this app on your iPhone: tap <strong>Share</strong> <span className="pwa-share-icon" role="img" aria-label="share icon">&#x2B06;</span> then <strong>&ldquo;Add to Home Screen&rdquo;</strong></span>
+                <div className="pwa-banner-actions">
+                  <button onClick={dismissInstallPrompt}>Got it</button>
+                </div>
+              </>
+            ) : (
+              <>
+                <span>📱 Install app for offline access and better experience</span>
+                <div className="pwa-banner-actions">
+                  <button onClick={installPWA}>Install</button>
+                  <button onClick={dismissInstallPrompt}>Later</button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}

@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_mail import Mail
 from database import connect_db
 from routes.auth import auth_bp
 from routes.products import products_bp
@@ -9,7 +10,11 @@ from routes.expenses import expenses_bp
 from routes.analytics import analytics_bp
 from routes.admin import admin_bp
 from routes.returns import returns_bp
+from routes.public_invoice import public_invoice_bp
+from routes.public_customer_card import public_customer_card_bp
 from routes.public import public_bp
+from routes.customer_portal import customer_portal_bp
+from routes.payment_links import payment_links_bp
 from services.cloudinary_service import init_cloudinary
 import logging
 
@@ -24,13 +29,24 @@ app.url_map.strict_slashes = False
 app.config.from_object(Config)
 
 # Enable CORS (Allows the React frontend to communicate with Flask)
-CORS(app, resources={r"/api/*": {"origins": "*"}, r"/public/*": {"origins": "*"}})
+CORS(app,
+     origins=[
+         "https://26-07inventory.vercel.app",  # Production Vercel frontend
+         "http://localhost:3000",               # Local development
+         "http://localhost:5173",               # Vite dev server
+         "http://127.0.0.1:3000",
+         "http://127.0.0.1:5173"
+     ],
+     allow_headers=["Content-Type", "Authorization"],
+     supports_credentials=True
+)
 
 # Connect to Database globally
 connect_db(app)
 
 # Initialize 3rd Party Wrappers
 init_cloudinary(app)
+Mail(app)  # Initialize Flask-Mail
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')
@@ -42,6 +58,13 @@ app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(returns_bp, url_prefix='/api/returns')
 app.register_blueprint(pos_bp, name='invoices', url_prefix='/api/invoices')
+app.register_blueprint(customer_portal_bp, url_prefix='/api/customer')
+app.register_blueprint(payment_links_bp, url_prefix='/api/payment-links')
+# Public invoice viewing (no authentication required)
+app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
+# Public customer card viewing (no authentication required)
+app.register_blueprint(public_customer_card_bp, url_prefix='/public/customer-card')
+# Public unified blueprint (includes customer vCard)
 app.register_blueprint(public_bp, url_prefix='/public')
 
 # The Express routes were: 
@@ -64,7 +87,7 @@ def index():
     })
 
 # Health Check Route
-@app.route('/health', methods=['GET'])
+@app.route('/health', methods=['GET', 'HEAD', 'OPTIONS'])
 def health_check():
     return jsonify({"api": "healthy"}), 200
 

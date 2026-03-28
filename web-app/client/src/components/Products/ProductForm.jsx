@@ -11,6 +11,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     quantity: 0,
     price: 0,
     costPrice: 0,
+    gstPercent: 18,
     hsnCode: '9999',
     minStock: 10,
     serialNo: '',
@@ -26,6 +27,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         quantity: product.quantity || 0,
         price: product.price || 0,
         costPrice: product.costPrice || 0,
+        gstPercent: product.gstPercent !== undefined ? product.gstPercent : 18,
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
         serialNo: product.serialNo || '',
@@ -75,6 +77,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
   // Calculate profit
   const profit = formData.price && formData.costPrice ? formData.price - formData.costPrice : 0;
   const profitPercentage = formData.costPrice > 0 ? ((profit / formData.costPrice) * 100).toFixed(1) : 0;
+  // Effective customer price after GST is added on top of the selling price
+  const priceWithGst = formData.price > 0 ? (formData.price * (1 + (formData.gstPercent || 0) / 100)) : 0;
 
   // Stock status
   const getStockStatus = () => {
@@ -163,6 +167,26 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 min="0"
                 step="0.01"
               />
+            </div>
+
+            <div className="form-row">
+              <Input
+                label="GST Rate (%)"
+                type="number"
+                value={formData.gstPercent}
+                onChange={(e) => handleChange('gstPercent', parseFloat(e.target.value) || 0)}
+                placeholder="18"
+                min="0"
+                max="28"
+                step="0.5"
+                helperText="0%, 5%, 12%, 18%, or 28%"
+              />
+              {formData.price > 0 && (
+                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px 0' }}>
+                  <span style={{ fontSize: '12px', color: '#6b7280' }}>Customer pays (incl. GST)</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>₹{priceWithGst.toFixed(2)}</span>
+                </div>
+              )}
             </div>
 
             {formData.price > 0 && formData.costPrice > 0 && (

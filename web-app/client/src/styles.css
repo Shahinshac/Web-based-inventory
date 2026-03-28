@@ -5674,6 +5674,89 @@ tbody td {
   box-shadow: 0 6px 20px rgba(0,0,0,0.2);
 }
 
+/* PWA Install banner */
+.pwa-install-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  border-top: 2px solid #0f3460;
+  padding: 14px 20px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+  animation: slideUpBanner 0.35s ease-out;
+}
+
+@keyframes slideUpBanner {
+  from { transform: translateY(100%); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+.pwa-banner-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  max-width: 900px;
+  margin: 0 auto;
+  flex-wrap: wrap;
+}
+
+.pwa-banner-content span {
+  color: #e0e0e0;
+  font-size: 0.92rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.pwa-banner-content strong {
+  color: #ffffff;
+}
+
+.pwa-share-icon {
+  font-style: normal;
+  font-size: 1rem;
+  vertical-align: middle;
+}
+
+.pwa-banner-actions {
+  display: flex;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.pwa-banner-actions button {
+  padding: 8px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.pwa-banner-actions button:first-child {
+  background: #e94560;
+  color: #ffffff;
+}
+
+.pwa-banner-actions button:first-child:hover {
+  background: #c73652;
+  transform: translateY(-1px);
+}
+
+.pwa-banner-actions button:last-child {
+  background: transparent;
+  color: #a0a0a0;
+  border: 1px solid #444;
+}
+
+.pwa-banner-actions button:last-child:hover {
+  color: #ffffff;
+  border-color: #666;
+}
+
 /* Offline transaction counter */
 .offline-counter {
   animation: fadeIn 0.3s ease-out;
@@ -6812,6 +6895,45 @@ textarea:focus-visible {
   flex: 1;
 }
 
+/* Mode Selector */
+.mode-selector {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 24px;
+  background: #f1f5f9;
+  padding: 8px;
+  border-radius: 10px;
+}
+
+.mode-btn {
+  flex: 1;
+  padding: 12px 16px;
+  background: transparent;
+  border: 2px solid transparent;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  color: #64748b;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.mode-btn:hover {
+  color: #334155;
+  background: #e2e8f0;
+}
+
+.mode-btn.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  border-color: #667eea;
+  box-shadow: 0 4px 12px rgba(102,126,234,0.3);
+}
+
 /* Tabs */
 .login-tabs {
   display: flex;
@@ -6910,6 +7032,17 @@ textarea:focus-visible {
   transition: all 0.2s;
 }
 
+.login-form input[type="tel"] {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #f8fafc;
+  transition: all 0.2s;
+}
+
 .login-form input:hover {
   border-color: #cbd5e1;
 }
@@ -6975,6 +7108,40 @@ textarea:focus-visible {
 
 .error-msg svg {
   flex-shrink: 0;
+}
+
+.field-hint {
+  font-size: 12px;
+  margin-top: -2px;
+  margin-left: 2px;
+}
+
+.form-footer {
+  text-align: center;
+  margin-top: 8px;
+}
+
+.form-footer p {
+  font-size: 13px;
+  color: #64748b;
+  margin: 0 0 6px;
+}
+
+.switch-link {
+  background: none;
+  border: none;
+  color: #667eea;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.switch-link:hover {
+  color: #764ba2;
+  text-decoration: underline;
 }
 
 /* Submit Button - Compact Size */
@@ -7048,6 +7215,100 @@ textarea:focus-visible {
 
 .login-footer-text a:hover {
   text-decoration: underline;
+}
+
+/* OTP AUTHENTICATION STYLES */
+
+.otp-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.otp-message {
+  font-size: 13px;
+  color: #64748b;
+  text-align: center;
+  margin: 0;
+  padding: 12px;
+  background: #f0f4ff;
+  border-radius: 8px;
+  border-left: 4px solid #667eea;
+}
+
+.otp-message strong {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.otp-input {
+  letter-spacing: 8px;
+  font-size: 28px !important;
+  font-weight: 700;
+  text-align: center;
+  font-family: 'Courier New', monospace !important;
+}
+
+.otp-timer {
+  font-size: 12px;
+  color: #f59e0b;
+  text-align: center;
+  margin: 0;
+  font-weight: 600;
+}
+
+.resend-btn {
+  background: #f0f4ff;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s;
+}
+
+.resend-btn:hover {
+  background: #667eea;
+  color: white;
+}
+
+.security-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+  border-radius: 8px;
+  color: #059669;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.security-badge svg {
+  color: #059669;
+  flex-shrink: 0;
+}
+
+.field-hint {
+  font-size: 12px;
+  margin-top: -4px;
+  margin-left: 2px;
+  display: block;
+}
+
+.field-hint.error {
+  color: #dc2626;
+}
+
+.field-hint.success {
+  color: #10b981;
 }
 
 /* Responsive */
@@ -15758,6 +16019,7 @@ body.dark-theme .pos-card-price {
   }
 }
 
+<<<<<<< HEAD
 /* PWA Install Banner */
 .pwa-install-banner {
   position: fixed;
@@ -15844,4 +16106,38 @@ body.dark-theme .pos-card-price {
     flex: 1;
     padding: 0.8rem;
   }
+=======
+/* Payment Link Button in Checkout */
+.generate-payment-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 18px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.generate-payment-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.generate-payment-link-btn:active {
+  transform: translateY(0);
+}
+
+.generate-payment-link-btn svg {
+  width: 16px;
+  height: 16px;
+>>>>>>> 35b56c38bdad5fa42c327244c591f3bdd08aaff7
 }
