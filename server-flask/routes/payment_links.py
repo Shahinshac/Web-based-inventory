@@ -94,6 +94,10 @@ def create_payment_link():
         if not customer_phone:
             return jsonify({"error": "Customer phone is required"}), 400
 
+        # Validate phone format (must be digits only)
+        if not customer_phone.isdigit():
+            return jsonify({"error": "Customer phone must contain only digits"}), 400
+
         db = get_db()
 
         # Create transaction ID
@@ -104,6 +108,9 @@ def create_payment_link():
 
         # Generate QR code
         qr_code = generate_qr_code(upi_string)
+        if not qr_code:
+            logger.error(f"Failed to generate QR code for UPI: {upi_string}")
+            return jsonify({"error": "Failed to generate QR code"}), 500
 
         # Create payment link record
         expiry_date = datetime.utcnow() + timedelta(days=PAYMENT_LINK_EXPIRY_DAYS)
@@ -151,9 +158,12 @@ def create_payment_link():
             }
         }), 201
 
+    except ValueError as ve:
+        logger.error(f"Payment link validation error: {ve}")
+        return jsonify({"error": f"Invalid data: {str(ve)}"}), 400
     except Exception as e:
-        logger.error(f"Payment link creation error: {e}")
-        return jsonify({"error": "Failed to create payment link"}), 500
+        logger.error(f"Payment link creation error: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to create payment link: {str(e)}"}), 500
 
 @payment_links_bp.route('', methods=['GET'])
 @authenticate_token
