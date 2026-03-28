@@ -43,7 +43,17 @@ CORS(app,
              "allow_headers": ["Content-Type", "Authorization"],
              "supports_credentials": True
          },
-         r"/public/*": {"origins": "*"}
+         r"/public/*": {"origins": "*"},
+         r"/health": {
+             "origins": [
+                 "https://26-07inventory.vercel.app",
+                 "http://localhost:3000",
+                 "http://localhost:5173",
+                 "http://127.0.0.1:3000",
+                 "http://127.0.0.1:5173"
+             ],
+             "methods": ["GET", "HEAD", "OPTIONS"]
+         }
      }
 )
 
