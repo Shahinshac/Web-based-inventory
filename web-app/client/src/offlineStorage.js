@@ -574,6 +574,9 @@ export { offlineStorage, STORE_NAMES, DB_CONFIG };
 
 // ==================== AUTO-INITIALIZATION ====================
 
+// Expose to window for easy access from other components
+window.offlineStorage = offlineStorage;
+
 /**
  * Initialize storage when DOM is ready
  */

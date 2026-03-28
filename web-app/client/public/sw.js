@@ -100,25 +100,30 @@ async function handleApiRequest(request) {
   } catch (error) {
     console.log('🔌 Network failed, trying cache:', request.url);
     
-    // Try cache if network fails
-    const cachedResponse = await cache.match(request);
-    if (cachedResponse) {
-      console.log('📦 Serving from cache:', request.url);
-      return cachedResponse;
+    // ONLY return offline response for GET requests
+    if (request.method === 'GET') {
+      const cachedResponse = await cache.match(request);
+      if (cachedResponse) {
+        console.log('📦 Serving from cache:', request.url);
+        return cachedResponse;
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          error: 'Offline', 
+          message: 'This feature requires an internet connection',
+          status: 503,
+          offline: true 
+        }), 
+        { 
+          status: 503,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      );
     }
     
-    // Return offline response for API failures
-    return new Response(
-      JSON.stringify({ 
-        error: 'Offline', 
-        message: 'This feature requires an internet connection',
-        offline: true 
-      }), 
-      { 
-        status: 503,
-        headers: { 'Content-Type': 'application/json' }
-      }
-    );
+    // For POST/PUT/DELETE, throw error to let UI handle it
+    throw error;
   }
 }
 

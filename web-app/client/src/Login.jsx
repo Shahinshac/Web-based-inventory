@@ -159,7 +159,7 @@ const Login = ({ onLogin }) => {
                   {/* Username field */}
                   <div className="field">
                     <label htmlFor="login-username">
-                      <Icon name="customers" size={14} />
+                      <Icon name="user" size={14} />
                       Username
                     </label>
                     <input
