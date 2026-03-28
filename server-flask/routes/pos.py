@@ -107,6 +107,9 @@ def checkout():
         bill["splitPaymentDetails"] = split_payment_details
 
     # Calculate item aggregates
+    # discount_factor is applied proportionally to each item's subtotal for per-item GST
+    discount_factor = 1.0 - (discount_percent / 100.0)
+
     for it in items:
         prod_id = it.get('productId')
         if not prod_id: continue
@@ -117,10 +120,17 @@ def checkout():
         qty = float(it.get('quantity', 0))
         unit_price = float(it.get('price', 0))
         prod_cost = float(product.get('costPrice', 0))
+        # Use per-product GST rate; fall back to 18% for legacy products
+        line_gst_percent = float(product.get('gstPercent', 18) or 18)
 
         line_subtotal = unit_price * qty
         line_cost = prod_cost * qty
         line_profit = line_subtotal - line_cost
+
+        # Taxable value for this line (subtotal after proportional discount)
+        line_taxable = line_subtotal * discount_factor
+        # GST amount for this line based on the product's specific GST rate
+        line_gst_amount = round(line_taxable * (line_gst_percent / 100.0), 2)
 
         bill["items"].append({
             "productId": ObjectId(prod_id),
@@ -129,15 +139,17 @@ def checkout():
             "quantity": qty,
             "costPrice": prod_cost,
             "unitPrice": unit_price,
+            "gstPercent": line_gst_percent,
             "lineSubtotal": line_subtotal,
             "lineCost": line_cost,
-            "lineProfit": line_profit
+            "lineProfit": line_profit,
+            "lineGstAmount": line_gst_amount
         })
 
         subtotal += line_subtotal
         total_cost += line_cost
 
-        # Substr inventory
+        # Deduct inventory
         db.products.update_one(
             {"_id": ObjectId(prod_id)},
             {"$inc": {"quantity": -qty}}
@@ -147,19 +159,22 @@ def checkout():
     discount_amount = (subtotal * discount_percent) / 100
     after_discount = subtotal - discount_amount
 
-    # GST Calculation (GST is collected for government, not company revenue)
-    # Company revenue = afterDiscount, NOT grandTotal
-    cgst = sgst = igst = gst_amount = 0.0
+    # GST: sum of per-item GST amounts (each calculated on the item's discounted taxable value).
+    # This correctly handles products with different GST rates.
+    # For uniform 18% products the result equals after_discount × 0.18.
+    # GST is collected for the government and is NOT company revenue or profit.
+    gst_amount = sum(i["lineGstAmount"] for i in bill["items"])
+
+    cgst = sgst = igst = 0.0
     if is_same_state:
-        cgst = after_discount * 0.09  # 9% CGST
-        sgst = after_discount * 0.09  # 9% SGST
-        gst_amount = cgst + sgst
+        cgst = round(gst_amount / 2, 2)
+        sgst = round(gst_amount - cgst, 2)  # Derived to ensure cgst + sgst == gst_amount
     else:
-        igst = after_discount * 0.18  # 18% IGST
-        gst_amount = igst
+        igst = round(gst_amount, 2)      # Full GST as IGST
 
     grand_total = after_discount + gst_amount
-    # Profit calculation: Does NOT include GST (GST is not company profit)
+    # Profit = revenue (selling price) minus cost of goods sold (COGS) minus discount.
+    # GST is excluded from profit because it is passed directly to the government.
     total_profit = subtotal - total_cost - discount_amount
 
     bill["subtotal"] = round(subtotal, 2)
@@ -169,7 +184,7 @@ def checkout():
     bill["sgst"] = round(sgst, 2)
     bill["igst"] = round(igst, 2)
     bill["gstAmount"] = round(gst_amount, 2)
-    bill["grandTotal"] = round(grand_total) # Nearest integer
+    bill["grandTotal"] = round(grand_total)  # Nearest integer
     bill["totalCost"] = round(total_cost, 2)
     bill["totalProfit"] = round(total_profit, 2)
 
@@ -193,15 +208,23 @@ def checkout():
         "customerPlace": customer_place,
         "paymentMode": payment_mode,
         "billDate": bill_date.isoformat() + ("Z" if not bill_date.tzinfo else ""),
+        "isSameState": is_same_state,
         "items": [{
             "productName": i["productName"],
+            "hsnCode": i["hsnCode"],
             "quantity": i["quantity"],
             "unitPrice": i["unitPrice"],
-            "lineSubtotal": i["lineSubtotal"]
+            "gstPercent": i["gstPercent"],
+            "lineSubtotal": i["lineSubtotal"],
+            "lineGstAmount": i["lineGstAmount"]
         } for i in bill["items"]],
         "subtotal": bill["subtotal"],
         "discountPercent": discount_percent,
         "discountAmount": bill["discountAmount"],
+        "afterDiscount": bill["afterDiscount"],
+        "cgst": bill["cgst"],
+        "sgst": bill["sgst"],
+        "igst": bill["igst"],
         "gstAmount": bill["gstAmount"],
         "grandTotal": bill["grandTotal"],
         "profit": bill["totalProfit"]
@@ -269,15 +292,25 @@ def get_invoice(id):
         "customerName": invoice.get("customerName"),
         "customerPhone": invoice.get("customerPhone"),
         "customerAddress": invoice.get("customerAddress"),
+        "customerPlace": invoice.get("customerPlace", ""),
+        "isSameState": invoice.get("isSameState", True),
         "billDate": (invoice.get("billDate").isoformat() + ("Z" if not invoice.get("billDate").tzinfo else "")) if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
         "items": [{
              "productName": i.get("productName"),
+             "hsnCode": i.get("hsnCode", "9999"),
              "quantity": i.get("quantity"),
              "unitPrice": i.get("unitPrice"),
-             "lineSubtotal": i.get("lineSubtotal")
+             "gstPercent": i.get("gstPercent", 18),
+             "lineSubtotal": i.get("lineSubtotal"),
+             "lineGstAmount": i.get("lineGstAmount", 0)
         } for i in invoice.get("items", [])],
         "subtotal": invoice.get("subtotal"),
+        "discountPercent": invoice.get("discountPercent", 0),
         "discountAmount": invoice.get("discountAmount"),
+        "afterDiscount": invoice.get("afterDiscount"),
+        "cgst": invoice.get("cgst", 0),
+        "sgst": invoice.get("sgst", 0),
+        "igst": invoice.get("igst", 0),
         "gstAmount": invoice.get("gstAmount"),
         "grandTotal": invoice.get("grandTotal"),
         "paymentMode": invoice.get("paymentMode")
