@@ -16018,3 +16018,37 @@ body.dark-theme .pos-card-price {
     height: 90px;
   }
 }
+
+/* Payment Link Button in Checkout */
+.generate-payment-link-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 12px 18px;
+  margin-top: 12px;
+  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+}
+
+.generate-payment-link-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.4);
+}
+
+.generate-payment-link-btn:active {
+  transform: translateY(0);
+}
+
+.generate-payment-link-btn svg {
+  width: 16px;
+  height: 16px;
+}

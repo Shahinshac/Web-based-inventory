@@ -6,7 +6,7 @@ import BarcodeScanner from './BarcodeScanner';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 
-export default function POSSystem({ 
+export default function POSSystem({
   products,
   customers,
   cart,
@@ -18,6 +18,7 @@ export default function POSSystem({
   onSelectCustomer,
   onAddCustomer,
   onCheckout,
+  onGeneratePaymentLink,
   isOnline,
   companyInfo,
   cartErrors = {},
@@ -106,6 +107,7 @@ export default function POSSystem({
             onSelectCustomer={onSelectCustomer}
             onAddCustomer={onAddCustomer}
             onCheckout={onCheckout}
+            onGeneratePaymentLink={onGeneratePaymentLink}
             isOnline={isOnline}
             companyInfo={companyInfo}
             currentUser={currentUser}
