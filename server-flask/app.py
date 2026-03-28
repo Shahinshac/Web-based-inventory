@@ -13,6 +13,8 @@ from routes.returns import returns_bp
 from routes.public_invoice import public_invoice_bp
 from routes.public_customer_card import public_customer_card_bp
 from routes.public import public_bp
+from routes.customer_portal import customer_portal_bp
+from routes.payment_links import payment_links_bp
 from services.cloudinary_service import init_cloudinary
 import logging
 
@@ -46,6 +48,8 @@ app.register_blueprint(analytics_bp, url_prefix='/api/analytics')
 app.register_blueprint(admin_bp, url_prefix='/api/admin')
 app.register_blueprint(returns_bp, url_prefix='/api/returns')
 app.register_blueprint(pos_bp, name='invoices', url_prefix='/api/invoices')
+app.register_blueprint(customer_portal_bp, url_prefix='/api/customer')
+app.register_blueprint(payment_links_bp, url_prefix='/api/payment-links')
 # Public invoice viewing (no authentication required)
 app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
 # Public customer card viewing (no authentication required)
