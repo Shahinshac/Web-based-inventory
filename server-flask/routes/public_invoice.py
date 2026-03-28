@@ -104,6 +104,9 @@ def public_invoice_view(token):
 
     items_html = ""
     for idx, item in enumerate(invoice.get('items', []), 1):
+        gst_pct = item.get('gstPercent', 18)
+        line_subtotal = item.get('lineSubtotal', 0)
+        line_gst = item.get('lineGstAmount', 0)
         items_html += f"""
         <tr>
             <td>{idx}</td>
@@ -111,7 +114,9 @@ def public_invoice_view(token):
             <td>{item.get('hsnCode', 'N/A')}</td>
             <td>{item.get('quantity', 0)}</td>
             <td>₹{item.get('unitPrice', 0):.2f}</td>
-            <td>₹{item.get('lineSubtotal', 0):.2f}</td>
+            <td>{gst_pct}%</td>
+            <td>₹{line_gst:.2f}</td>
+            <td>₹{(line_subtotal + line_gst):.2f}</td>
         </tr>
         """
 
@@ -210,8 +215,10 @@ def public_invoice_view(token):
                                 <th>Product</th>
                                 <th>HSN</th>
                                 <th>Qty</th>
-                                <th>Price</th>
-                                <th>Amount</th>
+                                <th>Base Price</th>
+                                <th>GST%</th>
+                                <th>GST Amt</th>
+                                <th>Total</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -222,7 +229,7 @@ def public_invoice_view(token):
 
                 <div class="totals">
                     <div class="total-row">
-                        <span>Subtotal:</span>
+                        <span>Subtotal (before discount):</span>
                         <span>₹{invoice.get('subtotal', 0):.2f}</span>
                     </div>
                     <div class="total-row">
@@ -230,14 +237,14 @@ def public_invoice_view(token):
                         <span>- ₹{invoice.get('discountAmount', 0):.2f}</span>
                     </div>
                     <div class="total-row">
-                        <span>After Discount:</span>
+                        <span>Taxable Amount:</span>
                         <span>₹{invoice.get('afterDiscount', 0):.2f}</span>
                     </div>
-                    {"<div class='total-row'><span>CGST (9%):</span><span>₹" + f"{invoice.get('cgst', 0):.2f}" + "</span></div>" if invoice.get('cgst', 0) > 0 else ""}
-                    {"<div class='total-row'><span>SGST (9%):</span><span>₹" + f"{invoice.get('sgst', 0):.2f}" + "</span></div>" if invoice.get('sgst', 0) > 0 else ""}
-                    {"<div class='total-row'><span>IGST (18%):</span><span>₹" + f"{invoice.get('igst', 0):.2f}" + "</span></div>" if invoice.get('igst', 0) > 0 else ""}
+                    {"<div class='total-row'><span>CGST:</span><span>₹" + f"{invoice.get('cgst', 0):.2f}" + "</span></div>" if invoice.get('cgst', 0) > 0 else ""}
+                    {"<div class='total-row'><span>SGST:</span><span>₹" + f"{invoice.get('sgst', 0):.2f}" + "</span></div>" if invoice.get('sgst', 0) > 0 else ""}
+                    {"<div class='total-row'><span>IGST:</span><span>₹" + f"{invoice.get('igst', 0):.2f}" + "</span></div>" if invoice.get('igst', 0) > 0 else ""}
                     <div class="total-row">
-                        <span>GST Amount:</span>
+                        <span>Total GST:</span>
                         <span>₹{invoice.get('gstAmount', 0):.2f}</span>
                     </div>
                     <div class="total-row grand">

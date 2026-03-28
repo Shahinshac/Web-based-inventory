@@ -58,6 +58,11 @@ def get_products():
         profit = price - cost_price
         profit_percent = round(((profit / price) * 100), 2) if price > 0 else 0
 
+        try:
+            gst_percent = float(p.get('gstPercent', 18) or 18)
+        except (ValueError, TypeError):
+            gst_percent = 18.0
+
         formatted.append({
             "id": str(p['_id']),
             "_id": str(p['_id']),
@@ -65,6 +70,7 @@ def get_products():
             "quantity": quantity,
             "price": price,
             "costPrice": cost_price,
+            "gstPercent": gst_percent,
             "hsnCode": p.get('hsnCode', '9999'),
             "minStock": p.get('minStock', 10),
             "barcode": p.get('barcode'),
@@ -86,6 +92,7 @@ def add_product():
     quantity = int(data.get('quantity') or 0)
     price = float(data.get('price') or 0)
     cost_price = float(data.get('costPrice') or 0)
+    gst_percent = float(data.get('gstPercent') or 18)
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
 
@@ -102,6 +109,7 @@ def add_product():
         "quantity": quantity,
         "price": price,
         "costPrice": cost_price,
+        "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "minStock": min_stock,
         "barcode": None,
@@ -149,6 +157,7 @@ def add_product():
         "quantity": quantity,
         "price": price,
         "costPrice": cost_price,
+        "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "barcode": barcode_value
     })
@@ -220,6 +229,7 @@ def full_update_product(id):
     quantity = int(data.get('quantity') or 0)
     price = float(data.get('price') or 0)
     cost_price = float(data.get('costPrice') or 0)
+    gst_percent = float(data.get('gstPercent') or 18)
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
     barcode = data.get('barcode')
@@ -237,6 +247,7 @@ def full_update_product(id):
         "quantity": quantity,
         "price": price,
         "costPrice": cost_price,
+        "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "minStock": min_stock,
         "lastModifiedBy": user_id,

@@ -71,21 +71,40 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
               <tr>
                 <th>#</th>
                 <th>Product</th>
-                <th>Quantity</th>
-                <th>Price</th>
+                <th>HSN</th>
+                <th>Qty</th>
+                <th>Base Price</th>
+                <th>GST%</th>
+                <th>GST Amt</th>
                 <th>Total</th>
               </tr>
             </thead>
             <tbody>
-              {invoice.items?.map((item, index) => (
-                <tr key={index}>
-                  <td>{index + 1}</td>
-                  <td>{item.name || item.productName}</td>
-                  <td>{item.quantity}</td>
-                  <td>{formatCurrency(item.price || item.unitPrice)}</td>
-                  <td>{formatCurrency((item.price || item.unitPrice) * item.quantity)}</td>
-                </tr>
-              ))}
+              {invoice.items?.map((item, index) => {
+                const unitPrice = item.price || item.unitPrice || 0;
+                const qty = item.quantity || 0;
+                const gstPct = item.gstPercent !== undefined ? item.gstPercent : GST_PERCENT;
+                const lineBase = unitPrice * qty;
+                // Apply discount factor when falling back (legacy bills without lineGstAmount)
+                const discountFactor = invoice.discountPercent > 0
+                  ? 1 - (invoice.discountPercent / 100)
+                  : 1;
+                const lineGst = item.lineGstAmount !== undefined
+                  ? item.lineGstAmount
+                  : lineBase * discountFactor * (gstPct / 100);
+                return (
+                  <tr key={index}>
+                    <td>{index + 1}</td>
+                    <td>{item.name || item.productName}</td>
+                    <td>{item.hsnCode || '9999'}</td>
+                    <td>{qty}</td>
+                    <td>{formatCurrency(unitPrice)}</td>
+                    <td>{gstPct}%</td>
+                    <td>{formatCurrency(lineGst)}</td>
+                    <td>{formatCurrency(lineBase + lineGst)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -123,7 +142,7 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
           <h4>Amount Summary</h4>
           <div className="amount-summary">
             <div className="summary-row">
-              <span>Subtotal:</span>
+              <span>Subtotal (before discount):</span>
               <span>{formatCurrency(invoice.subtotal || invoice.total)}</span>
             </div>
             {invoice.discountAmount > 0 && (
@@ -133,12 +152,34 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
               </div>
             )}
             <div className="summary-row">
-              <span>GST ({GST_PERCENT}%):</span>
+              <span>Taxable Amount:</span>
+              <span>{formatCurrency(invoice.afterDiscount || (invoice.subtotal - (invoice.discountAmount || 0)))}</span>
+            </div>
+            {/* Show CGST + SGST for same-state, or IGST for different-state */}
+            {invoice.isSameState !== false ? (
+              <>
+                <div className="summary-row">
+                  <span>CGST:</span>
+                  <span>{formatCurrency(invoice.cgst || (invoice.gstAmount || 0) / 2)}</span>
+                </div>
+                <div className="summary-row">
+                  <span>SGST:</span>
+                  <span>{formatCurrency(invoice.sgst || (invoice.gstAmount || 0) / 2)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="summary-row">
+                <span>IGST:</span>
+                <span>{formatCurrency(invoice.igst || invoice.gstAmount || 0)}</span>
+              </div>
+            )}
+            <div className="summary-row" style={{ fontWeight: '500' }}>
+              <span>Total GST:</span>
               <span>{formatCurrency(invoice.gstAmount || 0)}</span>
             </div>
             <div className="summary-row total">
-              <strong>Total Amount:</strong>
-              <strong>{formatCurrency0(invoice.total)}</strong>
+              <strong>Grand Total:</strong>
+              <strong>{formatCurrency0(invoice.grandTotal || invoice.total)}</strong>
             </div>
           </div>
         </div>
