@@ -1,5 +1,6 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
+from flask_mail import Mail
 from database import connect_db
 from routes.auth import auth_bp
 from routes.products import products_bp
@@ -33,6 +34,7 @@ connect_db(app)
 
 # Initialize 3rd Party Wrappers
 init_cloudinary(app)
+Mail(app)  # Initialize Flask-Mail
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')

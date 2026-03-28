@@ -1,6 +1,7 @@
 flask
 flask-cors
 flask-restful
+flask-mail
 pymongo[srv]
 certifi
 dnspython
