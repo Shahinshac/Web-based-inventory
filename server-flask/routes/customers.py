@@ -1,14 +1,15 @@
+import io
 import logging
 import secrets
 from datetime import datetime, timedelta
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, send_file
 
 from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
-from services.customer_service import build_vcard
+from services.customer_service import build_vcard, build_pvc_card_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -261,4 +262,27 @@ def get_customer_vcard(id):
         'Content-Type': 'text/vcard; charset=utf-8',
         'Content-Disposition': f'attachment; filename="{customer.get("name", "contact").replace(" ", "_")}.vcf"'
     }
+
+
+@customers_bp.route('/<id>/pvc-card-pdf', methods=['GET'])
+@authenticate_token
+def get_pvc_card_pdf(id):
+    """Generate and return a PVC (credit card) sized PDF for the given customer."""
+    db = get_db()
+    try:
+        customer = db.customers.find_one({"_id": ObjectId(id)})
+    except Exception:
+        return jsonify({"error": "Invalid customer ID"}), 400
+
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 404
+
+    pdf_buffer = build_pvc_card_pdf(customer, COMPANY_NAME, COMPANY_PHONE)
+    safe_name = customer.get('name', 'customer').replace(' ', '_')
+    return send_file(
+        pdf_buffer,
+        mimetype='application/pdf',
+        as_attachment=True,
+        download_name=f"{safe_name}_card.pdf"
+    )
 
