@@ -18,7 +18,6 @@ import Returns from './components/Returns/Returns';
 import Expenses from './components/Expenses/Expenses';
 import ExportData from './components/ExportData/ExportData';
 import Dashboard from './components/Dashboard/Dashboard';
-import PaymentLinkGenerator from './components/PaymentLinks/PaymentLinkGenerator';
 import Toast from './components/Common/Toast';
 import { useAuth } from './hooks/useAuth';
 
@@ -253,7 +252,7 @@ Esc: Close modals/dialogs`;
         linkData.description
       );
       if (result && result.success) {
-        return { success: true, paymentLink: result };
+        return { success: true, paymentLink: result.paymentLink };
       } else {
         return { success: false, error: result?.error || 'Failed to generate payment link' };
       }
@@ -1104,9 +1103,6 @@ Esc: Close modals/dialogs`;
             canDelete={canDelete()}
           />
         );
-
-      case 'payment-links':
-        return <PaymentLinkGenerator />;
 
       case 'analytics':
         return (
