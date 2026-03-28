@@ -452,16 +452,25 @@ def send_otp():
 
         logger.info(f"Generating OTP for email: {email}, type: {otp_type}")
 
-        # For login: verify customer exists in database
+        # For login: verify customer exists in database (case-insensitive search)
         if otp_type == 'login':
-            customer = db.customers.find_one({"email": email})
+            # Try case-insensitive search
+            customer = db.customers.find_one({
+                "email": {"$regex": f"^{email}$", "$options": "i"}
+            })
+
             if not customer:
                 logger.warning(f"Login attempt with non-existent customer email: {email}")
+                # Debug: log all customers to help troubleshoot
+                all_customers = list(db.customers.find({}, {"email": 1, "_id": 0}))
+                logger.debug(f"Available customer emails in database: {[c.get('email') for c in all_customers]}")
                 return jsonify({"error": "Email not found in customer database. Please register first."}), 404
 
-        # For register: check if customer already exists
+        # For register: check if customer already exists (case-insensitive)
         if otp_type == 'register':
-            customer = db.customers.find_one({"email": email})
+            customer = db.customers.find_one({
+                "email": {"$regex": f"^{email}$", "$options": "i"}
+            })
             if customer:
                 logger.warning(f"Registration attempt with existing email: {email}")
                 return jsonify({"error": "Email already registered. Please login instead."}), 400
@@ -524,9 +533,11 @@ def verify_otp_endpoint():
         if not result.get('valid'):
             return jsonify({"error": result.get("error", "Invalid OTP")}), 401
 
-        # OTP verified - check if customer exists
+        # OTP verified - check if customer exists (case-insensitive search)
         db = get_db()
-        customer = db.customers.find_one({"email": email})
+        customer = db.customers.find_one({
+            "email": {"$regex": f"^{email}$", "$options": "i"}
+        })
 
         if not customer:
             return jsonify({
@@ -665,9 +676,11 @@ def login_customer_otp():
         if token_payload.get('email') != email:
             return jsonify({"error": "Token email mismatch"}), 401
 
-        # Get customer from database
+        # Get customer from database (case-insensitive search)
         db = get_db()
-        customer = db.customers.find_one({"email": email})
+        customer = db.customers.find_one({
+            "email": {"$regex": f"^{email}$", "$options": "i"}
+        })
 
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
