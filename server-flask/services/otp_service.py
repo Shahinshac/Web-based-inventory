@@ -77,15 +77,21 @@ def send_otp_email(email: str, otp: str, otp_type: str = 'login') -> bool:
     try:
         from flask import current_app
         from flask_mail import Mail, Message
+        import logging
 
-        # Initialize mail if not already done
-        if not hasattr(current_app, 'mail'):
-            Mail(current_app)
+        logger = logging.getLogger(__name__)
 
-        mail = current_app.extensions.get('mail')
-        if not mail:
-            print("Flask-Mail not initialized")
+        # Check mail configuration
+        if not current_app.config.get('MAIL_USERNAME') or not current_app.config.get('MAIL_PASSWORD'):
+            logger.error("Mail credentials not configured")
             return False
+
+        # Initialize or get mail instance
+        mail = None
+        if 'mail' not in current_app.extensions:
+            mail = Mail(current_app)
+        else:
+            mail = current_app.extensions['mail']
 
         subject = "Your OTP for Login" if otp_type == 'login' else "Your OTP for Registration"
 
@@ -131,8 +137,9 @@ Best regards,
         )
 
         mail.send(msg)
+        logger.info(f"OTP email sent to {email}")
         return True
 
     except Exception as e:
-        print(f"Error sending OTP email: {e}")
+        logger.error(f"Error sending OTP email: {e}", exc_info=True)
         return False

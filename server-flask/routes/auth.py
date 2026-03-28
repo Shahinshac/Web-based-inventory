@@ -448,34 +448,44 @@ def send_otp():
         return jsonify({"error": "Valid email address is required"}), 400
 
     try:
+        logger.info(f"Generating OTP for email: {email}")
+
         # Generate OTP
         otp = generate_otp()
+        logger.info(f"OTP generated: {otp}")
 
         # Store OTP in database
         if not store_otp(email, otp):
+            logger.error(f"Failed to store OTP for {email}")
             return jsonify({"error": "Failed to generate OTP. Please try again."}), 500
 
+        logger.info(f"OTP stored in database for {email}")
+
         # Send OTP via email
-        if not send_otp_email(email, otp, otp_type):
-            logger.warning(f"Failed to send OTP email to {email}, but OTP was stored")
+        send_result = send_otp_email(email, otp, otp_type)
+
+        if not send_result:
+            logger.warning(f"Failed to send OTP email to {email}")
             # For development: return the OTP if email fails (remove in production!)
             # In production, always require successful email send
             if current_app.config.get('DEBUG'):
+                logger.info("DEBUG mode: returning OTP in response")
                 return jsonify({
                     "success": True,
                     "message": "OTP generated (email not configured)",
                     "otp": otp  # Only for development!
                 })
-            return jsonify({"error": "Failed to send OTP email. Please try again."}), 500
+            return jsonify({"error": "Failed to send OTP email. Please check your email configuration in Render environment variables."}), 500
 
+        logger.info(f"OTP email sent successfully to {email}")
         return jsonify({
             "success": True,
             "message": f"OTP sent to {email}. Valid for 10 minutes."
         })
 
     except Exception as e:
-        logger.error(f"Error in send_otp: {e}")
-        return jsonify({"error": "Failed to send OTP"}), 500
+        logger.error(f"Error in send_otp: {e}", exc_info=True)
+        return jsonify({"error": f"Failed to send OTP: {str(e)}"}), 500
 
 @auth_bp.route('/verify-otp', methods=['POST'])
 def verify_otp_endpoint():
