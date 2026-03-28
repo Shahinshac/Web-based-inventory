@@ -711,55 +711,76 @@ Esc: Close modals/dialogs`;
 
       // Call backend to get public invoice link
       let publicUrl = '';
-      let backendWhatsAppUrl = null;
       try {
         const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
           requestedBy: currentUser?.username || 'system',
           company: companyInfo.name
         });
         publicUrl = linkData.publicUrl || '';
-        backendWhatsAppUrl = linkData.whatsappUrl || null;
       } catch (linkErr) {
         console.warn('Could not generate public link:', linkErr);
       }
 
-      // If backend returned a full whatsapp URL, route it through openWhatsApp
-      // so the same deep-link logic applies
-      if (backendWhatsAppUrl) {
-        const urlObj = new URL(backendWhatsAppUrl);
-        const phone = urlObj.pathname.replace('/', '');
-        const text = urlObj.searchParams.get('text') || '';
-        openWhatsApp(phone, decodeURIComponent(text));
-        showNotification('✅ Opening WhatsApp...', 'success');
-        return;
-      }
+      // Build detailed message with full invoice breakdown + public link
+      const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
+      const formattedDate = date.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      });
 
-      // Build message with public link included
       const itemsList = (invoice.items || [])
-        .map((item, i) => `${i + 1}. ${item.name || item.productName} x${item.quantity} = ₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(0)}`)
+        .map((item, i) => {
+          const qty = Number(item.quantity || 0);
+          const price = Number(item.price || item.unitPrice || 0);
+          const lineGst = Number(item.lineGstAmount !== undefined ? item.lineGstAmount : 0);
+          const lineTotal = price * qty + lineGst;
+          return `  ${i + 1}. ${item.name || item.productName} × ${qty} @ ₹${price.toFixed(0)} = ₹${lineTotal.toFixed(0)}`;
+        })
         .join('\n');
 
+      const subtotal = Number(invoice.subtotal || invoice.total || 0);
+      const discountAmt = Number(invoice.discountAmount || 0);
+      const gstAmount = Number(invoice.gstAmount || 0);
+      const cgst = Number(invoice.cgst || 0);
+      const sgst = Number(invoice.sgst || 0);
+      const igst = Number(invoice.igst || 0);
+      const isSameState = invoice.isSameState !== false;
+
+      const summaryLines = [];
+      if (discountAmt > 0) {
+        summaryLines.push(`  Discount (${invoice.discountPercent || 0}%): -₹${discountAmt.toFixed(0)}`);
+      }
+      if (cgst > 0) {
+        summaryLines.push(`  CGST: ₹${cgst.toFixed(0)}  |  SGST: ₹${sgst.toFixed(0)}`);
+      } else if (igst > 0) {
+        summaryLines.push(`  IGST: ₹${igst.toFixed(0)}`);
+      } else if (gstAmount > 0) {
+        summaryLines.push(`  GST: ₹${gstAmount.toFixed(0)}`);
+      }
+
+      const payMode = (invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1);
+
       const message = [
-        `📄 *Invoice #${billNumber}*`,
-        `From: *${companyInfo.name}*`,
-        `Date: ${new Date(invoice.createdAt || invoice.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}`,
+        `📄 *TAX INVOICE #${billNumber}*`,
+        `🏢 *${companyInfo.name}*`,
+        companyInfo.phone ? `📞 ${companyInfo.phone}` : '',
+        companyInfo.gstin ? `GSTIN: ${companyInfo.gstin}` : '',
         '',
-        `👤 Customer: ${customerName}`,
+        `📅 Date: ${formattedDate}`,
+        `👤 Customer: *${customerName}*`,
         '',
         `📦 *Items:*`,
         itemsList,
         '',
-        invoice.discountAmount > 0 ? `💰 Discount: -₹${Number(invoice.discountAmount).toFixed(0)}` : '',
-        invoice.gstAmount > 0 ? `📊 GST: ₹${Number(invoice.gstAmount).toFixed(0)}` : '',
-        `💵 *Total: ₹${grandTotal.toFixed(0)}*`,
+        `Subtotal: ₹${subtotal.toFixed(0)}`,
+        ...summaryLines,
+        `------------------`,
+        `💵 *Grand Total: ₹${grandTotal.toFixed(0)}*`,
+        `💳 Payment: ${payMode} ✓`,
         '',
-        `Payment: ${(invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1)} ✓`,
+        publicUrl ? `🔗 *View Full Invoice:*\n${publicUrl}` : '',
         '',
-        publicUrl ? `🔗 View Invoice: ${publicUrl}` : '',
-        '',
-        `Thank you for your purchase! 🙏`,
-        `— ${companyInfo.name}`,
-        companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
+        `Thank you for your business! 🙏`,
+        `— ${companyInfo.name}`
       ].filter(Boolean).join('\n');
 
       openWhatsApp(customerPhone, message);
