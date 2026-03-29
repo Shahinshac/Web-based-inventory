@@ -23,8 +23,8 @@ export default function ProductCard({
   const [barcodeCanvas, setBarcodeCanvas] = useState(null);
   const [qrCanvas, setQRCanvas] = useState(null);
 
-  const profit = product.price - (product.costPrice || 0);
-  const profitMargin = product.price > 0 ? ((profit / product.price) * 100).toFixed(1) : 0;
+  const profit = product.profit !== undefined ? product.profit : (product.price - (product.costPrice || 0));
+  const profitMargin = product.profitPercent !== undefined ? product.profitPercent : (product.price > 0 ? ((profit / product.price) * 100).toFixed(1) : 0);
 
   const stockStatus = product.quantity === 0 
     ? 'out-of-stock' 

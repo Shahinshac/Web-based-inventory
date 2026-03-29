@@ -231,8 +231,13 @@ def customer_whatsapp_share(id):
     public_url = f"{request.host_url.rstrip('/')}/public/customer-card/{token}"
 
     import urllib.parse
-    portal_text = "\n\n🚀 Customer Portal:\nYou can register & login to view your invoices, warranties and purchase history using the email you provided during billing.\n🔗 https://26-07inventory.vercel.app"
-    message = f"Hi {customer.get('name', 'Customer')}, here's your customer card from {COMPANY_NAME}. View: {public_url}{portal_text}"
+    portal_message = (
+        f"\n\n🎁 *Customer Portal:*"
+        f"\nRegister & login to view your invoices, warranties and purchase history."
+        f"\n🔗 https://26-07inventory.vercel.app"
+        f"\n(Use the email you provided during billing)"
+    )
+    message = f"Hi {customer.get('name', 'Customer')}, here's your customer identity card from {COMPANY_NAME}.\n\n🆔 View Card: {public_url}{portal_message}"
 
     whatsapp_url = None
     if customer_phone:

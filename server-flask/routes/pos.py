@@ -419,8 +419,13 @@ def whatsapp_link(id):
 
         public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
-        portal_text = "\n\n🚀 Customer Portal:\nYou can register & login to view your invoices, warranties and purchase history using the email you provided during billing.\n🔗 https://26-07inventory.vercel.app"
-        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}{portal_text}"
+        portal_message = (
+            f"\n\n🎁 *Customer Portal:*"
+            f"\nRegister & login to view your invoices, warranties and purchase history."
+            f"\n🔗 https://26-07inventory.vercel.app"
+            f"\n(Use the email you provided during billing)"
+        )
+        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}.\n\n📄 View Invoice: {public_url}{portal_message}"
 
         whatsapp_url = None
         if customer_phone:
