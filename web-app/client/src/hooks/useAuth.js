@@ -83,19 +83,19 @@ export const useAuth = () => {
     return () => clearInterval(intervalId)
   }, [isAuthenticated, currentUser])
 
-  // Check user validity periodically (for non-admin users)
+  // Check user validity periodically (ONLY for staff users, not customers or admins)
   useEffect(() => {
-    if (!isAuthenticated || isAdmin || !currentUser?.id) return
+    if (!isAuthenticated || isAdmin || isCustomer || !currentUser?.id) return
 
     const intervalId = setInterval(async () => {
       const isValid = await checkUserValidity(currentUser.id)
       if (!isValid) {
         handleLogout()
       }
-    }, 30000)
+    }, 60000) // Increase to 60 seconds to reduce load
 
     return () => clearInterval(intervalId)
-  }, [isAuthenticated, isAdmin, currentUser])
+  }, [isAuthenticated, isAdmin, isCustomer, currentUser])
 
   const handleLogin = async (username, password, userMode = 'staff', preFetchedToken = null) => {
     try {

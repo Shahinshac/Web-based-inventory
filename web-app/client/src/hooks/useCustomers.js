@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { API, getAuthHeaders } from '../utils/api';
 import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh';
 
-export function useCustomers(isOnline, isAuthenticated) {
+export function useCustomers(isOnline, isAuthenticated, activeTab) {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -125,9 +125,16 @@ export function useCustomers(isOnline, isAuthenticated) {
 
   useEffect(() => {
     if (isAuthenticated) {
-      fetchCustomers();
+      if (activeTab === 'customers') {
+        fetchCustomers();
+      } else {
+        // Initial fetch or fetch on other tabs if data is empty
+        if (customers.length === 0) {
+          fetchCustomers();
+        }
+      }
     }
-  }, [isAuthenticated, fetchCustomers]);
+  }, [isAuthenticated, fetchCustomers, activeTab]);
 
   // Auto-refresh every 30 seconds
   const { refresh: manualRefresh, isRefreshing, lastRefreshTime } = useAutoRefresh(

@@ -86,7 +86,7 @@ export default function App() {
     manualRefresh: refreshCustomers,
     isRefreshing: isRefreshingCustomers,
     lastRefreshTime: customersLastRefresh
-  } = useCustomers(isOnline, isAuthenticated);
+  } = useCustomers(isOnline, isAuthenticated, tab);
 
   const {
     invoices,
