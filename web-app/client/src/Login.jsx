@@ -1,6 +1,6 @@
 /**
  * @file Login.jsx
- * @description Full-screen authentication component - staff & customer login
+ * @description Professional full-screen authentication - Staff & Customer Login
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -9,22 +9,30 @@ import Icon from './Icon.jsx';
 import { API } from './utils/api.js';
 
 const Login = ({ onLogin }) => {
-  // State
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [email, setEmail] = useState('');
-  const [error, setError] = useState('');
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
-  const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState('staff'); // 'staff' or 'customer'
+
+  // Staff login
+  const [staffUsername, setStaffUsername] = useState('');
+  const [staffPassword, setStaffPassword] = useState('');
+  const [staffError, setStaffError] = useState('');
+  const [staffLoading, setStaffLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Load remembered username on mount
+  // Customer login - OTP based
+  const [customerEmail, setCustomerEmail] = useState('');
+  const [customerOtp, setCustomerOtp] = useState('');
+  const [customerError, setCustomerError] = useState('');
+  const [customerLoading, setCustomerLoading] = useState(false);
+  const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
+  const [otpTimer, setOtpTimer] = useState(0);
+
+  // Load remembered staff username
   useEffect(() => {
     try {
       const remembered = localStorage.getItem('rememberedUser');
       if (remembered) {
-        setUsername(remembered);
+        setStaffUsername(remembered);
         setRememberMe(true);
       }
     } catch (error) {
@@ -35,56 +43,62 @@ const Login = ({ onLogin }) => {
   // Save/remove remembered username
   useEffect(() => {
     try {
-      if (rememberMe && username) {
-        localStorage.setItem('rememberedUser', username);
+      if (rememberMe && staffUsername) {
+        localStorage.setItem('rememberedUser', staffUsername);
       } else if (!rememberMe) {
         localStorage.removeItem('rememberedUser');
       }
     } catch (error) {
       console.error('Failed to update remembered user:', error);
     }
-  }, [rememberMe, username]);
+  }, [rememberMe, staffUsername]);
+
+  // OTP Timer
+  useEffect(() => {
+    if (otpTimer <= 0) return;
+    const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [otpTimer]);
 
   // Handle staff login
   const handleStaffLogin = useCallback(async (e) => {
     e.preventDefault();
-    setError('');
+    setStaffError('');
 
-    if (!username || !password) {
-      setError('Please fill in all fields');
+    if (!staffUsername || !staffPassword) {
+      setStaffError('Please fill in all fields');
       return;
     }
 
-    setLoading(true);
+    setStaffLoading(true);
     try {
-      const result = await onLogin(username, password, 'staff');
+      const result = await onLogin(staffUsername, staffPassword, 'staff');
       if (result && result.error) {
-        setError(result.error);
+        setStaffError(result.error);
       }
     } catch (error) {
-      setError(error.message || 'Login failed. Please try again.');
+      setStaffError(error.message || 'Login failed. Please try again.');
     } finally {
-      setLoading(false);
+      setStaffLoading(false);
     }
-  }, [username, password, onLogin]);
+  }, [staffUsername, staffPassword, onLogin]);
 
-  // Handle customer registration
-  const handleRegister = useCallback(async (e) => {
+  // Handle send OTP
+  const handleSendOtp = useCallback(async (e) => {
     e.preventDefault();
-    setError('');
+    setCustomerError('');
 
-    if (!email) {
-      setError('Please enter your email');
+    if (!customerEmail) {
+      setCustomerError('Please enter your email');
       return;
     }
 
-    setLoading(true);
+    setCustomerLoading(true);
     try {
-      // Send OTP
       const response = await fetch(API('/api/users/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, type: 'register' })
+        body: JSON.stringify({ email: customerEmail, type: 'login' })
       });
 
       if (!response.ok) {
@@ -92,434 +106,587 @@ const Login = ({ onLogin }) => {
         throw new Error(err.error || 'Failed to send OTP');
       }
 
-      // After successful OTP send, show message
-      setError('');
-      alert(`OTP sent to ${email}. Please check your email to verify and complete registration.`);
-      setEmail('');
-      setMode('login');
+      setOtpStep('otp');
+      setOtpTimer(300); // 5 minutes
     } catch (error) {
-      setError(error.message || 'Registration failed. Please try again.');
+      setCustomerError(error.message || 'Failed to send OTP. Please try again.');
     } finally {
-      setLoading(false);
+      setCustomerLoading(false);
     }
-  }, [email]);
+  }, [customerEmail]);
+
+  // Handle verify OTP
+  const handleVerifyOtp = useCallback(async (e) => {
+    e.preventDefault();
+    setCustomerError('');
+
+    if (!customerOtp || customerOtp.length !== 6) {
+      setCustomerError('Please enter a valid 6-digit OTP');
+      return;
+    }
+
+    setCustomerLoading(true);
+    try {
+      const response = await fetch(API('/api/users/verify-otp'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: customerEmail, otp: customerOtp })
+      });
+
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Invalid OTP');
+      }
+
+      const data = await response.json();
+      const result = await onLogin(customerEmail, null, 'customer', data.token);
+      if (result && result.error) {
+        setCustomerError(result.error);
+      }
+    } catch (error) {
+      setCustomerError(error.message || 'OTP verification failed. Please try again.');
+    } finally {
+      setCustomerLoading(false);
+    }
+  }, [customerEmail, customerOtp, onLogin]);
 
   const currentYear = new Date().getFullYear();
 
   return (
     <div style={{
       width: '100%',
-      height: '100vh',
+      minHeight: '100vh',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px'
+      padding: '20px',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '480px'
-      }}>
+      <div style={{ width: '100%', maxWidth: '450px' }}>
         {/* Header */}
         <div style={{
           textAlign: 'center',
           marginBottom: '40px',
           color: 'white'
         }}>
-          <div style={{
-            fontSize: '48px',
-            marginBottom: '16px'
-          }}>⚡</div>
+          <div style={{ fontSize: '56px', marginBottom: '16px' }}>⚡</div>
           <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            margin: '0 0 8px 0'
+            fontSize: '32px',
+            fontWeight: '800',
+            margin: '0 0 8px 0',
+            letterSpacing: '-0.5px'
           }}>26:07 Electronics</h1>
           <p style={{
-            fontSize: '14px',
-            opacity: 0.9,
-            margin: '0'
-          }}>Premium Electronics & Smart Solutions</p>
+            fontSize: '15px',
+            opacity: 0.95,
+            margin: '0',
+            fontWeight: '500'
+          }}>Smart Inventory & POS Management</p>
         </div>
 
         {/* Card */}
         <div style={{
           background: 'white',
-          borderRadius: '16px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-          padding: '40px',
-          marginBottom: '20px'
+          borderRadius: '20px',
+          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          overflow: 'hidden',
+          marginBottom: '24px'
         }}>
           {/* Tabs */}
           <div style={{
             display: 'flex',
-            gap: '12px',
-            marginBottom: '32px',
-            borderBottom: '1px solid #e2e8f0',
-            paddingBottom: '16px'
+            background: '#f8fafc',
+            borderBottom: '2px solid #e2e8f0',
+            padding: '8px'
           }}>
             <button
               type="button"
-              onClick={() => { setMode('login'); setError(''); }}
+              onClick={() => {
+                setMode('staff');
+                setCustomerError('');
+                setStaffError('');
+              }}
               style={{
-                flexGrow: 1,
-                padding: '12px 16px',
-                background: mode === 'login' ? '#6366f1' : 'transparent',
-                color: mode === 'login' ? 'white' : '#64748b',
+                flex: 1,
+                padding: '16px 20px',
+                background: mode === 'staff' ? 'white' : 'transparent',
+                color: mode === 'staff' ? '#6366f1' : '#64748b',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 fontWeight: '600',
+                fontSize: '15px',
                 cursor: 'pointer',
-                fontSize: '14px',
                 transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                margin: '4px',
+                boxShadow: mode === 'staff' ? '0 2px 8px rgba(99, 102, 241, 0.1)' : 'none'
               }}
             >
-              <Icon name="lock" size={16} />
+              <Icon name="lock" size={18} />
               Staff Login
             </button>
             <button
               type="button"
-              onClick={() => { setMode('register'); setError(''); }}
+              onClick={() => {
+                setMode('customer');
+                setCustomerError('');
+                setStaffError('');
+                setOtpStep('email');
+                setOtpTimer(0);
+              }}
               style={{
-                flexGrow: 1,
-                padding: '12px 16px',
-                background: mode === 'register' ? '#6366f1' : 'transparent',
-                color: mode === 'register' ? 'white' : '#64748b',
+                flex: 1,
+                padding: '16px 20px',
+                background: mode === 'customer' ? 'white' : 'transparent',
+                color: mode === 'customer' ? '#6366f1' : '#64748b',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '12px',
                 fontWeight: '600',
+                fontSize: '15px',
                 cursor: 'pointer',
-                fontSize: '14px',
                 transition: 'all 0.2s',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px'
+                gap: '8px',
+                margin: '4px',
+                boxShadow: mode === 'customer' ? '0 2px 8px rgba(99, 102, 241, 0.1)' : 'none'
               }}
             >
-              <Icon name="add" size={16} />
-              Register
+              <Icon name="mail" size={18} />
+              Customer Login
             </button>
           </div>
 
-          {/* Login Form */}
-          {mode === 'login' && (
-            <form onSubmit={handleStaffLogin}>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                margin: '0 0 8px 0',
-                color: '#0f172a'
-              }}>Welcome Back!</h2>
-              <p style={{
-                margin: '0 0 24px 0',
-                color: '#64748b',
-                fontSize: '14px'
-              }}>Staff login</p>
+          {/* Content */}
+          <div style={{ padding: '40px' }}>
+            {/* Staff Login */}
+            {mode === 'staff' && (
+              <form onSubmit={handleStaffLogin}>
+                <h2 style={{
+                  fontSize: '26px',
+                  fontWeight: '700',
+                  margin: '0 0 8px 0',
+                  color: '#0f172a'
+                }}>Welcome Back</h2>
+                <p style={{
+                  margin: '0 0 32px 0',
+                  color: '#64748b',
+                  fontSize: '15px'
+                }}>Sign in to your staff account</p>
 
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#0f172a',
-                  marginBottom: '8px'
-                }}>
-                  <Icon name="customers" size={16} />
-                  Username
-                </label>
-                <input
-                  type="text"
-                  value={username}
-                  onChange={(e) => setUsername(e.target.value)}
-                  placeholder="Enter username"
-                  required
-                  autoFocus
-                  style={{
-                    width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
+                {/* Username */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
                     fontSize: '14px',
-                    fontFamily: 'inherit',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s'
-                  }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                />
-              </div>
-
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#0f172a',
-                  marginBottom: '8px'
-                }}>
-                  <Icon name="lock" size={16} />
-                  Password
-                </label>
-                <div style={{ position: 'relative' }}>
+                    fontWeight: '600',
+                    color: '#0f172a',
+                    marginBottom: '8px'
+                  }}>Username</label>
                   <input
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter password"
+                    type="text"
+                    value={staffUsername}
+                    onChange={(e) => setStaffUsername(e.target.value)}
+                    placeholder="Enter your username"
                     required
+                    autoFocus
                     style={{
                       width: '100%',
                       padding: '12px 16px',
-                      paddingRight: '44px',
-                      border: '1px solid #e2e8f0',
-                      borderRadius: '8px',
-                      fontSize: '14px',
+                      border: '2px solid #e2e8f0',
+                      borderRadius: '12px',
+                      fontSize: '15px',
                       fontFamily: 'inherit',
                       boxSizing: 'border-box',
-                      transition: 'all 0.2s'
+                      transition: 'all 0.2s',
+                      outline: 'none'
                     }}
                     onFocus={(e) => e.target.style.borderColor = '#6366f1'}
                     onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'none',
-                      border: 'none',
-                      cursor: 'pointer',
-                      color: '#64748b',
-                      padding: '0',
-                      display: 'flex',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <Icon name={showPassword ? "lock" : "eye"} size={18} />
-                  </button>
                 </div>
-              </div>
 
-              <label style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '14px',
-                cursor: 'pointer',
-                marginBottom: '24px',
-                color: '#475569'
-              }}>
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{ cursor: 'pointer' }}
-                />
-                Remember me
-              </label>
-
-              {error && (
-                <div style={{
-                  padding: '12px 16px',
-                  background: '#fee2e2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  color: '#991b1b',
-                  fontSize: '14px',
-                  marginBottom: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px'
-                }}>
-                  <Icon name="alert-circle" size={16} />
-                  {error}
+                {/* Password */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#0f172a',
+                    marginBottom: '8px'
+                  }}>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showPassword ? "text" : "password"}
+                      value={staffPassword}
+                      onChange={(e) => setStaffPassword(e.target.value)}
+                      placeholder="Enter your password"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '12px 16px',
+                        paddingRight: '44px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '14px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#64748b',
+                        padding: '8px',
+                        display: 'flex',
+                        alignItems: 'center'
+                      }}
+                    >
+                      <Icon name={showPassword ? "lock" : "eye"} size={20} />
+                    </button>
+                  </div>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px 24px',
-                  background: '#6366f1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => !loading && (e.target.style.background = '#4f46e5')}
-                onMouseOut={(e) => !loading && (e.target.style.background = '#6366f1')}
-              >
-                {loading ? 'Logging in...' : 'Login'}
-              </button>
-
-              <div style={{
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: '#f0fdf4',
-                border: '1px solid #86efac',
-                borderRadius: '8px',
-                fontSize: '13px',
-                color: '#166534',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Icon name="lock" size={16} />
-                Contact your admin if you need an account
-              </div>
-            </form>
-          )}
-
-          {/* Register Form */}
-          {mode === 'register' && (
-            <form onSubmit={handleRegister}>
-              <h2 style={{
-                fontSize: '24px',
-                fontWeight: '700',
-                margin: '0 0 8px 0',
-                color: '#0f172a'
-              }}>Customer Registration</h2>
-              <p style={{
-                margin: '0 0 24px 0',
-                color: '#64748b',
-                fontSize: '14px'
-              }}>Create your account</p>
-
-              <div style={{ marginBottom: '16px' }}>
+                {/* Remember Me */}
                 <label style={{
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
                   fontSize: '14px',
-                  fontWeight: '500',
-                  color: '#0f172a',
-                  marginBottom: '8px'
+                  cursor: 'pointer',
+                  marginBottom: '24px',
+                  color: '#475569'
                 }}>
-                  <Icon name="mail" size={16} />
-                  Email Address
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                  />
+                  Remember me
                 </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="your@email.com"
-                  required
-                  autoFocus
+
+                {/* Error */}
+                {staffError && (
+                  <div style={{
+                    padding: '14px 16px',
+                    background: '#fee2e2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '12px',
+                    color: '#991b1b',
+                    fontSize: '14px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <Icon name="alert-circle" size={18} />
+                    {staffError}
+                  </div>
+                )}
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={staffLoading}
                   style={{
                     width: '100%',
-                    padding: '12px 16px',
-                    border: '1px solid #e2e8f0',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    fontFamily: 'inherit',
-                    boxSizing: 'border-box',
-                    transition: 'all 0.2s'
+                    padding: '14px 24px',
+                    background: staffLoading ? '#94a3b8' : '#6366f1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    cursor: staffLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.5px'
                   }}
-                  onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                  onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                />
-              </div>
+                  onMouseOver={(e) => !staffLoading && (e.target.style.background = '#4f46e5')}
+                  onMouseOut={(e) => !staffLoading && (e.target.style.background = '#6366f1')}
+                >
+                  {staffLoading ? '🔄 Signing in...' : '🔓 Sign In'}
+                </button>
 
-              <div style={{
-                padding: '12px 16px',
-                background: '#f0f9ff',
-                border: '1px solid #bae6fd',
-                borderRadius: '8px',
-                color: '#0c4a6e',
-                fontSize: '13px',
-                marginBottom: '24px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Icon name="shield" size={16} />
-                You'll receive an OTP via email to verify your account
-              </div>
-
-              {error && (
+                {/* Help */}
                 <div style={{
-                  padding: '12px 16px',
-                  background: '#fee2e2',
-                  border: '1px solid #fecaca',
-                  borderRadius: '8px',
-                  color: '#991b1b',
+                  marginTop: '20px',
+                  padding: '14px 16px',
+                  background: '#f0fdf4',
+                  border: '1px solid #86efac',
+                  borderRadius: '12px',
                   fontSize: '14px',
-                  marginBottom: '16px',
+                  color: '#166534',
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px'
+                  gap: '10px'
                 }}>
-                  <Icon name="alert-circle" size={16} />
-                  {error}
+                  <Icon name="lock" size={18} />
+                  <span>Contact your administrator if you need an account</span>
                 </div>
-              )}
+              </form>
+            )}
 
-              <button
-                type="submit"
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px 24px',
-                  background: '#6366f1',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  fontWeight: '600',
-                  cursor: loading ? 'not-allowed' : 'pointer',
-                  opacity: loading ? 0.7 : 1,
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => !loading && (e.target.style.background = '#4f46e5')}
-                onMouseOut={(e) => !loading && (e.target.style.background = '#6366f1')}
-              >
-                {loading ? 'Sending OTP...' : 'Send OTP'}
-              </button>
+            {/* Customer Login */}
+            {mode === 'customer' && (
+              <form onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
+                <h2 style={{
+                  fontSize: '26px',
+                  fontWeight: '700',
+                  margin: '0 0 8px 0',
+                  color: '#0f172a'
+                }}>Customer Login</h2>
+                <p style={{
+                  margin: '0 0 32px 0',
+                  color: '#64748b',
+                  fontSize: '15px'
+                }}>Secure OTP-based authentication</p>
 
-              <div style={{
-                marginTop: '16px',
-                padding: '12px 16px',
-                background: '#f0fdf4',
-                border: '1px solid #86efac',
-                borderRadius: '8px',
-                fontSize: '13px',
-                color: '#166534',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px'
-              }}>
-                <Icon name="shield" size={16} />
-                We'll never share your email with anyone else
-              </div>
-            </form>
-          )}
+                {otpStep === 'email' ? (
+                  <>
+                    {/* Email */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#0f172a',
+                        marginBottom: '8px'
+                      }}>Email Address</label>
+                      <input
+                        type="email"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        required
+                        autoFocus
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '12px',
+                          fontSize: '15px',
+                          fontFamily: 'inherit',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.2s',
+                          outline: 'none'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                      />
+                    </div>
+
+                    {/* Info */}
+                    <div style={{
+                      padding: '14px 16px',
+                      background: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '12px',
+                      color: '#0c4a6e',
+                      fontSize: '14px',
+                      marginBottom: '24px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '10px'
+                    }}>
+                      <Icon name="shield" size={18} />
+                      <span>We'll send a 6-digit OTP to your email</span>
+                    </div>
+
+                    {/* Error */}
+                    {customerError && (
+                      <div style={{
+                        padding: '14px 16px',
+                        background: '#fee2e2',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '12px',
+                        color: '#991b1b',
+                        fontSize: '14px',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}>
+                        <Icon name="alert-circle" size={18} />
+                        {customerError}
+                      </div>
+                    )}
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={customerLoading}
+                      style={{
+                        width: '100%',
+                        padding: '14px 24px',
+                        background: customerLoading ? '#94a3b8' : '#6366f1',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        fontWeight: '700',
+                        cursor: customerLoading ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        letterSpacing: '0.5px'
+                      }}
+                      onMouseOver={(e) => !customerLoading && (e.target.style.background = '#4f46e5')}
+                      onMouseOut={(e) => !customerLoading && (e.target.style.background = '#6366f1')}
+                    >
+                      {customerLoading ? '📧 Sending OTP...' : '📧 Send OTP'}
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    {/* OTP Input */}
+                    <div style={{ marginBottom: '20px' }}>
+                      <label style={{
+                        display: 'block',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        color: '#0f172a',
+                        marginBottom: '8px'
+                      }}>One-Time Password</label>
+                      <input
+                        type="text"
+                        value={customerOtp}
+                        onChange={(e) => setCustomerOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        placeholder="000000"
+                        maxLength="6"
+                        required
+                        autoFocus
+                        inputMode="numeric"
+                        style={{
+                          width: '100%',
+                          padding: '12px 16px',
+                          border: '2px solid #e2e8f0',
+                          borderRadius: '12px',
+                          fontSize: '20px',
+                          fontFamily: 'monospace',
+                          letterSpacing: '4px',
+                          fontWeight: '600',
+                          boxSizing: 'border-box',
+                          transition: 'all 0.2s',
+                          outline: 'none',
+                          textAlign: 'center'
+                        }}
+                        onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                      />
+                    </div>
+
+                    {/* Timer */}
+                    {otpTimer > 0 && (
+                      <div style={{
+                        padding: '12px 16px',
+                        background: '#fef3c7',
+                        border: '1px solid #fcd34d',
+                        borderRadius: '12px',
+                        color: '#92400e',
+                        fontSize: '14px',
+                        marginBottom: '20px',
+                        textAlign: 'center',
+                        fontWeight: '600'
+                      }}>
+                        ⏱️ OTP expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                      </div>
+                    )}
+
+                    {/* Error */}
+                    {customerError && (
+                      <div style={{
+                        padding: '14px 16px',
+                        background: '#fee2e2',
+                        border: '1px solid #fca5a5',
+                        borderRadius: '12px',
+                        color: '#991b1b',
+                        fontSize: '14px',
+                        marginBottom: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '10px'
+                      }}>
+                        <Icon name="alert-circle" size={18} />
+                        {customerError}
+                      </div>
+                    )}
+
+                    {/* Submit */}
+                    <button
+                      type="submit"
+                      disabled={customerLoading || customerOtp.length !== 6}
+                      style={{
+                        width: '100%',
+                        padding: '14px 24px',
+                        background: (customerLoading || customerOtp.length !== 6) ? '#94a3b8' : '#6366f1',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        fontWeight: '700',
+                        cursor: (customerLoading || customerOtp.length !== 6) ? 'not-allowed' : 'pointer',
+                        transition: 'all 0.2s',
+                        letterSpacing: '0.5px'
+                      }}
+                      onMouseOver={(e) => (customerLoading || customerOtp.length !== 6) || (e.target.style.background = '#4f46e5')}
+                      onMouseOut={(e) => (customerLoading || customerOtp.length !== 6) || (e.target.style.background = '#6366f1')}
+                    >
+                      {customerLoading ? '🔄 Verifying...' : '✅ Verify & Login'}
+                    </button>
+
+                    {/* Back */}
+                    <button
+                      type="button"
+                      onClick={() => { setOtpStep('email'); setCustomerOtp(''); setCustomerError(''); }}
+                      style={{
+                        width: '100%',
+                        marginTop: '12px',
+                        padding: '12px 24px',
+                        background: 'transparent',
+                        color: '#6366f1',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '14px',
+                        fontWeight: '600',
+                        cursor: 'pointer',
+                        transition: 'all 0.2s'
+                      }}
+                      onMouseOver={(e) => e.target.style.borderColor = '#6366f1'}
+                      onMouseOut={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    >
+                      ← Use different email
+                    </button>
+                  </>
+                )}
+              </form>
+            )}
+          </div>
         </div>
 
         {/* Footer */}
         <div style={{
           textAlign: 'center',
-          color: 'rgba(255,255,255,0.8)',
-          fontSize: '12px'
+          color: 'rgba(255,255,255,0.85)',
+          fontSize: '13px',
+          fontWeight: '500'
         }}>
-          © {currentYear} 26:07 Electronics
+          © {currentYear} 26:07 Electronics · Secure & Reliable
         </div>
       </div>
     </div>
