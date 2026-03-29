@@ -6,7 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
 import { apiGet } from '../../utils/api';
-import { downloadPVCCard, downloadVCard } from '../../services/customerPortalService';
+import { downloadPVCCard, downloadVCard, downloadInvoicePDF } from '../../services/customerPortalService';
 
 const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
   // Mapping stats from props (Backend returns { stats: { ... }, memberSince: ... })
@@ -84,7 +84,56 @@ const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }
             />
           </div>
 
-          {/* Digital Identity & Quick Actions */}
+          {/* Recent Purchases Section */}
+          <div className="portal-section mt-4">
+            <div className="section-header-inline">
+              <h3 className="section-title">Recent Purchases</h3>
+              <a href="#invoices" className="link-more">View All Invoices →</a>
+            </div>
+            
+            <div className="recent-list-container">
+              {incomingStats?.recentPurchases && incomingStats.recentPurchases.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incomingStats.recentPurchases.map(inv => (
+                        <tr key={inv.id}>
+                          <td className="font-weight-bold">#{inv.invoiceNo}</td>
+                          <td>{new Date(inv.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                          <td>{inv.itemCount} items</td>
+                          <td className="font-weight-bold">₹{inv.total.toLocaleString('en-IN')}</td>
+                          <td>
+                            <button 
+                              className="btn-icon-sm" 
+                              onClick={() => downloadInvoicePDF(inv.id)}
+                              title="Download PDF"
+                            >
+                              <Icon name="download" size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-mini">
+                  <Icon name="shopping-bag" size={24} />
+                  <p>No recent purchases found</p>
+                </div>
+              )}
+            </div>
+          </div>
+
           <div className="portal-section mt-4 grid-2">
             <div className="dashboard-column">
               <h3 className="section-title">Quick Actions</h3>
@@ -134,7 +183,6 @@ const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }
             </div>
           </div>
 
-          {/* Help Section */}
           <div className="help-section">
             <Icon name="help-circle" size={20} />
             <div>

@@ -9,7 +9,6 @@ import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
 import CustomersList from './components/Customers/CustomersList';
 import InvoicesList from './components/Invoices/InvoicesList';
-import AnalyticsPage from './components/Analytics/Analytics';
 import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
 import AuditLogs from './components/AuditLogs/AuditLogs';
@@ -25,7 +24,6 @@ import { useProducts } from './hooks/useProducts';
 import { useCustomers } from './hooks/useCustomers';
 import { useInvoices } from './hooks/useInvoices';
 import { useCart } from './hooks/useCart';
-import { useAnalytics } from './hooks/useAnalytics';
 import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -104,9 +102,6 @@ export default function App() {
   const { cart, addToCart, setQuantity: updateCartItem, removeFromCart, clearCart, selectedCustomer, setSelectedCustomer: selectCustomer, errors: cartErrors } = 
     useCart(products);
   
-  const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
-    useAnalytics(isOnline, tab);
-  
   const { showInstallPrompt, isIOS, installPWA, dismissInstallPrompt } = usePWA();
 
   // Permission helpers
@@ -130,9 +125,9 @@ Alt+2 or F2: POS System
 Alt+3 or F3: Products
 Alt+4 or F4: Customers
 Alt+5 or F5: Invoices
-Alt+6 or F6: Analytics
-Alt+7 or F7: Reports
-
+Alt+6 or F6: Reports
+Alt+7 or F7: Returns
+Alt+8 or F8: Expenses
 Actions:
 Ctrl+N: New Product
 Ctrl+K: New Customer
@@ -190,7 +185,8 @@ Esc: Close modals/dialogs`;
               break;
             case 'SALE_COMPLETED':
             case 'INVOICE_CREATED':
-              text = `Completed sale - ${log.details?.total ? `₹${log.details.total}` : 'N/A'}`;
+              const amount = log.details?.grandTotal || log.details?.total;
+              text = `Completed sale - ${amount ? `₹${amount}` : 'N/A'}`;
               break;
             case 'CUSTOMER_ADDED':
               text = `Added customer "${log.details?.customerName || 'Unknown'}"`;
@@ -1124,16 +1120,6 @@ Esc: Close modals/dialogs`;
             isRefreshing={isRefreshingInvoices}
             lastRefreshTime={invoicesLastRefresh}
             canDelete={canDelete()}
-          />
-        );
-
-      case 'analytics':
-        return (
-          <AnalyticsPage 
-            analyticsData={analyticsData}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            canViewProfit={canViewProfit()}
           />
         );
 

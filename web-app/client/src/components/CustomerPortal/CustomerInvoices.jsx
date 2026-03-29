@@ -25,15 +25,11 @@ const CustomerInvoices = ({ currentUser, invoices = [], loading, error }) => {
 
   const handleDownloadPDF = async (invoiceId) => {
     try {
-      // Call API to generate and download PDF
-      const link = document.createElement('a');
-      link.href = `/api/customer/invoices/${invoiceId}/pdf`;
-      link.download = `invoice-${invoiceId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const { downloadInvoicePDF } = await import('../../services/customerPortalService');
+      await downloadInvoicePDF(invoiceId);
     } catch (err) {
       console.error('Failed to download invoice:', err);
+      alert('Failed to download invoice. Please try again later.');
     }
   };
 

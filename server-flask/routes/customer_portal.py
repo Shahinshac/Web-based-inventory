@@ -41,6 +41,7 @@ def get_current_customer():
 def get_dashboard():
     """Get customer dashboard statistics"""
     try:
+        db = get_db()
         customer = get_current_customer()
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
@@ -167,19 +168,28 @@ def download_invoice_pdf(invoice_id):
             return jsonify({"error": "Customer not found"}), 404
 
         db = get_db()
-        invoice = db.bills.find_one({"_id": ObjectId(invoice_id), "customerId": customer['_id']})
+        # Verify ownership (can be by ID, phone, or email)
+        customer_id = customer['_id']
+        invoice = db.bills.find_one({
+            "_id": ObjectId(invoice_id),
+            "$or": [
+                {"customerId": customer_id},
+                {"customerId": str(customer_id)},
+                {"customerPhone": customer.get('phone')},
+                {"customerEmail": customer.get('email')}
+            ]
+        })
 
         if not invoice:
-            return jsonify({"error": "Invoice not found"}), 404
+            return jsonify({"error": "Invoice not found or access denied"}), 404
 
-        # For now, return invoice data - PDF generation can be added later
-        # This would require reportlab or weasyprint library
-        return jsonify({
-            "message": "PDF generation coming soon",
-            "invoiceNo": invoice.get('billNumber'),
-            "total": invoice.get('grandTotal')
-        }), 501
+        # Use the public_invoice logic to generate the response (already has PDF generation)
+        from routes.public_invoice import generate_invoice_pdf_response
+        return generate_invoice_pdf_response(invoice)
 
+    except Exception as e:
+        logger.error(f"PDF download error: {e}")
+        return jsonify({"error": "Failed to download invoice"}), 500
     except Exception as e:
         logger.error(f"PDF download error: {e}")
         return jsonify({"error": "Failed to download invoice"}), 500
