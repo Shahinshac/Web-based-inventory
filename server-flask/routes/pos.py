@@ -419,10 +419,10 @@ def whatsapp_link(id):
             }
         })
 
-        # Public invoice page is served by this Flask backend, so use the backend URL
         public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
-        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
+        portal_text = "\n\n🚀 Customer Portal:\nYou can register & login to view your invoices, warranties and purchase history using the email you provided during billing.\n🔗 https://26-07inventory.vercel.app"
+        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}{portal_text}"
 
         whatsapp_url = None
         if customer_phone:
