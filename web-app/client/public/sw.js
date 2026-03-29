@@ -1,5 +1,5 @@
 // Service Worker for 26:07 Electronics Inventory App
-const CACHE_NAME = '2607-inventory-v2.0.0';
+const CACHE_NAME = '2607-inventory-v2.0.1';
 const OFFLINE_URL = '/offline.html';
 
 // Static assets to cache
