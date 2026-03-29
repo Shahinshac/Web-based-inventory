@@ -46,6 +46,7 @@ def checkout():
     # Get customer details
     customer_name = "Walk-in Customer"
     customer_phone = None
+    customer_email = None
     customer_address = ""
     customer_place = ""
     customer_pincode = ""
@@ -56,6 +57,7 @@ def checkout():
             if customer:
                 customer_name = customer.get('name')
                 customer_phone = customer.get('phone')
+                customer_email = customer.get('email')
                 customer_address = customer.get('address', '')
                 customer_place = customer.get('place', '')
                 customer_pincode = customer.get('pincode', '')
@@ -82,11 +84,6 @@ def checkout():
             # JavaScript date string e.g., "2023-10-15T12:00:00Z"
             from dateutil import parser
             parsed_time = parser.parse(client_time)
-            # If parsed_time has tzinfo, convert it to naive local time
-            if parsed_time.tzinfo:
-                # Strip timezone by applying UTC offset locally, but since we default to IST,
-                # we can just trust the parsed payload or stick to strictly precise server IST.
-                pass
             bill_date = parsed_time
         except Exception:
             pass
@@ -96,6 +93,7 @@ def checkout():
         "customerId": ObjectId(customer_id) if customer_id else None,
         "customerName": customer_name,
         "customerPhone": customer_phone,
+        "customerEmail": customer_email,
         "customerAddress": customer_address,
         "customerState": customer_state,
         "customerPlace": customer_place,

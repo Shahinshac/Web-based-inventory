@@ -34,6 +34,27 @@ def get_current_customer():
         logger.error(f"Error getting customer: {e}")
         return None
 
+def get_customer_match_query(customer):
+    """Build a robust match query for a customer (ID, Name, Phone, Email)"""
+    customer_id = customer['_id']
+    or_conditions = [
+        {"customerId": customer_id},
+        {"customerId": str(customer_id)}
+    ]
+    
+    if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+        or_conditions.append({"customerName": customer.get('name')})
+        
+    if customer.get('phone') and str(customer.get('phone')).strip() != "":
+        or_conditions.append({"customerPhone": str(customer.get('phone'))})
+        
+    if customer.get('email') and str(customer.get('email')).strip() != "":
+        import re
+        email_regex = re.compile(f"^{re.escape(customer.get('email'))}$", re.I)
+        or_conditions.append({"customerEmail": email_regex})
+        
+    return {"$or": or_conditions}
+
 # ==================== DASHBOARD ====================
 
 @customer_portal_bp.route('/dashboard', methods=['GET'])
@@ -46,17 +67,7 @@ def get_dashboard():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        customer_id = customer['_id']
-        or_conditions = [
-            {"customerId": customer_id},
-            {"customerId": str(customer_id)}
-        ]
-        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
-            or_conditions.append({"customerName": customer.get('name')})
-        if customer.get('phone') and str(customer.get('phone')).strip() != "":
-            or_conditions.append({"customerPhone": customer.get('phone')})
-            
-        match_query = {"$or": or_conditions}
+        match_query = get_customer_match_query(customer)
 
         # Get invoices for this customer
         invoices = list(db.bills.find(match_query))
@@ -108,18 +119,7 @@ def get_customer_invoices():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        customer_id = customer['_id']
-        or_conditions = [
-            {"customerId": customer_id},
-            {"customerId": str(customer_id)}
-        ]
-        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
-            or_conditions.append({"customerName": customer.get('name')})
-        if customer.get('phone') and str(customer.get('phone')).strip() != "":
-            or_conditions.append({"customerPhone": customer.get('phone')})
-            
-        match_query = {"$or": or_conditions}
+        match_query = get_customer_match_query(customer)
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
@@ -205,18 +205,7 @@ def get_customer_warranties():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        customer_id = customer['_id']
-        or_conditions = [
-            {"customerId": customer_id},
-            {"customerId": str(customer_id)}
-        ]
-        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
-            or_conditions.append({"customerName": customer.get('name')})
-        if customer.get('phone') and str(customer.get('phone')).strip() != "":
-            or_conditions.append({"customerPhone": customer.get('phone')})
-            
-        match_query = {"$or": or_conditions}
+        match_query = get_customer_match_query(customer)
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))

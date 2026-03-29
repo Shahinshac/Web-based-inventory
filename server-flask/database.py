@@ -65,11 +65,32 @@ def get_db():
 def _create_indexes(database):
     """Creates indexes exactly as the Node app did for optimal query performance."""
     try:
+        # Users indexes
         database.users.create_index("username", unique=True)
         database.users.create_index("email", unique=True, sparse=True)
         database.users.create_index("approved")
         database.users.create_index("role")
         database.users.create_index("lastLogin")
-        logger.info("🔧 Core Database Indexes Created Successfully.")
+        
+        # Customers indexes (for fast lookups)
+        database.customers.create_index("email", unique=True, sparse=True)
+        database.customers.create_index("phone", sparse=True)
+        database.customers.create_index("name")
+        
+        # Bills/Invoices indexes (for Customer Portal reconciliation)
+        database.bills.create_index("billNumber", unique=True)
+        database.bills.create_index("billDate")
+        database.bills.create_index("customerId")
+        database.bills.create_index("customerEmail")
+        database.bills.create_index("customerPhone")
+        
+        # Warranties indexes
+        database.warranties.create_index("customerId")
+        database.warranties.create_index("customerEmail")
+        database.warranties.create_index("customerPhone")
+        database.warranties.create_index("expiryDate")
+        database.warranties.create_index("invoiceNo")
+        
+        logger.info("🔧 Core & Performance Database Indexes Created Successfully.")
     except Exception as e:
         logger.warning(f"Index creation warning: {e}")
