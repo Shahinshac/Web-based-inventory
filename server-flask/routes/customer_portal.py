@@ -48,14 +48,14 @@ def get_dashboard():
         customer_id = customer['_id']
 
         # Get invoices for this customer
-        invoices = list(db.invoices.find({"customerId": customer_id}))
+        invoices = list(db.bills.find({"customerId": customer_id}))
 
         # Calculate stats
         total_purchases = len(invoices)
-        total_spent = sum(float(inv.get('total', 0)) for inv in invoices)
+        total_spent = sum(float(inv.get('grandTotal', 0)) for inv in invoices)
 
         # Get latest purchases
-        recent_invoices = sorted(invoices, key=lambda x: x.get('createdAt', datetime.utcnow()), reverse=True)[:5]
+        recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', datetime.utcnow()), reverse=True)[:5]
 
         # Get warranties
         warranties = list(db.warranties.find({"customerId": customer_id}))
@@ -72,9 +72,9 @@ def get_dashboard():
             "recentPurchases": [
                 {
                     "id": str(inv['_id']),
-                    "invoiceNo": inv.get('invoiceNo'),
-                    "date": inv.get('createdAt').isoformat() if inv.get('createdAt') else None,
-                    "total": float(inv.get('total', 0)),
+                    "invoiceNo": inv.get('billNumber'),
+                    "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                    "total": float(inv.get('grandTotal', 0)),
                     "itemCount": len(inv.get('items', []))
                 }
                 for inv in recent_invoices
@@ -105,17 +105,17 @@ def get_customer_invoices():
         skip = (page - 1) * limit
 
         # Fetch invoices
-        invoices_cursor = db.invoices.find({"customerId": customer_id}).sort("createdAt", -1).skip(skip).limit(limit)
-        total = db.invoices.count_documents({"customerId": customer_id})
+        invoices_cursor = db.bills.find({"customerId": customer_id}).sort("billDate", -1).skip(skip).limit(limit)
+        total = db.bills.count_documents({"customerId": customer_id})
 
         invoices = []
         for inv in invoices_cursor:
             invoices.append({
                 "id": str(inv['_id']),
-                "invoiceNo": inv.get('invoiceNo'),
-                "date": inv.get('createdAt').isoformat() if inv.get('createdAt') else None,
-                "total": float(inv.get('total', 0)),
-                "paymentMethod": inv.get('paymentMethod', 'cash'),
+                "invoiceNo": inv.get('billNumber'),
+                "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                "total": float(inv.get('grandTotal', 0)),
+                "paymentMethod": inv.get('paymentMode', 'cash'),
                 "items": inv.get('items', []),
                 "itemCount": len(inv.get('items', []))
             })
@@ -146,7 +146,7 @@ def download_invoice_pdf(invoice_id):
             return jsonify({"error": "Customer not found"}), 404
 
         db = get_db()
-        invoice = db.invoices.find_one({"_id": ObjectId(invoice_id), "customerId": customer['_id']})
+        invoice = db.bills.find_one({"_id": ObjectId(invoice_id), "customerId": customer['_id']})
 
         if not invoice:
             return jsonify({"error": "Invoice not found"}), 404
@@ -155,8 +155,8 @@ def download_invoice_pdf(invoice_id):
         # This would require reportlab or weasyprint library
         return jsonify({
             "message": "PDF generation coming soon",
-            "invoiceNo": invoice.get('invoiceNo'),
-            "total": invoice.get('total')
+            "invoiceNo": invoice.get('billNumber'),
+            "total": invoice.get('grandTotal')
         }), 501
 
     except Exception as e:

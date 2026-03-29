@@ -73,14 +73,21 @@ def checkout():
     total_cost = 0.0
     is_same_state = (customer_state == 'Same')
 
-    bill_date = datetime.utcnow()
+    # Set exact local time (IST is +5:30 ahead of UTC)
+    bill_date = datetime.utcnow() + timedelta(hours=5, minutes=30)
     client_time = data.get('clientTime')
     if client_time:
         try:
             # simple parse if provided
             # JavaScript date string e.g., "2023-10-15T12:00:00Z"
             from dateutil import parser
-            bill_date = parser.parse(client_time)
+            parsed_time = parser.parse(client_time)
+            # If parsed_time has tzinfo, convert it to naive local time
+            if parsed_time.tzinfo:
+                # Strip timezone by applying UTC offset locally, but since we default to IST,
+                # we can just trust the parsed payload or stick to strictly precise server IST.
+                pass
+            bill_date = parsed_time
         except Exception:
             pass
 
@@ -198,6 +205,21 @@ def checkout():
 
     result = db.bills.insert_one(bill)
 
+    # Auto-generate warranties for registered customers (1 year from invoice date)
+    if customer_id:
+        for i in bill["items"]:
+            db.warranties.insert_one({
+                "customerId": ObjectId(customer_id),
+                "productName": i["productName"],
+                "productSku": i.get("hsnCode", "N/A"),
+                "warrantyType": "1 Year Standard",
+                "startDate": bill_date,
+                "expiryDate": bill_date + timedelta(days=365),
+                "status": "active",
+                "invoiceNo": bill_number, 
+                "createdAt": datetime.utcnow() + timedelta(hours=5, minutes=30)
+            })
+
     log_audit(db, "SALE_COMPLETED", user_id, username, {
         "billId": str(result.inserted_id),
         "billNumber": bill_number,
@@ -215,7 +237,7 @@ def checkout():
         "customerPhone": customer_phone,
         "customerPlace": customer_place,
         "paymentMode": payment_mode,
-        "billDate": bill_date.isoformat() + ("Z" if not bill_date.tzinfo else ""),
+        "billDate": bill_date.isoformat(),
         "isSameState": is_same_state,
         "items": [{
             "productName": i["productName"],
@@ -277,7 +299,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": (b.get("billDate", datetime.utcnow()).isoformat() + ("Z" if not b.get("billDate", datetime.utcnow()).tzinfo else "")) if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
+            "date": b.get("billDate", datetime.utcnow()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -302,7 +324,7 @@ def get_invoice(id):
         "customerAddress": invoice.get("customerAddress"),
         "customerPlace": invoice.get("customerPlace", ""),
         "isSameState": invoice.get("isSameState", True),
-        "billDate": (invoice.get("billDate").isoformat() + ("Z" if not invoice.get("billDate").tzinfo else "")) if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
         "items": [{
              "productName": i.get("productName"),
              "hsnCode": i.get("hsnCode", "9999"),
