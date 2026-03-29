@@ -1,6 +1,6 @@
 /**
  * @file Login.jsx
- * @description Professional split-screen authentication - Staff & Customer Login
+ * @description Professional full-screen authentication - Resolved Tab Visibility
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
@@ -69,7 +69,7 @@ const Login = ({ onLogin }) => {
     setStaffError('');
 
     if (!staffUsername || !staffPassword) {
-      setStaffError('Please enter both username and password');
+      setStaffError('Please fill in all fields');
       return;
     }
 
@@ -80,7 +80,7 @@ const Login = ({ onLogin }) => {
         setStaffError(result.error);
       }
     } catch (error) {
-      setStaffError(error.message || 'Login failed. Please verify your credentials.');
+      setStaffError(error.message || 'Login failed.');
     } finally {
       setStaffLoading(false);
     }
@@ -92,48 +92,27 @@ const Login = ({ onLogin }) => {
     setCustomerError('');
 
     if (!customerEmail) {
-      setCustomerError('Please enter your email');
+      setCustomerError('Email is required');
       return;
     }
 
     setCustomerLoading(true);
-    setConnStatus('online'); // Reset status at start of attempt
-    
     try {
-      const apiUrl = API('/api/users/send-otp');
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-      const response = await fetch(apiUrl, {
+      const response = await fetch(API('/api/users/send-otp'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, type: 'login' }),
-        signal: controller.signal
+        body: JSON.stringify({ email: customerEmail, type: 'login' })
       });
-
-      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || `Server error: ${response.status}`);
+        throw new Error(err.error || 'Failed to send OTP');
       }
 
       setOtpStep('otp');
-      setOtpTimer(300); // 5 minutes
+      setOtpTimer(300);
     } catch (error) {
-      console.error('OTP Send Error:', error);
-      let errorMsg = error.message || 'Failed to send OTP';
-
-      if (error.name === 'AbortError') {
-        errorMsg = 'Request timed out. The server might be waking up. Please try again.';
-        setConnStatus('waking');
-      } else if (error instanceof TypeError) {
-        errorMsg = 'Cannot connect to server. Check your internet connection.';
-        setConnStatus('offline');
-      }
-
-      setCustomerError(errorMsg);
+      setCustomerError(error.message || 'Connection error.');
     } finally {
       setCustomerLoading(false);
     }
@@ -145,7 +124,7 @@ const Login = ({ onLogin }) => {
     setCustomerError('');
 
     if (!customerOtp || customerOtp.length !== 6) {
-      setCustomerError('Please enter a valid 6-digit OTP');
+      setCustomerError('Enter 6-digit code');
       return;
     }
 
@@ -159,7 +138,7 @@ const Login = ({ onLogin }) => {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Invalid OTP. Please check and try again.');
+        throw new Error(err.error || 'Invalid code');
       }
 
       const data = await response.json();
@@ -168,7 +147,7 @@ const Login = ({ onLogin }) => {
         setCustomerError(result.error);
       }
     } catch (error) {
-      setCustomerError(error.message || 'OTP verification failed.');
+      setCustomerError(error.message || 'Verification failed.');
     } finally {
       setCustomerLoading(false);
     }
@@ -179,7 +158,7 @@ const Login = ({ onLogin }) => {
   return (
     <div className="login-page">
       <div className="login-wrapper">
-        {/* Left Side: Branding & Info */}
+        {/* Left Side: Branding & Info (Modern Charcoal Theme) */}
         <div className="login-brand-side">
           <div className="brand-inner">
             <div className="brand-logo-box">
@@ -208,226 +187,148 @@ const Login = ({ onLogin }) => {
           </div>
         </div>
 
-        {/* Right Side: Login Forms */}
+        {/* Right Side: Centered Forms */}
         <div className="login-form-side">
-          {/* Connection Status Indicator */}
-          <div className={`conn-status-bar ${connStatus}`}>
-            <Icon name={connStatus === 'online' ? 'activity' : connStatus === 'offline' ? 'wifi-off' : 'clock'} size={14} />
-            <span>{connStatus === 'online' ? 'System Online' : connStatus === 'offline' ? 'No Connection' : 'Checking Status...'}</span>
-          </div>
+          <div className="login-form-container" style={{ width: '100%', maxWidth: '480px', padding: '0 40px', margin: '0 auto' }}>
+            
+            <div className={`conn-status-bar ${connStatus}`} style={{ marginBottom: '32px' }}>
+              <Icon name={connStatus === 'online' ? 'activity' : connStatus === 'offline' ? 'wifi-off' : 'clock'} size={14} />
+              <span>{connStatus === 'online' ? 'System Online' : 'Check Network'}</span>
+            </div>
 
-          <div className="mode-selector" style={{ width: '100%', maxWidth: '400px' }}>
-            <button 
-              className={`mode-btn ${mode === 'staff' ? 'active' : ''}`}
-              onClick={() => { setMode('staff'); setStaffError(''); setCustomerError(''); }}
-            >
-              <Icon name="shield" size={14} />
-              <span style={{ whiteSpace: 'nowrap' }}>Staff Login</span>
-            </button>
-            <button 
-              className={`mode-btn ${mode === 'customer' ? 'active' : ''}`}
-              onClick={() => { setMode('customer'); setStaffError(''); setCustomerError(''); setOtpStep('email'); }}
-            >
-              <Icon name="users" size={14} />
-              <span style={{ whiteSpace: 'nowrap' }}>Customer Portal</span>
-            </button>
-          </div>
+            {/* Prominent Tab Toggles */}
+            <div className="mode-selector" style={{ marginBottom: '48px', background: '#f1f5f9', padding: '10px', borderRadius: '18px' }}>
+              <button 
+                type="button"
+                className={`mode-btn ${mode === 'staff' ? 'active' : ''}`}
+                onClick={() => { setMode('staff'); setStaffError(''); setCustomerError(''); }}
+                style={{ flex: 1, minWidth: '150px', padding: '14px 20px' }}
+              >
+                <Icon name="shield" size={14} />
+                <span style={{ fontWeight: 800 }}>STAFF</span>
+              </button>
+              <button 
+                type="button"
+                className={`mode-btn ${mode === 'customer' ? 'active' : ''}`}
+                onClick={() => { setMode('customer'); setStaffError(''); setCustomerError(''); setOtpStep('email'); }}
+                style={{ flex: 1, minWidth: '150px', padding: '14px 20px' }}
+              >
+                <Icon name="users" size={14} />
+                <span style={{ fontWeight: 800 }}>CUSTOMER</span>
+              </button>
+            </div>
 
-          <div className="login-content">
-            {mode === 'staff' ? (
-              /* Staff Login Form */
-              <div className="staff-portal">
-                <div className="login-header">
-                  <div className="portal-badge">STAFF PORTAL</div>
-                  <h2>Welcome Back</h2>
-                  <p>Please sign in to access the management dashboard.</p>
-                </div>
-
-                <form className="login-form" onSubmit={handleStaffLogin}>
-                  <div className="field">
-                    <label>
-                      <Icon name="user" size={14} />
-                      Username
-                    </label>
-                    <input 
-                      type="text" 
-                      placeholder="your username" 
-                      value={staffUsername}
-                      onChange={(e) => setStaffUsername(e.target.value)}
-                      required 
-                    />
+            <div className="login-content" style={{ maxWidth: '100%' }}>
+              {mode === 'staff' ? (
+                <div className="staff-portal">
+                  <div className="login-header">
+                    <div className="portal-badge">STAFF AUTHENTICATION</div>
+                    <h2>Welcome Back</h2>
+                    <p>Enter your credentials to access the console.</p>
                   </div>
-                  
-                  <div className="field">
-                    <label>
-                      <Icon name="lock" size={14} />
-                      Password
-                    </label>
-                    <div className="password-field">
+
+                  <form className="login-form" onSubmit={handleStaffLogin}>
+                    <div className="field">
+                      <label><Icon name="user" size={14} /> Username</label>
                       <input 
-                        type={showPassword ? "text" : "password"} 
-                        placeholder="••••••••" 
-                        value={staffPassword}
-                        onChange={(e) => setStaffPassword(e.target.value)}
+                        type="text" 
+                        placeholder="username" 
+                        value={staffUsername}
+                        onChange={(e) => setStaffUsername(e.target.value)}
                         required 
                       />
-                      <button 
-                        type="button" 
-                        className="eye-btn" 
-                        onClick={() => setShowPassword(!showPassword)}
-                      >
-                        <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
-                      </button>
                     </div>
-                  </div>
-
-                  <label className="remember-me">
-                    <input 
-                      type="checkbox" 
-                      checked={rememberMe}
-                      onChange={(e) => setRememberMe(e.target.checked)}
-                    />
-                    <span>Remember me on this device</span>
-                  </label>
-
-                  {staffError && (
-                    <div className="error-notice">
-                      <Icon name="alert-circle" size={16} />
-                      {staffError}
-                    </div>
-                  )}
-
-                  <button type="submit" className="submit-btn" disabled={staffLoading}>
-                    {staffLoading ? 'Logging In...' : 'Access Dashboard'}
-                  </button>
-                </form>
-
-                <div className="login-form-extras">
-                  <button type="button" className="forgot-password" onClick={() => setStaffError('Contact admin to reset password')}>
-                    Forgot Password?
-                  </button>
-                  <div className="notice">
-                    <Icon name="info" size={14} />
-                    <span>Authorized staff members only. 26:07 Electronics Secure Access.</span>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              /* Customer Login Form */
-              <div className="customer-portal">
-                <div className="login-header">
-                  <div className="portal-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(10, 185, 129, 0.1)' }}>
-                    CUSTOMER PORTAL
-                  </div>
-                  <h2>Sign In</h2>
-                  <p>Access your billing dashboard and download your invoices instantly.</p>
-                </div>
-
-                <div className="stepper" style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
-                  <div className={`step-item ${otpStep === 'email' ? 'active' : 'done'}`} style={{ 
-                    flex: 1, height: '4px', borderRadius: '2px', 
-                    background: otpStep === 'email' ? '#4f46e5' : '#10b981' 
-                  }}></div>
-                  <div className={`step-item ${otpStep === 'otp' ? 'active' : ''}`} style={{ 
-                    flex: 1, height: '4px', borderRadius: '2px', 
-                    background: otpStep === 'otp' ? '#4f46e5' : '#e2e8f0' 
-                  }}></div>
-                </div>
-
-                <form className="login-form" onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
-                  {otpStep === 'email' ? (
-                    /* Step 1: Email */
-                    <>
-                      <div className="field">
-                        <label>
-                          <Icon name="mail" size={14} />
-                          Email Address
-                        </label>
+                    
+                    <div className="field">
+                      <label><Icon name="lock" size={14} /> Password</label>
+                      <div className="password-field">
                         <input 
-                          type="email" 
-                          placeholder="name@email.com" 
-                          value={customerEmail}
-                          onChange={(e) => setCustomerEmail(e.target.value)}
+                          type={showPassword ? "text" : "password"} 
+                          placeholder="••••••••" 
+                          value={staffPassword}
+                          onChange={(e) => setStaffPassword(e.target.value)}
                           required 
                         />
+                        <button type="button" className="eye-btn" onClick={() => setShowPassword(!showPassword)}>
+                          <Icon name={showPassword ? "eye-off" : "eye"} size={18} />
+                        </button>
                       </div>
-                      
-                      {customerError && (
-                        <div className="error-notice">
-                          <Icon name="alert-circle" size={16} />
-                          {customerError}
+                    </div>
+
+                    <label className="remember-me">
+                      <input type="checkbox" checked={rememberMe} onChange={(e) => setRememberMe(e.target.checked)} />
+                      <span>Remember access</span>
+                    </label>
+
+                    {staffError && <div className="error-notice"><Icon name="alert-circle" size={16} /> {staffError}</div>}
+
+                    <button type="submit" className="submit-btn" disabled={staffLoading}>
+                      {staffLoading ? 'Verifying...' : 'Sign In'}
+                    </button>
+                  </form>
+                </div>
+              ) : (
+                <div className="customer-portal">
+                  <div className="login-header">
+                    <div className="portal-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}>SECURE ACCESS</div>
+                    <h2>Customer Log In</h2>
+                    <p>We'll send a secure code to your email address.</p>
+                  </div>
+
+                  <div className="stepper" style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
+                    <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: otpStep === 'email' ? '#4f46e5' : '#10b981' }}></div>
+                    <div style={{ flex: 1, height: '4px', borderRadius: '2px', background: otpStep === 'otp' ? '#4f46e5' : '#ced4da' }}></div>
+                  </div>
+
+                  <form className="login-form" onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
+                    {otpStep === 'email' ? (
+                      <>
+                        <div className="field">
+                          <label><Icon name="mail" size={14} /> Email Address</label>
+                          <input type="email" placeholder="email@address.com" value={customerEmail} onChange={(e) => setCustomerEmail(e.target.value)} required />
                         </div>
-                      )}
-
-                      <button type="submit" className="submit-btn" disabled={customerLoading}>
-                        {customerLoading ? 'Sending...' : 'Receive OTP'}
-                      </button>
-                    </>
-                  ) : (
-                    /* Step 2: OTP */
-                    <>
-                      <div className="field">
-                        <label>
-                          <Icon name="shield-check" size={14} />
-                          Verification Code
-                        </label>
-                        <input 
-                          type="text" 
-                          placeholder="000 000" 
-                          maxLength="6"
-                          value={customerOtp}
-                          onChange={(e) => setCustomerOtp(e.target.value.replace(/\D/g, ''))}
-                          style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '24px' }}
-                          required 
-                        />
-                      </div>
-
-                      {otpTimer > 0 && (
-                        <div className="notice">
-                          <Icon name="clock" size={14} />
-                          Code expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
+                        {customerError && <div className="error-notice">{customerError}</div>}
+                        <button type="submit" className="submit-btn" disabled={customerLoading}>Receive Code</button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="field">
+                          <label><Icon name="shield-check" size={14} /> 6-Digit Code</label>
+                          <input 
+                            type="text" 
+                            placeholder="000 000" 
+                            maxLength="6"
+                            value={customerOtp}
+                            onChange={(e) => setCustomerOtp(e.target.value.replace(/\D/g, ''))}
+                            style={{ textAlign: 'center', letterSpacing: '8px', fontSize: '24px' }}
+                            required 
+                          />
                         </div>
-                      )}
-
-                      {customerError && (
-                        <div className="error-notice">
-                          <Icon name="alert-circle" size={16} />
-                          {customerError}
-                        </div>
-                      )}
-
-                      <button type="submit" className="submit-btn" disabled={customerLoading || customerOtp.length < 6}>
-                        {customerLoading ? 'Verifying...' : 'Verify & Sign In'}
-                      </button>
-                      <button 
-                        type="button" 
-                        className="forgot-password" 
-                        style={{ marginTop: '16px', textDecoration: 'none', background: 'none' }}
-                        onClick={() => { setOtpStep('email'); setCustomerOtp(''); }}
-                      >
-                        ← Use different email
-                      </button>
-                    </>
-                  )}
-                </form>
-
-                <div className="login-form-extras" style={{ marginTop: '32px' }}>
+                        {otpTimer > 0 && <div className="notice">Code expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}</div>}
+                        {customerError && <div className="error-notice">{customerError}</div>}
+                        <button type="submit" className="submit-btn" disabled={customerLoading || customerOtp.length < 6}>Authenticate</button>
+                        <button type="button" className="forgot-password" style={{ marginTop: '16px', background: 'none', border: 'none' }} onClick={() => setOtpStep('email')}>← Re-enter email</button>
+                      </>
+                    )}
+                  </form>
+                  
                   <div className="security-badge" style={{ 
-                    display: 'flex', alignItems: 'center', gap: '8px', 
-                    fontSize: '12px', color: '#10b981', fontWeight: '600', 
-                    background: 'rgba(16, 185, 129, 0.05)', padding: '10px 20px', 
-                    borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.1)' 
+                    display: 'flex', alignItems: 'center', gap: '10px', marginTop: '48px',
+                    fontSize: '12px', color: '#10b981', fontWeight: '800', 
+                    background: 'rgba(16, 185, 129, 0.05)', padding: '14px 24px', 
+                    borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.1)',
+                    letterSpacing: '0.5px'
                   }}>
-                    <Icon name="shield-check" size={14} />
-                    <span>Secure end-to-end encrypted session</span>
+                    <Icon name="shield" size={14} />
+                    <span>SECURE ENCRYPTED VERIFICATION</span>
                   </div>
                 </div>
-              </div>
-            )}
-          </div>
+              )}
+            </div>
 
-          <div className="login-footer-text">
-            © {currentYear} 26:07 Electronics Inc. All Rights Reserved.
+            <div className="login-footer-text" style={{ marginTop: '60px', opacity: 0.5 }}>
+              © {currentYear} 26:07 Electronics Inc.
+            </div>
           </div>
         </div>
       </div>
