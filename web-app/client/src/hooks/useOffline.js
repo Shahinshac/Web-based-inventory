@@ -7,36 +7,52 @@ import { useState, useEffect } from 'react'
 
 export const useOffline = (isAuthenticated) => {
   const [isOnline, setIsOnline] = useState(true) // Default to online
+  const [connectionStatus, setConnectionStatus] = useState('checking') // 'checking', 'online', 'offline', 'waking'
+  const [lastCheck, setLastCheck] = useState(Date.now())
   const [offlineTransactions, setOfflineTransactions] = useState([])
   const [isSyncing, setIsSyncing] = useState(false)
   const [lastDataRefresh, setLastDataRefresh] = useState(null)
 
+  const testConnection = useCallback(async () => {
+    try {
+      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '') + '/health'
+      
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 8000)
+
+      const test = await fetch(apiUrl, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal
+      })
+      
+      clearTimeout(timeoutId)
+
+      if (test.ok) {
+        setIsOnline(true)
+        setConnectionStatus('online')
+      } else if (test.status === 503) {
+        // Service worker returned offline or server is starting up
+        setIsOnline(false)
+        setConnectionStatus('offline')
+      } else {
+        setIsOnline(false)
+        setConnectionStatus('offline')
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        setConnectionStatus('waking')
+      } else {
+        setIsOnline(false)
+        setConnectionStatus('offline')
+      }
+    } finally {
+      setLastCheck(Date.now())
+    }
+  }, [])
+
   // Handle online/offline events - More reliable detection
   useEffect(() => {
-    // Test actual connectivity by pinging the API
-    const testConnection = async () => {
-      try {
-        const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000') + '/health'
-        console.log('🔍 Testing connection to:', apiUrl)
-
-        const test = await fetch(apiUrl, {
-          method: 'GET',
-          headers: { 'Content-Type': 'application/json' }
-        })
-
-        if (test.ok) {
-          console.log('✅ Backend is online')
-          setIsOnline(true)
-        } else {
-          console.log('❌ Backend returned status:', test.status)
-          setIsOnline(false)
-        }
-      } catch (error) {
-        console.log('❌ Connection test failed:', error.message)
-        setIsOnline(false)
-      }
-    }
-
     // Test on mount
     testConnection()
 
@@ -187,12 +203,15 @@ export const useOffline = (isAuthenticated) => {
 
   return {
     isOnline,
+    connectionStatus,
+    lastCheck,
     offlineTransactions,
     isSyncing,
     lastDataRefresh,
     syncOfflineData,
     loadOfflineTransactions,
     loadCachedData,
+    testConnection,
     saveOfflineTransaction
   }
 }

@@ -8,9 +8,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
-import { API } from './utils/api.js';
+import { API, apiPost } from './utils/api.js';
+import { useOffline } from './hooks/useOffline';
 
 const Login = ({ onLogin }) => {
+  const { isOnline, connectionStatus, testConnection } = useOffline(false);
   // ==================== STATE ====================
 
   // Staff login state
@@ -117,17 +119,11 @@ const Login = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      // Call backend to send OTP
-      const response = await fetch(API('/api/users/send-otp'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, type: 'login' })
+      // Use apiPost for better error handling and consistency
+      await apiPost('/api/users/send-otp', { 
+        email: customerEmail, 
+        type: 'login' 
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to send OTP');
-      }
 
       // Move to OTP entry step
       setOtpStep('otp');
@@ -154,18 +150,10 @@ const Login = ({ onLogin }) => {
     setLoading(true);
     try {
       // Call backend to verify OTP
-      const response = await fetch(API('/api/users/verify-otp'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, otp: otpCode })
+      const data = await apiPost('/api/users/verify-otp', { 
+        email: customerEmail, 
+        otp: otpCode 
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Invalid OTP');
-      }
-
-      const data = await response.json();
 
       // Auto-login after OTP verification
       const result = await onLogin(customerEmail, null, 'customer', data.token);
@@ -203,21 +191,12 @@ const Login = ({ onLogin }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(API('/api/users/register-customer'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: registerEmail,
-          name: registerName,
-          phone: registerPhone,
-          role: 'customer'
-        })
+      await apiPost('/api/users/register-customer', {
+        email: registerEmail,
+        name: registerName,
+        phone: registerPhone,
+        role: 'customer'
       });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Registration failed');
-      }
 
       // Switch to login after successful registration
       setIsRegistering(false);
@@ -294,14 +273,29 @@ const Login = ({ onLogin }) => {
 
         {/* ==================== FORM SIDE ==================== */}
         <div className="login-form-side">
-          <div className="login-box">
+          {/* Connection Status Indicator */}
+          <div className={`conn-status-bar ${connectionStatus}`}>
+            <Icon name={connectionStatus === 'online' ? 'check-circle' : connectionStatus === 'waking' ? 'loader' : 'wifi-off'} size={14} />
+            <span>
+              {connectionStatus === 'online' ? 'System Online' : 
+               connectionStatus === 'waking' ? 'Connecting to Server...' : 
+               'System Offline - Check Internet'}
+            </span>
+            {connectionStatus !== 'online' && (
+              <button onClick={testConnection} className="retry-link">
+                <Icon name="refresh-cw" size={12} />
+              </button>
+            )}
+          </div>
 
+          <div className="login-box">
             {/* ==================== MODE SELECTOR ==================== */}
             <div className="mode-selector">
               <button
                 type="button"
                 className={`mode-btn ${userMode === 'staff' ? 'active' : ''}`}
                 onClick={() => switchMode('staff')}
+                disabled={loading}
               >
                 <Icon name="users" size={16} />
                 Staff Login
@@ -326,13 +320,8 @@ const Login = ({ onLogin }) => {
 
                 <form onSubmit={onStaffLoginSubmit} className="login-form">
                   <div className="field">
-<<<<<<< HEAD
-                    <label htmlFor="login-username">
-                      <Icon name="user" size={14} />
-=======
                     <label htmlFor="staff-username">
-                      <Icon name="customers" size={14} />
->>>>>>> 35b56c38bdad5fa42c327244c591f3bdd08aaff7
+                      <Icon name="user" size={14} />
                       Username
                     </label>
                     <input
@@ -477,9 +466,9 @@ const Login = ({ onLogin }) => {
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={loading || !registerEmail || !registerName || !registerPhone}
+                      disabled={loading || !registerEmail || !registerName || !registerPhone || connectionStatus === 'offline'}
                     >
-                      {loading ? 'Creating account...' : 'Create Account'}
+                      {loading ? 'Creating account...' : connectionStatus === 'offline' ? 'Server Offline' : 'Create Account'}
                     </button>
 
                     <div className="form-footer">
@@ -527,9 +516,9 @@ const Login = ({ onLogin }) => {
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={loading || !customerEmail}
+                      disabled={loading || !customerEmail || connectionStatus === 'offline'}
                     >
-                      {loading ? 'Sending OTP...' : 'Send OTP to Email'}
+                      {loading ? 'Sending OTP...' : connectionStatus === 'offline' ? 'Server Offline' : 'Send OTP to Email'}
                     </button>
 
                     <div className="form-footer">
@@ -598,9 +587,9 @@ const Login = ({ onLogin }) => {
                     <button
                       type="submit"
                       className="submit-btn"
-                      disabled={loading || otpCode.length !== 6}
+                      disabled={loading || otpCode.length !== 6 || connectionStatus === 'offline'}
                     >
-                      {loading ? 'Verifying...' : 'Verify OTP & Login'}
+                      {loading ? 'Verifying...' : connectionStatus === 'offline' ? 'Server Offline' : 'Verify OTP & Login'}
                     </button>
 
                     <div className="form-footer">

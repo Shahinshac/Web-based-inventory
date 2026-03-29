@@ -60,6 +60,11 @@ self.addEventListener('fetch', (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // Bypass Service Worker for health checks and specific routes
+  if (url.pathname === '/health') {
+    return; // Let browser handle it natively
+  }
+
   // Skip non-HTTP requests
   if (!request.url.startsWith('http')) {
     return;

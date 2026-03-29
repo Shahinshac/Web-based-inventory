@@ -1917,9 +1917,29 @@ h2 {
   flex-shrink: 0;
 }
 
+.conn-status-bar.online {
+  background: #f0fdf4;
+  color: #10b981;
+  border: 1px solid #d1fae5;
+}
+
+.conn-status-bar.offline {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+  animation: pulse 2s infinite;
+}
+
+.conn-status-bar.waking {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fde68a;
+}
+
 @keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.02); }
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .right button {
@@ -6886,13 +6906,72 @@ textarea:focus-visible {
 /* Form Side */
 .login-form-side {
   flex: 1;
-  padding: 32px;
+  padding: 40px;
   display: flex;
   flex-direction: column;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+}
+
+/* Connection Status Indicator */
+.conn-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  border-radius: 99px;
+  margin: 0 auto 32px;
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.4s ease;
+  width: fit-content;
+}
+
+.conn-status-bar.online {
+  background: #f0fdf4;
+  color: #10b981;
+  border: 1px solid #d1fae5;
+}
+
+.conn-status-bar.office {
+  background: #fef2f2;
+  color: #ef4444;
+  border: 1px solid #fee2e2;
+  animation: pulse 2s infinite;
+}
+
+.conn-status-bar.waking {
+  background: #fffbeb;
+  color: #f59e0b;
+  border: 1px solid #fef3c7;
+}
+
+.retry-link {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: inherit;
+  display: flex;
+  align-items: center;
+  padding: 4px;
+  border-radius: 50%;
+  transition: transform 0.3s;
+}
+
+.retry-link:hover {
+  transform: rotate(180deg);
+}
+
+@keyframes pulse {
+  0% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.8; transform: scale(0.98); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .login-box {
   flex: 1;
+  animation: slideUp 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 /* Mode Selector */
@@ -15964,70 +16043,6 @@ body.dark-theme .pos-cat-pill:hover {
 }
 body.dark-theme .pos-cat-pill.active {
   background: #6366f1;
-  border-color: #6366f1;
-  color: #fff;
-}
-body.dark-theme .pos-product-card {
-  background: #1e293b;
-  border-color: #334155;
-}
-body.dark-theme .pos-product-card:hover {
-  border-color: #818cf8;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
-}
-body.dark-theme .pos-card-thumb {
-  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
-}
-body.dark-theme .pos-card-name {
-  color: #e2e8f0;
-}
-body.dark-theme .pos-card-price {
-  color: #a5b4fc;
-}
-
-/* ── Responsive adjustments ── */
-@media (max-width: 768px) {
-  .pos-products-grid {
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 10px;
-  }
-  .pos-card-thumb {
-    height: 100px;
-  }
-  .pos-card-body {
-    padding: 8px 10px 10px;
-  }
-  .pos-card-name {
-    font-size: 12px;
-  }
-  .pos-card-price {
-    font-size: 13px;
-  }
-  .pos-add-btn {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@media (max-width: 480px) {
-  .pos-products-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-  }
-  .pos-card-thumb {
-    height: 90px;
-  }
-}
-
-<<<<<<< HEAD
-/* PWA Install Banner */
-.pwa-install-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: var(--surface);
-  border-top: 1px solid var(--border);
   padding: 1rem 1.5rem;
   box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.1);
   z-index: 1000;
@@ -16106,7 +16121,8 @@ body.dark-theme .pos-card-price {
     flex: 1;
     padding: 0.8rem;
   }
-=======
+}
+
 /* Payment Link Button in Checkout */
 .generate-payment-link-btn {
   display: flex;
@@ -16139,5 +16155,4 @@ body.dark-theme .pos-card-price {
 .generate-payment-link-btn svg {
   width: 16px;
   height: 16px;
->>>>>>> 35b56c38bdad5fa42c327244c591f3bdd08aaff7
 }

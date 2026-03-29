@@ -63,7 +63,7 @@ export default function App() {
     handleDeleteUserPhoto
    } = useAuth();
 
-  const { isOnline } = useOffline(isAuthenticated);
+  const { isOnline, connectionStatus, testConnection, offlineTransactions, syncOfflineData } = useOffline(isAuthenticated);
 
   const {
     products,
