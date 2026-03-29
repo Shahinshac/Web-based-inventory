@@ -288,98 +288,135 @@ const Login = ({ onLogin }) => {
             {mode === 'staff' && (
               <form onSubmit={handleStaffLogin}>
                 <h2 style={{
-                  fontSize: '26px',
-                  fontWeight: '700',
-                  margin: '0 0 8px 0',
-                  color: '#0f172a'
-                }}>Welcome Back</h2>
+                  fontSize: '28px',
+                  fontWeight: '800',
+                  margin: '0 0 6px 0',
+                  color: '#0f172a',
+                  letterSpacing: '-0.5px'
+                }}>Staff Portal</h2>
                 <p style={{
-                  margin: '0 0 32px 0',
+                  margin: '0 0 28px 0',
                   color: '#64748b',
-                  fontSize: '15px'
-                }}>Sign in to your staff account</p>
+                  fontSize: '14px',
+                  fontWeight: '500'
+                }}>Secure access for authorized personnel</p>
 
                 {/* Username */}
-                <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '18px' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    fontSize: '13px',
+                    fontWeight: '700',
                     color: '#0f172a',
-                    marginBottom: '8px'
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>Username</label>
-                  <input
-                    type="text"
-                    value={staffUsername}
-                    onChange={(e) => setStaffUsername(e.target.value)}
-                    placeholder="Enter your username"
-                    required
-                    autoFocus
-                    style={{
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: '2px solid #e2e8f0',
-                      borderRadius: '12px',
-                      fontSize: '15px',
-                      fontFamily: 'inherit',
-                      boxSizing: 'border-box',
-                      transition: 'all 0.2s',
-                      outline: 'none'
-                    }}
-                    onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                    onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                  />
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="text"
+                      value={staffUsername}
+                      onChange={(e) => setStaffUsername(e.target.value)}
+                      placeholder="your username"
+                      required
+                      autoFocus
+                      style={{
+                        width: '100%',
+                        padding: '13px 16px 13px 40px',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '10px',
+                        fontSize: '14px',
+                        fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        outline: 'none',
+                        background: '#fafbfc',
+                        color: '#0f172a'
+                      }}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.background = '#fafbfc';
+                        e.target.style.boxShadow = 'none';
+                      }}
+                    />
+                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
+                      <Icon name="user" size={18} />
+                    </div>
+                  </div>
                 </div>
 
                 {/* Password */}
-                <div style={{ marginBottom: '20px' }}>
+                <div style={{ marginBottom: '18px' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
+                    fontSize: '13px',
+                    fontWeight: '700',
                     color: '#0f172a',
-                    marginBottom: '8px'
+                    marginBottom: '8px',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px'
                   }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? "text" : "password"}
                       value={staffPassword}
                       onChange={(e) => setStaffPassword(e.target.value)}
-                      placeholder="Enter your password"
+                      placeholder="••••••••"
                       required
                       style={{
                         width: '100%',
-                        padding: '12px 16px',
-                        paddingRight: '44px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
+                        padding: '13px 40px 13px 40px',
+                        border: '1.5px solid #e2e8f0',
+                        borderRadius: '10px',
+                        fontSize: '14px',
                         fontFamily: 'inherit',
                         boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        outline: 'none'
+                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                        outline: 'none',
+                        background: '#fafbfc',
+                        letterSpacing: '0.15em',
+                        color: '#0f172a'
                       }}
-                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                      onFocus={(e) => {
+                        e.target.style.borderColor = '#6366f1';
+                        e.target.style.background = 'white';
+                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                      }}
+                      onBlur={(e) => {
+                        e.target.style.borderColor = '#e2e8f0';
+                        e.target.style.background = '#fafbfc';
+                        e.target.style.boxShadow = 'none';
+                      }}
                     />
+                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
+                      <Icon name="lock" size={18} />
+                    </div>
                     <button
                       type="button"
                       onClick={() => setShowPassword(!showPassword)}
                       style={{
                         position: 'absolute',
-                        right: '14px',
+                        right: '12px',
                         top: '50%',
                         transform: 'translateY(-50%)',
                         background: 'none',
                         border: 'none',
                         cursor: 'pointer',
-                        color: '#64748b',
+                        color: '#94a3b8',
                         padding: '8px',
                         display: 'flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        transition: 'color 0.2s'
                       }}
+                      onMouseOver={(e) => e.target.style.color = '#6366f1'}
+                      onMouseOut={(e) => e.target.style.color = '#94a3b8'}
                     >
-                      <Icon name={showPassword ? "lock" : "eye"} size={20} />
+                      <Icon name={showPassword ? "eye" : "lock"} size={18} />
                     </button>
                   </div>
                 </div>
@@ -388,34 +425,41 @@ const Login = ({ onLogin }) => {
                 <label style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '8px',
-                  fontSize: '14px',
+                  gap: '10px',
+                  fontSize: '13px',
                   cursor: 'pointer',
-                  marginBottom: '24px',
-                  color: '#475569'
+                  marginBottom: '28px',
+                  color: '#475569',
+                  fontWeight: '500'
                 }}>
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{ cursor: 'pointer', width: '18px', height: '18px' }}
+                    style={{
+                      cursor: 'pointer',
+                      width: '16px',
+                      height: '16px',
+                      accentColor: '#6366f1'
+                    }}
                   />
-                  Remember me
+                  <span>Keep me signed in</span>
                 </label>
 
                 {/* Error */}
                 {staffError && (
                   <div style={{
-                    padding: '14px 16px',
+                    padding: '13px 14px',
                     background: '#fee2e2',
                     border: '1px solid #fca5a5',
-                    borderRadius: '12px',
+                    borderRadius: '10px',
                     color: '#991b1b',
-                    fontSize: '14px',
+                    fontSize: '13px',
                     marginBottom: '20px',
                     display: 'flex',
                     alignItems: 'center',
-                    gap: '10px'
+                    gap: '10px',
+                    fontWeight: '500'
                   }}>
                     <Icon name="alert-circle" size={18} />
                     {staffError}
@@ -429,37 +473,67 @@ const Login = ({ onLogin }) => {
                   style={{
                     width: '100%',
                     padding: '14px 24px',
-                    background: staffLoading ? '#94a3b8' : '#6366f1',
+                    background: staffLoading ? '#cbd5e1' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
                     color: 'white',
                     border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '15px',
+                    borderRadius: '10px',
+                    fontSize: '14px',
                     fontWeight: '700',
                     cursor: staffLoading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.5px'
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    letterSpacing: '0.5px',
+                    textTransform: 'uppercase',
+                    boxShadow: staffLoading ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.3)',
+                    position: 'relative',
+                    overflow: 'hidden'
                   }}
-                  onMouseOver={(e) => !staffLoading && (e.target.style.background = '#4f46e5')}
-                  onMouseOut={(e) => !staffLoading && (e.target.style.background = '#6366f1')}
+                  onMouseOver={(e) => {
+                    if (!staffLoading) {
+                      e.target.style.transform = 'translateY(-2px)';
+                      e.target.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
+                    }
+                  }}
+                  onMouseOut={(e) => {
+                    if (!staffLoading) {
+                      e.target.style.transform = 'translateY(0)';
+                      e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
+                    }
+                  }}
                 >
-                  {staffLoading ? '🔄 Signing in...' : '🔓 Sign In'}
+                  {staffLoading ? '🔄 Signing in...' : '🔐 Sign In'}
                 </button>
+
+                {/* Divider */}
+                <div style={{
+                  margin: '24px 0',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  color: '#cbd5e1'
+                }}>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                  <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>OR</span>
+                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
+                </div>
 
                 {/* Help */}
                 <div style={{
-                  marginTop: '20px',
                   padding: '14px 16px',
-                  background: '#f0fdf4',
-                  border: '1px solid #86efac',
-                  borderRadius: '12px',
-                  fontSize: '14px',
-                  color: '#166534',
+                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
+                  border: '1.5px solid #bae6fd',
+                  borderRadius: '10px',
+                  fontSize: '13px',
+                  color: '#0c4a6e',
                   display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
+                  alignItems: 'flex-start',
+                  gap: '10px',
+                  fontWeight: '500',
+                  lineHeight: '1.5'
                 }}>
-                  <Icon name="lock" size={18} />
-                  <span>Contact your administrator if you need an account</span>
+                  <div style={{ marginTop: '2px', flexShrink: 0 }}>
+                    <Icon name="info" size={16} />
+                  </div>
+                  <span>Don't have an account? Contact your <strong>administrator</strong> to request access.</span>
                 </div>
               </form>
             )}
