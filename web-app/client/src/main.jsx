@@ -10,6 +10,7 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
+import ErrorBoundary from './components/ErrorBoundary';
 import './styles.css';
 import './theme-modern.css';
 import './bento-theme.css';
@@ -208,12 +209,18 @@ const initializeApp = () => {
     // Render with or without StrictMode based on config
     if (APP_CONFIG.ENABLE_STRICT_MODE) {
       root.render(
-        <React.StrictMode>
-          <App />
-        </React.StrictMode>
+        <ErrorBoundary>
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        </ErrorBoundary>
       );
     } else {
-      root.render(<App />);
+      root.render(
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
+      );
     }
     
     console.log('✅ App rendered successfully');
