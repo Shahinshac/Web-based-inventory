@@ -215,10 +215,32 @@ def get_all_users():
 @auth_bp.route('/check/<id>', methods=['GET'])
 def check_user(id):
     db = get_db()
-    user = db.users.find_one({"_id": ObjectId(id)})
-    if not user:
-        return jsonify({"exists": False, "approved": False, "message": "User account not found"})
-    return jsonify({"exists": True, "approved": user.get('approved', False), "username": user.get('username')})
+    try:
+        user_id = ObjectId(id)
+    except Exception:
+        return jsonify({"exists": False, "approved": False, "message": "Invalid ID format"})
+
+    # Check staff users collection first
+    user = db.users.find_one({"_id": user_id})
+    if user:
+        return jsonify({
+            "exists": True, 
+            "approved": user.get('approved', False), 
+            "username": user.get('username'),
+            "role": user.get('role', 'cashier')
+        })
+    
+    # Check customers collection if not found in staff
+    customer = db.customers.find_one({"_id": user_id})
+    if customer:
+        return jsonify({
+            "exists": True,
+            "approved": True, # Customers are approved by default if account exists
+            "name": customer.get('name'),
+            "role": 'customer'
+        })
+
+    return jsonify({"exists": False, "approved": False, "message": "User account not found"})
 
 @auth_bp.route('/<username>/session', methods=['GET'])
 @authenticate_token

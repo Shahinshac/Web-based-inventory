@@ -7,10 +7,11 @@ import logging
 import jwt
 from datetime import datetime, timedelta
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, current_app, g
-
+from flask import Blueprint, request, jsonify, current_app, g, send_file
 from database import get_db
 from utils.auth_middleware import authenticate_token
+from utils.constants import COMPANY_NAME, COMPANY_PHONE
+from services.customer_service import build_vcard, build_pvc_card_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -379,4 +380,44 @@ def change_customer_password():
     return jsonify({
         "error": "Password changes not supported for OTP-based authentication",
         "message": "Contact support to change your email address"
-    }), 400
+    }), 400@customer_portal_bp.route('/vcard', methods=['GET'])
+@authenticate_token
+def download_vcard():
+    """Download vCard for the current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        vcard_text = build_vcard(customer)
+        safe_name = customer.get('name', 'contact').replace(' ', '_')
+        
+        return vcard_text, 200, {
+            'Content-Type': 'text/vcard; charset=utf-8',
+            'Content-Disposition': f'attachment; filename="{safe_name}.vcf"'
+        }
+    except Exception as e:
+        logger.error(f"vCard error: {e}")
+        return jsonify({"error": "Failed to generate vCard"}), 500
+
+@customer_portal_bp.route('/pvc-card', methods=['GET'])
+@authenticate_token
+def download_pvc_card():
+    """Download PVC-sized PDF card for the current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        pdf_buffer = build_pvc_card_pdf(customer, COMPANY_NAME, COMPANY_PHONE)
+        safe_name = customer.get('name', 'customer').replace(' ', '_')
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"card_{safe_name}.pdf"
+        )
+    except Exception as e:
+        logger.error(f"PVC card error: {e}")
+        return jsonify({"error": "Failed to generate identity card"}), 500

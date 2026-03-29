@@ -87,3 +87,59 @@ export const downloadInvoicePDF = async (invoiceId) => {
 export const renewWarranty = async (warrantyId) => {
   return await apiPost(`/api/customer/warranties/${warrantyId}/renew`, {});
 };
+
+/**
+ * Download customer vCard
+ */
+export const downloadVCard = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch('/api/customer/vcard', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to download vCard');
+    
+    const text = await response.text();
+    const blob = new Blob([text], { type: 'text/vcard' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'business_contact.vcf';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('vCard download error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Download PVC Membership Card
+ */
+export const downloadPVCCard = async () => {
+  try {
+    const token = localStorage.getItem('authToken');
+    const response = await fetch('/api/customer/pvc-card', {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    
+    if (!response.ok) throw new Error('Failed to download identity card');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'membership_card.pdf';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('PVC Card download error:', error);
+    throw error;
+  }
+};
+

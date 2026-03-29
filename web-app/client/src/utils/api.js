@@ -10,8 +10,25 @@ export const getApiBaseUrl = () => {
   }
   
   // Intelligent resolution for local network testing (e.g. mobile phones)
-  if (typeof window !== 'undefined' && window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
-    return `http://${window.location.hostname}:5000`;
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If we're on localhost, use locahost:5000
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+    
+    // If we're on a Vercel/Production domain, we should NOT assume port 5000.
+    // If VITE_API_URL is missing, we try to use the SAME hostname as the backend
+    // but this is only common if it's a monolithic deploy.
+    // For many users, they might be using a specific tunnel or a sub-domain.
+    if (hostname.includes('.vercel.app')) {
+      // Return a placeholder or the same host if you're proxied, 
+      // but for Vercel + Flask local, an ngrok URL is needed or VITE_API_URL must be set.
+      return ''; // Force it to be empty if not set, which will trigger an error or use relative path
+    }
+
+    return `http://${hostname}:5000`;
   }
   
   return 'http://localhost:5000';

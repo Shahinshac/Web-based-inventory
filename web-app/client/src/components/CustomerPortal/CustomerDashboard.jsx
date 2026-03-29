@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
 import { apiGet } from '../../utils/api';
+import { downloadPVCCard, downloadVCard } from '../../services/customerPortalService';
 
 const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
   // Mapping stats from props (Backend returns { stats: { ... }, memberSince: ... })
@@ -83,22 +84,53 @@ const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }
             />
           </div>
 
-          {/* Quick Actions */}
-          <div className="portal-section mt-4">
-            <h3 className="section-title">Quick Actions</h3>
-            <div className="quick-actions">
-              <a href="#invoices" className="action-card">
-                <Icon name="layers" size={20} />
-                <span>View Invoices</span>
-              </a>
-              <a href="#warranties" className="action-card">
-                <Icon name="shield" size={20} />
-                <span>Manage Warranties</span>
-              </a>
-              <a href="#profile" className="action-card">
-                <Icon name="user" size={20} />
-                <span>Update Profile</span>
-              </a>
+          {/* Digital Identity & Quick Actions */}
+          <div className="portal-section mt-4 grid-2">
+            <div className="dashboard-column">
+              <h3 className="section-title">Quick Actions</h3>
+              <div className="quick-actions-list">
+                <a href="#invoices" className="action-row">
+                  <div className="action-icon"><Icon name="layers" size={18} /></div>
+                  <span>View My Invoices</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+                <a href="#warranties" className="action-row">
+                  <div className="action-icon"><Icon name="shield" size={18} /></div>
+                  <span>Check Warranties</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+                <a href="#profile" className="action-row">
+                  <div className="action-icon"><Icon name="user" size={18} /></div>
+                  <span>Account Settings</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+              </div>
+            </div>
+
+            <div className="dashboard-column">
+              <h3 className="section-title">Digital Identity</h3>
+              <div className="identity-card-demo">
+                <div className="card-mockup">
+                  <div className="card-header">
+                    <span className="card-logo">⚡</span>
+                    <span className="card-brand">26:07</span>
+                  </div>
+                  <div className="card-body">
+                    <p className="card-holder">{currentUser?.name || 'Customer'}</p>
+                    <p className="card-type">Premium Member</p>
+                  </div>
+                </div>
+                <div className="identity-actions">
+                  <button onClick={downloadVCard} className="btn-identity">
+                    <Icon name="user-plus" size={16} />
+                    <span>Save Contact</span>
+                  </button>
+                  <button onClick={downloadPVCCard} className="btn-identity secondary">
+                    <Icon name="download" size={16} />
+                    <span>Member ID</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
