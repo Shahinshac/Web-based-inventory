@@ -95,11 +95,20 @@ const Login = ({ onLogin }) => {
 
     setCustomerLoading(true);
     try {
-      const response = await fetch(API('/api/users/send-otp'), {
+      const apiUrl = API('/api/users/send-otp');
+      console.log('🔍 Attempting to send OTP to:', apiUrl);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, type: 'login' })
+        body: JSON.stringify({ email: customerEmail, type: 'login' }),
+        signal: controller.signal
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const err = await response.json();
@@ -109,11 +118,14 @@ const Login = ({ onLogin }) => {
       setOtpStep('otp');
       setOtpTimer(300); // 5 minutes
     } catch (error) {
+      console.error('❌ OTP Send Error:', error);
       let errorMsg = error.message || 'Failed to send OTP';
 
-      // Handle network errors
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        errorMsg = 'Network error - Please check your connection and try again';
+      // Handle different error types
+      if (error.name === 'AbortError') {
+        errorMsg = 'Request timed out - Backend may be slow. Please try again.';
+      } else if (error instanceof TypeError) {
+        errorMsg = 'Network error - Please check that you\'re connected to the internet and try again. If the problem persists, the backend may be unavailable.';
       }
 
       setCustomerError(errorMsg);
