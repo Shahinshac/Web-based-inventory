@@ -6,10 +6,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
-import { API } from './utils/api.js';
+import { API, apiPost } from './utils/api.js';
+import { useOffline } from './hooks/useOffline.js';
 
 const Login = ({ onLogin }) => {
   const [mode, setMode] = useState('staff'); // 'staff' or 'customer'
+  const { connectionStatus: connStatus } = useOffline(false);
 
   // Staff login
   const [staffUsername, setStaffUsername] = useState('');
@@ -27,8 +29,6 @@ const Login = ({ onLogin }) => {
   const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
   const [otpTimer, setOtpTimer] = useState(0);
 
-  // Connection status (for visual feedback)
-  const [connStatus, setConnStatus] = useState('online'); // online, offline, waking
 
   // Load remembered staff username
   useEffect(() => {
@@ -98,17 +98,7 @@ const Login = ({ onLogin }) => {
 
     setCustomerLoading(true);
     try {
-      const response = await fetch(API('/api/users/send-otp'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, type: 'login' })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to send OTP');
-      }
-
+      await apiPost('/api/users/send-otp', { email: customerEmail, type: 'login' });
       setOtpStep('otp');
       setOtpTimer(300);
     } catch (error) {
@@ -130,18 +120,7 @@ const Login = ({ onLogin }) => {
 
     setCustomerLoading(true);
     try {
-      const response = await fetch(API('/api/users/verify-otp'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, otp: customerOtp })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Invalid code');
-      }
-
-      const data = await response.json();
+      const data = await apiPost('/api/users/verify-otp', { email: customerEmail, otp: customerOtp });
       const result = await onLogin(customerEmail, null, 'customer', data.token);
       if (result && result.error) {
         setCustomerError(result.error);
