@@ -182,26 +182,26 @@ const Login = ({ onLogin }) => {
         {/* Left Side: Branding & Info */}
         <div className="login-brand-side">
           <div className="brand-inner">
-            <div className="brand-logo-box" style={{ width: '100px', height: '100px', marginBottom: '40px' }}>
-              <Icon name="zap" size={50} />
+            <div className="brand-logo-box">
+              <Icon name="zap" size={40} />
             </div>
-            <h1 className="brand-name" style={{ fontSize: '42px', marginBottom: '20px' }}>26:07 Electronics</h1>
-            <p className="brand-tagline" style={{ fontSize: '18px', maxWidth: '450px', marginBottom: '60px' }}>
+            <h1 className="brand-name">26:07 Electronics</h1>
+            <p className="brand-tagline">
               Advanced Inventory & POS Management System. 
               Efficiency and reliability at your fingertips.
             </p>
             
-            <div className="brand-list" style={{ gap: '24px' }}>
-              <div className="brand-list-item" style={{ padding: '18px 24px', fontSize: '17px' }}>
-                <Icon name="check-circle" size={20} />
+            <div className="brand-list">
+              <div className="brand-list-item">
+                <Icon name="check-circle" size={18} />
                 <span>Real-time Inventory Tracking</span>
               </div>
-              <div className="brand-list-item" style={{ padding: '18px 24px', fontSize: '17px' }}>
-                <Icon name="check-circle" size={20} />
+              <div className="brand-list-item">
+                <Icon name="check-circle" size={18} />
                 <span>Secure Cloud-Based Storage</span>
               </div>
-              <div className="brand-list-item" style={{ padding: '18px 24px', fontSize: '17px' }}>
-                <Icon name="check-circle" size={20} />
+              <div className="brand-list-item">
+                <Icon name="check-circle" size={18} />
                 <span>Automated Financial Reporting</span>
               </div>
             </div>
@@ -237,13 +237,13 @@ const Login = ({ onLogin }) => {
             {mode === 'staff' ? (
               /* Staff Login Form */
               <div className="staff-portal">
-                <div className="login-header" style={{ marginBottom: '40px', maxWidth: '450px' }}>
-                  <div className="portal-badge" style={{ padding: '6px 16px', fontSize: '12px' }}>STAFF PORTAL</div>
-                  <h2 style={{ fontSize: '36px', marginTop: '16px' }}>Welcome Back</h2>
-                  <p style={{ fontSize: '16px' }}>Please sign in to access the management dashboard.</p>
+                <div className="login-header">
+                  <div className="portal-badge">STAFF PORTAL</div>
+                  <h2>Welcome Back</h2>
+                  <p>Please sign in to access the management dashboard.</p>
                 </div>
 
-                <form className="login-form" onSubmit={handleStaffLogin} style={{ maxWidth: '450px' }}>
+                <form className="login-form" onSubmit={handleStaffLogin}>
                   <div className="field">
                     <label>
                       <Icon name="user" size={14} />
@@ -315,13 +315,13 @@ const Login = ({ onLogin }) => {
             ) : (
               /* Customer Login Form */
               <div className="customer-portal">
-                <div className="login-header" style={{ marginBottom: '40px', maxWidth: '450px' }}>
-                  <div className="portal-badge" style={{ padding: '6px 16px', fontSize: '12px' }}>CUSTOMER PORTAL</div>
-                  <h2 style={{ fontSize: '36px', marginTop: '16px' }}>Hello!</h2>
-                  <p style={{ fontSize: '16px' }}>Sign in with your email to view your orders and invoices.</p>
+                <div className="login-header">
+                  <div className="portal-badge">CUSTOMER PORTAL</div>
+                  <h2>Hello!</h2>
+                  <p>Sign in with your email to view your orders and invoices.</p>
                 </div>
 
-                <form className="login-form" onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp} style={{ maxWidth: '450px' }}>
+                <form className="login-form" onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
                   {otpStep === 'email' ? (
                     /* Step 1: Email */
                     <>
