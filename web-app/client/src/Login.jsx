@@ -93,7 +93,7 @@ const Login = ({ onLogin }) => {
     }
     setLoginLoading(true);
     try {
-      const data = await apiPost('/api/users/customer-login', { email: loginEmail, password: loginPassword });
+      const data = await apiPost('/api/customer-auth/login', { email: loginEmail, password: loginPassword });
       const result = await onLogin(loginEmail, null, 'customer', data.token);
       if (result && result.error) {
         setLoginError(result.error);
@@ -129,7 +129,7 @@ const Login = ({ onLogin }) => {
     }
     setRegLoading(true);
     try {
-      await apiPost('/api/users/customer-register', { email: regEmail, password: regPassword });
+      await apiPost('/api/customer-auth/register', { email: regEmail, password: regPassword });
       setRegSuccess('Account created! You can now login with your email and password.');
       setRegEmail('');
       setRegPassword('');
