@@ -163,16 +163,16 @@ const Login = ({ onLogin }) => {
       padding: '20px',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      <div style={{ width: '100%', maxWidth: '400px' }}>
+      <div style={{ width: '100%', maxWidth: '360px' }}>
         {/* Header */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '40px',
+          marginBottom: '30px',
           color: 'white'
         }}>
-          <div style={{ fontSize: '56px', marginBottom: '16px' }}>⚡</div>
+          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
           <h1 style={{
-            fontSize: '32px',
+            fontSize: '28px',
             fontWeight: '800',
             margin: '0 0 8px 0',
             letterSpacing: '-0.5px'
@@ -263,7 +263,7 @@ const Login = ({ onLogin }) => {
           </div>
 
           {/* Content */}
-          <div style={{ padding: '40px' }}>
+          <div style={{ padding: '32px' }}>
             {/* Staff Login */}
             {mode === 'staff' && (
               <form onSubmit={handleStaffLogin}>
