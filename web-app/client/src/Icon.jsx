@@ -292,6 +292,32 @@ const Icon = ({
     );
   }
 
+  if (name === 'shield') {
+    return (
+      <svg {...svgProps}>
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+      </svg>
+    );
+  }
+
+  if (name === 'alert-circle') {
+    return (
+      <svg {...svgProps}>
+        <circle cx="12" cy="12" r="10" />
+        <path d="M12 8v4" />
+        <path d="M12 16h.01" />
+      </svg>
+    );
+  }
+
+  if (name === 'call') {
+    return (
+      <svg {...svgProps}>
+        <path d="M22 16.92l-3.31-1.62a2 2 0 0 0-2.16.38l-1.67 1.67a16 16 0 0 1-6.26-6.26l1.67-1.67a2 2 0 0 0 .38-2.16L7.08 2A2 2 0 0 0 5.04 1C2.48 1 .5 3 .5 5.55C.5 15.26 8.24 23 18.45 23c2.55 0 4.5-2 4.5-4.5 0-1.04-.31-2-.93-2.85z" />
+      </svg>
+    );
+  }
+
   // ==================== PAYMENT ICONS ====================
 
   if (name === 'cash') {
@@ -795,15 +821,15 @@ Icon.defaultProps = {
  */
 export const AVAILABLE_ICONS = [
   // Navigation
-  'dashboard', 'pos', 'products', 'customers', 'invoices', 
+  'dashboard', 'pos', 'products', 'customers', 'invoices',
   'analytics', 'reports', 'users', 'audit',
   // Actions
-  'add', 'download', 'print', 'trash', 'check', 'close', 
+  'add', 'download', 'print', 'trash', 'check', 'close',
   'eye', 'camera', 'door',
   // Communication
-  'whatsapp', 'email', 'mail', 'phone', 'location',
+  'whatsapp', 'email', 'mail', 'phone', 'call', 'location',
   // Security
-  'lock',
+  'lock', 'shield', 'alert-circle',
   // Payment
   'cash', 'card', 'rupee',
   // Code/Barcode
