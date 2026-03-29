@@ -118,18 +118,22 @@ def checkout():
         if not product: continue
 
         qty = float(it.get('quantity', 0))
-        unit_price = float(it.get('price', 0))
+        unit_price = float(it.get('price', 0)) # Inclusive of GST
         prod_cost = float(product.get('costPrice', 0))
-        # Use per-product GST rate; fall back to 18% for legacy products
         line_gst_percent = float(product.get('gstPercent', 18) or 18)
+        
+        # Extract base price by removing GST component
+        gst_factor = 1 + (line_gst_percent / 100.0)
+        base_unit_price = unit_price / gst_factor
 
-        line_subtotal = unit_price * qty
+        line_subtotal_inclusive = unit_price * qty
+        line_subtotal_base = base_unit_price * qty
         line_cost = prod_cost * qty
-        line_profit = line_subtotal - line_cost
+        line_profit = line_subtotal_base - line_cost
 
-        # Taxable value for this line (subtotal after proportional discount)
-        line_taxable = line_subtotal * discount_factor
-        # GST amount for this line based on the product's specific GST rate
+        # Taxable value for this line (base subtotal after proportional discount)
+        line_taxable = line_subtotal_base * discount_factor
+        # GST amount for this line
         line_gst_amount = round(line_taxable * (line_gst_percent / 100.0), 2)
 
         bill["items"].append({
@@ -138,15 +142,16 @@ def checkout():
             "hsnCode": product.get('hsnCode', '9999'),
             "quantity": qty,
             "costPrice": prod_cost,
-            "unitPrice": unit_price,
+            "unitPrice": unit_price, # Store inclusive price to match UI
             "gstPercent": line_gst_percent,
-            "lineSubtotal": line_subtotal,
+            "lineSubtotal": line_subtotal_inclusive, # Store inclusive subtotal
             "lineCost": line_cost,
             "lineProfit": line_profit,
             "lineGstAmount": line_gst_amount
         })
 
-        subtotal += line_subtotal
+        # We accumulate inclusive sum for the bill's subtotal
+        subtotal += line_subtotal_inclusive
         total_cost += line_cost
 
         # Deduct inventory
@@ -155,13 +160,10 @@ def checkout():
             {"$inc": {"quantity": -qty}}
         )
 
-    # Tax & Discount Math
+    # Tax & Discount Math (subtotal is inclusive of GST)
     discount_amount = (subtotal * discount_percent) / 100
     after_discount = subtotal - discount_amount
 
-    # GST: sum of per-item GST amounts (each calculated on the item's discounted taxable value).
-    # This correctly handles products with different GST rates.
-    # For uniform 18% products the result equals after_discount × 0.18.
     # GST is collected for the government and is NOT company revenue or profit.
     gst_amount = sum(i["lineGstAmount"] for i in bill["items"])
 
@@ -172,10 +174,16 @@ def checkout():
     else:
         igst = round(gst_amount, 2)      # Full GST as IGST
 
-    grand_total = after_discount + gst_amount
-    # Profit = revenue (selling price) minus cost of goods sold (COGS) minus discount.
-    # GST is excluded from profit because it is passed directly to the government.
-    total_profit = subtotal - total_cost - discount_amount
+    # grand_total is already after_discount because after_discount is inclusive of GST
+    grand_total = after_discount
+    
+    # Profit = (revenue excluding GST) minus cost of goods sold (COGS).
+    # Since total_profit is calculated via per-item line_profit, we sum it and apply discount factor 
+    # to account for the profit loss due to the global discount.
+    pre_discount_profit = sum(i["lineProfit"] for i in bill["items"])
+    # The discount effectively eats directly into profit (base amount lost)
+    total_base_lost_to_discount = (subtotal - gst_amount) * (discount_percent / 100.0)
+    total_profit = pre_discount_profit - total_base_lost_to_discount
 
     bill["subtotal"] = round(subtotal, 2)
     bill["discountAmount"] = round(discount_amount, 2)

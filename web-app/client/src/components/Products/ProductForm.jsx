@@ -74,11 +74,14 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     }
   };
 
-  // Calculate profit
-  const profit = formData.price && formData.costPrice ? formData.price - formData.costPrice : 0;
+  // GST Calculations (Selling Price is inclusive of GST)
+  const gstFactor = 1 + (formData.gstPercent || 0) / 100;
+  const basePrice = formData.price > 0 ? formData.price / gstFactor : 0;
+  const gstAmount = formData.price > 0 ? formData.price - basePrice : 0;
+
+  // Calculate profit based on Base Price (exclusive of GST)
+  const profit = basePrice && formData.costPrice ? basePrice - formData.costPrice : 0;
   const profitPercentage = formData.costPrice > 0 ? ((profit / formData.costPrice) * 100).toFixed(1) : 0;
-  // Effective customer price after GST is added on top of the selling price
-  const priceWithGst = formData.price > 0 ? (formData.price * (1 + (formData.gstPercent || 0) / 100)) : 0;
 
   // Stock status
   const getStockStatus = () => {
@@ -131,12 +134,13 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             
             <div className="form-row">
               <Input
-                label="Base Price (Excl. 18% GST) (₹)"
+                label={`Base Price (Excl. ${formData.gstPercent || 0}% GST) (₹)`}
                 type="number"
-                value={formData.price ? (formData.price / 1.18).toFixed(2) : ''}
+                value={formData.price ? basePrice.toFixed(2) : ''}
                 onChange={(e) => {
                   const base = parseFloat(e.target.value) || 0;
-                  handleChange('price', Math.round(base * 1.18 * 100) / 100);
+                  const currentGstFactor = 1 + (formData.gstPercent || 0) / 100;
+                  handleChange('price', Math.round(base * currentGstFactor * 100) / 100);
                 }}
                 placeholder="0.00"
                 min="0"
@@ -154,6 +158,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 step="0.01"
                 required
                 error={errors.price}
+                helperText="This price includes GST"
               />
             </div>
 
@@ -184,7 +189,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               {formData.price > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px 0' }}>
                   <span style={{ fontSize: '12px', color: '#6b7280' }}>Customer pays (incl. GST)</span>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>₹{priceWithGst.toFixed(2)}</span>
+                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>₹{formData.price.toFixed(2)}</span>
+                  <span style={{ fontSize: '12px', color: '#9ca3af' }}>Includes ₹{gstAmount.toFixed(2)} GST</span>
                 </div>
               )}
             </div>
