@@ -578,23 +578,62 @@
   margin: 0;
 }
 
-/* ── Sync status ── */
-.last-updated-tag {
-  display: inline-flex;
+/* ═════════════════ DETAILED PROFILE ═════════════════ */
+.profile-header-detailed {
+  display: flex;
   align-items: center;
-  gap: 6px;
-  background: #f0fdf4;
-  color: #16a34a;
-  padding: 4px 10px;
-  border-radius: 100px;
-  font-size: 10px;
-  font-weight: 700;
-  margin-top: 4px;
-  border: 1px solid #dcfce7;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
+  gap: 24px;
+  padding-bottom: 32px;
+  border-bottom: 1px solid #f1f5f9;
+  margin-bottom: 32px;
 }
-.last-updated-tag svg { vertical-align: middle; }
+
+.profile-avatar-large {
+  width: 80px; height: 80px;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  border-radius: 20px;
+  display: flex; align-items: center; justify-content: center;
+  color: white; font-size: 32px; font-weight: 800;
+  box-shadow: 0 10px 15px -3px rgba(16,185,129,0.2);
+}
+
+.profile-info-summary h3 { font-size: 22px; font-weight: 800; color: #0f172a; margin: 0; }
+.profile-info-summary p { font-size: 14px; color: #64748b; margin: 4px 0 12px; }
+
+.profile-badges { display: flex; gap: 8px; }
+.badge-premium {
+  background: #fffbeb; color: #b45309; border: 1px solid #fde68a;
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+}
+.badge-verified {
+  background: #f0f9ff; color: #0369a1; border: 1px solid #bae6fd;
+  padding: 4px 10px; border-radius: 6px; font-size: 11px; font-weight: 700;
+}
+
+.profile-section-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 24px;
+}
+.profile-section-card h3 { font-size: 16px; font-weight: 700; color: #0f172a; margin: 0 0 4px; }
+.section-desc-text { font-size: 13px; color: #64748b; margin-bottom: 20px; }
+
+.btn-renew {
+  width: 100%;
+  padding: 10px;
+  background: #10b981;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-renew:hover { background: #059669; transform: translateY(-2px); }
+.btn-renew.secondary { background: #f1f5f9; color: #64748b; }
+.btn-renew.secondary:hover { background: #e2e8f0; }
 
 /* ── Better Card Mockup ── */
 .card-mockup {

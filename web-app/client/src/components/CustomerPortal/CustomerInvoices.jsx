@@ -108,8 +108,9 @@ const CustomerInvoices = ({ currentUser, invoices = [], loading, error }) => {
               <div className="invoice-actions">
                 <button
                   className="action-btn view-btn"
-                  onClick={() => alert('Invoice details: ' + invoice.id)}
-                  title="View Details"
+                  onClick={() => window.open(`/api/public/invoice/${invoice.id}`, '_blank') || 
+                                 window.open(`/invoice/${invoice.id}`, '_blank')}
+                  title="View Invoice"
                 >
                   <Icon name="eye" size={16} />
                 </button>

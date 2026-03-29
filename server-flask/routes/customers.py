@@ -296,10 +296,15 @@ def get_customer_purchases(id):
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
         
-        # Smart Match Query: Find bills by ID, Phone, or exact Name
-        match_conditions = [{"customerId": ObjectId(id)}]
+        # Aggressive Match: ID (as ObjectId or String), Phone, or Name
+        match_conditions = [
+            {"customerId": ObjectId(id)},
+            {"customerId": id}
+        ]
+        
         if customer.get('phone'):
-            match_conditions.append({"customerPhone": customer['phone']})
+            match_conditions.append({"customerPhone": str(customer['phone'])})
+            
         if customer.get('name') and customer['name'].lower() != 'walk-in customer':
             match_conditions.append({"customerName": customer['name']})
             
@@ -309,11 +314,18 @@ def get_customer_purchases(id):
         bills_cursor = db.bills.find(match_query).sort("billDate", -1)
         bills = []
         for bill in bills_cursor:
+            # Handle varied date formats and total fields
+            b_date = bill.get('billDate')
+            if isinstance(b_date, datetime):
+                b_date_str = b_date.isoformat()
+            else:
+                b_date_str = str(b_date) if b_date else None
+                
             bills.append({
                 "id": str(bill['_id']),
-                "billNumber": bill.get('billNumber'),
-                "billDate": bill.get('billDate').isoformat() if bill.get('billDate') else None,
-                "total": float(bill.get('total') or bill.get('grandTotal') or 0),
+                "billNumber": bill.get('billNumber', 'N/A'),
+                "billDate": b_date_str,
+                "total": float(bill.get('grandTotal') or bill.get('total') or 0),
                 "paymentMode": bill.get('paymentMode', 'cash'),
                 "items": bill.get('items', [])
             })
@@ -322,12 +334,15 @@ def get_customer_purchases(id):
         warranties_cursor = db.warranties.find(match_query).sort("expiryDate", -1)
         warranties = []
         for w in warranties_cursor:
+            s_date = w.get('startDate')
+            e_date = w.get('expiryDate')
+            
             warranties.append({
                 "id": str(w['_id']),
-                "productName": w.get('productName'),
-                "productSku": w.get('productSku'),
-                "startDate": w.get('startDate').isoformat() if w.get('startDate') else None,
-                "expiryDate": w.get('expiryDate').isoformat() if w.get('expiryDate') else None,
+                "productName": w.get('productName', 'Unknown Product'),
+                "productSku": w.get('productSku', 'N/A'),
+                "startDate": s_date.isoformat() if isinstance(s_date, datetime) else str(s_date) if s_date else None,
+                "expiryDate": e_date.isoformat() if isinstance(e_date, datetime) else str(e_date) if e_date else None,
                 "status": w.get('status', 'active')
             })
             

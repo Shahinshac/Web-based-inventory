@@ -91,9 +91,19 @@ const CustomerProfile = ({ currentUser }) => {
 
   return (
     <div className="portal-section">
-      <div className="section-header">
-        <h2>My Profile</h2>
-        <p>Manage your account information</p>
+      {/* Profile Header & Avatar */}
+      <div className="profile-header-detailed">
+        <div className="profile-avatar-large">
+          {currentUser?.name?.charAt(0) || 'C'}
+        </div>
+        <div className="profile-info-summary">
+          <h3>{currentUser?.name || 'Customer'}</h3>
+          <p>{currentUser?.email || 'No email provided'}</p>
+          <div className="profile-badges">
+            <span className="badge-premium">Premium</span>
+            <span className="badge-verified">Verified</span>
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -245,8 +255,9 @@ const CustomerProfile = ({ currentUser }) => {
       </div>
 
       {/* Change Password */}
-      <div className="profile-section">
+      <div className="profile-section-card mt-4">
         <h3>Change Password</h3>
+        <p className="section-desc-text">Keep your account secure with a strong password</p>
         <div className="profile-grid">
           <div className="profile-field full-width">
             <label>Current Password</label>
@@ -293,18 +304,17 @@ const CustomerProfile = ({ currentUser }) => {
         </div>
       </div>
 
-      {/* Account Information */}
-      <div className="profile-section">
-        <h3>Account Information</h3>
+      {/* Account Stats */}
+      <div className="profile-section-card mt-4">
         <div className="info-grid">
           <div>
             <p className="info-label">Account Created</p>
-            <p className="info-value">{new Date(currentUser?.createdAt).toLocaleDateString('en-IN')}</p>
+            <p className="info-value">{new Date(currentUser?.createdAt).toLocaleDateString('en-IN') || 'Jan 2024'}</p>
           </div>
           <div>
             <p className="info-label">Account Status</p>
             <p className="info-value">
-              <span className="status-badge green">Active</span>
+              <span className="status-badge green">Active Member</span>
             </p>
           </div>
         </div>
