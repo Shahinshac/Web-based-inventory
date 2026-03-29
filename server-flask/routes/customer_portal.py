@@ -44,11 +44,20 @@ def get_dashboard():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
         customer_id = customer['_id']
+        or_conditions = [
+            {"customerId": customer_id},
+            {"customerId": str(customer_id)}
+        ]
+        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+            or_conditions.append({"customerName": customer.get('name')})
+        if customer.get('phone') and str(customer.get('phone')).strip() != "":
+            or_conditions.append({"customerPhone": customer.get('phone')})
+            
+        match_query = {"$or": or_conditions}
 
         # Get invoices for this customer
-        invoices = list(db.bills.find({"customerId": customer_id}))
+        invoices = list(db.bills.find(match_query))
 
         # Calculate stats
         total_purchases = len(invoices)
@@ -58,7 +67,7 @@ def get_dashboard():
         recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', datetime.utcnow()), reverse=True)[:5]
 
         # Get warranties
-        warranties = list(db.warranties.find({"customerId": customer_id}))
+        warranties = list(db.warranties.find(match_query))
         active_warranties = len([w for w in warranties if w.get('status') == 'active'])
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
@@ -99,6 +108,16 @@ def get_customer_invoices():
 
         db = get_db()
         customer_id = customer['_id']
+        or_conditions = [
+            {"customerId": customer_id},
+            {"customerId": str(customer_id)}
+        ]
+        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+            or_conditions.append({"customerName": customer.get('name')})
+        if customer.get('phone') and str(customer.get('phone')).strip() != "":
+            or_conditions.append({"customerPhone": customer.get('phone')})
+            
+        match_query = {"$or": or_conditions}
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
@@ -106,8 +125,8 @@ def get_customer_invoices():
         skip = (page - 1) * limit
 
         # Fetch invoices
-        invoices_cursor = db.bills.find({"customerId": customer_id}).sort("billDate", -1).skip(skip).limit(limit)
-        total = db.bills.count_documents({"customerId": customer_id})
+        invoices_cursor = db.bills.find(match_query).sort("billDate", -1).skip(skip).limit(limit)
+        total = db.bills.count_documents(match_query)
 
         invoices = []
         for inv in invoices_cursor:
@@ -177,6 +196,16 @@ def get_customer_warranties():
 
         db = get_db()
         customer_id = customer['_id']
+        or_conditions = [
+            {"customerId": customer_id},
+            {"customerId": str(customer_id)}
+        ]
+        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+            or_conditions.append({"customerName": customer.get('name')})
+        if customer.get('phone') and str(customer.get('phone')).strip() != "":
+            or_conditions.append({"customerPhone": customer.get('phone')})
+            
+        match_query = {"$or": or_conditions}
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
@@ -184,8 +213,8 @@ def get_customer_warranties():
         skip = (page - 1) * limit
 
         # Fetch warranties
-        warranties_cursor = db.warranties.find({"customerId": customer_id}).sort("expiryDate", 1).skip(skip).limit(limit)
-        total = db.warranties.count_documents({"customerId": customer_id})
+        warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
+        total = db.warranties.count_documents(match_query)
 
         warranties = []
         for w in warranties_cursor:
@@ -237,8 +266,23 @@ def renew_warranty(warranty_id):
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        warranty = db.warranties.find_one({"_id": ObjectId(warranty_id), "customerId": customer['_id']})
+        customer_id = customer['_id']
+
+        or_conditions = [
+            {"customerId": customer_id},
+            {"customerId": str(customer_id)}
+        ]
+        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+            or_conditions.append({"customerName": customer.get('name')})
+        if customer.get('phone') and str(customer.get('phone')).strip() != "":
+            or_conditions.append({"customerPhone": customer.get('phone')})
+            
+        match_query = {
+            "_id": ObjectId(warranty_id),
+            "$or": or_conditions
+        }
+        
+        warranty = db.warranties.find_one(match_query)
 
         if not warranty:
             return jsonify({"error": "Warranty not found"}), 404
