@@ -6849,14 +6849,15 @@ textarea:focus-visible {
    ================================================== */
 
 .login-page {
-  min-height: 100vh;
+  width: 100vw;
+  height: 100vh;
+  min-height: -webkit-fill-available;
   display: flex;
-  align-items: center;
-  justify-content: center;
   background: #11111d;
   position: relative;
   overflow: hidden;
   padding: 0;
+  margin: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -6882,7 +6883,7 @@ textarea:focus-visible {
 
 .login-wrapper {
   width: 100%;
-  height: 100vh;
+  height: 100%;
   display: flex;
   background: #ffffff;
   overflow: hidden;
@@ -7060,7 +7061,7 @@ textarea:focus-visible {
 }
 
 .login-header {
-  margin-bottom: 32px;
+  margin-bottom: 40px;
   width: 100%;
 }
 
@@ -7099,7 +7100,7 @@ textarea:focus-visible {
 .login-form {
   display: flex;
   flex-direction: column;
-  gap: 20px;
+  gap: 24px;
 }
 
 .login-form .field {
@@ -7184,7 +7185,7 @@ textarea:focus-visible {
   font-size: 14px;
   color: #64748b;
   cursor: pointer;
-  margin-top: 5px;
+  margin-top: 8px;
   user-select: none;
 }
 
@@ -7340,72 +7341,45 @@ textarea:focus-visible {
 
 /* RESPONSIVE REFINEMENTS */
 @media (max-width: 1024px) {
-  .login-wrapper {
-    max-width: 900px;
-  }
   .login-form-side {
-    padding: 50px;
+    padding: 60px 40px;
   }
 }
 
 @media (max-width: 900px) {
-  .login-wrapper {
-    max-width: 500px;
-    flex-direction: column;
-    border-radius: 32px;
-  }
-  .login-brand-side {
-    padding: 50px 40px;
-  }
-  .login-form-side {
-    padding: 40px;
-  }
-}
-
-@media (max-width: 768px) {
-  .login-wrapper {
-    max-width: 450px;
-  }
-}
-
-@media (max-width: 500px) {
   .login-page {
-    padding: 0;
-    align-items: stretch;
+    overflow-y: auto;
+    height: auto;
   }
   .login-wrapper {
-    border-radius: 0;
-    min-height: 100vh;
-    box-shadow: none;
+    flex-direction: column;
+    height: auto;
   }
   .login-brand-side {
-    padding: 60px 24px 40px;
+    padding: 80px 40px 60px;
+    flex: none;
+    width: 100%;
   }
   .login-form-side {
-    padding: 40px 24px;
-    border-radius: 32px 32px 0 0;
-    margin-top: -32px;
-    box-shadow: 0 -10px 50px rgba(0,0,0,0.1);
-  }
-  .brand-name {
-    font-size: 28px;
-  }
-  .brand-tagline {
-    font-size: 14px;
-    margin-bottom: 0;
+    padding: 60px 24px;
+    flex: none;
+    width: 100%;
+    justify-content: flex-start;
   }
   .brand-list {
     display: none;
   }
-  .login-header h2 {
-    font-size: 26px;
+  .brand-name {
+    font-size: 28px;
   }
-  .login-form input {
-    padding: 13px 16px;
-    font-size: 16px;
+}
+
+@media (max-width: 480px) {
+  .login-brand-side {
+    padding: 60px 24px 40px;
   }
-  .submit-btn {
-    padding: 18px 24px;
+  .login-form-side {
+    padding: 40px 20px;
   }
 }
 
