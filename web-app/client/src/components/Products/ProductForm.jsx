@@ -11,6 +11,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     quantity: 0,
     price: 0,
     costPrice: 0,
+    companyProfit: 0,
     gstPercent: 18,
     hsnCode: '9999',
     minStock: 10,
@@ -27,6 +28,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         quantity: product.quantity || 0,
         price: product.price || 0,
         costPrice: product.costPrice || 0,
+        companyProfit: (product.price / (1 + (product.gstPercent || 18) / 100)) - (product.costPrice || 0),
         gstPercent: product.gstPercent !== undefined ? product.gstPercent : 18,
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
@@ -84,12 +86,9 @@ export default function ProductForm({ product, onSubmit, onClose }) {
   // Detailed GST amount
   const gstAmount = formData.price > 0 ? formData.price - basePrice : 0;
 
-  // Company Profit per unit (Base Price - Cost Price)
-  const companyProfit = basePrice - (parseFloat(formData.costPrice) || 0);
-  
-  // Profit Percentage relative to Cost Price
-  const profitPercentage = formData.costPrice > 0 ? ((companyProfit / formData.costPrice) * 100).toFixed(1) : 0;
-  const profit = companyProfit; // Alias for UI consistency with previous code
+  // Final values for UI consistency
+  const profit = formData.companyProfit;
+  const profitPercentage = formData.costPrice > 0 ? ((profit / formData.costPrice) * 100).toFixed(1) : 0;
 
   // Stock status
   const getStockStatus = () => {
@@ -147,8 +146,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 value={formData.costPrice || ''}
                 onChange={(e) => {
                   const cp = parseFloat(e.target.value) || 0;
-                  // If CP changes, we keep the current companyProfit and update the Final Price
-                  const currentProfit = companyProfit;
+                  // If CP changes, we keep current companyProfit and update the Final Price
+                  const currentProfit = formData.companyProfit || 0;
                   const currentGstRate = (formData.gstPercent || 0) / 100;
                   const newBase = cp + currentProfit;
                   const newFinal = newBase * (1 + currentGstRate);
@@ -167,7 +166,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="Company Profit (₹)"
                 type="number"
-                value={formData.price > 0 ? companyProfit.toFixed(2) : ''}
+                value={formData.companyProfit || ''}
                 onChange={(e) => {
                   const profitVal = parseFloat(e.target.value) || 0;
                   const cp = parseFloat(formData.costPrice) || 0;
@@ -175,7 +174,11 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   const newBase = cp + profitVal;
                   const newFinal = newBase * (1 + currentGstRate);
                   
-                  handleChange('price', Math.round(newFinal * 100) / 100);
+                  setFormData(prev => ({
+                    ...prev,
+                    companyProfit: profitVal,
+                    price: Math.round(newFinal * 100) / 100
+                  }));
                 }}
                 placeholder="0.00"
                 step="0.01"
@@ -191,7 +194,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   const gst = parseFloat(e.target.value) || 0;
                   // If GST changes, we keep CP and Profit constant, update Final Price
                   const cp = parseFloat(formData.costPrice) || 0;
-                  const currProfit = companyProfit;
+                  const currProfit = formData.companyProfit || 0;
                   const newBase = cp + currProfit;
                   const newFinal = newBase * (1 + (gst / 100));
                   
@@ -211,7 +214,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label={`Base Price (Excl. GST) (₹)`}
                 type="number"
-                value={formData.price > 0 ? basePrice.toFixed(2) : ''}
+                value={basePrice > 0 ? basePrice.toFixed(2) : ''}
                 readOnly
                 placeholder="0.00"
                 helperText="CP + Profit (Excl. GST)"
@@ -223,7 +226,20 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 label="Final Selling Price (Incl. GST) (₹)"
                 type="number"
                 value={formData.price || ''}
-                onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
+                onChange={(e) => {
+                  const newPrice = parseFloat(e.target.value) || 0;
+                  // If Price changes, we recalculate Profit
+                  const currentGstRate = (formData.gstPercent || 0) / 100;
+                  const currentCp = parseFloat(formData.costPrice) || 0;
+                  const newBase = newPrice / (1 + currentGstRate);
+                  const newProfit = newBase - currentCp;
+
+                  setFormData(prev => ({
+                    ...prev,
+                    price: newPrice,
+                    companyProfit: Math.round(newProfit * 100) / 100
+                  }));
+                }}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
