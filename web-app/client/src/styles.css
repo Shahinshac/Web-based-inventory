@@ -6853,10 +6853,10 @@ textarea:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: radial-gradient(circle at top left, #1e1e2f 0%, #11111d 100%);
+  background: #11111d;
   position: relative;
   overflow: hidden;
-  padding: 24px;
+  padding: 0;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
@@ -6882,13 +6882,9 @@ textarea:focus-visible {
 
 .login-wrapper {
   width: 100%;
-  max-width: 1024px;
+  height: 100vh;
   display: flex;
   background: #ffffff;
-  border-radius: 28px;
-  box-shadow: 
-    0 30px 100px -20px rgba(0, 0, 0, 0.6),
-    0 0 0 1px rgba(255, 255, 255, 0.05);
   overflow: hidden;
   animation: modalContentIn 1s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
@@ -6997,22 +6993,25 @@ textarea:focus-visible {
 /* Form Side */
 .login-form-side {
   flex: 1.2;
-  padding: 60px 70px;
+  padding: 60px 10%;
   display: flex;
   flex-direction: column;
+  justify-content: center;
   background: #ffffff;
   position: relative;
+  overflow-y: auto;
 }
 
 /* Mode Selector */
 .mode-selector {
   display: flex;
   gap: 6px;
-  margin-bottom: 40px;
+  margin-bottom: 48px;
   background: #f1f5f9;
-  padding: 6px;
-  border-radius: 16px;
+  padding: 8px;
+  border-radius: 18px;
   border: 1px solid #e2e8f0;
+  max-width: 450px;
 }
 
 .mode-btn {
@@ -7325,9 +7324,11 @@ textarea:focus-visible {
   text-align: center;
   font-size: 14px;
   color: #94a3b8;
-  margin-top: 40px;
-  padding-top: 24px;
+  padding-top: 32px;
+  margin-top: 48px;
   border-top: 1px solid #f1f5f9;
+  width: 100%;
+  max-width: 450px;
 }
 
 /* RESPONSIVE REFINEMENTS */
