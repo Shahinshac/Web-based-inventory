@@ -109,12 +109,13 @@ const CustomerWarranties = ({ currentUser }) => {
         <div className="warranties-grid">
           {filteredWarranties.map(warranty => {
             const badge = getStatusBadge(warranty);
-            const daysRemaining = Math.ceil(
+            const daysRemaining = Math.max(0, Math.ceil(
               (new Date(warranty.expiryDate) - new Date()) / (1000 * 60 * 60 * 24)
-            );
+            ));
+            const durationMonths = 12; // Default system warranty length
 
             return (
-              <div key={warranty._id} className="warranty-card">
+              <div key={warranty.id} className="warranty-card">
                 <div className="warranty-header">
                   <h3 className="product-name">{warranty.productName}</h3>
                   <span className={`status-badge ${badge.color}`}>
@@ -130,12 +131,12 @@ const CustomerWarranties = ({ currentUser }) => {
                   </div>
                   <div className="detail-row">
                     <span className="label">Duration</span>
-                    <span className="value">{warranty.durationMonths} months</span>
+                    <span className="value">{durationMonths} months</span>
                   </div>
                   <div className="detail-row">
                     <span className="label">Purchase Date</span>
                     <span className="value">
-                      {new Date(warranty.purchaseDate).toLocaleDateString('en-IN')}
+                      {new Date(warranty.startDate).toLocaleDateString('en-IN')}
                     </span>
                   </div>
                   <div className="detail-row">
@@ -144,10 +145,10 @@ const CustomerWarranties = ({ currentUser }) => {
                       {new Date(warranty.expiryDate).toLocaleDateString('en-IN')}
                     </span>
                   </div>
-                  {warranty.serialNumber && (
+                  {warranty.productSku && warranty.productSku !== 'N/A' && (
                     <div className="detail-row">
-                      <span className="label">Serial Number</span>
-                      <span className="value mono">{warranty.serialNumber}</span>
+                      <span className="label">Model Code</span>
+                      <span className="value mono">{warranty.productSku}</span>
                     </div>
                   )}
                 </div>
@@ -158,7 +159,7 @@ const CustomerWarranties = ({ currentUser }) => {
                       <div
                         className="progress-fill"
                         style={{
-                          width: `${Math.max(0, Math.min(100, (daysRemaining / warranty.durationMonths / 30) * 100))}%`,
+                          width: `${Math.max(0, Math.min(100, (daysRemaining / (durationMonths * 30)) * 100))}%`,
                           backgroundColor: badge.color === 'green' ? '#10b981' : badge.color === 'orange' ? '#f59e0b' : '#ef4444'
                         }}
                       />

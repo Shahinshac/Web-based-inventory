@@ -23,7 +23,13 @@ const CustomerDashboard = ({ currentUser }) => {
       try {
         setLoading(true);
         const response = await apiGet('/api/customer/dashboard');
-        setStats(response);
+        setStats({
+          invoiceCount: response.stats?.totalPurchases || 0,
+          totalSpent: response.stats?.totalSpent || 0,
+          warrantyCount: response.stats?.activeWarranties || 0,
+          expiringWarranties: response.stats?.expiredWarranties || 0,
+          memberSince: response.memberSince || new Date().toISOString()
+        });
       } catch (err) {
         setError(err.message);
         console.error('Failed to fetch dashboard stats:', err);
@@ -96,8 +102,8 @@ const CustomerDashboard = ({ currentUser }) => {
             <StatCard
               icon="trending-up"
               label="Member Since"
-              value={new Date(currentUser?.createdAt).getFullYear()}
-              trend={`${Math.round((new Date() - new Date(currentUser?.createdAt)) / (1000 * 60 * 60 * 24))} days`}
+              value={stats.memberSince ? new Date(stats.memberSince).getFullYear() : 'New'}
+              trend={stats.memberSince ? `${Math.round((new Date() - new Date(stats.memberSince)) / (1000 * 60 * 60 * 24))} days` : '0 days'}
             />
           </div>
 

@@ -39,14 +39,14 @@ const CustomerInvoices = ({ currentUser }) => {
     // Filter by search term
     if (searchTerm) {
       filtered = filtered.filter(inv =>
-        inv._id?.includes(searchTerm) ||
-        inv.invoiceNumber?.includes(searchTerm)
+        inv.id?.includes(searchTerm) ||
+        inv.invoiceNo?.includes(searchTerm)
       );
     }
 
     // Filter by status
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(inv => inv.status === filterStatus);
+      filtered = filtered.filter(inv => inv.paymentMethod === filterStatus);
     }
 
     setFilteredInvoices(filtered);
@@ -120,35 +120,35 @@ const CustomerInvoices = ({ currentUser }) => {
       ) : (
         <div className="invoices-list">
           {filteredInvoices.map(invoice => (
-            <div key={invoice._id} className="invoice-row">
+            <div key={invoice.id} className="invoice-row">
               <div className="invoice-info">
                 <div className="invoice-number">
                   <Icon name="layers" size={16} />
                   <div>
-                    <p className="invoice-id">Invoice #{invoice.invoiceNumber || invoice._id.slice(-6)}</p>
+                    <p className="invoice-id">Invoice #{invoice.invoiceNo || invoice.id.slice(-6)}</p>
                     <p className="invoice-date">
-                      {new Date(invoice.createdAt).toLocaleDateString('en-IN')}
+                      {new Date(invoice.date).toLocaleDateString('en-IN')}
                     </p>
                   </div>
                 </div>
                 <div className="invoice-amount">
-                  <p className="amount">₹{invoice.totalAmount?.toLocaleString('en-IN') || 0}</p>
-                  <p className={`status ${invoice.status || 'completed'}`}>
-                    {invoice.status || 'Completed'}
+                  <p className="amount">₹{invoice.total?.toLocaleString('en-IN') || 0}</p>
+                  <p className={`status ${invoice.paymentMethod || 'completed'}`}>
+                    {invoice.paymentMethod || 'Completed'}
                   </p>
                 </div>
               </div>
               <div className="invoice-actions">
                 <button
                   className="action-btn view-btn"
-                  onClick={() => alert('Invoice details: ' + invoice._id)}
+                  onClick={() => alert('Invoice details: ' + invoice.id)}
                   title="View Details"
                 >
                   <Icon name="eye" size={16} />
                 </button>
                 <button
                   className="action-btn download-btn"
-                  onClick={() => handleDownloadPDF(invoice._id)}
+                  onClick={() => handleDownloadPDF(invoice.id)}
                   title="Download PDF"
                 >
                   <Icon name="download" size={16} />

@@ -63,6 +63,7 @@ def get_dashboard():
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
         return jsonify({
+            "memberSince": customer.get('createdAt').isoformat() if customer.get('createdAt') else None,
             "stats": {
                 "totalPurchases": total_purchases,
                 "totalSpent": round(total_spent, 2),
