@@ -23,42 +23,65 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
   ];
 
   return (
-    <div className="customer-portal">
-      {/* Header */}
-      <div className="portal-header">
+    <div className="customer-portal-desktop">
+      {/* Sidebar Navigation */}
+      <aside className="portal-sidebar">
         <div className="portal-brand">
-          <Icon name="spark" size={28} />
+          <div className="brand-logo"><Icon name="zap" size={24} /></div>
           <span>26:07 Electronics</span>
         </div>
-        <div className="portal-user-info">
-          <span className="user-name">{currentUser?.name || currentUser?.username}</span>
-          <button className="logout-btn" onClick={onLogout} title="Logout">
-            <Icon name="arrow-right" size={16} />
+        
+        <nav className="portal-nav-vertical">
+          <div className="nav-section-title">MAIN MENU</div>
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`nav-tab-vertical ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              <Icon name={tab.icon} size={18} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        <div className="portal-sidebar-footer">
+          <button className="logout-btn-sidebar" onClick={onLogout} title="Sign Out">
+            <Icon name="log-out" size={18} />
+            <span>Sign Out</span>
           </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Navigation Tabs */}
-      <div className="portal-nav">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            <Icon name={tab.icon} size={18} />
-            <span>{tab.label}</span>
-          </button>
-        ))}
-      </div>
+      {/* Main Area */}
+      <main className="portal-main-area">
+        {/* Topbar */}
+        <header className="portal-topbar">
+          <div className="portal-page-heading">
+            <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
+          </div>
+          
+          <div className="portal-user-chip">
+            <div className="user-avatar">
+              {currentUser?.name?.charAt(0) || currentUser?.username?.charAt(0) || 'C'}
+            </div>
+            <div className="user-details">
+              <span className="user-name">{currentUser?.name || currentUser?.username}</span>
+              <span className="user-role">Customer Account</span>
+            </div>
+          </div>
+        </header>
 
-      {/* Content */}
-      <div className="portal-content">
-        {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
-        {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
-        {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
-        {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
-      </div>
+        {/* Scrollable Content */}
+        <div className="portal-content-wrapper">
+          <div className="portal-content-inner">
+            {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
+            {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
+            {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
+            {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
+          </div>
+        </div>
+      </main>
     </div>
   );
 };
