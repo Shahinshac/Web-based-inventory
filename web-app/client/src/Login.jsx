@@ -98,8 +98,9 @@ const Login = ({ onLogin }) => {
       const apiUrl = API('/api/users/send-otp');
       console.log('🔍 Attempting to send OTP to:', apiUrl);
 
+      // Controller for OTP send request (20 second timeout)
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 20000);
 
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -123,9 +124,9 @@ const Login = ({ onLogin }) => {
 
       // Handle different error types
       if (error.name === 'AbortError') {
-        errorMsg = 'Request timed out - Backend may be slow. Please try again.';
+        errorMsg = 'Request timed out - The backend server is slow to respond. This may happen if the server is starting up. Please wait a moment and try again.';
       } else if (error instanceof TypeError) {
-        errorMsg = 'Network error - Please check that you\'re connected to the internet and try again. If the problem persists, the backend may be unavailable.';
+        errorMsg = 'Cannot connect to the server - Please check your internet connection. If the problem persists, the backend service may be unavailable.';
       }
 
       setCustomerError(errorMsg);
