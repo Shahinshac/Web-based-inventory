@@ -106,6 +106,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
                 currentUser={currentUser} 
                 invoices={invoices} 
                 loading={loading} 
+                error={error} 
               />
             )}
             {activeTab === 'warranties' && (
@@ -113,6 +114,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
                 currentUser={currentUser} 
                 warranties={warranties} 
                 loading={loading} 
+                error={error} 
               />
             )}
             {activeTab === 'profile' && (

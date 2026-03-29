@@ -3,38 +3,25 @@
  * @description Display customer's purchase invoices with download option
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Icon from '../../Icon.jsx';
 
-const CustomerInvoices = ({ currentUser, invoices: propInvoices, loading }) => {
-  const [invoices, setInvoices] = useState(propInvoices || []);
-  const [filteredInvoices, setFilteredInvoices] = useState(propInvoices || []);
+const CustomerInvoices = ({ currentUser, invoices = [], loading, error }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  // Update local invoices state when propInvoices change (live updates)
-  useEffect(() => {
-    setInvoices(propInvoices || []);
-  }, [propInvoices]);
-
-  useEffect(() => {
-    let filtered = invoices;
-
+  const filteredInvoices = (invoices || []).filter(inv => {
     // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(inv =>
-        inv.id?.includes(searchTerm) ||
-        inv.invoiceNo?.includes(searchTerm)
-      );
-    }
+    const matchesSearch = !searchTerm || 
+      inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.id?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filter by status (paymentMethod)
+    const matchesStatus = filterStatus === 'all' || 
+      (inv.paymentMethod?.toLowerCase() === filterStatus.toLowerCase());
 
-    // Filter by status
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(inv => inv.paymentMethod === filterStatus);
-    }
-
-    setFilteredInvoices(filtered);
-  }, [invoices, searchTerm, filterStatus]);
+    return matchesSearch && matchesStatus;
+  });
 
   const handleDownloadPDF = async (invoiceId) => {
     try {

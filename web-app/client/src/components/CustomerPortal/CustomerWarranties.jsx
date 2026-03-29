@@ -6,33 +6,9 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
 
-const CustomerWarranties = ({ currentUser, warranties: propWarranties, loading }) => {
-  const [warranties, setWarranties] = useState(propWarranties || []);
-  const [filteredWarranties, setFilteredWarranties] = useState(propWarranties || []);
+const CustomerWarranties = ({ currentUser, warranties = [], loading, error }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-
-  // Update local state when propWarranties change (live updates)
-  useEffect(() => {
-    setWarranties(propWarranties || []);
-  }, [propWarranties]);
-
-  useEffect(() => {
-    let filtered = warranties;
-
-    if (searchTerm) {
-      filtered = filtered.filter(w =>
-        w.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.id?.includes(searchTerm)
-      );
-    }
-
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(w => getWarrantyStatus(w) === filterStatus);
-    }
-
-    setFilteredWarranties(filtered);
-  }, [warranties, searchTerm, filterStatus]);
 
   const getWarrantyStatus = (warranty) => {
     const now = new Date();
@@ -43,6 +19,20 @@ const CustomerWarranties = ({ currentUser, warranties: propWarranties, loading }
     if (daysUntilExpiry < 30) return 'expiring-soon';
     return 'active';
   };
+
+  const filteredWarranties = (warranties || []).filter(w => {
+    // Filter by search term
+    const matchesSearch = !searchTerm || 
+      w.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.id?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      w.productSku?.toLowerCase().includes(searchTerm.toLowerCase());
+
+    // Filter by status
+    const status = getWarrantyStatus(w);
+    const matchesStatus = filterStatus === 'all' || status === filterStatus;
+
+    return matchesSearch && matchesStatus;
+  });
 
   const getStatusBadge = (warranty) => {
     const status = getWarrantyStatus(warranty);

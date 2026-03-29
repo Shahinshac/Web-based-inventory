@@ -8,12 +8,12 @@ import Icon from '../../Icon.jsx';
 import { apiGet } from '../../utils/api';
 
 const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
-  // Mapping stats from props
+  // Mapping stats from props (Backend returns { stats: { ... }, memberSince: ... })
   const stats = {
-    invoiceCount: incomingStats?.totalPurchases || 0,
-    totalSpent: incomingStats?.totalSpent || 0,
-    warrantyCount: incomingStats?.activeWarranties || 0,
-    expiringWarranties: incomingStats?.expiredWarranties || 0,
+    invoiceCount: incomingStats?.stats?.totalPurchases || 0,
+    totalSpent: incomingStats?.stats?.totalSpent || 0,
+    warrantyCount: incomingStats?.stats?.activeWarranties || 0,
+    expiringWarranties: incomingStats?.stats?.expiredWarranties || 0,
     memberSince: incomingStats?.memberSince || new Date().toISOString()
   };
 
