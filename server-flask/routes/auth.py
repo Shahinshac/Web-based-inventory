@@ -44,7 +44,6 @@ def create_user():
     valid_roles = ['admin', 'manager', 'cashier']
     assigned_role = role if role in valid_roles else 'cashier'
 
-    # Hash the password with bcrypt
     hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
     user = {
@@ -52,7 +51,7 @@ def create_user():
         "password": hashed_password,
         "email": email,
         "role": assigned_role,
-        "approved": True, # Straight to true for admin creations
+        "approved": True,
         "createdAt": datetime.utcnow(),
         "createdBy": g.user.get('username'),
         "lastLogin": None,
@@ -93,18 +92,15 @@ def login():
 
     if not user:
         return jsonify({"error": "Invalid username or password"}), 401
-    
-    # Check password match
+
     if not bcrypt.checkpw(password.encode('utf-8'), str(user['password']).encode('utf-8')):
         return jsonify({"error": "Invalid username or password"}), 401
-    
+
     if not user.get('approved', False):
         return jsonify({"error": "Your account is disabled. Please contact your admin.", "approved": False}), 403
 
-    # Update last login
     db.users.update_one({"_id": user['_id']}, {"$set": {"lastLogin": datetime.utcnow()}})
 
-    # Audit
     ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
     log_audit(db, "USER_LOGIN", str(user['_id']), user['username'], {
         "role": user.get('role'),
@@ -113,15 +109,14 @@ def login():
 
     session_version = user.get('sessionVersion', 1)
 
-    # Issue JWT token! Match the Node.js payload precisely
     token_payload = {
         "userId": str(user['_id']),
         "username": user['username'],
         "role": user.get('role'),
         "sessionVersion": session_version,
-        "exp": datetime.utcnow() + timedelta(days=7) # Equivalent to 7d in node
+        "exp": datetime.utcnow() + timedelta(days=7)
     }
-    
+
     token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
     photo_url = user.get('photo')
@@ -160,7 +155,7 @@ def logout():
 def verify_session():
     db = get_db()
     user = db.users.find_one({"_id": ObjectId(g.user.get('userId'))})
-    
+
     if not user:
         return jsonify({"valid": False, "error": "User not found"}), 404
 
@@ -169,7 +164,7 @@ def verify_session():
         photo_url = f"/api/users/{str(user['_id'])}/photo"
 
     return jsonify({
-        "valid": True, 
+        "valid": True,
         "user": {
             "id": str(user['_id']),
             "username": user['username'],
@@ -264,13 +259,13 @@ def change_role(id):
     data = request.get_json() or {}
     role = data.get('role')
     valid_roles = ['admin', 'manager', 'cashier']
-    
+
     if not role or role not in valid_roles:
         return jsonify({"error": "Invalid role"}), 400
 
     db = get_db()
     result = db.users.update_one({"_id": ObjectId(id)}, {"$set": {"role": role}})
-    
+
     if result.matched_count == 0:
         return jsonify({"error": "User not found"}), 404
 
@@ -296,7 +291,7 @@ def admin_reset_password(id):
     new_pass = data.get('newPassword', '')
     if len(new_pass) < 6:
         return jsonify({"error": "Password must be at least 6 characters"}), 400
-    
+
     db = get_db()
     user = db.users.find_one({"_id": ObjectId(id)})
     if not user:
@@ -352,7 +347,6 @@ def manage_photo(id):
     if not user:
         return jsonify({"error": "User not found"}), 404
 
-    # POST: Upload photo
     if request.method == 'POST':
         if 'photo' not in request.files:
             return jsonify({"error": "No photo file provided"}), 400
@@ -362,18 +356,14 @@ def manage_photo(id):
             return jsonify({"error": "No file selected"}), 400
 
         try:
-            # Check if Cloudinary is configured
             if not is_configured():
                 return jsonify({"error": "Cloudinary is not configured. Please set CLOUDINARY environment variables."}), 500
 
-            # Delete old photo if exists
             if user.get('photoPublicId'):
                 delete_cloudinary_asset(user['photoPublicId'])
 
-            # Upload new photo
             result = upload_user_photo(file, id)
 
-            # Update user document
             db.users.update_one(
                 {"_id": ObjectId(id)},
                 {
@@ -401,19 +391,16 @@ def manage_photo(id):
             logger.error(f"Photo upload error: {e}")
             return jsonify({"error": f"Failed to upload photo: {str(e)}"}), 500
 
-    # GET: Retrieve photo (for legacy non-cloudinary photos stored in DB)
     elif request.method == 'GET':
         if user.get('photoStorage') == 'cloudinary':
             return jsonify({"photoUrl": user.get('photo')})
 
-        # For backward compatibility with base64 photos
         photo = user.get('photo')
         if not photo:
             return jsonify({"error": "No photo found"}), 404
 
         return jsonify({"photoUrl": photo})
 
-    # DELETE: Remove photo
     elif request.method == 'DELETE':
         if user.get('photoPublicId'):
             delete_cloudinary_asset(user['photoPublicId'])
@@ -433,120 +420,89 @@ def manage_photo(id):
 
         return jsonify({"success": True, "message": "Photo deleted successfully"})
 
-# ==================== CUSTOMER AUTHENTICATION ====================
 
-@auth_bp.route('/send-otp', methods=['POST'])
-def send_otp():
-    """Send OTP to customer email for login/registration"""
-    from services.otp_service import generate_otp, store_otp, send_otp_email
+# ==================== CUSTOMER AUTHENTICATION (Password-Based) ====================
 
+@auth_bp.route('/customer-register', methods=['POST'])
+def customer_register():
+    """Register a customer account with email + password.
+    Only emails that already exist in the customers collection can register."""
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
-    otp_type = data.get('type', 'login')  # 'login' or 'register'
+    password = data.get('password', '')
 
     if not email or '@' not in email:
         return jsonify({"error": "Valid email address is required"}), 400
+    if not password or len(password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
 
     try:
         db = get_db()
 
-        logger.info(f"Generating OTP for email: {email}, type: {otp_type}")
-
-        # For login: verify customer exists in database (case-insensitive search)
-        if otp_type == 'login':
-            # Try case-insensitive search
-            customer = db.customers.find_one({
-                "email": {"$regex": f"^{email}$", "$options": "i"}
-            })
-
-            if not customer:
-                logger.warning(f"Login attempt with non-existent customer email: {email}")
-                # Debug: log all customers to help troubleshoot
-                all_customers = list(db.customers.find({}, {"email": 1, "_id": 0}))
-                logger.debug(f"Available customer emails in database: {[c.get('email') for c in all_customers]}")
-                return jsonify({"error": "This email is not registered as a business customer. Please contact your administrator for access."}), 404
-
-        # For register: check if customer already exists (case-insensitive)
-        if otp_type == 'register':
-            customer = db.customers.find_one({
-                "email": {"$regex": f"^{email}$", "$options": "i"}
-            })
-            if customer:
-                logger.warning(f"Registration attempt with existing email: {email}")
-                return jsonify({"error": "Email already registered. Please login instead."}), 400
-
-        # Generate OTP
-        otp = generate_otp()
-        logger.info(f"OTP generated: {otp}")
-
-        # Store OTP in database
-        if not store_otp(email, otp):
-            logger.error(f"Failed to store OTP for {email}")
-            return jsonify({"error": "Failed to generate OTP. Please try again."}), 500
-
-        logger.info(f"OTP stored in database for {email}")
-
-        # Send OTP via email
-        send_result = send_otp_email(email, otp, otp_type)
-
-        if not send_result:
-            logger.warning(f"Failed to send OTP email to {email}")
-            # For development: return the OTP if email fails (remove in production!)
-            # In production, always require successful email send
-            if current_app.config.get('DEBUG'):
-                logger.info("DEBUG mode: returning OTP in response")
-                return jsonify({
-                    "success": True,
-                    "message": "OTP generated (email not configured)",
-                    "otp": otp  # Only for development!
-                })
-            return jsonify({"error": "Failed to send OTP email. Please check your email configuration in Render environment variables."}), 500
-
-        logger.info(f"OTP email sent successfully to {email}")
-        return jsonify({
-            "success": True,
-            "message": f"OTP sent to {email}. Valid for 10 minutes."
-        })
-
-    except Exception as e:
-        logger.error(f"Error in send_otp: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to send OTP: {str(e)}"}), 500
-
-@auth_bp.route('/verify-otp', methods=['POST'])
-def verify_otp_endpoint():
-    """Verify OTP and return token for customer login"""
-    from services.otp_service import verify_otp
-
-    data = request.get_json() or {}
-    email = data.get('email', '').strip().lower()
-    otp = data.get('otp', '').strip()
-
-    if not email or not otp:
-        return jsonify({"error": "Email and OTP are required"}), 400
-
-    if len(otp) != 6 or not otp.isdigit():
-        return jsonify({"error": "OTP must be 6 digits"}), 400
-
-    try:
-        # Verify OTP
-        result = verify_otp(email, otp)
-        if not result.get('valid'):
-            return jsonify({"error": result.get("error", "Invalid OTP")}), 401
-
-        # OTP verified - check if customer exists (case-insensitive search)
-        db = get_db()
-        customer = db.customers.find_one({
-            "email": {"$regex": f"^{email}$", "$options": "i"}
-        })
-
+        # Only emails in the customers DB (billed customers) can register
+        customer = db.customers.find_one(
+            {"email": {"$regex": f"^{email}$", "$options": "i"}}
+        )
         if not customer:
             return jsonify({
-                "error": "Customer account not found",
-                "otp_verified": True,
-                "needs_registration": True
+                "error": "This email is not registered in our system. Please use the email you provided during billing."
             }), 404
 
-        # Generate JWT token for customer
+        # Prevent duplicate accounts
+        if customer.get('accountPassword'):
+            return jsonify({"error": "An account already exists for this email. Please login instead."}), 400
+
+        hashed = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        db.customers.update_one(
+            {"_id": customer['_id']},
+            {"$set": {"accountPassword": hashed, "sessionVersion": 1}}
+        )
+
+        log_audit(db, "CUSTOMER_ACCOUNT_CREATED", str(customer['_id']), customer.get('name'), {
+            "email": email
+        })
+
+        return jsonify({
+            "success": True,
+            "message": "Account created successfully! You can now login."
+        }), 201
+
+    except Exception as e:
+        logger.error(f"Error in customer_register: {e}", exc_info=True)
+        return jsonify({"error": "Registration failed. Please try again."}), 500
+
+
+@auth_bp.route('/customer-login', methods=['POST'])
+def customer_login():
+    """Login a customer with email + password."""
+    data = request.get_json() or {}
+    email = data.get('email', '').strip().lower()
+    password = data.get('password', '')
+
+    if not email or not password:
+        return jsonify({"error": "Email and password are required"}), 400
+
+    try:
+        db = get_db()
+
+        customer = db.customers.find_one(
+            {"email": {"$regex": f"^{email}$", "$options": "i"}}
+        )
+
+        if not customer:
+            return jsonify({"error": "Invalid email or password"}), 401
+
+        if not customer.get('accountPassword'):
+            return jsonify({
+                "error": "No account registered for this email. Please register first.",
+                "needs_registration": True
+            }), 401
+
+        if not bcrypt.checkpw(password.encode('utf-8'), customer['accountPassword'].encode('utf-8')):
+            return jsonify({"error": "Invalid email or password"}), 401
+
+        db.customers.update_one({"_id": customer['_id']}, {"$set": {"lastLogin": datetime.utcnow()}})
+
         session_version = customer.get('sessionVersion', 1)
         token_payload = {
             "userId": str(customer['_id']),
@@ -556,10 +512,8 @@ def verify_otp_endpoint():
             "sessionVersion": session_version,
             "exp": datetime.utcnow() + timedelta(days=7)
         }
-
         token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 
-        # Log audit
         ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
         log_audit(db, "CUSTOMER_LOGIN", str(customer['_id']), customer.get('name'), {"ip": ip_addr})
 
@@ -576,131 +530,42 @@ def verify_otp_endpoint():
         })
 
     except Exception as e:
-        logger.error(f"Error in verify_otp: {e}")
-        return jsonify({"error": "OTP verification failed"}), 500
+        logger.error(f"Error in customer_login: {e}", exc_info=True)
+        return jsonify({"error": "Login failed. Please try again."}), 500
 
-@auth_bp.route('/register-customer', methods=['POST'])
-def register_customer():
-    """Register a new customer account with email and OTP"""
-    from services.otp_service import send_otp_email, generate_otp, store_otp
 
+@auth_bp.route('/customer-change-password', methods=['POST'])
+def customer_change_password():
+    """Allow a customer to change their password."""
     data = request.get_json() or {}
     email = data.get('email', '').strip().lower()
-    name = data.get('name', '').strip()
-    phone = data.get('phone', '').strip()
+    current_password = data.get('currentPassword', '')
+    new_password = data.get('newPassword', '')
 
-    # Validation
-    if not email or '@' not in email:
-        return jsonify({"error": "Valid email is required"}), 400
-
-    if not name or len(name) < 2:
-        return jsonify({"error": "Name must be at least 2 characters"}), 400
-
-    if not phone or len(phone) != 10 or not phone.isdigit():
-        return jsonify({"error": "Valid 10-digit phone number is required"}), 400
+    if not email or not current_password or not new_password:
+        return jsonify({"error": "Email, current password and new password are required"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "New password must be at least 6 characters"}), 400
 
     try:
         db = get_db()
-
-        # Check if customer already exists
-        existing = db.customers.find_one(
-            {"$or": [{"email": email}, {"phone": phone}]}
+        customer = db.customers.find_one(
+            {"email": {"$regex": f"^{email}$", "$options": "i"}}
         )
-        if existing:
-            field = "email" if existing.get('email') == email else "phone"
-            return jsonify({"error": f"Customer with this {field} already exists"}), 400
+        if not customer or not customer.get('accountPassword'):
+            return jsonify({"error": "Account not found"}), 404
 
-        # Create new customer
-        customer = {
-            "email": email,
-            "name": name,
-            "phone": phone,
-            "role": 'customer',
-            "approved": True,
-            "createdAt": datetime.utcnow(),
-            "sessionVersion": 1
-        }
+        if not bcrypt.checkpw(current_password.encode('utf-8'), customer['accountPassword'].encode('utf-8')):
+            return jsonify({"error": "Current password is incorrect"}), 401
 
-        result = db.customers.insert_one(customer)
-        customer_id = str(result.inserted_id)
+        hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        db.customers.update_one(
+            {"_id": customer['_id']},
+            {"$set": {"accountPassword": hashed}, "$inc": {"sessionVersion": 1}}
+        )
 
-        # Generate and send OTP
-        otp = generate_otp()
-        store_otp(email, otp)
-
-        # Send OTP email
-        if not send_otp_email(email, otp, 'register'):
-            logger.warning(f"Failed to send registration OTP to {email}")
-            if not current_app.config.get('DEBUG'):
-                # In production, fail if email doesn't send
-                db.customers.delete_one({"_id": result.inserted_id})
-                return jsonify({"error": "Failed to send OTP. Please try again."}), 500
-
-        log_audit(db, "CUSTOMER_REGISTERED", customer_id, name, {
-            "email": email,
-            "phone": phone
-        })
-
-        response = {
-            "success": True,
-            "message": "Registration successful! OTP sent to your email.",
-            "customerId": customer_id,
-            "email": email
-        }
-
-        # For development, include OTP
-        if current_app.config.get('DEBUG'):
-            response["otp"] = otp
-
-        return jsonify(response), 201
+        return jsonify({"success": True, "message": "Password changed successfully"})
 
     except Exception as e:
-        logger.error(f"Error in register_customer: {e}")
-        return jsonify({"error": "Registration failed"}), 500
-
-@auth_bp.route('/login-customer-otp', methods=['POST'])
-def login_customer_otp():
-    """Finalize customer login after OTP verification (validates token and returns user)"""
-    data = request.get_json() or {}
-    email = data.get('email', '').strip().lower()
-    token = data.get('token', '')
-
-    if not email or not token:
-        return jsonify({"error": "Email and token are required"}), 400
-
-    try:
-        # Decode and validate the JWT token
-        token_payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
-
-        # Verify email matches
-        if token_payload.get('email') != email:
-            return jsonify({"error": "Token email mismatch"}), 401
-
-        # Get customer from database (case-insensitive search)
-        db = get_db()
-        customer = db.customers.find_one({
-            "email": {"$regex": f"^{email}$", "$options": "i"}
-        })
-
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
-
-        return jsonify({
-            "success": True,
-            "token": token,
-            "user": {
-                "id": str(customer['_id']),
-                "email": customer.get('email'),
-                "name": customer.get('name'),
-                "phone": customer.get('phone'),
-                "role": 'customer'
-            }
-        })
-
-    except jwt.ExpiredSignatureError:
-        return jsonify({"error": "Token has expired"}), 401
-    except jwt.InvalidTokenError:
-        return jsonify({"error": "Invalid token"}), 401
-    except Exception as e:
-        logger.error(f"Error in login_customer_otp: {e}")
-        return jsonify({"error": "Login finalization failed"}), 500
+        logger.error(f"Error changing customer password: {e}", exc_info=True)
+        return jsonify({"error": "Failed to change password"}), 500

@@ -1,6 +1,5 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_mail import Mail
 from database import connect_db
 from routes.auth import auth_bp
 from routes.products import products_bp
@@ -17,6 +16,7 @@ from routes.customer_portal import customer_portal_bp
 from routes.payment_links import payment_links_bp
 from services.cloudinary_service import init_cloudinary
 import logging
+import re
 
 from config import Config
 
@@ -32,10 +32,10 @@ app.config.from_object(Config)
 CORS(app,
      origins=[
          "https://26-07inventory.vercel.app",  # Production Vercel frontend
-         r"http://localhost:\d+",               # Local development (any port)
-         r"http://127\.0\.0\.1:\d+",
-         r"https?://192\.168\.\d+\.\d+:\d+",    # Local network (mobile testing)
-         r"https?://10\.\d+\.\d+\.\d+:\d+"
+         re.compile(r"^http://localhost:\d+$"),               # Local development (any port)
+         re.compile(r"^http://127\.0\.0\.1:\d+$"),
+         re.compile(r"^https?://192\.168\.\d+\.\d+:\d+$"),    # Local network (mobile testing)
+         re.compile(r"^https?://10\.\d+\.\d+\.\d+:\d+$")
      ],
      allow_headers=["Content-Type", "Authorization"],
      supports_credentials=True
@@ -46,7 +46,6 @@ connect_db(app)
 
 # Initialize 3rd Party Wrappers
 init_cloudinary(app)
-Mail(app)  # Initialize Flask-Mail
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')

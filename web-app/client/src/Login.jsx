@@ -3,10 +3,11 @@ import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
 import { apiPost } from './utils/api.js';
 import { useOffline } from './hooks/useOffline.js';
-import './LoginLayout.css'; // Import the new ultra-modern stylesheet
+import './LoginLayout.css';
 
 const Login = ({ onLogin }) => {
   const [mode, setMode] = useState('staff'); // 'staff' or 'customer'
+  const [customerTab, setCustomerTab] = useState('login'); // 'login' or 'register'
   const { connectionStatus: connStatus } = useOffline(false);
 
   // Staff login
@@ -14,17 +15,25 @@ const Login = ({ onLogin }) => {
   const [staffPassword, setStaffPassword] = useState('');
   const [staffError, setStaffError] = useState('');
   const [staffLoading, setStaffLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showStaffPassword, setShowStaffPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Customer login - OTP based
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerOtp, setCustomerOtp] = useState('');
-  const [customerError, setCustomerError] = useState('');
-  const [customerLoading, setCustomerLoading] = useState(false);
-  const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
-  const [otpTimer, setOtpTimer] = useState(0);
+  // Customer login
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [loginError, setLoginError] = useState('');
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [loginSuccess, setLoginSuccess] = useState('');
 
+  // Customer register
+  const [regEmail, setRegEmail] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  const [regConfirmPassword, setRegConfirmPassword] = useState('');
+  const [regError, setRegError] = useState('');
+  const [regLoading, setRegLoading] = useState(false);
+  const [showRegPassword, setShowRegPassword] = useState(false);
+  const [regSuccess, setRegSuccess] = useState('');
 
   // Load remembered staff username
   useEffect(() => {
@@ -52,23 +61,14 @@ const Login = ({ onLogin }) => {
     }
   }, [rememberMe, staffUsername]);
 
-  // OTP Timer
-  useEffect(() => {
-    if (otpTimer <= 0) return;
-    const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [otpTimer]);
-
   // Handle staff login
   const handleStaffLogin = useCallback(async (e) => {
     e.preventDefault();
     setStaffError('');
-
     if (!staffUsername || !staffPassword) {
       setStaffError('Please fill in all fields');
       return;
     }
-
     setStaffLoading(true);
     try {
       const result = await onLogin(staffUsername, staffPassword, 'staff');
@@ -82,67 +82,99 @@ const Login = ({ onLogin }) => {
     }
   }, [staffUsername, staffPassword, onLogin]);
 
-  // Handle send OTP
-  const handleSendOtp = useCallback(async (e) => {
+  // Handle customer login
+  const handleCustomerLogin = useCallback(async (e) => {
     e.preventDefault();
-    setCustomerError('');
-
-    if (!customerEmail) {
-      setCustomerError('Email is required');
+    setLoginError('');
+    setLoginSuccess('');
+    if (!loginEmail || !loginPassword) {
+      setLoginError('Please fill in all fields');
       return;
     }
-
-    setCustomerLoading(true);
+    setLoginLoading(true);
     try {
-      await apiPost('/api/users/send-otp', { email: customerEmail, type: 'login' });
-      setOtpStep('otp');
-      setOtpTimer(300);
-    } catch (error) {
-      setCustomerError(error.message || 'Connection error.');
-    } finally {
-      setCustomerLoading(false);
-    }
-  }, [customerEmail]);
-
-  // Handle verify OTP
-  const handleVerifyOtp = useCallback(async (e) => {
-    e.preventDefault();
-    setCustomerError('');
-
-    if (!customerOtp || customerOtp.length !== 6) {
-      setCustomerError('Enter 6-digit code');
-      return;
-    }
-
-    setCustomerLoading(true);
-    try {
-      const data = await apiPost('/api/users/verify-otp', { email: customerEmail, otp: customerOtp });
-      const result = await onLogin(customerEmail, null, 'customer', data.token);
+      const data = await apiPost('/api/users/customer-login', { email: loginEmail, password: loginPassword });
+      const result = await onLogin(loginEmail, null, 'customer', data.token);
       if (result && result.error) {
-        setCustomerError(result.error);
+        setLoginError(result.error);
       }
     } catch (error) {
-      setCustomerError(error.message || 'Verification failed.');
+      const msg = error.message || 'Login failed.';
+      if (msg.includes('needs_registration') || msg.includes('register first')) {
+        setLoginError('No account found. Please register first.');
+      } else {
+        setLoginError(msg);
+      }
     } finally {
-      setCustomerLoading(false);
+      setLoginLoading(false);
     }
-  }, [customerEmail, customerOtp, onLogin]);
+  }, [loginEmail, loginPassword, onLogin]);
+
+  // Handle customer registration
+  const handleCustomerRegister = useCallback(async (e) => {
+    e.preventDefault();
+    setRegError('');
+    setRegSuccess('');
+    if (!regEmail || !regPassword || !regConfirmPassword) {
+      setRegError('Please fill in all fields');
+      return;
+    }
+    if (regPassword !== regConfirmPassword) {
+      setRegError('Passwords do not match');
+      return;
+    }
+    if (regPassword.length < 6) {
+      setRegError('Password must be at least 6 characters');
+      return;
+    }
+    setRegLoading(true);
+    try {
+      await apiPost('/api/users/customer-register', { email: regEmail, password: regPassword });
+      setRegSuccess('Account created! You can now login with your email and password.');
+      setRegEmail('');
+      setRegPassword('');
+      setRegConfirmPassword('');
+      // Switch to login tab after 2 seconds
+      setTimeout(() => {
+        setCustomerTab('login');
+        setLoginEmail(regEmail);
+        setRegSuccess('');
+      }, 2000);
+    } catch (error) {
+      setRegError(error.message || 'Registration failed.');
+    } finally {
+      setRegLoading(false);
+    }
+  }, [regEmail, regPassword, regConfirmPassword]);
 
   const currentYear = new Date().getFullYear();
 
   const renderError = (errorMsg) => {
     if (!errorMsg) return null;
-    const isNetwork = errorMsg.includes('backend is running');
+    const isNetwork = errorMsg.includes('backend is running') || errorMsg.includes('Connection error') || errorMsg.includes('fetch');
     return (
       <div className="ultra-error-pane">
         <Icon name={isNetwork ? "wifi-off" : "alert-circle"} size={22} color="#dc2626" />
         <div>
-          <span className="ultra-error-title">{isNetwork ? "Connection Failure" : "Authentication Error"}</span>
+          <span className="ultra-error-title">{isNetwork ? "Connection Failure" : "Error"}</span>
           <span className="ultra-error-text">
-            {isNetwork 
-              ? "Could not reach the server. Please ensure the API is running, and that your browser/ad-blocker isn't interfering with requests."
+            {isNetwork
+              ? "Could not reach the server. Make sure the API server is running."
               : errorMsg}
           </span>
+        </div>
+      </div>
+    );
+  };
+
+  const renderSuccess = (msg) => {
+    if (!msg) return null;
+    return (
+      <div className="ultra-error-pane" style={{ borderColor: '#10b981', background: 'rgba(16,185,129,0.08)' }}>
+        <Icon name="check-circle" size={22} color="#10b981" />
+        <div>
+          <span className="ultra-error-title" style={{ color: '#10b981' }}>Success</span>
+          <span className="ultra-error-text">{msg}</span>
         </div>
       </div>
     );
@@ -158,9 +190,9 @@ const Login = ({ onLogin }) => {
           </div>
           <h1 className="ultra-brand-title">26:07<br />Electronics</h1>
           <p className="ultra-brand-subtitle">
-            Next-generation Point of Sale & Inventory Platform. Seamlessly unifying staff operations and customer experiences.
+            Next-generation Point of Sale &amp; Inventory Platform. Seamlessly unifying staff operations and customer experiences.
           </p>
-          
+
           <div className="ultra-features">
             <div className="ultra-feature-item">
               <div className="ultra-feature-icon"><Icon name="cpu" size={18} /></div>
@@ -182,26 +214,26 @@ const Login = ({ onLogin }) => {
       <div className="ultra-form-side">
         <div className="ultra-form-wrapper">
 
-          {/* Dynamic Connection Status Badge */}
+          {/* Connection Status Badge */}
           <div className={`ultra-conn-status ${connStatus}`}>
             <Icon name={connStatus === 'online' ? 'activity' : connStatus === 'offline' ? 'wifi-off' : 'clock'} size={14} />
             <span>{connStatus === 'online' ? 'Systems Operational' : 'Offline Mode'}</span>
           </div>
 
-          {/* Sleek Segment Switch */}
+          {/* Staff / Customer Switch */}
           <div className="ultra-segment-control">
             <div className={`ultra-segment-indicator ${mode === 'customer' ? 'ultra-segment-customer' : ''}`}></div>
-            <button 
+            <button
               type="button"
               className={`ultra-segment-btn ${mode === 'staff' ? 'active' : ''}`}
-              onClick={() => { setMode('staff'); setStaffError(''); setCustomerError(''); }}
+              onClick={() => { setMode('staff'); setStaffError(''); setLoginError(''); setRegError(''); }}
             >
               <Icon name="shield" size={16} /> STAFF
             </button>
-            <button 
+            <button
               type="button"
               className={`ultra-segment-btn ${mode === 'customer' ? 'active' : ''}`}
-              onClick={() => { setMode('customer'); setStaffError(''); setCustomerError(''); setOtpStep('email'); }}
+              onClick={() => { setMode('customer'); setStaffError(''); setLoginError(''); setRegError(''); }}
             >
               <Icon name="users" size={16} /> CUSTOMER
             </button>
@@ -209,6 +241,7 @@ const Login = ({ onLogin }) => {
 
           <div className="ultra-form-content">
             {mode === 'staff' ? (
+              /* ── STAFF LOGIN ── */
               <div className="ultra-staff-form">
                 <div className="ultra-form-header">
                   <h2>Staff Portal</h2>
@@ -218,29 +251,29 @@ const Login = ({ onLogin }) => {
                 <form onSubmit={handleStaffLogin}>
                   <div className="ultra-input-group">
                     <label><Icon name="user" size={15} /> Workspace Username</label>
-                    <input 
-                      type="text" 
+                    <input
+                      type="text"
                       className="ultra-input"
-                      placeholder="Enter your system username" 
+                      placeholder="Enter your system username"
                       value={staffUsername}
                       onChange={(e) => setStaffUsername(e.target.value)}
-                      required 
+                      required
                     />
                   </div>
-                  
+
                   <div className="ultra-input-group">
-                    <label><Icon name="lock" size={15} /> Encryption Key</label>
+                    <label><Icon name="lock" size={15} /> Password</label>
                     <div className="ultra-input-wrapper">
-                      <input 
-                        type={showPassword ? "text" : "password"} 
+                      <input
+                        type={showStaffPassword ? "text" : "password"}
                         className="ultra-input"
-                        placeholder="••••••••" 
+                        placeholder="••••••••"
                         value={staffPassword}
                         onChange={(e) => setStaffPassword(e.target.value)}
-                        required 
+                        required
                       />
-                      <button type="button" className="ultra-eye-btn" onClick={() => setShowPassword(!showPassword)}>
-                        <Icon name={showPassword ? "eye-off" : "eye"} size={20} />
+                      <button type="button" className="ultra-eye-btn" onClick={() => setShowStaffPassword(!showStaffPassword)}>
+                        <Icon name={showStaffPassword ? "eye-off" : "eye"} size={20} />
                       </button>
                     </div>
                   </div>
@@ -262,93 +295,167 @@ const Login = ({ onLogin }) => {
                 </form>
               </div>
             ) : (
+              /* ── CUSTOMER PORTAL ── */
               <div className="ultra-customer-form">
                 <div className="ultra-form-header">
-                  <h2>Customer Access</h2>
-                  <p>Secure passwordless login via your registered email.</p>
+                  <h2>Customer Portal</h2>
+                  <p>Login or register using your billing email.</p>
                 </div>
 
-                <div className="ultra-stepper">
-                  <div className={`ultra-step ${otpStep === 'email' ? 'active' : ''}`}></div>
-                  <div className={`ultra-step ${otpStep === 'otp' ? 'active' : ''}`}></div>
+                {/* Login / Register Tab Switch */}
+                <div className="ultra-sub-tabs">
+                  <button
+                    type="button"
+                    className={`ultra-sub-tab ${customerTab === 'login' ? 'active' : ''}`}
+                    onClick={() => { setCustomerTab('login'); setLoginError(''); setRegError(''); setLoginSuccess(''); setRegSuccess(''); }}
+                  >
+                    <Icon name="log-in" size={15} /> Login
+                  </button>
+                  <button
+                    type="button"
+                    className={`ultra-sub-tab ${customerTab === 'register' ? 'active' : ''}`}
+                    onClick={() => { setCustomerTab('register'); setLoginError(''); setRegError(''); setLoginSuccess(''); setRegSuccess(''); }}
+                  >
+                    <Icon name="user-plus" size={15} /> Register
+                  </button>
                 </div>
 
-                <form onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
-                  {otpStep === 'email' ? (
-                    <>
-                      <div className="ultra-input-group">
-                        <label><Icon name="mail" size={15} /> Registered Email</label>
-                        <input 
-                          type="email" 
+                {customerTab === 'login' ? (
+                  /* ── CUSTOMER LOGIN ── */
+                  <form onSubmit={handleCustomerLogin}>
+                    <div className="ultra-input-group">
+                      <label><Icon name="mail" size={15} /> Email Address</label>
+                      <input
+                        type="email"
+                        className="ultra-input"
+                        placeholder="e.g. name@email.com"
+                        value={loginEmail}
+                        onChange={(e) => setLoginEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="ultra-input-group">
+                      <label><Icon name="lock" size={15} /> Password</label>
+                      <div className="ultra-input-wrapper">
+                        <input
+                          type={showLoginPassword ? "text" : "password"}
                           className="ultra-input"
-                          placeholder="e.g. name@company.com" 
-                          value={customerEmail} 
-                          onChange={(e) => setCustomerEmail(e.target.value)} 
-                          required 
+                          placeholder="••••••••"
+                          value={loginPassword}
+                          onChange={(e) => setLoginPassword(e.target.value)}
+                          required
                         />
+                        <button type="button" className="ultra-eye-btn" onClick={() => setShowLoginPassword(!showLoginPassword)}>
+                          <Icon name={showLoginPassword ? "eye-off" : "eye"} size={20} />
+                        </button>
                       </div>
-                      
-                      {renderError(customerError)}
-                      
-                      <button type="submit" className="ultra-btn customer" disabled={customerLoading}>
-                        {customerLoading ? (
-                          <><Icon name="loader" size={18} className="spin" /> Establishing Session...</>
-                        ) : (
-                          <>Send Security Code <Icon name="send" size={18} /></>
-                        )}
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <div className="ultra-input-group">
-                        <label style={{ justifyContent: 'center', fontSize: '15px' }}>
-                          <Icon name="shield-check" size={16} color="#10b981" /> Authorize Session
-                        </label>
-                        <input 
-                          type="text" 
-                          className="ultra-input ultra-otp-input"
-                          placeholder="000000" 
-                          maxLength="6"
-                          value={customerOtp}
-                          onChange={(e) => setCustomerOtp(e.target.value.replace(/\D/g, ''))}
-                          required 
-                        />
-                      </div>
-                      
-                      <div style={{ textAlign: 'center' }}>
-                        {otpTimer > 0 ? (
-                          <div className="ultra-timer-badge">
-                            <Icon name="clock" size={14} /> Code valid for {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
-                          </div>
-                        ) : (
-                          <div className="ultra-timer-badge" style={{ color: '#ef4444' }}>
-                            <Icon name="alert-circle" size={14} /> Code expired. Please resend.
-                          </div>
-                        )}
-                      </div>
+                    </div>
 
-                      {renderError(customerError)}
-                      
-                      <button type="submit" className="ultra-btn customer" disabled={customerLoading || customerOtp.length < 6}>
-                        {customerLoading ? 'Confirming...' : 'Verify & Continue'}
+                    {renderError(loginError)}
+                    {renderSuccess(loginSuccess)}
+
+                    <button type="submit" className="ultra-btn customer" disabled={loginLoading}>
+                      {loginLoading ? (
+                        <><Icon name="loader" size={18} className="spin" /> Signing In...</>
+                      ) : (
+                        <>Sign In <Icon name="arrow-right" size={18} /></>
+                      )}
+                    </button>
+
+                    <p style={{ textAlign: 'center', marginTop: '14px', fontSize: '13px', color: 'var(--text-muted, #94a3b8)' }}>
+                      No account yet?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setCustomerTab('register')}
+                        style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px', padding: 0 }}
+                      >
+                        Register now →
                       </button>
-                      
-                      <button type="button" className="ultra-back-btn" onClick={() => setOtpStep('email')}>
-                        <Icon name="arrow-left" size={16} /> Re-enter email address
+                    </p>
+                  </form>
+                ) : (
+                  /* ── CUSTOMER REGISTER ── */
+                  <form onSubmit={handleCustomerRegister}>
+                    <div className="ultra-input-group">
+                      <label><Icon name="mail" size={15} /> Billing Email</label>
+                      <input
+                        type="email"
+                        className="ultra-input"
+                        placeholder="Email used during purchase"
+                        value={regEmail}
+                        onChange={(e) => setRegEmail(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    <div className="ultra-input-group">
+                      <label><Icon name="lock" size={15} /> Create Password</label>
+                      <div className="ultra-input-wrapper">
+                        <input
+                          type={showRegPassword ? "text" : "password"}
+                          className="ultra-input"
+                          placeholder="Minimum 6 characters"
+                          value={regPassword}
+                          onChange={(e) => setRegPassword(e.target.value)}
+                          required
+                        />
+                        <button type="button" className="ultra-eye-btn" onClick={() => setShowRegPassword(!showRegPassword)}>
+                          <Icon name={showRegPassword ? "eye-off" : "eye"} size={20} />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="ultra-input-group">
+                      <label><Icon name="shield-check" size={15} /> Confirm Password</label>
+                      <input
+                        type="password"
+                        className="ultra-input"
+                        placeholder="Re-enter your password"
+                        value={regConfirmPassword}
+                        onChange={(e) => setRegConfirmPassword(e.target.value)}
+                        required
+                      />
+                    </div>
+
+                    {renderError(regError)}
+                    {renderSuccess(regSuccess)}
+
+                    <div className="ultra-info-note">
+                      <Icon name="info" size={14} color="#6366f1" />
+                      <span>Only emails in our billing database can register. Use the email you gave during purchase.</span>
+                    </div>
+
+                    <button type="submit" className="ultra-btn customer" disabled={regLoading}>
+                      {regLoading ? (
+                        <><Icon name="loader" size={18} className="spin" /> Creating Account...</>
+                      ) : (
+                        <>Create Account <Icon name="user-plus" size={18} /></>
+                      )}
+                    </button>
+
+                    <p style={{ textAlign: 'center', marginTop: '14px', fontSize: '13px', color: 'var(--text-muted, #94a3b8)' }}>
+                      Already registered?{' '}
+                      <button
+                        type="button"
+                        onClick={() => setCustomerTab('login')}
+                        style={{ color: '#6366f1', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, fontSize: '13px', padding: 0 }}
+                      >
+                        Login here →
                       </button>
-                    </>
-                  )}
-                </form>
-                
+                    </p>
+                  </form>
+                )}
+
                 <div className="ultra-security-badge">
-                  <Icon name="lock" size={14} /> Secured by RSA 2048-bit Encryption
+                  <Icon name="lock" size={14} /> Secured by AES-256 Encryption
                 </div>
               </div>
             )}
           </div>
-          
+
         </div>
-        
+
         <div className="ultra-footer">
           © {currentYear} 26:07 Electronics Inc. • Enterprise Systems
         </div>

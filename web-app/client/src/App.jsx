@@ -800,7 +800,12 @@ Esc: Close modals/dialogs`;
         publicUrl ? `🔗 *View Full Invoice:*\n${publicUrl}` : '',
         '',
         `Thank you for your business! 🙏`,
-        `— ${companyInfo.name}`
+        `— ${companyInfo.name}`,
+        '',
+        `─────────────────────`,
+        `🌐 *Customer Portal:*`,
+        `You can register & login to view your invoices, warranties and purchase history using the email you provided during billing.`,
+        `👉 https://26-07inventory.vercel.app`,
       ].filter(Boolean).join('\n');
 
       openWhatsApp(customerPhone, message);
