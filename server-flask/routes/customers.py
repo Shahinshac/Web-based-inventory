@@ -181,10 +181,10 @@ def delete_customer(id):
     if not customer:
         return jsonify({"error": "Customer not found"}), 404
 
-    # Check for linked invoices before deleting
-    invoice_count = db.invoices.count_documents({"customerId": ObjectId(id)})
-    if invoice_count > 0:
-        return jsonify({"error": f"Cannot delete customer with {invoice_count} existing invoices. Archive customer instead."}), 400
+    # Check for linked bills before deleting
+    bill_count = db.bills.count_documents({"customerId": ObjectId(id)})
+    if bill_count > 0:
+        return jsonify({"error": f"Cannot delete customer with {bill_count} existing bills. Archive customer instead."}), 400
 
     db.customers.delete_one({"_id": ObjectId(id)})
 
@@ -285,4 +285,65 @@ def get_pvc_card_pdf(id):
         as_attachment=True,
         download_name=f"{safe_name}_card.pdf"
     )
+
+@customers_bp.route('/<id>/purchases', methods=['GET'])
+@authenticate_token
+def get_customer_purchases(id):
+    """Fetch all purchase history and associated warranties for a customer."""
+    db = get_db()
+    try:
+        customer = db.customers.find_one({"_id": ObjectId(id)})
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+        
+        # Smart Match Query: Find bills by ID, Phone, or exact Name
+        match_conditions = [{"customerId": ObjectId(id)}]
+        if customer.get('phone'):
+            match_conditions.append({"customerPhone": customer['phone']})
+        if customer.get('name') and customer['name'].lower() != 'walk-in customer':
+            match_conditions.append({"customerName": customer['name']})
+            
+        match_query = {"$or": match_conditions}
+        
+        # Fetch Bills
+        bills_cursor = db.bills.find(match_query).sort("billDate", -1)
+        bills = []
+        for bill in bills_cursor:
+            bills.append({
+                "id": str(bill['_id']),
+                "billNumber": bill.get('billNumber'),
+                "billDate": bill.get('billDate').isoformat() if bill.get('billDate') else None,
+                "total": float(bill.get('total') or bill.get('grandTotal') or 0),
+                "paymentMode": bill.get('paymentMode', 'cash'),
+                "items": bill.get('items', [])
+            })
+            
+        # Fetch Warranties
+        warranties_cursor = db.warranties.find(match_query).sort("expiryDate", -1)
+        warranties = []
+        for w in warranties_cursor:
+            warranties.append({
+                "id": str(w['_id']),
+                "productName": w.get('productName'),
+                "productSku": w.get('productSku'),
+                "startDate": w.get('startDate').isoformat() if w.get('startDate') else None,
+                "expiryDate": w.get('expiryDate').isoformat() if w.get('expiryDate') else None,
+                "status": w.get('status', 'active')
+            })
+            
+        return jsonify({
+            "customerId": id,
+            "customerName": customer.get('name'),
+            "bills": bills,
+            "warranties": warranties,
+            "stats": {
+                "totalSpent": sum(b['total'] for b in bills),
+                "purchaseCount": len(bills),
+                "activeWarranties": len([w for w in warranties if w['status'] == 'active'])
+            }
+        })
+    except Exception as e:
+        logger.error(f"Error fetching customer purchases: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
