@@ -7019,19 +7019,21 @@ textarea:focus-visible {
 
 .mode-btn {
   flex: 1;
-  padding: 14px 16px;
+  padding: 12px 20px;
   background: transparent;
   border: none;
   border-radius: 12px;
   font-weight: 700;
-  font-size: 14px;
+  font-size: 13px;
   color: #64748b;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  white-space: nowrap;
+  min-width: 130px;
 }
 
 .mode-btn:hover:not(.active) {

@@ -216,20 +216,20 @@ const Login = ({ onLogin }) => {
             <span>{connStatus === 'online' ? 'System Online' : connStatus === 'offline' ? 'No Connection' : 'Checking Status...'}</span>
           </div>
 
-          <div className="mode-selector">
+          <div className="mode-selector" style={{ width: '100%', maxWidth: '400px' }}>
             <button 
               className={`mode-btn ${mode === 'staff' ? 'active' : ''}`}
               onClick={() => { setMode('staff'); setStaffError(''); setCustomerError(''); }}
             >
-              <Icon name="shield" size={16} />
-              Staff Login
+              <Icon name="shield" size={14} />
+              <span style={{ whiteSpace: 'nowrap' }}>Staff Login</span>
             </button>
             <button 
               className={`mode-btn ${mode === 'customer' ? 'active' : ''}`}
               onClick={() => { setMode('customer'); setStaffError(''); setCustomerError(''); setOtpStep('email'); }}
             >
-              <Icon name="users" size={16} />
-              Customer
+              <Icon name="users" size={14} />
+              <span style={{ whiteSpace: 'nowrap' }}>Customer Portal</span>
             </button>
           </div>
 
@@ -316,9 +316,22 @@ const Login = ({ onLogin }) => {
               /* Customer Login Form */
               <div className="customer-portal">
                 <div className="login-header">
-                  <div className="portal-badge">CUSTOMER PORTAL</div>
-                  <h2>Hello!</h2>
-                  <p>Sign in with your email to view your orders and invoices.</p>
+                  <div className="portal-badge" style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981', border: '1px solid rgba(10, 185, 129, 0.1)' }}>
+                    CUSTOMER PORTAL
+                  </div>
+                  <h2>Sign In</h2>
+                  <p>Access your billing dashboard and download your invoices instantly.</p>
+                </div>
+
+                <div className="stepper" style={{ display: 'flex', gap: '8px', marginBottom: '32px' }}>
+                  <div className={`step-item ${otpStep === 'email' ? 'active' : 'done'}`} style={{ 
+                    flex: 1, height: '4px', borderRadius: '2px', 
+                    background: otpStep === 'email' ? '#4f46e5' : '#10b981' 
+                  }}></div>
+                  <div className={`step-item ${otpStep === 'otp' ? 'active' : ''}`} style={{ 
+                    flex: 1, height: '4px', borderRadius: '2px', 
+                    background: otpStep === 'otp' ? '#4f46e5' : '#e2e8f0' 
+                  }}></div>
                 </div>
 
                 <form className="login-form" onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
@@ -386,11 +399,10 @@ const Login = ({ onLogin }) => {
                       <button type="submit" className="submit-btn" disabled={customerLoading || customerOtp.length < 6}>
                         {customerLoading ? 'Verifying...' : 'Verify & Sign In'}
                       </button>
-                      
                       <button 
                         type="button" 
                         className="forgot-password" 
-                        style={{ marginTop: '16px', textDecoration: 'none' }}
+                        style={{ marginTop: '16px', textDecoration: 'none', background: 'none' }}
                         onClick={() => { setOtpStep('email'); setCustomerOtp(''); }}
                       >
                         ← Use different email
@@ -398,6 +410,18 @@ const Login = ({ onLogin }) => {
                     </>
                   )}
                 </form>
+
+                <div className="login-form-extras" style={{ marginTop: '32px' }}>
+                  <div className="security-badge" style={{ 
+                    display: 'flex', alignItems: 'center', gap: '8px', 
+                    fontSize: '12px', color: '#10b981', fontWeight: '600', 
+                    background: 'rgba(16, 185, 129, 0.05)', padding: '10px 20px', 
+                    borderRadius: '100px', border: '1px solid rgba(16, 185, 129, 0.1)' 
+                  }}>
+                    <Icon name="shield-check" size={14} />
+                    <span>Secure end-to-end encrypted session</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>
