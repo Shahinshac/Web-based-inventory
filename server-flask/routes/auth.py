@@ -464,7 +464,7 @@ def send_otp():
                 # Debug: log all customers to help troubleshoot
                 all_customers = list(db.customers.find({}, {"email": 1, "_id": 0}))
                 logger.debug(f"Available customer emails in database: {[c.get('email') for c in all_customers]}")
-                return jsonify({"error": "Email not found in customer database. Please register first."}), 404
+                return jsonify({"error": "This email is not registered as a business customer. Please contact your administrator for access."}), 404
 
         # For register: check if customer already exists (case-insensitive)
         if otp_type == 'register':

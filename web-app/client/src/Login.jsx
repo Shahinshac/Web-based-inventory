@@ -103,13 +103,20 @@ const Login = ({ onLogin }) => {
 
       if (!response.ok) {
         const err = await response.json();
-        throw new Error(err.error || 'Failed to send OTP');
+        throw new Error(err.error || `Server error: ${response.status}`);
       }
 
       setOtpStep('otp');
       setOtpTimer(300); // 5 minutes
     } catch (error) {
-      setCustomerError(error.message || 'Failed to send OTP. Please try again.');
+      let errorMsg = error.message || 'Failed to send OTP';
+
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMsg = 'Network error - Please check your connection and try again';
+      }
+
+      setCustomerError(errorMsg);
     } finally {
       setCustomerLoading(false);
     }
