@@ -32,12 +32,10 @@ app.config.from_object(Config)
 CORS(app,
      origins=[
          "https://26-07inventory.vercel.app",  # Production Vercel frontend
-         "http://localhost:3000",               # Local development
-         "http://localhost:5173",               # Vite dev server
-         "http://localhost:5174",               # Vite fallback
-         "http://127.0.0.1:3000",
-         "http://127.0.0.1:5173",
-         "http://127.0.0.1:5174"
+         r"http://localhost:\d+",               # Local development (any port)
+         r"http://127\.0\.0\.1:\d+",
+         r"https?://192\.168\.\d+\.\d+:\d+",    # Local network (mobile testing)
+         r"https?://10\.\d+\.\d+\.\d+:\d+"
      ],
      allow_headers=["Content-Type", "Authorization"],
      supports_credentials=True

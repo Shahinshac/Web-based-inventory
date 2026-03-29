@@ -72,6 +72,11 @@ self.addEventListener('fetch', (event) => {
 
   // Handle API requests
   if (url.pathname.startsWith('/api/')) {
+    // Bypass SW for critical authentication requests
+    if (url.pathname.includes('/auth') || url.pathname.includes('/users/login') || url.pathname.includes('/users/send-otp') || url.pathname.includes('/users/verify-otp')) {
+      return; // Natively let browser handle this so CORS and fetches process cleanly
+    }
+    
     event.respondWith(handleApiRequest(request));
     return;
   }
