@@ -10,10 +10,22 @@ import CustomerDashboard from './CustomerDashboard';
 import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';
 import CustomerProfile from './CustomerProfile';
+import { useCustomerPortal } from '../../hooks/useCustomerPortal';
 import './customerPortal.css';
 
 const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  
+  const { 
+    dashboardStats, 
+    invoices, 
+    warranties, 
+    loading, 
+    error, 
+    lastUpdated,
+    fetchAllData,
+    updateProfile 
+  } = useCustomerPortal(currentUser);
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'analytics' },
@@ -59,6 +71,12 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
         <header className="portal-topbar">
           <div className="portal-page-heading">
             <h2>{tabs.find(t => t.id === activeTab)?.label}</h2>
+            {lastUpdated && (
+              <span className="last-updated-tag">
+                <Icon name="refresh-cw" size={10} />
+                Synced: {lastUpdated.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
+              </span>
+            )}
           </div>
           
           <div className="portal-user-chip">
@@ -75,10 +93,34 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
         {/* Scrollable Content */}
         <div className="portal-content-wrapper">
           <div className="portal-content-inner">
-            {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
-            {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
-            {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
-            {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
+            {activeTab === 'dashboard' && (
+              <CustomerDashboard 
+                currentUser={currentUser} 
+                stats={dashboardStats} 
+                loading={loading} 
+                error={error} 
+              />
+            )}
+            {activeTab === 'invoices' && (
+              <CustomerInvoices 
+                currentUser={currentUser} 
+                invoices={invoices} 
+                loading={loading} 
+              />
+            )}
+            {activeTab === 'warranties' && (
+              <CustomerWarranties 
+                currentUser={currentUser} 
+                warranties={warranties} 
+                loading={loading} 
+              />
+            )}
+            {activeTab === 'profile' && (
+              <CustomerProfile 
+                currentUser={currentUser} 
+                onUpdate={updateProfile} 
+              />
+            )}
           </div>
         </div>
       </main>

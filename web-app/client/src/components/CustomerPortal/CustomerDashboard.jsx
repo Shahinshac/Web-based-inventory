@@ -7,39 +7,15 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
 import { apiGet } from '../../utils/api';
 
-const CustomerDashboard = ({ currentUser }) => {
-  const [stats, setStats] = useState({
-    totalPurchases: 0,
-    totalSpent: 0,
-    invoiceCount: 0,
-    warrantyCount: 0,
-    expiringWarranties: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        setLoading(true);
-        const response = await apiGet('/api/customer/dashboard');
-        setStats({
-          invoiceCount: response.stats?.totalPurchases || 0,
-          totalSpent: response.stats?.totalSpent || 0,
-          warrantyCount: response.stats?.activeWarranties || 0,
-          expiringWarranties: response.stats?.expiredWarranties || 0,
-          memberSince: response.memberSince || new Date().toISOString()
-        });
-      } catch (err) {
-        setError(err.message);
-        console.error('Failed to fetch dashboard stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, []);
+const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
+  // Mapping stats from props
+  const stats = {
+    invoiceCount: incomingStats?.totalPurchases || 0,
+    totalSpent: incomingStats?.totalSpent || 0,
+    warrantyCount: incomingStats?.activeWarranties || 0,
+    expiringWarranties: incomingStats?.expiredWarranties || 0,
+    memberSince: incomingStats?.memberSince || new Date().toISOString()
+  };
 
   const StatCard = ({ icon, label, value, trend }) => (
     <div className="stat-card">

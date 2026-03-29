@@ -5,33 +5,17 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
-import { apiGet } from '../../utils/api';
 
-const CustomerInvoices = ({ currentUser }) => {
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filteredInvoices, setFilteredInvoices] = useState([]);
+const CustomerInvoices = ({ currentUser, invoices: propInvoices, loading }) => {
+  const [invoices, setInvoices] = useState(propInvoices || []);
+  const [filteredInvoices, setFilteredInvoices] = useState(propInvoices || []);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
+  // Update local invoices state when propInvoices change (live updates)
   useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        setLoading(true);
-        const response = await apiGet('/api/customer/invoices');
-        setInvoices(response.invoices || []);
-        setFilteredInvoices(response.invoices || []);
-      } catch (err) {
-        setError(err.message);
-        console.error('Failed to fetch invoices:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInvoices();
-  }, []);
+    setInvoices(propInvoices || []);
+  }, [propInvoices]);
 
   useEffect(() => {
     let filtered = invoices;

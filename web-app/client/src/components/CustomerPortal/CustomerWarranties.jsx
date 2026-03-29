@@ -5,42 +5,34 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
-import { apiGet } from '../../utils/api';
 
-const CustomerWarranties = ({ currentUser }) => {
-  const [warranties, setWarranties] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+const CustomerWarranties = ({ currentUser, warranties: propWarranties, loading }) => {
+  const [warranties, setWarranties] = useState(propWarranties || []);
+  const [filteredWarranties, setFilteredWarranties] = useState(propWarranties || []);
+  const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
-  const [filteredWarranties, setFilteredWarranties] = useState([]);
 
+  // Update local state when propWarranties change (live updates)
   useEffect(() => {
-    const fetchWarranties = async () => {
-      try {
-        setLoading(true);
-        const response = await apiGet('/api/customer/warranties');
-        setWarranties(response.warranties || []);
-        setFilteredWarranties(response.warranties || []);
-      } catch (err) {
-        setError(err.message);
-        console.error('Failed to fetch warranties:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchWarranties();
-  }, []);
+    setWarranties(propWarranties || []);
+  }, [propWarranties]);
 
   useEffect(() => {
     let filtered = warranties;
 
+    if (searchTerm) {
+      filtered = filtered.filter(w =>
+        w.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.id?.includes(searchTerm)
+      );
+    }
+
     if (filterStatus !== 'all') {
-      filtered = filtered.filter(w => w.status === filterStatus);
+      filtered = filtered.filter(w => getWarrantyStatus(w) === filterStatus);
     }
 
     setFilteredWarranties(filtered);
-  }, [warranties, filterStatus]);
+  }, [warranties, searchTerm, filterStatus]);
 
   const getWarrantyStatus = (warranty) => {
     const now = new Date();
