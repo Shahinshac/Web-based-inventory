@@ -29,6 +29,9 @@ const APP_CONFIG = {
 
 console.log('🎯 main.jsx executing...');
 console.log('📋 Environment:', import.meta.env.MODE || 'production');
+console.log('🔗 API URL:', import.meta.env.VITE_API_URL || 'http://localhost:5000');
+console.log('📄 Document ready:', document.readyState);
+console.log('🌳 DOM root element:', document.getElementById('root'));
 
 // ==================== ROOT ELEMENT VERIFICATION ====================
 
