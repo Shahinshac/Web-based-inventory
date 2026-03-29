@@ -3,7 +3,7 @@
  * Manages offline/online status and data synchronization
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export const useOffline = (isAuthenticated) => {
   const [isOnline, setIsOnline] = useState(true) // Default to online
