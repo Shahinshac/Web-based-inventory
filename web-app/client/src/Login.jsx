@@ -163,7 +163,7 @@ const Login = ({ onLogin }) => {
       padding: '20px',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     }}>
-      <div style={{ width: '100%', maxWidth: '450px' }}>
+      <div style={{ width: '100%', maxWidth: '400px' }}>
         {/* Header */}
         <div style={{
           textAlign: 'center',
