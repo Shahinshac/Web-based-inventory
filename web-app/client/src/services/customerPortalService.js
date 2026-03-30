@@ -3,7 +3,7 @@
  * Handles customer-specific API calls
  */
 
-import { apiGet, apiPatch, apiPost } from '../utils/api';
+import { apiGet, apiPatch, apiPost, API, getAuthHeaders } from '../utils/api';
 
 /**
  * Fetch customer dashboard statistics
@@ -55,11 +55,9 @@ export const changeCustomerPassword = async (oldPassword, newPassword) => {
  */
 export const downloadInvoicePDF = async (invoiceId) => {
   try {
-    const response = await fetch(`/api/customer/invoices/${invoiceId}/pdf`, {
+    const response = await fetch(API(`/api/customer/invoices/${invoiceId}/pdf`), {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -93,9 +91,8 @@ export const renewWarranty = async (warrantyId) => {
  */
 export const downloadVCard = async () => {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch('/api/customer/vcard', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(API('/api/customer/vcard'), {
+      headers: getAuthHeaders()
     });
     
     if (!response.ok) throw new Error('Failed to download vCard');
@@ -121,9 +118,8 @@ export const downloadVCard = async () => {
  */
 export const downloadPVCCard = async () => {
   try {
-    const token = localStorage.getItem('authToken');
-    const response = await fetch('/api/customer/pvc-card', {
-      headers: { 'Authorization': `Bearer ${token}` }
+    const response = await fetch(API('/api/customer/pvc-card'), {
+      headers: getAuthHeaders()
     });
     
     if (!response.ok) throw new Error('Failed to download identity card');

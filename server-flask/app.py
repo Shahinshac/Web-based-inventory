@@ -18,6 +18,7 @@ from routes.payment_links import payment_links_bp
 from routes.exports import exports_bp
 from services.cloudinary_service import init_cloudinary
 import logging
+import os
 import re
 
 from config import Config
@@ -30,15 +31,22 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_object(Config)
 
+# Build allowed CORS origins list
+# CORS_ORIGIN env var can supply one or more comma-separated extra origins
+_extra_origins = [o.strip() for o in os.environ.get('CORS_ORIGIN', '').split(',') if o.strip()]
+
+_cors_origins = [
+    "https://26-07inventory.vercel.app",          # Primary production Vercel frontend
+    re.compile(r"^https://.*\.vercel\.app$"),      # All Vercel preview deployments
+    re.compile(r"^http://localhost:\d+$"),         # Local development (any port)
+    re.compile(r"^http://127\.0\.0\.1:\d+$"),
+    re.compile(r"^https?://192\.168\.\d+\.\d+:\d+$"),  # Local network (mobile testing)
+    re.compile(r"^https?://10\.\d+\.\d+\.\d+:\d+$"),
+] + _extra_origins
+
 # Enable CORS (Allows the React frontend to communicate with Flask)
 CORS(app,
-     origins=[
-         "https://26-07inventory.vercel.app",  # Production Vercel frontend
-         re.compile(r"^http://localhost:\d+$"),               # Local development (any port)
-         re.compile(r"^http://127\.0\.0\.1:\d+$"),
-         re.compile(r"^https?://192\.168\.\d+\.\d+:\d+$"),    # Local network (mobile testing)
-         re.compile(r"^https?://10\.\d+\.\d+\.\d+:\d+$")
-     ],
+     origins=_cors_origins,
      allow_headers=["Content-Type", "Authorization"],
      supports_credentials=True
 )
