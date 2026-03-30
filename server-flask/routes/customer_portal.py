@@ -127,6 +127,7 @@ def get_customer_invoices():
         skip = (page - 1) * limit
 
         # Fetch invoices
+        db = get_db()
         invoices_cursor = db.bills.find(match_query).sort("billDate", -1).skip(skip).limit(limit)
         total = db.bills.count_documents(match_query)
 
@@ -190,9 +191,6 @@ def download_invoice_pdf(invoice_id):
     except Exception as e:
         logger.error(f"PDF download error: {e}")
         return jsonify({"error": "Failed to download invoice"}), 500
-    except Exception as e:
-        logger.error(f"PDF download error: {e}")
-        return jsonify({"error": "Failed to download invoice"}), 500
 
 # ==================== WARRANTIES ====================
 
@@ -213,6 +211,7 @@ def get_customer_warranties():
         skip = (page - 1) * limit
 
         # Fetch warranties
+        db = get_db()
         warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
         total = db.warranties.count_documents(match_query)
 
@@ -281,7 +280,8 @@ def renew_warranty(warranty_id):
             "_id": ObjectId(warranty_id),
             "$or": or_conditions
         }
-        
+
+        db = get_db()
         warranty = db.warranties.find_one(match_query)
 
         if not warranty:
@@ -379,7 +379,9 @@ def change_customer_password():
     return jsonify({
         "error": "Password changes not supported for OTP-based authentication",
         "message": "Contact support to change your email address"
-    }), 400@customer_portal_bp.route('/vcard', methods=['GET'])
+    }), 400
+
+@customer_portal_bp.route('/vcard', methods=['GET'])
 @authenticate_token
 def download_vcard():
     """Download vCard for the current customer"""
