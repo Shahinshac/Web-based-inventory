@@ -3,6 +3,7 @@ import logging
 import jwt
 from datetime import datetime, timedelta
 from bson import ObjectId
+from bson.errors import InvalidId
 from flask import Blueprint, request, jsonify, current_app, g
 
 from database import get_db
@@ -154,27 +155,48 @@ def logout():
 @authenticate_token
 def verify_session():
     db = get_db()
-    user = db.users.find_one({"_id": ObjectId(g.user.get('userId'))})
+    user_id_str = g.user.get('userId')
+    try:
+        user_oid = ObjectId(user_id_str)
+    except InvalidId:
+        return jsonify({"valid": False, "error": "Invalid user ID"}), 401
 
-    if not user:
-        return jsonify({"valid": False, "error": "User not found"}), 404
+    # Check staff users first
+    user = db.users.find_one({"_id": user_oid})
 
-    photo_url = user.get('photo')
-    if user.get('photoStorage') != 'cloudinary' and photo_url:
-        photo_url = f"/api/users/{str(user['_id'])}/photo"
+    if user:
+        photo_url = user.get('photo')
+        if user.get('photoStorage') != 'cloudinary' and photo_url:
+            photo_url = f"/api/users/{str(user['_id'])}/photo"
 
-    return jsonify({
-        "valid": True,
-        "user": {
-            "id": str(user['_id']),
-            "username": user['username'],
-            "email": user.get('email', ''),
-            "role": user.get('role'),
-            "approved": user.get('approved'),
-            "sessionVersion": user.get('sessionVersion', 1),
-            "photo": photo_url
-        }
-    })
+        return jsonify({
+            "valid": True,
+            "user": {
+                "id": str(user['_id']),
+                "username": user['username'],
+                "email": user.get('email', ''),
+                "role": user.get('role'),
+                "approved": user.get('approved'),
+                "sessionVersion": user.get('sessionVersion', 1),
+                "photo": photo_url
+            }
+        })
+
+    # Check customers collection (customer portal users are not in db.users)
+    customer = db.customers.find_one({"_id": user_oid})
+    if customer:
+        return jsonify({
+            "valid": True,
+            "user": {
+                "id": str(customer['_id']),
+                "email": customer.get('email', ''),
+                "name": customer.get('name', ''),
+                "phone": customer.get('phone', ''),
+                "role": 'customer'
+            }
+        })
+
+    return jsonify({"valid": False, "error": "User not found"}), 404
 
 @auth_bp.route('/', methods=['GET'])
 @authenticate_token
