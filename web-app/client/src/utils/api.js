@@ -13,20 +13,18 @@ export const getApiBaseUrl = () => {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     
-    // If we're on localhost, use locahost:5000
+    // If we're on localhost, use localhost:5000
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:5000';
     }
-    
-    // If we're on a Vercel/Production domain, we should NOT assume port 5000.
-    // If VITE_API_URL is missing, we try to use the SAME hostname as the backend
-    // but this is only common if it's a monolithic deploy.
-    // For many users, they might be using a specific tunnel or a sub-domain.
-    if (hostname.includes('.vercel.app')) {
-      // Return a placeholder or the same host if you're proxied, 
-      // but for Vercel + Flask local, an ngrok URL is needed or VITE_API_URL must be set.
-      return ''; // Force it to be empty if not set, which will trigger an error or use relative path
-    }
+
+    // For any other hostname (including production domains), the VITE_API_URL
+    // environment variable must be set at build time to point to the backend.
+    // Log a warning so developers can diagnose the issue quickly.
+    console.warn(
+      `[api] VITE_API_URL is not set. API calls may fail on host "${hostname}". ` +
+      'Set VITE_API_URL to your backend URL (e.g. https://your-backend.onrender.com).'
+    );
 
     return `http://${hostname}:5000`;
   }
