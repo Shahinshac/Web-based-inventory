@@ -11,7 +11,7 @@ import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';
 import CustomerEMI from './CustomerEMI';
 import CustomerProfile from './CustomerProfile';
-import './CustomerPortal.css';
+import './customerPortal.css';
 
 const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
