@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, request, jsonify
@@ -6,6 +7,7 @@ from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
 
 public_invoice_bp = Blueprint('public_invoice', __name__)
+logger = logging.getLogger(__name__)
 
 # Public Invoice View Route (No Authentication Required)
 @public_invoice_bp.route('/<token>', methods=['GET'])
