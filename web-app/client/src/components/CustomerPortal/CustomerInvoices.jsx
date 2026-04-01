@@ -3,66 +3,33 @@
  * @description Display customer's purchase invoices with download option
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Icon from '../../Icon.jsx';
-import { apiGet } from '../../utils/api';
 
-const CustomerInvoices = ({ currentUser }) => {
-  const [invoices, setInvoices] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [filteredInvoices, setFilteredInvoices] = useState([]);
+const CustomerInvoices = ({ currentUser, invoices = [], loading, error }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
 
-  useEffect(() => {
-    const fetchInvoices = async () => {
-      try {
-        setLoading(true);
-        const response = await apiGet('/api/customer/invoices');
-        setInvoices(response.invoices || []);
-        setFilteredInvoices(response.invoices || []);
-      } catch (err) {
-        setError(err.message);
-        console.error('Failed to fetch invoices:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInvoices();
-  }, []);
-
-  useEffect(() => {
-    let filtered = invoices;
-
+  const filteredInvoices = (invoices || []).filter(inv => {
     // Filter by search term
-    if (searchTerm) {
-      filtered = filtered.filter(inv =>
-        inv._id?.includes(searchTerm) ||
-        inv.invoiceNumber?.includes(searchTerm)
-      );
-    }
+    const matchesSearch = !searchTerm || 
+      inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      inv.id?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // Filter by status (paymentMethod)
+    const matchesStatus = filterStatus === 'all' || 
+      (inv.paymentMethod?.toLowerCase() === filterStatus.toLowerCase());
 
-    // Filter by status
-    if (filterStatus !== 'all') {
-      filtered = filtered.filter(inv => inv.status === filterStatus);
-    }
-
-    setFilteredInvoices(filtered);
-  }, [invoices, searchTerm, filterStatus]);
+    return matchesSearch && matchesStatus;
+  });
 
   const handleDownloadPDF = async (invoiceId) => {
     try {
-      // Call API to generate and download PDF
-      const link = document.createElement('a');
-      link.href = `/api/customer/invoices/${invoiceId}/pdf`;
-      link.download = `invoice-${invoiceId}.pdf`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
+      const { downloadInvoicePDF } = await import('../../services/customerPortalService');
+      await downloadInvoicePDF(invoiceId);
     } catch (err) {
       console.error('Failed to download invoice:', err);
+      alert('Failed to download invoice. Please try again later.');
     }
   };
 
@@ -120,35 +87,36 @@ const CustomerInvoices = ({ currentUser }) => {
       ) : (
         <div className="invoices-list">
           {filteredInvoices.map(invoice => (
-            <div key={invoice._id} className="invoice-row">
+            <div key={invoice.id} className="invoice-row">
               <div className="invoice-info">
                 <div className="invoice-number">
                   <Icon name="layers" size={16} />
                   <div>
-                    <p className="invoice-id">Invoice #{invoice.invoiceNumber || invoice._id.slice(-6)}</p>
+                    <p className="invoice-id">Invoice #{invoice.invoiceNo || invoice.id.slice(-6)}</p>
                     <p className="invoice-date">
-                      {new Date(invoice.createdAt).toLocaleDateString('en-IN')}
+                      {new Date(invoice.date).toLocaleDateString('en-IN')}
                     </p>
                   </div>
                 </div>
                 <div className="invoice-amount">
-                  <p className="amount">₹{invoice.totalAmount?.toLocaleString('en-IN') || 0}</p>
-                  <p className={`status ${invoice.status || 'completed'}`}>
-                    {invoice.status || 'Completed'}
+                  <p className="amount">₹{invoice.total?.toLocaleString('en-IN') || 0}</p>
+                  <p className={`status ${invoice.paymentMethod || 'completed'}`}>
+                    {invoice.paymentMethod || 'Completed'}
                   </p>
                 </div>
               </div>
               <div className="invoice-actions">
                 <button
                   className="action-btn view-btn"
-                  onClick={() => alert('Invoice details: ' + invoice._id)}
-                  title="View Details"
+                  onClick={() => window.open(`/api/public/invoice/${invoice.id}`, '_blank') || 
+                                 window.open(`/invoice/${invoice.id}`, '_blank')}
+                  title="View Invoice"
                 >
                   <Icon name="eye" size={16} />
                 </button>
                 <button
                   className="action-btn download-btn"
-                  onClick={() => handleDownloadPDF(invoice._id)}
+                  onClick={() => handleDownloadPDF(invoice.id)}
                   title="Download PDF"
                 >
                   <Icon name="download" size={16} />

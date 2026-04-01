@@ -6,7 +6,6 @@
 import { useState, useEffect } from 'react'
 import {
   loginUser,
-  loginCustomerWithOTP,
   registerUser,
   logoutUser,
   getCurrentUser,
@@ -19,6 +18,7 @@ import {
   uploadUserProfilePhoto,
   deleteUserProfilePhoto
 } from '../services/authService'
+
 
 export const useAuth = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false)
@@ -83,43 +83,63 @@ export const useAuth = () => {
     return () => clearInterval(intervalId)
   }, [isAuthenticated, currentUser])
 
-  // Check user validity periodically (for non-admin users)
+  // Check user validity periodically (ONLY for staff users, not customers or admins)
   useEffect(() => {
-    if (!isAuthenticated || isAdmin || !currentUser?.id) return
+    if (!isAuthenticated || isAdmin || isCustomer || !currentUser?.id) return
 
     const intervalId = setInterval(async () => {
       const isValid = await checkUserValidity(currentUser.id)
       if (!isValid) {
         handleLogout()
       }
-    }, 30000)
+    }, 60000) // Increase to 60 seconds to reduce load
 
     return () => clearInterval(intervalId)
-  }, [isAuthenticated, isAdmin, currentUser])
+  }, [isAuthenticated, isAdmin, isCustomer, currentUser])
 
-  const handleLogin = async (username, password, userMode = 'staff', otpToken = null) => {
+  const handleLogin = async (username, password, userMode = 'staff', preFetchedToken = null) => {
     try {
       setError(null)
 
-      // Customer OTP login flow
-      if (userMode === 'customer' && otpToken) {
-        const response = await loginCustomerWithOTP(username, otpToken)
-        const user = response.user
+      // Customer login: Login.jsx already fetched the token from /api/customer-auth/login
+      // and passes it here. We just need to store it and set auth state.
+      if (userMode === 'customer' && preFetchedToken) {
+        // Decode the JWT payload (base64) to extract user info
+        let customerUser = {}
+        try {
+          const payloadB64 = preFetchedToken.split('.')[1]
+          const payload = JSON.parse(atob(payloadB64))
+          customerUser = {
+            id: payload.userId,
+            email: payload.email,
+            name: payload.name,
+            role: 'customer'
+          }
+        } catch (e) {
+          console.error('Failed to decode customer JWT', e)
+        }
+
+        // Persist session exactly like loginUser does
+        localStorage.setItem('authToken', preFetchedToken)
+        localStorage.setItem('currentUser', JSON.stringify(customerUser))
+        localStorage.setItem('isAdmin', 'false')
+        localStorage.setItem('userRole', 'customer')
+
         setIsAuthenticated(true)
-        setCurrentUser(user)
+        setCurrentUser(customerUser)
         setIsAdmin(false)
         setUserRole('customer')
         setIsCustomer(true)
-        return { success: true, user }
+        return { success: true, user: customerUser }
       }
 
-      // Staff login flow
+      // Staff login flow (unchanged)
       const response = await loginUser(username, password, userMode)
       const user = response.user
       setIsAuthenticated(true)
       setCurrentUser(user)
       setIsAdmin(user.role === 'admin')
-      const role = user.role || (userMode === 'customer' ? 'customer' : 'cashier')
+      const role = user.role || 'cashier'
       setUserRole(role)
       setIsCustomer(role === 'customer')
 

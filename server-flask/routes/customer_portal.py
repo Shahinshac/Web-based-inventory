@@ -7,10 +7,11 @@ import logging
 import jwt
 from datetime import datetime, timedelta
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, current_app, g
-
+from flask import Blueprint, request, jsonify, current_app, g, send_file
 from database import get_db
 from utils.auth_middleware import authenticate_token
+from utils.constants import COMPANY_NAME, COMPANY_PHONE
+from services.customer_service import build_vcard, build_pvc_card_pdf
 
 logger = logging.getLogger(__name__)
 
@@ -33,6 +34,27 @@ def get_current_customer():
         logger.error(f"Error getting customer: {e}")
         return None
 
+def get_customer_match_query(customer):
+    """Build a robust match query for a customer (ID, Name, Phone, Email)"""
+    customer_id = customer['_id']
+    or_conditions = [
+        {"customerId": customer_id},
+        {"customerId": str(customer_id)}
+    ]
+    
+    if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+        or_conditions.append({"customerName": customer.get('name')})
+        
+    if customer.get('phone') and str(customer.get('phone')).strip() != "":
+        or_conditions.append({"customerPhone": str(customer.get('phone'))})
+        
+    if customer.get('email') and str(customer.get('email')).strip() != "":
+        import re
+        email_regex = re.compile(f"^{re.escape(customer.get('email'))}$", re.I)
+        or_conditions.append({"customerEmail": email_regex})
+        
+    return {"$or": or_conditions}
+
 # ==================== DASHBOARD ====================
 
 @customer_portal_bp.route('/dashboard', methods=['GET'])
@@ -40,29 +62,30 @@ def get_current_customer():
 def get_dashboard():
     """Get customer dashboard statistics"""
     try:
+        db = get_db()
         customer = get_current_customer()
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        customer_id = customer['_id']
+        match_query = get_customer_match_query(customer)
 
         # Get invoices for this customer
-        invoices = list(db.invoices.find({"customerId": customer_id}))
+        invoices = list(db.bills.find(match_query))
 
         # Calculate stats
         total_purchases = len(invoices)
-        total_spent = sum(float(inv.get('total', 0)) for inv in invoices)
+        total_spent = sum(float(inv.get('grandTotal', 0)) for inv in invoices)
 
         # Get latest purchases
-        recent_invoices = sorted(invoices, key=lambda x: x.get('createdAt', datetime.utcnow()), reverse=True)[:5]
+        recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', datetime.utcnow()), reverse=True)[:5]
 
         # Get warranties
-        warranties = list(db.warranties.find({"customerId": customer_id}))
+        warranties = list(db.warranties.find(match_query))
         active_warranties = len([w for w in warranties if w.get('status') == 'active'])
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
         return jsonify({
+            "memberSince": customer.get('createdAt').isoformat() if customer.get('createdAt') else None,
             "stats": {
                 "totalPurchases": total_purchases,
                 "totalSpent": round(total_spent, 2),
@@ -72,9 +95,9 @@ def get_dashboard():
             "recentPurchases": [
                 {
                     "id": str(inv['_id']),
-                    "invoiceNo": inv.get('invoiceNo'),
-                    "date": inv.get('createdAt').isoformat() if inv.get('createdAt') else None,
-                    "total": float(inv.get('total', 0)),
+                    "invoiceNo": inv.get('billNumber'),
+                    "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                    "total": float(inv.get('grandTotal', 0)),
                     "itemCount": len(inv.get('items', []))
                 }
                 for inv in recent_invoices
@@ -96,8 +119,7 @@ def get_customer_invoices():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        customer_id = customer['_id']
+        match_query = get_customer_match_query(customer)
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
@@ -105,17 +127,18 @@ def get_customer_invoices():
         skip = (page - 1) * limit
 
         # Fetch invoices
-        invoices_cursor = db.invoices.find({"customerId": customer_id}).sort("createdAt", -1).skip(skip).limit(limit)
-        total = db.invoices.count_documents({"customerId": customer_id})
+        db = get_db()
+        invoices_cursor = db.bills.find(match_query).sort("billDate", -1).skip(skip).limit(limit)
+        total = db.bills.count_documents(match_query)
 
         invoices = []
         for inv in invoices_cursor:
             invoices.append({
                 "id": str(inv['_id']),
-                "invoiceNo": inv.get('invoiceNo'),
-                "date": inv.get('createdAt').isoformat() if inv.get('createdAt') else None,
-                "total": float(inv.get('total', 0)),
-                "paymentMethod": inv.get('paymentMethod', 'cash'),
+                "invoiceNo": inv.get('billNumber'),
+                "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                "total": float(inv.get('grandTotal', 0)),
+                "paymentMethod": inv.get('paymentMode', 'cash'),
                 "items": inv.get('items', []),
                 "itemCount": len(inv.get('items', []))
             })
@@ -146,18 +169,24 @@ def download_invoice_pdf(invoice_id):
             return jsonify({"error": "Customer not found"}), 404
 
         db = get_db()
-        invoice = db.invoices.find_one({"_id": ObjectId(invoice_id), "customerId": customer['_id']})
+        # Verify ownership (can be by ID, phone, or email)
+        customer_id = customer['_id']
+        invoice = db.bills.find_one({
+            "_id": ObjectId(invoice_id),
+            "$or": [
+                {"customerId": customer_id},
+                {"customerId": str(customer_id)},
+                {"customerPhone": customer.get('phone')},
+                {"customerEmail": customer.get('email')}
+            ]
+        })
 
         if not invoice:
-            return jsonify({"error": "Invoice not found"}), 404
+            return jsonify({"error": "Invoice not found or access denied"}), 404
 
-        # For now, return invoice data - PDF generation can be added later
-        # This would require reportlab or weasyprint library
-        return jsonify({
-            "message": "PDF generation coming soon",
-            "invoiceNo": invoice.get('invoiceNo'),
-            "total": invoice.get('total')
-        }), 501
+        # Use the public_invoice logic to generate the response (already has PDF generation)
+        from routes.public_invoice import generate_invoice_pdf_response
+        return generate_invoice_pdf_response(invoice)
 
     except Exception as e:
         logger.error(f"PDF download error: {e}")
@@ -174,8 +203,7 @@ def get_customer_warranties():
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
-        db = get_db()
-        customer_id = customer['_id']
+        match_query = get_customer_match_query(customer)
 
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
@@ -183,8 +211,9 @@ def get_customer_warranties():
         skip = (page - 1) * limit
 
         # Fetch warranties
-        warranties_cursor = db.warranties.find({"customerId": customer_id}).sort("expiryDate", 1).skip(skip).limit(limit)
-        total = db.warranties.count_documents({"customerId": customer_id})
+        db = get_db()
+        warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
+        total = db.warranties.count_documents(match_query)
 
         warranties = []
         for w in warranties_cursor:
@@ -236,8 +265,24 @@ def renew_warranty(warranty_id):
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
 
+        customer_id = customer['_id']
+
+        or_conditions = [
+            {"customerId": customer_id},
+            {"customerId": str(customer_id)}
+        ]
+        if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
+            or_conditions.append({"customerName": customer.get('name')})
+        if customer.get('phone') and str(customer.get('phone')).strip() != "":
+            or_conditions.append({"customerPhone": customer.get('phone')})
+            
+        match_query = {
+            "_id": ObjectId(warranty_id),
+            "$or": or_conditions
+        }
+
         db = get_db()
-        warranty = db.warranties.find_one({"_id": ObjectId(warranty_id), "customerId": customer['_id']})
+        warranty = db.warranties.find_one(match_query)
 
         if not warranty:
             return jsonify({"error": "Warranty not found"}), 404
@@ -335,3 +380,45 @@ def change_customer_password():
         "error": "Password changes not supported for OTP-based authentication",
         "message": "Contact support to change your email address"
     }), 400
+
+@customer_portal_bp.route('/vcard', methods=['GET'])
+@authenticate_token
+def download_vcard():
+    """Download vCard for the current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        vcard_text = build_vcard(customer)
+        safe_name = customer.get('name', 'contact').replace(' ', '_')
+        
+        return vcard_text, 200, {
+            'Content-Type': 'text/vcard; charset=utf-8',
+            'Content-Disposition': f'attachment; filename="{safe_name}.vcf"'
+        }
+    except Exception as e:
+        logger.error(f"vCard error: {e}")
+        return jsonify({"error": "Failed to generate vCard"}), 500
+
+@customer_portal_bp.route('/pvc-card', methods=['GET'])
+@authenticate_token
+def download_pvc_card():
+    """Download PVC-sized PDF card for the current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        pdf_buffer = build_pvc_card_pdf(customer, COMPANY_NAME, COMPANY_PHONE)
+        safe_name = customer.get('name', 'customer').replace(' ', '_')
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"card_{safe_name}.pdf"
+        )
+    except Exception as e:
+        logger.error(f"PVC card error: {e}")
+        return jsonify({"error": "Failed to generate identity card"}), 500

@@ -11,6 +11,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     quantity: 0,
     price: 0,
     costPrice: 0,
+    companyProfit: 0,
     gstPercent: 18,
     hsnCode: '9999',
     minStock: 10,
@@ -27,6 +28,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         quantity: product.quantity || 0,
         price: product.price || 0,
         costPrice: product.costPrice || 0,
+        companyProfit: (product.price / (1 + (product.gstPercent || 18) / 100)) - (product.costPrice || 0),
         gstPercent: product.gstPercent !== undefined ? product.gstPercent : 18,
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
@@ -74,11 +76,19 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     }
   };
 
-  // Calculate profit
-  const profit = formData.price && formData.costPrice ? formData.price - formData.costPrice : 0;
+  // GST Calculations (Selling Price is inclusive of GST)
+  const gstRate = parseFloat(formData.gstPercent || 0) / 100;
+  const gstFactor = 1 + gstRate;
+  
+  // Base Price (Exclusive of GST) - Input "Price" includes GST
+  const basePrice = formData.price > 0 ? formData.price / gstFactor : 0;
+  
+  // Detailed GST amount
+  const gstAmount = formData.price > 0 ? formData.price - basePrice : 0;
+
+  // Final values for UI consistency
+  const profit = formData.companyProfit;
   const profitPercentage = formData.costPrice > 0 ? ((profit / formData.costPrice) * 100).toFixed(1) : 0;
-  // Effective customer price after GST is added on top of the selling price
-  const priceWithGst = formData.price > 0 ? (formData.price * (1 + (formData.gstPercent || 0) / 100)) : 0;
 
   // Stock status
   const getStockStatus = () => {
@@ -131,40 +141,46 @@ export default function ProductForm({ product, onSubmit, onClose }) {
             
             <div className="form-row">
               <Input
-                label="Base Price (Excl. 18% GST) (₹)"
+                label="Cost Price (₹)"
                 type="number"
-                value={formData.price ? (formData.price / 1.18).toFixed(2) : ''}
+                value={formData.costPrice || ''}
                 onChange={(e) => {
-                  const base = parseFloat(e.target.value) || 0;
-                  handleChange('price', Math.round(base * 1.18 * 100) / 100);
+                  const cp = parseFloat(e.target.value) || 0;
+                  // If CP changes, we keep current companyProfit and update the Final Price
+                  const currentProfit = formData.companyProfit || 0;
+                  const currentGstRate = (formData.gstPercent || 0) / 100;
+                  const newBase = cp + currentProfit;
+                  const newFinal = newBase * (1 + currentGstRate);
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    costPrice: cp,
+                    price: Math.round(newFinal * 100) / 100
+                  }));
                 }}
                 placeholder="0.00"
                 min="0"
                 step="0.01"
-                required
               />
 
               <Input
-                label="Final Selling Price (Incl. GST) (₹)"
+                label="Company Profit (₹)"
                 type="number"
-                value={formData.price}
-                onChange={(e) => handleChange('price', parseFloat(e.target.value) || 0)}
+                value={formData.companyProfit || ''}
+                onChange={(e) => {
+                  const profitVal = parseFloat(e.target.value) || 0;
+                  const cp = parseFloat(formData.costPrice) || 0;
+                  const currentGstRate = (formData.gstPercent || 0) / 100;
+                  const newBase = cp + profitVal;
+                  const newFinal = newBase * (1 + currentGstRate);
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    companyProfit: profitVal,
+                    price: Math.round(newFinal * 100) / 100
+                  }));
+                }}
                 placeholder="0.00"
-                min="0"
-                step="0.01"
-                required
-                error={errors.price}
-              />
-            </div>
-
-            <div className="form-row">
-              <Input
-                label="Cost Price (₹)"
-                type="number"
-                value={formData.costPrice}
-                onChange={(e) => handleChange('costPrice', parseFloat(e.target.value) || 0)}
-                placeholder="0.00"
-                min="0"
                 step="0.01"
               />
             </div>
@@ -173,20 +189,70 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="GST Rate (%)"
                 type="number"
-                value={formData.gstPercent}
-                onChange={(e) => handleChange('gstPercent', parseFloat(e.target.value) || 0)}
+                value={formData.gstPercent || ''}
+                onChange={(e) => {
+                  const gst = parseFloat(e.target.value) || 0;
+                  // If GST changes, we keep CP and Profit constant, update Final Price
+                  const cp = parseFloat(formData.costPrice) || 0;
+                  const currProfit = formData.companyProfit || 0;
+                  const newBase = cp + currProfit;
+                  const newFinal = newBase * (1 + (gst / 100));
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    gstPercent: gst,
+                    price: Math.round(newFinal * 100) / 100
+                  }));
+                }}
                 placeholder="18"
                 min="0"
-                max="28"
+                max="100"
                 step="0.5"
                 helperText="0%, 5%, 12%, 18%, or 28%"
               />
-              {formData.price > 0 && (
-                <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px 0' }}>
-                  <span style={{ fontSize: '12px', color: '#6b7280' }}>Customer pays (incl. GST)</span>
-                  <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>₹{priceWithGst.toFixed(2)}</span>
-                </div>
-              )}
+
+              <Input
+                label={`Base Price (Excl. GST) (₹)`}
+                type="number"
+                value={basePrice > 0 ? basePrice.toFixed(2) : ''}
+                readOnly
+                placeholder="0.00"
+                helperText="CP + Profit (Excl. GST)"
+              />
+            </div>
+
+            <div className="form-row">
+              <Input
+                label="Final Selling Price (Incl. GST) (₹)"
+                type="number"
+                value={formData.price || ''}
+                onChange={(e) => {
+                  const newPrice = parseFloat(e.target.value) || 0;
+                  // If Price changes, we recalculate Profit
+                  const currentGstRate = (formData.gstPercent || 0) / 100;
+                  const currentCp = parseFloat(formData.costPrice) || 0;
+                  const newBase = newPrice / (1 + currentGstRate);
+                  const newProfit = newBase - currentCp;
+
+                  setFormData(prev => ({
+                    ...prev,
+                    price: newPrice,
+                    companyProfit: Math.round(newProfit * 100) / 100
+                  }));
+                }}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                required
+                error={errors.price}
+                helperText="This price includes GST"
+              />
+              
+              <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '8px 0' }}>
+                <span style={{ fontSize: '12px', color: '#6b7280' }}>Customer pays (incl. GST)</span>
+                <span style={{ fontSize: '16px', fontWeight: '600', color: '#374151' }}>₹{(formData.price || 0).toFixed(2)}</span>
+                <span style={{ fontSize: '12px', color: '#9ca3af' }}>Includes ₹{gstAmount.toFixed(2)} GST</span>
+              </div>
             </div>
 
             {formData.price > 0 && formData.costPrice > 0 && (

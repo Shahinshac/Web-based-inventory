@@ -3,7 +3,7 @@
  * Handles customer-specific API calls
  */
 
-import { apiGet, apiPatch, apiPost } from '../utils/api';
+import { apiGet, apiPatch, apiPost, API, getAuthHeaders } from '../utils/api';
 
 /**
  * Fetch customer dashboard statistics
@@ -55,11 +55,9 @@ export const changeCustomerPassword = async (oldPassword, newPassword) => {
  */
 export const downloadInvoicePDF = async (invoiceId) => {
   try {
-    const response = await fetch(`/api/customer/invoices/${invoiceId}/pdf`, {
+    const response = await fetch(API(`/api/customer/invoices/${invoiceId}/pdf`), {
       method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('authToken')}`
-      }
+      headers: getAuthHeaders()
     });
 
     if (!response.ok) {
@@ -87,3 +85,57 @@ export const downloadInvoicePDF = async (invoiceId) => {
 export const renewWarranty = async (warrantyId) => {
   return await apiPost(`/api/customer/warranties/${warrantyId}/renew`, {});
 };
+
+/**
+ * Download customer vCard
+ */
+export const downloadVCard = async () => {
+  try {
+    const response = await fetch(API('/api/customer/vcard'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) throw new Error('Failed to download vCard');
+    
+    const text = await response.text();
+    const blob = new Blob([text], { type: 'text/vcard' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'business_contact.vcf';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('vCard download error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Download PVC Membership Card
+ */
+export const downloadPVCCard = async () => {
+  try {
+    const response = await fetch(API('/api/customer/pvc-card'), {
+      headers: getAuthHeaders()
+    });
+    
+    if (!response.ok) throw new Error('Failed to download identity card');
+    
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'membership_card.pdf';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } catch (error) {
+    console.error('PVC Card download error:', error);
+    throw error;
+  }
+};
+

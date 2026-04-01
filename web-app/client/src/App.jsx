@@ -9,7 +9,6 @@ import POSSystem from './components/POS/POSSystem';
 import ProductsList from './components/Products/ProductsList';
 import CustomersList from './components/Customers/CustomersList';
 import InvoicesList from './components/Invoices/InvoicesList';
-import AnalyticsPage from './components/Analytics/Analytics';
 import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
 import AuditLogs from './components/AuditLogs/AuditLogs';
@@ -25,7 +24,6 @@ import { useProducts } from './hooks/useProducts';
 import { useCustomers } from './hooks/useCustomers';
 import { useInvoices } from './hooks/useInvoices';
 import { useCart } from './hooks/useCart';
-import { useAnalytics } from './hooks/useAnalytics';
 import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
@@ -89,7 +87,7 @@ export default function App() {
     manualRefresh: refreshCustomers,
     isRefreshing: isRefreshingCustomers,
     lastRefreshTime: customersLastRefresh
-  } = useCustomers(isOnline, isAuthenticated);
+  } = useCustomers(isOnline, isAuthenticated, tab);
 
   const {
     invoices,
@@ -104,9 +102,6 @@ export default function App() {
   
   const { cart, addToCart, setQuantity: updateCartItem, removeFromCart, clearCart, selectedCustomer, setSelectedCustomer: selectCustomer, errors: cartErrors } = 
     useCart(products);
-  
-  const { analyticsData, dateRange, setDateRange, fetchAnalyticsData } = 
-    useAnalytics(isOnline, tab);
   
   const { showInstallPrompt, isIOS, installPWA, dismissInstallPrompt } = usePWA();
 
@@ -131,9 +126,9 @@ Alt+2 or F2: POS System
 Alt+3 or F3: Products
 Alt+4 or F4: Customers
 Alt+5 or F5: Invoices
-Alt+6 or F6: Analytics
-Alt+7 or F7: Reports
-
+Alt+6 or F6: Reports
+Alt+7 or F7: Returns
+Alt+8 or F8: Expenses
 Actions:
 Ctrl+N: New Product
 Ctrl+K: New Customer
@@ -191,7 +186,8 @@ Esc: Close modals/dialogs`;
               break;
             case 'SALE_COMPLETED':
             case 'INVOICE_CREATED':
-              text = `Completed sale - ${log.details?.total ? `₹${log.details.total}` : 'N/A'}`;
+              const amount = log.details?.grandTotal || log.details?.total;
+              text = `Completed sale - ${amount ? `₹${amount}` : 'N/A'}`;
               break;
             case 'CUSTOMER_ADDED':
               text = `Added customer "${log.details?.customerName || 'Unknown'}"`;
@@ -751,7 +747,13 @@ Esc: Close modals/dialogs`;
       const billNumber = invoice.billNumber || invoice.id;
       const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
-      // Call backend to get public invoice link
+      // 1. Build the detailed message (used for fallback or share text)
+      const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
+      const formattedDate = date.toLocaleDateString('en-IN', {
+        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
+      });
+
+      // Call backend to get public invoice link (for fallback)
       let publicUrl = '';
       try {
         const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
@@ -762,12 +764,6 @@ Esc: Close modals/dialogs`;
       } catch (linkErr) {
         console.warn('Could not generate public link:', linkErr);
       }
-
-      // Build detailed message with full invoice breakdown + public link
-      const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
-      const formattedDate = date.toLocaleDateString('en-IN', {
-        day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
-      });
 
       const itemsList = (invoice.items || [])
         .map((item, i) => {
@@ -785,19 +781,12 @@ Esc: Close modals/dialogs`;
       const cgst = Number(invoice.cgst || 0);
       const sgst = Number(invoice.sgst || 0);
       const igst = Number(invoice.igst || 0);
-      const isSameState = invoice.isSameState !== false;
 
       const summaryLines = [];
-      if (discountAmt > 0) {
-        summaryLines.push(`  Discount (${invoice.discountPercent || 0}%): -₹${discountAmt.toFixed(0)}`);
-      }
-      if (cgst > 0) {
-        summaryLines.push(`  CGST: ₹${cgst.toFixed(0)}  |  SGST: ₹${sgst.toFixed(0)}`);
-      } else if (igst > 0) {
-        summaryLines.push(`  IGST: ₹${igst.toFixed(0)}`);
-      } else if (gstAmount > 0) {
-        summaryLines.push(`  GST: ₹${gstAmount.toFixed(0)}`);
-      }
+      if (discountAmt > 0) summaryLines.push(`  Discount (${invoice.discountPercent || 0}%): -₹${discountAmt.toFixed(0)}`);
+      if (cgst > 0) summaryLines.push(`  CGST: ₹${cgst.toFixed(0)}  |  SGST: ₹${sgst.toFixed(0)}`);
+      else if (igst > 0) summaryLines.push(`  IGST: ₹${igst.toFixed(0)}`);
+      else if (gstAmount > 0) summaryLines.push(`  GST: ₹${gstAmount.toFixed(0)}`);
 
       const payMode = (invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1);
 
@@ -805,7 +794,6 @@ Esc: Close modals/dialogs`;
         `📄 *TAX INVOICE #${billNumber}*`,
         `🏢 *${companyInfo.name}*`,
         companyInfo.phone ? `📞 ${companyInfo.phone}` : '',
-        companyInfo.gstin ? `GSTIN: ${companyInfo.gstin}` : '',
         '',
         `📅 Date: ${formattedDate}`,
         `👤 Customer: *${customerName}*`,
@@ -813,25 +801,56 @@ Esc: Close modals/dialogs`;
         `📦 *Items:*`,
         itemsList,
         '',
-        `Subtotal: ₹${subtotal.toFixed(0)}`,
-        ...summaryLines,
-        `------------------`,
         `💵 *Grand Total: ₹${grandTotal.toFixed(0)}*`,
         `💳 Payment: ${payMode} ✓`,
         '',
-        publicUrl ? `🔗 *View Full Invoice:*\n${publicUrl}` : '',
-        '',
-        `Thank you for your business! 🙏`,
-        `— ${companyInfo.name}`
+        publicUrl ? `🔗 *View Online:* ${publicUrl}` : '',
+        `— ${companyInfo.name}`,
       ].filter(Boolean).join('\n');
 
-      openWhatsApp(customerPhone, message);
-      showNotification(
-        customerPhone ? '✅ Opening WhatsApp...' : '⚠️ No phone number — please select contact manually',
-        customerPhone ? 'success' : 'warning'
-      );
+      // 2. Try DIRECT PDF SHARING (navigator.share)
+      let sharedSuccessfully = false;
+      const canShareFiles = navigator.canShare && navigator.canShare({ 
+        files: [new File([new Blob(['test'], {type: 'application/pdf'})], 'test.pdf', {type: 'application/pdf'})] 
+      });
+
+      if (canShareFiles) {
+        try {
+          // Download the PDF as a blob
+          const pdfResponse = await fetch(API(`/api/invoices/${invoice.id}/pdf`), {
+            headers: getAuthHeaders()
+          });
+          
+          if (pdfResponse.ok) {
+            const blob = await pdfResponse.blob();
+            const fileName = `Invoice_${billNumber}.pdf`;
+            const file = new File([blob], fileName, { type: 'application/pdf' });
+            
+            await navigator.share({
+              files: [file],
+              title: `Invoice #${billNumber}`,
+              text: `Tax Invoice from ${companyInfo.name} for ₹${grandTotal.toFixed(0)}`
+            });
+            sharedSuccessfully = true;
+          }
+        } catch (shareErr) {
+          console.warn('Direct share failed, falling back to link:', shareErr);
+          // Don't show error to user, just fall back
+        }
+      }
+
+      // 3. Fallback to WhatsApp Link Sharing
+      if (!sharedSuccessfully) {
+        openWhatsApp(customerPhone, message);
+        showNotification(
+          customerPhone ? '✅ Opening WhatsApp (Link Mode)...' : '⚠️ No phone number — please select contact manually',
+          customerPhone ? 'success' : 'warning'
+        );
+      } else {
+        showNotification('✅ Invoice shared successfully!', 'success');
+      }
     } catch (e) {
-      showNotification('❌ Failed to open WhatsApp: ' + (e.message || 'Unknown error'), 'error');
+      showNotification('❌ Failed to share: ' + (e.message || 'Unknown error'), 'error');
       console.error(e);
     }
   };
@@ -1123,16 +1142,6 @@ Esc: Close modals/dialogs`;
             isRefreshing={isRefreshingInvoices}
             lastRefreshTime={invoicesLastRefresh}
             canDelete={canDelete()}
-          />
-        );
-
-      case 'analytics':
-        return (
-          <AnalyticsPage 
-            analyticsData={analyticsData}
-            dateRange={dateRange}
-            onDateRangeChange={setDateRange}
-            canViewProfit={canViewProfit()}
           />
         );
 

@@ -55,13 +55,17 @@ def get_products():
         except (ValueError, TypeError):
             quantity = 0
 
-        profit = price - cost_price
-        profit_percent = round(((profit / price) * 100), 2) if price > 0 else 0
-
         try:
             gst_percent = float(p.get('gstPercent', 18) or 18)
         except (ValueError, TypeError):
             gst_percent = 18.0
+
+        gst_factor = 1 + (gst_percent / 100.0)
+        base_price = price / gst_factor if price > 0 else 0
+        
+        profit = base_price - cost_price
+        # Margin calculated against cost price as per standard UI
+        profit_percent = round(((profit / cost_price) * 100), 2) if cost_price > 0 else 0
 
         formatted.append({
             "id": str(p['_id']),

@@ -19,14 +19,16 @@ export const useCustomerPortal = (currentUser) => {
   const [warranties, setWarranties] = useState([]);
   const [profile, setProfile] = useState(currentUser);
   const [loading, setLoading] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState(null);
   const [error, setError] = useState(null);
 
   /**
    * Fetch all customer data
+   * @param {boolean} silent If true, loading spinner is not shown
    */
-  const fetchAllData = async () => {
+  const fetchAllData = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       const [statsRes, invoicesRes, warrantiesRes] = await Promise.all([
@@ -38,11 +40,12 @@ export const useCustomerPortal = (currentUser) => {
       setDashboardStats(statsRes);
       setInvoices(invoicesRes.invoices || []);
       setWarranties(warrantiesRes.warranties || []);
+      setLastUpdated(new Date());
     } catch (err) {
       setError(err.message);
       console.error('Failed to fetch customer data:', err);
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
   };
 
@@ -53,6 +56,7 @@ export const useCustomerPortal = (currentUser) => {
     try {
       const stats = await fetchDashboardStats();
       setDashboardStats(stats);
+      setLastUpdated(new Date());
     } catch (err) {
       setError(err.message);
     }
@@ -91,10 +95,22 @@ export const useCustomerPortal = (currentUser) => {
     }
   };
 
+  // Initial Fetch
   useEffect(() => {
     if (currentUser) {
       fetchAllData();
     }
+  }, [currentUser]);
+
+  // Live Sync: Poll every 30 seconds
+  useEffect(() => {
+    if (!currentUser) return;
+
+    const interval = setInterval(() => {
+      fetchAllData(true); // Silent refresh
+    }, 30000);
+
+    return () => clearInterval(interval);
   }, [currentUser]);
 
   return {
@@ -104,6 +120,7 @@ export const useCustomerPortal = (currentUser) => {
     profile,
     loading,
     error,
+    lastUpdated,
     fetchAllData,
     loadDashboardStats,
     updateProfile,

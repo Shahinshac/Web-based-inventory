@@ -5,9 +5,31 @@
 
 // Get base API URL from environment
 export const getApiBaseUrl = () => {
-  let baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000'
-  // Remove trailing slash if present
-  return baseUrl.replace(/\/$/, '')
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  }
+  
+  // Intelligent resolution for local network testing (e.g. mobile phones)
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    
+    // If we're on localhost, use localhost:5000
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+
+    // For any other hostname (including production domains), the VITE_API_URL
+    // environment variable must be set at build time to point to the backend.
+    // Log a warning so developers can diagnose the issue quickly.
+    console.warn(
+      `[api] VITE_API_URL is not set. API calls may fail on host "${hostname}". ` +
+      'Set VITE_API_URL to your backend URL (e.g. https://your-backend.onrender.com).'
+    );
+
+    return `http://${hostname}:5000`;
+  }
+  
+  return 'http://localhost:5000';
 }
 
 export const API = (path) => {

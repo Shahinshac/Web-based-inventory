@@ -32,7 +32,6 @@ export default function Sidebar({
     { id: 'products', label: 'Inventory', icon: 'package', show: true },
     { id: 'customers', label: 'Customers', icon: 'users', show: true },
     { id: 'invoices', label: 'Invoices', icon: 'file-text', show: true },
-    { id: 'analytics', label: 'Analytics', icon: 'pie-chart', show: true },
     { id: 'reports', label: 'Reports', icon: 'bar-chart-2', show: true },
     { id: 'returns', label: 'Returns', icon: 'rotate-ccw', show: true },
     { id: 'expenses', label: 'Expenses', icon: 'dollar-sign', show: true },

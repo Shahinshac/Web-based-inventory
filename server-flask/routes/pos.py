@@ -46,6 +46,7 @@ def checkout():
     # Get customer details
     customer_name = "Walk-in Customer"
     customer_phone = None
+    customer_email = None
     customer_address = ""
     customer_place = ""
     customer_pincode = ""
@@ -56,6 +57,7 @@ def checkout():
             if customer:
                 customer_name = customer.get('name')
                 customer_phone = customer.get('phone')
+                customer_email = customer.get('email')
                 customer_address = customer.get('address', '')
                 customer_place = customer.get('place', '')
                 customer_pincode = customer.get('pincode', '')
@@ -73,14 +75,16 @@ def checkout():
     total_cost = 0.0
     is_same_state = (customer_state == 'Same')
 
-    bill_date = datetime.utcnow()
+    # Set exact local time (IST is +5:30 ahead of UTC)
+    bill_date = datetime.utcnow() + timedelta(hours=5, minutes=30)
     client_time = data.get('clientTime')
     if client_time:
         try:
             # simple parse if provided
             # JavaScript date string e.g., "2023-10-15T12:00:00Z"
             from dateutil import parser
-            bill_date = parser.parse(client_time)
+            parsed_time = parser.parse(client_time)
+            bill_date = parsed_time
         except Exception:
             pass
 
@@ -89,6 +93,7 @@ def checkout():
         "customerId": ObjectId(customer_id) if customer_id else None,
         "customerName": customer_name,
         "customerPhone": customer_phone,
+        "customerEmail": customer_email,
         "customerAddress": customer_address,
         "customerState": customer_state,
         "customerPlace": customer_place,
@@ -118,18 +123,22 @@ def checkout():
         if not product: continue
 
         qty = float(it.get('quantity', 0))
-        unit_price = float(it.get('price', 0))
+        unit_price = float(it.get('price', 0)) # Inclusive of GST
         prod_cost = float(product.get('costPrice', 0))
-        # Use per-product GST rate; fall back to 18% for legacy products
         line_gst_percent = float(product.get('gstPercent', 18) or 18)
+        
+        # Extract base price by removing GST component
+        gst_factor = 1 + (line_gst_percent / 100.0)
+        base_unit_price = unit_price / gst_factor
 
-        line_subtotal = unit_price * qty
+        line_subtotal_inclusive = unit_price * qty
+        line_subtotal_base = base_unit_price * qty
         line_cost = prod_cost * qty
-        line_profit = line_subtotal - line_cost
+        line_profit = line_subtotal_base - line_cost
 
-        # Taxable value for this line (subtotal after proportional discount)
-        line_taxable = line_subtotal * discount_factor
-        # GST amount for this line based on the product's specific GST rate
+        # Taxable value for this line (base subtotal after proportional discount)
+        line_taxable = line_subtotal_base * discount_factor
+        # GST amount for this line
         line_gst_amount = round(line_taxable * (line_gst_percent / 100.0), 2)
 
         bill["items"].append({
@@ -138,15 +147,16 @@ def checkout():
             "hsnCode": product.get('hsnCode', '9999'),
             "quantity": qty,
             "costPrice": prod_cost,
-            "unitPrice": unit_price,
+            "unitPrice": unit_price, # Store inclusive price to match UI
             "gstPercent": line_gst_percent,
-            "lineSubtotal": line_subtotal,
+            "lineSubtotal": line_subtotal_inclusive, # Store inclusive subtotal
             "lineCost": line_cost,
             "lineProfit": line_profit,
             "lineGstAmount": line_gst_amount
         })
 
-        subtotal += line_subtotal
+        # We accumulate inclusive sum for the bill's subtotal
+        subtotal += line_subtotal_inclusive
         total_cost += line_cost
 
         # Deduct inventory
@@ -155,13 +165,10 @@ def checkout():
             {"$inc": {"quantity": -qty}}
         )
 
-    # Tax & Discount Math
+    # Tax & Discount Math (subtotal is inclusive of GST)
     discount_amount = (subtotal * discount_percent) / 100
     after_discount = subtotal - discount_amount
 
-    # GST: sum of per-item GST amounts (each calculated on the item's discounted taxable value).
-    # This correctly handles products with different GST rates.
-    # For uniform 18% products the result equals after_discount × 0.18.
     # GST is collected for the government and is NOT company revenue or profit.
     gst_amount = sum(i["lineGstAmount"] for i in bill["items"])
 
@@ -172,10 +179,16 @@ def checkout():
     else:
         igst = round(gst_amount, 2)      # Full GST as IGST
 
-    grand_total = after_discount + gst_amount
-    # Profit = revenue (selling price) minus cost of goods sold (COGS) minus discount.
-    # GST is excluded from profit because it is passed directly to the government.
-    total_profit = subtotal - total_cost - discount_amount
+    # grand_total is already after_discount because after_discount is inclusive of GST
+    grand_total = after_discount
+    
+    # Profit = (revenue excluding GST) minus cost of goods sold (COGS).
+    # Since total_profit is calculated via per-item line_profit, we sum it and apply discount factor 
+    # to account for the profit loss due to the global discount.
+    pre_discount_profit = sum(i["lineProfit"] for i in bill["items"])
+    # The discount effectively eats directly into profit (base amount lost)
+    total_base_lost_to_discount = (subtotal - gst_amount) * (discount_percent / 100.0)
+    total_profit = pre_discount_profit - total_base_lost_to_discount
 
     bill["subtotal"] = round(subtotal, 2)
     bill["discountAmount"] = round(discount_amount, 2)
@@ -189,6 +202,21 @@ def checkout():
     bill["totalProfit"] = round(total_profit, 2)
 
     result = db.bills.insert_one(bill)
+
+    # Auto-generate warranties for registered customers (1 year from invoice date)
+    if customer_id:
+        for i in bill["items"]:
+            db.warranties.insert_one({
+                "customerId": ObjectId(customer_id),
+                "productName": i["productName"],
+                "productSku": i.get("hsnCode", "N/A"),
+                "warrantyType": "1 Year Standard",
+                "startDate": bill_date,
+                "expiryDate": bill_date + timedelta(days=365),
+                "status": "active",
+                "invoiceNo": bill_number, 
+                "createdAt": datetime.utcnow() + timedelta(hours=5, minutes=30)
+            })
 
     log_audit(db, "SALE_COMPLETED", user_id, username, {
         "billId": str(result.inserted_id),
@@ -207,7 +235,7 @@ def checkout():
         "customerPhone": customer_phone,
         "customerPlace": customer_place,
         "paymentMode": payment_mode,
-        "billDate": bill_date.isoformat() + ("Z" if not bill_date.tzinfo else ""),
+        "billDate": bill_date.isoformat(),
         "isSameState": is_same_state,
         "items": [{
             "productName": i["productName"],
@@ -269,7 +297,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": (b.get("billDate", datetime.utcnow()).isoformat() + ("Z" if not b.get("billDate", datetime.utcnow()).tzinfo else "")) if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
+            "date": b.get("billDate", datetime.utcnow()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -294,7 +322,7 @@ def get_invoice(id):
         "customerAddress": invoice.get("customerAddress"),
         "customerPlace": invoice.get("customerPlace", ""),
         "isSameState": invoice.get("isSameState", True),
-        "billDate": (invoice.get("billDate").isoformat() + ("Z" if not invoice.get("billDate").tzinfo else "")) if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
         "items": [{
              "productName": i.get("productName"),
              "hsnCode": i.get("hsnCode", "9999"),
@@ -389,10 +417,15 @@ def whatsapp_link(id):
             }
         })
 
-        # Public invoice page is served by this Flask backend, so use the backend URL
         public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
-        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}. View: {public_url}"
+        portal_message = (
+            f"\n\n🎁 *Customer Portal:*"
+            f"\nRegister & login to view your invoices, warranties and purchase history."
+            f"\n🔗 https://26-07inventory.vercel.app"
+            f"\n(Use the email you provided during billing)"
+        )
+        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}.\n\n📄 View Invoice: {public_url}{portal_message}"
 
         whatsapp_url = None
         if customer_phone:

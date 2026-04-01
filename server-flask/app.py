@@ -1,8 +1,8 @@
 from flask import Flask, jsonify, request
 from flask_cors import CORS
-from flask_mail import Mail
 from database import connect_db
 from routes.auth import auth_bp
+from routes.customer_auth import customer_auth_bp
 from routes.products import products_bp
 from routes.customers import customers_bp
 from routes.pos import pos_bp
@@ -16,8 +16,11 @@ from routes.public import public_bp
 from routes.customer_portal import customer_portal_bp
 from routes.payment_links import payment_links_bp
 from routes.emi import emi_bp
+from routes.exports import exports_bp
 from services.cloudinary_service import init_cloudinary
 import logging
+import os
+import re
 
 from config import Config
 
@@ -29,15 +32,22 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_object(Config)
 
+# Build allowed CORS origins list
+# CORS_ORIGIN env var can supply one or more comma-separated extra origins
+_extra_origins = [o.strip() for o in os.environ.get('CORS_ORIGIN', '').split(',') if o.strip()]
+
+_cors_origins = [
+    "https://26-07inventory.vercel.app",          # Primary production Vercel frontend
+    re.compile(r"^https://.*\.vercel\.app$"),      # All Vercel preview deployments
+    re.compile(r"^http://localhost:\d+$"),         # Local development (any port)
+    re.compile(r"^http://127\.0\.0\.1:\d+$"),
+    re.compile(r"^https?://192\.168\.\d+\.\d+:\d+$"),  # Local network (mobile testing)
+    re.compile(r"^https?://10\.\d+\.\d+\.\d+:\d+$"),
+] + _extra_origins
+
 # Enable CORS (Allows the React frontend to communicate with Flask)
 CORS(app,
-     origins=[
-         "https://26-07inventory.vercel.app",  # Production Vercel frontend
-         "http://localhost:3000",               # Local development
-         "http://localhost:5173",               # Vite dev server
-         "http://127.0.0.1:3000",
-         "http://127.0.0.1:5173"
-     ],
+     origins=_cors_origins,
      allow_headers=["Content-Type", "Authorization"],
      supports_credentials=True
 )
@@ -47,10 +57,10 @@ connect_db(app)
 
 # Initialize 3rd Party Wrappers
 init_cloudinary(app)
-Mail(app)  # Initialize Flask-Mail
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')
+app.register_blueprint(customer_auth_bp, url_prefix='/api/customer-auth')
 app.register_blueprint(products_bp, url_prefix='/api/products')
 app.register_blueprint(customers_bp, url_prefix='/api/customers')
 app.register_blueprint(pos_bp, url_prefix='/api/checkout')
@@ -62,6 +72,7 @@ app.register_blueprint(pos_bp, name='invoices', url_prefix='/api/invoices')
 app.register_blueprint(customer_portal_bp, url_prefix='/api/customer')
 app.register_blueprint(payment_links_bp, url_prefix='/api/payment-links')
 app.register_blueprint(emi_bp, url_prefix='/api/emi')
+app.register_blueprint(exports_bp, url_prefix='/api/exports')
 # Public invoice viewing (no authentication required)
 app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
 # Public customer card viewing (no authentication required)

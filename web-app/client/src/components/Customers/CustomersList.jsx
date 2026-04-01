@@ -5,6 +5,7 @@ import CustomerForm from './CustomerForm';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
+import CustomerHistoryModal from './CustomerHistoryModal';
 import './VisitingCard.css';
 
 export default function CustomersList({
@@ -24,6 +25,12 @@ export default function CustomersList({
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'visiting'
+
+  // History Modal State
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState(null);
+  const [historyData, setHistoryData] = useState({ bills: [], warranties: [], stats: {} });
+  const [isHistoryLoading, setIsHistoryLoading] = useState(false);
 
   const filteredCustomers = customers.filter(customer => {
     const query = searchQuery.toLowerCase();
@@ -52,6 +59,30 @@ export default function CustomersList({
       await onAddCustomer(customerData);
     }
     handleFormClose();
+  };
+
+  const handleViewHistory = async (customer) => {
+    setSelectedCustomer(customer);
+    setHistoryData({ bills: [], warranties: [], stats: {} });
+    setIsHistoryOpen(true);
+    setIsHistoryLoading(true);
+
+    try {
+      const result = await onViewHistory(customer.id);
+      if (result.success) {
+        setHistoryData({
+          bills: result.purchases.bills || [],
+          warranties: result.purchases.warranties || [],
+          stats: result.purchases.stats || {}
+        });
+      } else {
+        console.error('Failed to load history:', result.error);
+      }
+    } catch (err) {
+      console.error('History fetch error:', err);
+    } finally {
+      setIsHistoryLoading(false);
+    }
   };
 
   return (
@@ -126,7 +157,7 @@ export default function CustomersList({
                 customer={customer}
                 onEdit={canEdit ? handleEdit : null}
                 onDelete={canDelete ? onDeleteCustomer : null}
-                onViewHistory={onViewHistory}
+                onViewHistory={handleViewHistory}
                 onShareWhatsApp={onShareWhatsApp}
               />
             ) : (
@@ -135,7 +166,7 @@ export default function CustomersList({
                 customer={customer}
                 onEdit={canEdit ? handleEdit : null}
                 onDelete={canDelete ? onDeleteCustomer : null}
-                onViewHistory={onViewHistory}
+                onViewHistory={handleViewHistory}
                 onShareWhatsApp={onShareWhatsApp}
               />
             )
@@ -163,6 +194,18 @@ export default function CustomersList({
           onClose={handleFormClose}
         />
       )}
+
+      {/* Customer History Modal */}
+      <CustomerHistoryModal 
+        isOpen={isHistoryOpen}
+        onClose={() => {
+          setIsHistoryOpen(false);
+          setSelectedCustomer(null);
+        }}
+        customer={selectedCustomer}
+        data={historyData}
+        isLoading={isHistoryLoading}
+      />
     </div>
   );
 }

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DateRangeSelector from './DateRangeSelector';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
+import { API, getAuthHeaders } from '../../utils/api';
 
 export default function Reports({ 
   invoices, 
@@ -32,7 +33,12 @@ export default function Reports({
   useEffect(() => {
     const fetchExpenses = async () => {
       try {
-        const res = await fetch('/api/expenses', { headers: { 'Content-Type': 'application/json' } });
+        const res = await fetch(API('/api/expenses'), { 
+          headers: { 
+            ...getAuthHeaders(),
+            'Content-Type': 'application/json' 
+          } 
+        });
         if (res.ok) {
           const data = await res.json();
           let filtered = data;

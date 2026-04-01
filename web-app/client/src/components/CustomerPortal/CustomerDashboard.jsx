@@ -6,34 +6,17 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
 import { apiGet } from '../../utils/api';
+import { downloadPVCCard, downloadVCard, downloadInvoicePDF } from '../../services/customerPortalService';
 
-const CustomerDashboard = ({ currentUser }) => {
-  const [stats, setStats] = useState({
-    totalPurchases: 0,
-    totalSpent: 0,
-    invoiceCount: 0,
-    warrantyCount: 0,
-    expiringWarranties: 0
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-
-  useEffect(() => {
-    const fetchDashboardStats = async () => {
-      try {
-        setLoading(true);
-        const response = await apiGet('/api/customer/dashboard');
-        setStats(response);
-      } catch (err) {
-        setError(err.message);
-        console.error('Failed to fetch dashboard stats:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchDashboardStats();
-  }, []);
+const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
+  // Mapping stats from props (Backend returns { stats: { ... }, memberSince: ... })
+  const stats = {
+    invoiceCount: incomingStats?.stats?.totalPurchases || 0,
+    totalSpent: incomingStats?.stats?.totalSpent || 0,
+    warrantyCount: incomingStats?.stats?.activeWarranties || 0,
+    expiringWarranties: incomingStats?.stats?.expiredWarranties || 0,
+    memberSince: incomingStats?.memberSince || new Date().toISOString()
+  };
 
   const StatCard = ({ icon, label, value, trend }) => (
     <div className="stat-card">
@@ -96,31 +79,110 @@ const CustomerDashboard = ({ currentUser }) => {
             <StatCard
               icon="trending-up"
               label="Member Since"
-              value={new Date(currentUser?.createdAt).getFullYear()}
-              trend={`${Math.round((new Date() - new Date(currentUser?.createdAt)) / (1000 * 60 * 60 * 24))} days`}
+              value={stats.memberSince ? new Date(stats.memberSince).getFullYear() : 'New'}
+              trend={stats.memberSince ? `${Math.round((new Date() - new Date(stats.memberSince)) / (1000 * 60 * 60 * 24))} days` : '0 days'}
             />
           </div>
 
-          {/* Quick Actions */}
+          {/* Recent Purchases Section */}
           <div className="portal-section mt-4">
-            <h3 className="section-title">Quick Actions</h3>
-            <div className="quick-actions">
-              <a href="#invoices" className="action-card">
-                <Icon name="layers" size={20} />
-                <span>View Invoices</span>
-              </a>
-              <a href="#warranties" className="action-card">
-                <Icon name="shield" size={20} />
-                <span>Manage Warranties</span>
-              </a>
-              <a href="#profile" className="action-card">
-                <Icon name="user" size={20} />
-                <span>Update Profile</span>
-              </a>
+            <div className="section-header-inline">
+              <h3 className="section-title">Recent Purchases</h3>
+              <a href="#invoices" className="link-more">View All Invoices →</a>
+            </div>
+            
+            <div className="recent-list-container">
+              {incomingStats?.recentPurchases && incomingStats.recentPurchases.length > 0 ? (
+                <div className="table-responsive">
+                  <table className="portal-table">
+                    <thead>
+                      <tr>
+                        <th>Invoice #</th>
+                        <th>Date</th>
+                        <th>Items</th>
+                        <th>Total</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {incomingStats.recentPurchases.map(inv => (
+                        <tr key={inv.id}>
+                          <td className="font-weight-bold">#{inv.invoiceNo}</td>
+                          <td>{new Date(inv.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                          <td>{inv.itemCount} items</td>
+                          <td className="font-weight-bold">₹{inv.total.toLocaleString('en-IN')}</td>
+                          <td>
+                            <button 
+                              className="btn-icon-sm" 
+                              onClick={() => downloadInvoicePDF(inv.id)}
+                              title="Download PDF"
+                            >
+                              <Icon name="download" size={14} />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="empty-mini">
+                  <Icon name="shopping-bag" size={24} />
+                  <p>No recent purchases found</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Help Section */}
+          <div className="portal-section mt-4 grid-2">
+            <div className="dashboard-column">
+              <h3 className="section-title">Quick Actions</h3>
+              <div className="quick-actions-list">
+                <a href="#invoices" className="action-row">
+                  <div className="action-icon"><Icon name="layers" size={18} /></div>
+                  <span>View My Invoices</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+                <a href="#warranties" className="action-row">
+                  <div className="action-icon"><Icon name="shield" size={18} /></div>
+                  <span>Check Warranties</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+                <a href="#profile" className="action-row">
+                  <div className="action-icon"><Icon name="user" size={18} /></div>
+                  <span>Account Settings</span>
+                  <Icon name="chevron-right" size={14} className="ml-auto" />
+                </a>
+              </div>
+            </div>
+
+            <div className="dashboard-column">
+              <h3 className="section-title">Digital Identity</h3>
+              <div className="identity-card-demo">
+                <div className="card-mockup">
+                  <div className="card-header">
+                    <span className="card-logo">⚡</span>
+                    <span className="card-brand">26:07</span>
+                  </div>
+                  <div className="card-body">
+                    <p className="card-holder">{currentUser?.name || 'Customer'}</p>
+                    <p className="card-type">Premium Member</p>
+                  </div>
+                </div>
+                <div className="identity-actions">
+                  <button onClick={downloadVCard} className="btn-identity">
+                    <Icon name="user-plus" size={16} />
+                    <span>Save Contact</span>
+                  </button>
+                  <button onClick={downloadPVCCard} className="btn-identity secondary">
+                    <Icon name="download" size={16} />
+                    <span>Member ID</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
           <div className="help-section">
             <Icon name="help-circle" size={20} />
             <div>

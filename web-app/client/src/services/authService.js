@@ -132,6 +132,10 @@ export const validateSession = async () => {
     const response = await apiGet('/api/users/session')
     return response
   } catch (error) {
+    if (error.message.includes('Unable to connect') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+      // Don't auto-logout on network drop/server offline
+      return { valid: true, networkOffline: true }
+    }
     logoutUser()
     return null
   }
@@ -146,6 +150,10 @@ export const checkUserValidity = async (userId) => {
     return response.exists && response.approved
   } catch (error) {
     console.error('User validity check error:', error)
+    if (error.message.includes('Unable to connect') || error.message.includes('NetworkError') || error.message.includes('Failed to fetch')) {
+      // Don't auto-logout on network drop
+      return true
+    }
     return false
   }
 }
