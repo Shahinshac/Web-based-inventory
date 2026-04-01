@@ -514,10 +514,10 @@ def update_customer_profile():
 @customer_portal_bp.route('/change-password', methods=['POST'])
 @authenticate_token
 def change_customer_password():
-    """Customer cannot change password (OTP-based auth only)"""
+    """Password change is handled by customer_auth blueprint"""
     return jsonify({
-        "error": "Password changes not supported for OTP-based authentication",
-        "message": "Contact support to change your email address"
+        "error": "Use /api/customer-auth/change-password endpoint",
+        "message": "Password changes should be done through the authentication endpoints"
     }), 400
 
 @customer_portal_bp.route('/vcard', methods=['GET'])
