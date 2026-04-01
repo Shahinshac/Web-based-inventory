@@ -11,10 +11,22 @@ import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';
 import CustomerEMI from './CustomerEMI';
 import CustomerProfile from './CustomerProfile';
+import { useCustomerPortal } from '../../hooks/useCustomerPortal';
 import './customerPortal.css';
 
 const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+
+  // Integration fix: Use the useCustomerPortal hook to fetch all portal data
+  const {
+    dashboardStats,
+    invoices,
+    warranties,
+    profile,
+    loading,
+    error,
+    fetchAllData
+  } = useCustomerPortal(currentUser);
 
   const tabs = [
     { id: 'dashboard', label: 'Dashboard', icon: 'analytics' },
