@@ -32,6 +32,7 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 // Removed unused constants import
 import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
 import { createPaymentLink } from './services/paymentLinkService';
+import { emiService } from './services/emiService';
 import './styles.css';
 
 export default function App() {
@@ -266,7 +267,28 @@ Esc: Close modals/dialogs`;
     try {
       const result = await createInvoice(billData);
       if (result.success) {
-        showNotification('✓ Sale completed successfully!', 'success');
+        // Create EMI plan if enabled
+        if (billData.emiDetails && billData.emiDetails.enabled && result.invoice?.id) {
+          try {
+            const emiResult = await emiService.createEMIPlan({
+              billId: result.invoice.id,
+              customerId: billData.customerId,
+              amount: billData.emiDetails.principalAmount,
+              tenure: billData.emiDetails.tenure,
+              notes: `EMI created for bill #${result.invoice.billNumber}`
+            });
+
+            if (emiResult.success) {
+              showNotification(`✓ Sale completed! EMI plan created: ₹${billData.emiDetails.monthlyEMI.toLocaleString('en-IN')}/month for ${billData.emiDetails.tenure} months`, 'success');
+            }
+          } catch (emiError) {
+            console.error('EMI creation error:', emiError);
+            showNotification('Sale completed but EMI creation failed. Please add EMI manually.', 'warning');
+          }
+        } else {
+          showNotification('✓ Sale completed successfully!', 'success');
+        }
+
         clearCart();
         selectCustomer(null);
         await fetchProducts();

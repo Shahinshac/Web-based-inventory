@@ -9,6 +9,7 @@ import Icon from '../../Icon.jsx';
 import CustomerDashboard from './CustomerDashboard';
 import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';
+import CustomerEMI from './CustomerEMI';
 import CustomerProfile from './CustomerProfile';
 import './customerPortal.css';
 
@@ -19,6 +20,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
     { id: 'dashboard', label: 'Dashboard', icon: 'analytics' },
     { id: 'invoices', label: 'Invoices', icon: 'layers' },
     { id: 'warranties', label: 'Warranties', icon: 'shield' },
+    { id: 'emi', label: 'EMI Plans', icon: 'credit-card' },
     { id: 'profile', label: 'Profile', icon: 'user' }
   ];
 
@@ -57,6 +59,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
         {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
         {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
         {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
+        {activeTab === 'emi' && <CustomerEMI customerId={currentUser?.id || currentUser?._id} customerName={currentUser?.name || currentUser?.username} />}
         {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
       </div>
     </div>

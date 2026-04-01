@@ -14203,6 +14203,241 @@ button {
 }
 
 /* ============================================
+   EMI CARD STYLES
+   ============================================ */
+
+.emi-card {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.emi-toggle-modern {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.emi-toggle-modern input {
+  display: none;
+}
+
+.toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: #cbd5e1;
+  border-radius: 12px;
+  transition: background 0.3s ease;
+}
+
+.emi-toggle-modern input:checked ~ .toggle-switch {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+}
+
+.toggle-switch::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 10px;
+  top: 2px;
+  left: 2px;
+  transition: left 0.3s ease;
+}
+
+.emi-toggle-modern input:checked ~ .toggle-switch::after {
+  left: 22px;
+}
+
+.toggle-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.emi-content {
+  padding: 20px;
+}
+
+.emi-info-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #dbeafe, #e0f2fe);
+  border: 1px solid #7dd3fc;
+  border-radius: 8px;
+  color: #0369a1;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 16px;
+}
+
+.emi-tenure-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.emi-tenure-btn {
+  padding: 14px;
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.emi-tenure-btn:hover {
+  border-color: #cbd5e1;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.emi-tenure-btn.active {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  border-color: #6366f1;
+  color: white;
+}
+
+.tenure-months {
+  font-size: 13px;
+  font-weight: 600;
+  color: inherit;
+  margin-bottom: 6px;
+}
+
+.tenure-emi {
+  font-size: 16px;
+  font-weight: 700;
+  color: inherit;
+}
+
+.emi-summary {
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  margin-bottom: 16px;
+}
+
+.emi-summary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+.emi-summary-row:not(:last-child) {
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.emi-summary-row strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.emi-amount {
+  color: #6366f1 !important;
+  font-size: 16px;
+}
+
+.emi-schedule-toggle {
+  width: 100%;
+  padding: 12px;
+  background: white;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  margin-bottom: 16px;
+}
+
+.emi-schedule-toggle:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.emi-schedule-table {
+  margin-top: 16px;
+  overflow-x: auto;
+}
+
+.emi-schedule-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.emi-schedule-table thead {
+  background: #f8fafc;
+  border-bottom: 1.5px solid #e2e8f0;
+}
+
+.emi-schedule-table th {
+  padding: 10px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+
+.emi-schedule-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #475569;
+}
+
+.emi-schedule-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+.emi-disabled-message {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, rgba(209, 213, 219, 0.2), rgba(229, 231, 235, 0.2));
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #6b7280;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.emi-divider {
+  height: 1px;
+  background: #e2e8f0;
+  margin: 12px 0;
+}
+
+.emi-info-summary {
+  padding-top: 12px;
+}
+
+.emi-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* ============================================
    BARCODE & QR CODE DOWNLOAD STYLES
    ============================================ */
 

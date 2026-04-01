@@ -181,44 +181,119 @@ const Login = ({ onLogin }) => {
       justifyContent: 'center',
       background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
       padding: '20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+      position: 'relative',
+      overflow: 'hidden'
     }}>
-      <div style={{ width: '100%', maxWidth: '360px' }}>
+      {/* Animated Background Elements */}
+      <div style={{
+        position: 'absolute',
+        top: '-50%',
+        left: '-50%',
+        width: '200%',
+        height: '200%',
+        background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
+        animation: 'drift 20s infinite alternate',
+        pointerEvents: 'none'
+      }}></div>
+      <div style={{
+        position: 'absolute',
+        bottom: '-50%',
+        right: '-50%',
+        width: '200%',
+        height: '200%',
+        background: 'radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 50%)',
+        animation: 'drift 25s infinite alternate-reverse',
+        pointerEvents: 'none'
+      }}></div>
+      
+      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
         {/* Header */}
         <div style={{
           textAlign: 'center',
-          marginBottom: '30px',
-          color: 'white'
+          marginBottom: '32px',
+          color: 'white',
+          animation: 'fadeInDown 0.6s ease-out'
         }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>⚡</div>
+          <div style={{
+            fontSize: '64px',
+            marginBottom: '20px',
+            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))',
+            animation: 'pulse 3s infinite'
+          }}>⚡</div>
           <h1 style={{
-            fontSize: '28px',
+            fontSize: '32px',
             fontWeight: '800',
-            margin: '0 0 8px 0',
-            letterSpacing: '-0.5px'
+            margin: '0 0 10px 0',
+            letterSpacing: '-0.5px',
+            textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
           }}>26:07 Electronics</h1>
           <p style={{
-            fontSize: '15px',
+            fontSize: '16px',
             opacity: 0.95,
             margin: '0',
-            fontWeight: '500'
+            fontWeight: '500',
+            textShadow: '0 1px 4px rgba(0, 0, 0, 0.15)'
           }}>Smart Inventory & POS Management</p>
         </div>
+        
+        <style>{`
+          @keyframes fadeInDown {
+            from {
+              opacity: 0;
+              transform: translateY(-20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+          @keyframes pulse {
+            0%, 100% {
+              transform: scale(1);
+            }
+            50% {
+              transform: scale(1.05);
+            }
+          }
+          @keyframes drift {
+            from {
+              transform: translate(0, 0) rotate(0deg);
+            }
+            to {
+              transform: translate(50px, 50px) rotate(5deg);
+            }
+          }
+          @keyframes fadeInUp {
+            from {
+              opacity: 0;
+              transform: translateY(20px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}</style>
 
         {/* Card */}
         <div style={{
-          background: 'white',
-          borderRadius: '20px',
-          boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+          background: 'rgba(255, 255, 255, 0.98)',
+          backdropFilter: 'blur(20px)',
+          borderRadius: '24px',
+          boxShadow: '0 25px 70px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.15)',
           overflow: 'hidden',
-          marginBottom: '24px'
+          marginBottom: '24px',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          animation: 'fadeInUp 0.6s ease-out 0.2s both'
         }}>
           {/* Tabs */}
           <div style={{
             display: 'flex',
-            background: '#f8fafc',
-            borderBottom: '2px solid #e2e8f0',
-            padding: '8px'
+            background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)',
+            borderBottom: '1px solid #e2e8f0',
+            padding: '12px',
+            gap: '8px'
           }}>
             <button
               type="button"
@@ -229,24 +304,24 @@ const Login = ({ onLogin }) => {
               }}
               style={{
                 flex: 1,
-                padding: '16px 20px',
-                background: mode === 'staff' ? 'white' : 'transparent',
+                padding: '18px 24px',
+                background: mode === 'staff' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
                 color: mode === 'staff' ? '#6366f1' : '#64748b',
-                border: 'none',
-                borderRadius: '12px',
-                fontWeight: '600',
+                border: mode === 'staff' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
+                borderRadius: '14px',
+                fontWeight: '700',
                 fontSize: '15px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                margin: '4px',
-                boxShadow: mode === 'staff' ? '0 2px 8px rgba(99, 102, 241, 0.1)' : 'none'
+                gap: '10px',
+                boxShadow: mode === 'staff' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
+                transform: mode === 'staff' ? 'translateY(-2px)' : 'none'
               }}
             >
-              <Icon name="lock" size={18} />
+              <Icon name="lock" size={20} />
               Staff Login
             </button>
             <button
@@ -260,141 +335,173 @@ const Login = ({ onLogin }) => {
               }}
               style={{
                 flex: 1,
-                padding: '16px 20px',
-                background: mode === 'customer' ? 'white' : 'transparent',
+                padding: '18px 24px',
+                background: mode === 'customer' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
                 color: mode === 'customer' ? '#6366f1' : '#64748b',
-                border: 'none',
-                borderRadius: '12px',
-                fontWeight: '600',
+                border: mode === 'customer' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
+                borderRadius: '14px',
+                fontWeight: '700',
                 fontSize: '15px',
                 cursor: 'pointer',
-                transition: 'all 0.2s',
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                gap: '8px',
-                margin: '4px',
-                boxShadow: mode === 'customer' ? '0 2px 8px rgba(99, 102, 241, 0.1)' : 'none'
+                gap: '10px',
+                boxShadow: mode === 'customer' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
+                transform: mode === 'customer' ? 'translateY(-2px)' : 'none'
               }}
             >
-              <Icon name="mail" size={18} />
+              <Icon name="mail" size={20} />
               Customer Login
             </button>
           </div>
 
           {/* Content */}
-          <div style={{ padding: '32px' }}>
+          <div style={{ padding: '40px 36px' }}>
             {/* Staff Login */}
             {mode === 'staff' && (
               <form onSubmit={handleStaffLogin}>
-                <h2 style={{
-                  fontSize: '28px',
-                  fontWeight: '800',
-                  margin: '0 0 6px 0',
-                  color: '#0f172a',
-                  letterSpacing: '-0.5px'
-                }}>Staff Portal</h2>
-                <p style={{
-                  margin: '0 0 28px 0',
-                  color: '#64748b',
-                  fontSize: '14px',
-                  fontWeight: '500'
-                }}>Secure access for authorized personnel</p>
+                <div style={{ marginBottom: '32px' }}>
+                  <h2 style={{
+                    fontSize: '30px',
+                    fontWeight: '800',
+                    margin: '0 0 8px 0',
+                    color: '#0f172a',
+                    letterSpacing: '-0.8px',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
+                    WebkitBackgroundClip: 'text',
+                    WebkitTextFillColor: 'transparent',
+                    backgroundClip: 'text'
+                  }}>Staff Portal</h2>
+                  <p style={{
+                    margin: '0',
+                    color: '#64748b',
+                    fontSize: '15px',
+                    fontWeight: '500',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}>
+                    <Icon name="shield" size={16} />
+                    Secure access for authorized personnel
+                  </p>
+                </div>
 
                 {/* Username */}
-                <div style={{ marginBottom: '18px' }}>
+                <div style={{ marginBottom: '24px' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
+                    fontSize: '14px',
                     fontWeight: '700',
-                    color: '#0f172a',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    color: '#1e293b',
+                    marginBottom: '10px',
+                    letterSpacing: '0.3px'
                   }}>Username</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type="text"
                       value={staffUsername}
                       onChange={(e) => setStaffUsername(e.target.value)}
-                      placeholder="your username"
+                      placeholder="Enter your username"
                       required
                       autoFocus
                       style={{
                         width: '100%',
-                        padding: '13px 16px 13px 40px',
-                        border: '1.5px solid #e2e8f0',
-                        borderRadius: '10px',
-                        fontSize: '14px',
+                        padding: '15px 18px 15px 48px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '15px',
                         fontFamily: 'inherit',
                         boxSizing: 'border-box',
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         outline: 'none',
-                        background: '#fafbfc',
-                        color: '#0f172a'
+                        background: '#f8fafc',
+                        color: '#0f172a',
+                        fontWeight: '500'
                       }}
                       onFocus={(e) => {
                         e.target.style.borderColor = '#6366f1';
                         e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
+                        e.target.style.transform = 'translateY(-1px)';
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#fafbfc';
+                        e.target.style.background = '#f8fafc';
                         e.target.style.boxShadow = 'none';
+                        e.target.style.transform = 'translateY(0)';
                       }}
                     />
-                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
-                      <Icon name="user" size={18} />
+                    <div style={{
+                      position: 'absolute',
+                      left: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      pointerEvents: 'none',
+                      transition: 'color 0.3s'
+                    }}>
+                      <Icon name="user" size={20} />
                     </div>
                   </div>
                 </div>
 
                 {/* Password */}
-                <div style={{ marginBottom: '18px' }}>
+                <div style={{ marginBottom: '24px' }}>
                   <label style={{
                     display: 'block',
-                    fontSize: '13px',
+                    fontSize: '14px',
                     fontWeight: '700',
-                    color: '#0f172a',
-                    marginBottom: '8px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px'
+                    color: '#1e293b',
+                    marginBottom: '10px',
+                    letterSpacing: '0.3px'
                   }}>Password</label>
                   <div style={{ position: 'relative' }}>
                     <input
                       type={showPassword ? "text" : "password"}
                       value={staffPassword}
                       onChange={(e) => setStaffPassword(e.target.value)}
-                      placeholder="••••••••"
+                      placeholder="Enter your password"
                       required
                       style={{
                         width: '100%',
-                        padding: '13px 40px 13px 40px',
-                        border: '1.5px solid #e2e8f0',
-                        borderRadius: '10px',
-                        fontSize: '14px',
+                        padding: '15px 50px 15px 48px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '15px',
                         fontFamily: 'inherit',
                         boxSizing: 'border-box',
                         transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                         outline: 'none',
-                        background: '#fafbfc',
-                        letterSpacing: '0.15em',
-                        color: '#0f172a'
+                        background: '#f8fafc',
+                        letterSpacing: showPassword ? 'normal' : '0.2em',
+                        color: '#0f172a',
+                        fontWeight: '500'
                       }}
                       onFocus={(e) => {
                         e.target.style.borderColor = '#6366f1';
                         e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 3px rgba(99, 102, 241, 0.1)';
+                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
+                        e.target.style.transform = 'translateY(-1px)';
                       }}
                       onBlur={(e) => {
                         e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#fafbfc';
+                        e.target.style.background = '#f8fafc';
                         e.target.style.boxShadow = 'none';
+                        e.target.style.transform = 'translateY(0)';
                       }}
                     />
-                    <div style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8', pointerEvents: 'none' }}>
-                      <Icon name="lock" size={18} />
+                    <div style={{
+                      position: 'absolute',
+                      left: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      pointerEvents: 'none',
+                      transition: 'color 0.3s'
+                    }}>
+                      <Icon name="lock" size={20} />
                     </div>
                     <button
                       type="button"
@@ -408,15 +515,22 @@ const Login = ({ onLogin }) => {
                         border: 'none',
                         cursor: 'pointer',
                         color: '#94a3b8',
-                        padding: '8px',
+                        padding: '10px',
                         display: 'flex',
                         alignItems: 'center',
-                        transition: 'color 0.2s'
+                        transition: 'all 0.2s',
+                        borderRadius: '8px'
                       }}
-                      onMouseOver={(e) => e.target.style.color = '#6366f1'}
-                      onMouseOut={(e) => e.target.style.color = '#94a3b8'}
+                      onMouseOver={(e) => {
+                        e.currentTarget.style.color = '#6366f1';
+                        e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
+                      }}
+                      onMouseOut={(e) => {
+                        e.currentTarget.style.color = '#94a3b8';
+                        e.currentTarget.style.background = 'none';
+                      }}
                     >
-                      <Icon name={showPassword ? "eye" : "lock"} size={18} />
+                      <Icon name={showPassword ? "eye" : "eye-off"} size={20} />
                     </button>
                   </div>
                 </div>
@@ -425,25 +539,30 @@ const Login = ({ onLogin }) => {
                 <label style={{
                   display: 'flex',
                   alignItems: 'center',
-                  gap: '10px',
-                  fontSize: '13px',
+                  gap: '12px',
+                  fontSize: '14px',
                   cursor: 'pointer',
-                  marginBottom: '28px',
+                  marginBottom: '32px',
                   color: '#475569',
-                  fontWeight: '500'
-                }}>
+                  fontWeight: '600',
+                  padding: '8px 4px',
+                  transition: 'color 0.2s'
+                }}
+                onMouseOver={(e) => e.currentTarget.style.color = '#1e293b'}
+                onMouseOut={(e) => e.currentTarget.style.color = '#475569'}
+                >
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
                     style={{
                       cursor: 'pointer',
-                      width: '16px',
-                      height: '16px',
+                      width: '18px',
+                      height: '18px',
                       accentColor: '#6366f1'
                     }}
                   />
-                  <span>Keep me signed in</span>
+                  <span>Keep me signed in on this device</span>
                 </label>
 
                 {/* Error */}
