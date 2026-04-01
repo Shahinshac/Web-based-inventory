@@ -1,15 +1,17 @@
 /**
  * @file Login.jsx
- * @description Professional full-screen authentication - Staff & Customer Login
+ * @description Ultra-Premium Login Experience with Blue Gradient Left Panel
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
 import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
 import { API } from './utils/api.js';
+import './LoginLayout.css';
 
 const Login = ({ onLogin }) => {
   const [mode, setMode] = useState('staff'); // 'staff' or 'customer'
+  const [subTab, setSubTab] = useState('login'); // 'login' or 'register'
 
   // Staff login
   const [staffUsername, setStaffUsername] = useState('');
@@ -19,12 +21,21 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Customer login - Email + Password based
+  // Customer login
   const [customerEmail, setCustomerEmail] = useState('');
   const [customerPassword, setCustomerPassword] = useState('');
   const [customerError, setCustomerError] = useState('');
   const [customerLoading, setCustomerLoading] = useState(false);
   const [showCustomerPassword, setShowCustomerPassword] = useState(false);
+
+  // Customer registration
+  const [registerEmail, setRegisterEmail] = useState('');
+  const [registerPassword, setRegisterPassword] = useState('');
+  const [registerConfirmPassword, setRegisterConfirmPassword] = useState('');
+  const [registerError, setRegisterError] = useState('');
+  const [registerSuccess, setRegisterSuccess] = useState('');
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   // Load remembered staff username
   useEffect(() => {
@@ -75,7 +86,7 @@ const Login = ({ onLogin }) => {
     }
   }, [staffUsername, staffPassword, onLogin]);
 
-  // Handle customer login
+  // Handle customer login - FIXED to use correct API
   const handleCustomerLogin = useCallback(async (e) => {
     e.preventDefault();
     setCustomerError('');
@@ -87,678 +98,513 @@ const Login = ({ onLogin }) => {
 
     setCustomerLoading(true);
     try {
-      const result = await onLogin(customerEmail, customerPassword, 'customer');
-      if (result && result.error) {
-        setCustomerError(result.error);
+      // Call the correct customer auth endpoint
+      const response = await fetch(API('/api/customer-auth/login'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: customerEmail,
+          password: customerPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setCustomerError(data.error || 'Login failed');
+        setCustomerLoading(false);
+        return;
+      }
+
+      if (data.success && data.token) {
+        // Pass the token to onLogin for proper auth state management
+        const result = await onLogin(customerEmail, customerPassword, 'customer', data.token);
+        if (result && result.error) {
+          setCustomerError(result.error);
+        }
+      } else {
+        setCustomerError('Login failed - invalid response from server');
       }
     } catch (error) {
-      setCustomerError(error.message || 'Login failed. Please try again.');
+      setCustomerError(error.message || 'Login failed. Please check your connection.');
     } finally {
       setCustomerLoading(false);
     }
   }, [customerEmail, customerPassword, onLogin]);
 
-  const currentYear = new Date().getFullYear();
+  // Handle customer registration
+  const handleCustomerRegister = useCallback(async (e) => {
+    e.preventDefault();
+    setRegisterError('');
+    setRegisterSuccess('');
+
+    if (!registerEmail || !registerPassword || !registerConfirmPassword) {
+      setRegisterError('Please fill in all fields');
+      return;
+    }
+
+    if (registerPassword !== registerConfirmPassword) {
+      setRegisterError('Passwords do not match');
+      return;
+    }
+
+    if (registerPassword.length < 6) {
+      setRegisterError('Password must be at least 6 characters');
+      return;
+    }
+
+    setRegisterLoading(true);
+    try {
+      const response = await fetch(API('/api/customer-auth/register'), {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: registerEmail,
+          password: registerPassword
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        setRegisterError(data.error || 'Registration failed');
+        setRegisterLoading(false);
+        return;
+      }
+
+      setRegisterSuccess('Account created successfully! You can now login.');
+      setRegisterEmail('');
+      setRegisterPassword('');
+      setRegisterConfirmPassword('');
+      
+      // Switch to login tab after 2 seconds
+      setTimeout(() => {
+        setSubTab('login');
+        setRegisterSuccess('');
+      }, 2000);
+    } catch (error) {
+      setRegisterError(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setRegisterLoading(false);
+    }
+  }, [registerEmail, registerPassword, registerConfirmPassword]);
 
   return (
-    <div style={{
-      width: '100%',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Animated Background Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '-50%',
-        left: '-50%',
-        width: '200%',
-        height: '200%',
-        background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
-        animation: 'drift 20s infinite alternate',
-        pointerEvents: 'none'
-      }}></div>
-      <div style={{
-        position: 'absolute',
-        bottom: '-50%',
-        right: '-50%',
-        width: '200%',
-        height: '200%',
-        background: 'radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 50%)',
-        animation: 'drift 25s infinite alternate-reverse',
-        pointerEvents: 'none'
-      }}></div>
-      
-      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
-        {/* Header */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-          color: 'white',
-          animation: 'fadeInDown 0.6s ease-out'
-        }}>
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '20px',
-            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))',
-            animation: 'pulse 3s infinite'
-          }}>⚡</div>
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: '800',
-            margin: '0 0 10px 0',
-            letterSpacing: '-0.5px',
-            textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-          }}>26:07 Electronics</h1>
-          <p style={{
-            fontSize: '16px',
-            opacity: 0.95,
-            margin: '0',
-            fontWeight: '500',
-            textShadow: '0 1px 4px rgba(0, 0, 0, 0.15)'
-          }}>Smart Inventory & POS Management</p>
-        </div>
+    <div className="ultra-login-container">
+      {/* Left Side - Brand Panel with Blue Gradient */}
+      <div className="ultra-brand-side">
+        <div className="grid-overlay"></div>
         
-        <style>{`
-          @keyframes fadeInDown {
-            from {
-              opacity: 0;
-              transform: translateY(-20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.05);
-            }
-          }
-          @keyframes drift {
-            from {
-              transform: translate(0, 0) rotate(0deg);
-            }
-            to {
-              transform: translate(50px, 50px) rotate(5deg);
-            }
-          }
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
+        <div className="ultra-brand-content">
+          <div className="ultra-logo-box">
+            <Icon name="zap" size={40} />
+          </div>
+          
+          <h1 className="ultra-brand-title">26:07 Electronics</h1>
+          <p className="ultra-brand-subtitle">
+            Smart Inventory & POS Management System with seamless customer portal integration
+          </p>
+          
+          <div className="ultra-features">
+            <div className="ultra-feature-item">
+              <div className="ultra-feature-icon">
+                <Icon name="check" size={18} />
+              </div>
+              <span>Real-time inventory tracking</span>
+            </div>
+            <div className="ultra-feature-item">
+              <div className="ultra-feature-icon">
+                <Icon name="check" size={18} />
+              </div>
+              <span>Secure authentication & role-based access</span>
+            </div>
+            <div className="ultra-feature-item">
+              <div className="ultra-feature-icon">
+                <Icon name="check" size={18} />
+              </div>
+              <span>Customer portal with warranty tracking</span>
+            </div>
+          </div>
+          
+          <div className="ultra-trust-row">
+            <div className="ultra-trust-badge">
+              <Icon name="shield" size={12} />
+              <span>256-BIT SSL</span>
+            </div>
+            <div className="ultra-trust-badge">
+              <Icon name="lock" size={12} />
+              <span>SECURE</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-        {/* Card */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          boxShadow: '0 25px 70px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.15)',
-          overflow: 'hidden',
-          marginBottom: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          animation: 'fadeInUp 0.6s ease-out 0.2s both'
-        }}>
-          {/* Tabs */}
-          <div style={{
-            display: 'flex',
-            background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)',
-            borderBottom: '1px solid #e2e8f0',
-            padding: '12px',
-            gap: '8px'
-          }}>
+      {/* Right Side - Form Panel */}
+      <div className="ultra-form-side">
+        <div className="ultra-form-wrapper">
+          {/* Segment Control - Staff / Customer */}
+          <div className="ultra-segment-control">
+            <div className={`ultra-segment-indicator ${mode === 'customer' ? 'ultra-segment-customer' : ''}`}></div>
             <button
               type="button"
+              className={`ultra-segment-btn ${mode === 'staff' ? 'active' : ''}`}
               onClick={() => {
                 setMode('staff');
-                setCustomerError('');
                 setStaffError('');
-              }}
-              style={{
-                flex: 1,
-                padding: '18px 24px',
-                background: mode === 'staff' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
-                color: mode === 'staff' ? '#6366f1' : '#64748b',
-                border: mode === 'staff' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                boxShadow: mode === 'staff' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
-                transform: mode === 'staff' ? 'translateY(-2px)' : 'none'
+                setCustomerError('');
+                setRegisterError('');
+                setRegisterSuccess('');
               }}
             >
-              <Icon name="lock" size={20} />
-              Staff Login
+              <Icon name="lock" size={16} />
+              STAFF
             </button>
             <button
               type="button"
+              className={`ultra-segment-btn ${mode === 'customer' ? 'active' : ''}`}
               onClick={() => {
                 setMode('customer');
-                setCustomerError('');
                 setStaffError('');
-              }}
-              style={{
-                flex: 1,
-                padding: '18px 24px',
-                background: mode === 'customer' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
-                color: mode === 'customer' ? '#6366f1' : '#64748b',
-                border: mode === 'customer' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                boxShadow: mode === 'customer' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
-                transform: mode === 'customer' ? 'translateY(-2px)' : 'none'
+                setCustomerError('');
+                setRegisterError('');
+                setRegisterSuccess('');
               }}
             >
-              <Icon name="mail" size={20} />
-              Customer Login
+              <Icon name="user" size={16} />
+              CUSTOMER
             </button>
           </div>
 
-          {/* Content */}
-          <div style={{ padding: '40px 36px' }}>
-            {/* Staff Login */}
-            {mode === 'staff' && (
-              <form onSubmit={handleStaffLogin}>
-                <div style={{ marginBottom: '32px' }}>
-                  <h2 style={{
-                    fontSize: '30px',
-                    fontWeight: '800',
-                    margin: '0 0 8px 0',
-                    color: '#0f172a',
-                    letterSpacing: '-0.8px',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}>Staff Portal</h2>
-                  <p style={{
-                    margin: '0',
-                    color: '#64748b',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <Icon name="shield" size={16} />
-                    Secure access for authorized personnel
-                  </p>
-                </div>
+          {/* STAFF LOGIN */}
+          {mode === 'staff' && (
+            <>
+              <div className="ultra-form-header">
+                <h2>Staff Login</h2>
+                <p>Access the inventory management system</p>
+              </div>
 
-                {/* Username */}
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#1e293b',
-                    marginBottom: '10px',
-                    letterSpacing: '0.3px'
-                  }}>Username</label>
-                  <div style={{ position: 'relative' }}>
+              <form onSubmit={handleStaffLogin}>
+                {staffError && (
+                  <div className="ultra-error-pane">
+                    <Icon name="alert-circle" size={18} />
+                    <div>
+                      <span className="ultra-error-title">Login Failed</span>
+                      <div className="ultra-error-text">{staffError}</div>
+                    </div>
+                  </div>
+                )}
+
+                <div className="ultra-input-group">
+                  <label>
+                    <Icon name="user" size={14} />
+                    Username
+                  </label>
+                  <div className="ultra-input-wrapper">
                     <input
                       type="text"
+                      className="ultra-input"
                       value={staffUsername}
                       onChange={(e) => setStaffUsername(e.target.value)}
                       placeholder="Enter your username"
-                      required
                       autoFocus
-                      style={{
-                        width: '100%',
-                        padding: '15px 18px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        outline: 'none',
-                        background: '#f8fafc',
-                        color: '#0f172a',
-                        fontWeight: '500'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#f8fafc';
-                        e.target.style.boxShadow = 'none';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
+                      required
                     />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none',
-                      transition: 'color 0.3s'
-                    }}>
-                      <Icon name="user" size={20} />
-                    </div>
                   </div>
                 </div>
 
-                {/* Password */}
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#1e293b',
-                    marginBottom: '10px',
-                    letterSpacing: '0.3px'
-                  }}>Password</label>
-                  <div style={{ position: 'relative' }}>
+                <div className="ultra-input-group">
+                  <label>
+                    <Icon name="lock" size={14} />
+                    Password
+                  </label>
+                  <div className="ultra-input-wrapper">
                     <input
-                      type={showPassword ? "text" : "password"}
+                      type={showPassword ? 'text' : 'password'}
+                      className="ultra-input"
                       value={staffPassword}
                       onChange={(e) => setStaffPassword(e.target.value)}
                       placeholder="Enter your password"
                       required
-                      style={{
-                        width: '100%',
-                        padding: '15px 50px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        outline: 'none',
-                        background: '#f8fafc',
-                        letterSpacing: showPassword ? 'normal' : '0.2em',
-                        color: '#0f172a',
-                        fontWeight: '500'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#f8fafc';
-                        e.target.style.boxShadow = 'none';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
                     />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none',
-                      transition: 'color 0.3s'
-                    }}>
-                      <Icon name="lock" size={20} />
-                    </div>
                     <button
                       type="button"
+                      className="ultra-eye-btn"
                       onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#94a3b8',
-                        padding: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'all 0.2s',
-                        borderRadius: '8px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.color = '#6366f1';
-                        e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.color = '#94a3b8';
-                        e.currentTarget.style.background = 'none';
-                      }}
                     >
-                      <Icon name={showPassword ? "eye" : "eye-off"} size={20} />
+                      <Icon name={showPassword ? 'eye-off' : 'eye'} size={18} />
                     </button>
                   </div>
                 </div>
 
-                {/* Remember Me */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  marginBottom: '32px',
-                  color: '#475569',
-                  fontWeight: '600',
-                  padding: '8px 4px',
-                  transition: 'color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = '#1e293b'}
-                onMouseOut={(e) => e.currentTarget.style.color = '#475569'}
-                >
+                <label className="ultra-remember">
                   <input
                     type="checkbox"
                     checked={rememberMe}
                     onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{
-                      cursor: 'pointer',
-                      width: '18px',
-                      height: '18px',
-                      accentColor: '#6366f1'
-                    }}
                   />
-                  <span>Keep me signed in on this device</span>
+                  <span>Remember my username</span>
                 </label>
 
-                {/* Error */}
-                {staffError && (
-                  <div style={{
-                    padding: '13px 14px',
-                    background: '#fee2e2',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '10px',
-                    color: '#991b1b',
-                    fontSize: '13px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    fontWeight: '500'
-                  }}>
-                    <Icon name="alert-circle" size={18} />
-                    {staffError}
-                  </div>
-                )}
-
-                {/* Submit Button */}
                 <button
                   type="submit"
+                  className="ultra-btn"
                   disabled={staffLoading}
-                  style={{
-                    width: '100%',
-                    padding: '14px 24px',
-                    background: staffLoading ? '#cbd5e1' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    cursor: staffLoading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    boxShadow: staffLoading ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.3)',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!staffLoading) {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!staffLoading) {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
-                    }
-                  }}
                 >
-                  {staffLoading ? '🔄 Signing in...' : '🔐 Sign In'}
+                  {staffLoading ? (
+                    <>
+                      <Icon name="loader" size={18} className="spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    <>
+                      <Icon name="log-in" size={18} />
+                      Sign In
+                    </>
+                  )}
                 </button>
 
-                {/* Divider */}
-                <div style={{
-                  margin: '24px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  color: '#cbd5e1'
-                }}>
-                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
-                  <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
-                </div>
-
-                {/* Help */}
-                <div style={{
-                  padding: '14px 16px',
-                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                  border: '1.5px solid #bae6fd',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  color: '#0c4a6e',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  fontWeight: '500',
-                  lineHeight: '1.5'
-                }}>
-                  <div style={{ marginTop: '2px', flexShrink: 0 }}>
-                    <Icon name="info" size={16} />
-                  </div>
-                  <span>Don't have an account? Contact your <strong>administrator</strong> to request access.</span>
+                <div className="ultra-security-badge">
+                  <Icon name="shield" size={14} />
+                  Secure Encrypted Connection
                 </div>
               </form>
-            )}
+            </>
+          )}
 
-            {/* Customer Login */}
-            {mode === 'customer' && (
-              <form onSubmit={handleCustomerLogin}>
-                <h2 style={{
-                  fontSize: '26px',
-                  fontWeight: '700',
-                  margin: '0 0 8px 0',
-                  color: '#0f172a'
-                }}>Customer Login</h2>
-                <p style={{
-                  margin: '0 0 32px 0',
-                  color: '#64748b',
-                  fontSize: '15px'
-                }}>Secure Email & Password authentication</p>
+          {/* CUSTOMER LOGIN/REGISTER */}
+          {mode === 'customer' && (
+            <>
+              <div className="ultra-form-header">
+                <h2>Customer Portal</h2>
+                <p>Access your invoices, warranties, and EMI details</p>
+              </div>
 
-                {/* Email */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    marginBottom: '8px'
-                  }}>Email Address</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="your@email.com"
-                      required
-                      autoFocus
-                      style={{
-                        width: '100%',
-                        padding: '15px 18px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        outline: 'none'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none'
-                    }}>
-                      <Icon name="mail" size={20} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    marginBottom: '8px'
-                  }}>Password</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showCustomerPassword ? 'text' : 'password'}
-                      value={customerPassword}
-                      onChange={(e) => setCustomerPassword(e.target.value)}
-                      placeholder="••••••••"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '15px 48px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        outline: 'none'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none'
-                    }}>
-                      <Icon name="lock" size={20} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '16px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#94a3b8',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Icon name={showCustomerPassword ? 'eye-off' : 'eye'} size={20} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Error */}
-                {customerError && (
-                  <div style={{
-                    padding: '14px 16px',
-                    background: '#fee2e2',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '12px',
-                    color: '#991b1b',
-                    fontSize: '14px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}>
-                    <Icon name="alert-circle" size={18} />
-                    {customerError}
-                  </div>
-                )}
-
-                {/* Submit */}
+              {/* Sub-tabs for Login / Register */}
+              <div className="ultra-sub-tabs">
                 <button
-                  type="submit"
-                  disabled={customerLoading}
-                  style={{
-                    width: '100%',
-                    padding: '14px 24px',
-                    background: customerLoading ? '#94a3b8' : '#6366f1',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: '700',
-                    cursor: customerLoading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.5px'
+                  type="button"
+                  className={`ultra-sub-tab ${subTab === 'login' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSubTab('login');
+                    setCustomerError('');
+                    setRegisterError('');
+                    setRegisterSuccess('');
                   }}
-                  onMouseOver={(e) => !customerLoading && (e.target.style.background = '#4f46e5')}
-                  onMouseOut={(e) => !customerLoading && (e.target.style.background = '#6366f1')}
                 >
-                  {customerLoading ? '🔄 Logging in...' : '✅ Login'}
+                  <Icon name="log-in" size={16} />
+                  Login
                 </button>
-              </form>
-            )}
-          </div>
+                <button
+                  type="button"
+                  className={`ultra-sub-tab ${subTab === 'register' ? 'active' : ''}`}
+                  onClick={() => {
+                    setSubTab('register');
+                    setCustomerError('');
+                    setRegisterError('');
+                    setRegisterSuccess('');
+                  }}
+                >
+                  <Icon name="user-plus" size={16} />
+                  Register
+                </button>
+              </div>
+
+              {/* Customer Login Form */}
+              {subTab === 'login' && (
+                <form onSubmit={handleCustomerLogin}>
+                  {customerError && (
+                    <div className="ultra-error-pane">
+                      <Icon name="alert-circle" size={18} />
+                      <div>
+                        <span className="ultra-error-title">Login Failed</span>
+                        <div className="ultra-error-text">{customerError}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="ultra-input-group">
+                    <label>
+                      <Icon name="mail" size={14} />
+                      Email Address
+                    </label>
+                    <div className="ultra-input-wrapper">
+                      <input
+                        type="email"
+                        className="ultra-input"
+                        value={customerEmail}
+                        onChange={(e) => setCustomerEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="ultra-input-group">
+                    <label>
+                      <Icon name="lock" size={14} />
+                      Password
+                    </label>
+                    <div className="ultra-input-wrapper">
+                      <input
+                        type={showCustomerPassword ? 'text' : 'password'}
+                        className="ultra-input"
+                        value={customerPassword}
+                        onChange={(e) => setCustomerPassword(e.target.value)}
+                        placeholder="Enter your password"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="ultra-eye-btn"
+                        onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                      >
+                        <Icon name={showCustomerPassword ? 'eye-off' : 'eye'} size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="ultra-btn customer"
+                    disabled={customerLoading}
+                  >
+                    {customerLoading ? (
+                      <>
+                        <Icon name="loader" size={18} className="spin" />
+                        Logging in...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="log-in" size={18} />
+                        Login
+                      </>
+                    )}
+                  </button>
+
+                  <div className="ultra-info-note">
+                    <Icon name="info" size={14} />
+                    <span>Use the email address you provided during billing to access your account.</span>
+                  </div>
+                </form>
+              )}
+
+              {/* Customer Register Form */}
+              {subTab === 'register' && (
+                <form onSubmit={handleCustomerRegister}>
+                  {registerError && (
+                    <div className="ultra-error-pane">
+                      <Icon name="alert-circle" size={18} />
+                      <div>
+                        <span className="ultra-error-title">Registration Failed</span>
+                        <div className="ultra-error-text">{registerError}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  {registerSuccess && (
+                    <div className="ultra-success-pane">
+                      <Icon name="check-circle" size={18} />
+                      <div>
+                        <span className="ultra-success-title">Success!</span>
+                        <div className="ultra-success-text">{registerSuccess}</div>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="ultra-input-group">
+                    <label>
+                      <Icon name="mail" size={14} />
+                      Email Address
+                    </label>
+                    <div className="ultra-input-wrapper">
+                      <input
+                        type="email"
+                        className="ultra-input"
+                        value={registerEmail}
+                        onChange={(e) => setRegisterEmail(e.target.value)}
+                        placeholder="your@email.com"
+                        autoFocus
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="ultra-input-group">
+                    <label>
+                      <Icon name="lock" size={14} />
+                      Password
+                    </label>
+                    <div className="ultra-input-wrapper">
+                      <input
+                        type={showRegisterPassword ? 'text' : 'password'}
+                        className="ultra-input"
+                        value={registerPassword}
+                        onChange={(e) => setRegisterPassword(e.target.value)}
+                        placeholder="Minimum 6 characters"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="ultra-eye-btn"
+                        onClick={() => setShowRegisterPassword(!showRegisterPassword)}
+                      >
+                        <Icon name={showRegisterPassword ? 'eye-off' : 'eye'} size={18} />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="ultra-input-group">
+                    <label>
+                      <Icon name="lock" size={14} />
+                      Confirm Password
+                    </label>
+                    <div className="ultra-input-wrapper">
+                      <input
+                        type={showRegisterPassword ? 'text' : 'password'}
+                        className="ultra-input"
+                        value={registerConfirmPassword}
+                        onChange={(e) => setRegisterConfirmPassword(e.target.value)}
+                        placeholder="Re-enter your password"
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="ultra-btn customer"
+                    disabled={registerLoading}
+                  >
+                    {registerLoading ? (
+                      <>
+                        <Icon name="loader" size={18} className="spin" />
+                        Creating account...
+                      </>
+                    ) : (
+                      <>
+                        <Icon name="user-plus" size={18} />
+                        Create Account
+                      </>
+                    )}
+                  </button>
+
+                  <div className="ultra-info-note">
+                    <Icon name="info" size={14} />
+                    <span>Only customers with existing billing records can register. Use your billing email address.</span>
+                  </div>
+                </form>
+              )}
+            </>
+          )}
         </div>
 
-        {/* Footer */}
-        <div style={{
-          textAlign: 'center',
-          color: 'rgba(255,255,255,0.85)',
-          fontSize: '13px',
-          fontWeight: '500'
-        }}>
-          © {currentYear} 26:07 Electronics · Secure & Reliable
+        <div className="ultra-footer">
+          © {new Date().getFullYear()} 26:07 Electronics. All rights reserved.
         </div>
       </div>
     </div>
@@ -766,7 +612,7 @@ const Login = ({ onLogin }) => {
 };
 
 Login.propTypes = {
-  onLogin: PropTypes.func.isRequired,
+  onLogin: PropTypes.func.isRequired
 };
 
 export default Login;
