@@ -139,6 +139,9 @@ def get_customer_invoices():
                 "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
                 "total": float(inv.get('grandTotal', 0)),
                 "paymentMethod": inv.get('paymentMode', 'cash'),
+                "emiEnabled": bool(inv.get('emiEnabled', False)),
+                "emiTenure": int(inv.get('emiTenure', 0) or 0),
+                "emiMonthlyAmount": float(inv.get('emiMonthlyAmount', 0) or 0),
                 "items": inv.get('items', []),
                 "itemCount": len(inv.get('items', []))
             })

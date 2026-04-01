@@ -59,6 +59,19 @@ const CustomerEMI = ({ currentUser }) => {
     return badges[status] || badges.pending;
   };
 
+  const formatAmount = (value) => `₹${Number(value || 0).toLocaleString()}`;
+
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
   if (loading && emiPlans.length === 0) {
     return (
       <div className="loading-spinner">
@@ -96,13 +109,13 @@ const CustomerEMI = ({ currentUser }) => {
             <div>
               <div style={{ fontSize: '0.875rem', color: '#718096' }}>Principal Amount</div>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
-                ₹{selectedPlan.principalAmount.toLocaleString()}
+                {formatAmount(selectedPlan.principalAmount)}
               </div>
             </div>
             <div>
               <div style={{ fontSize: '0.875rem', color: '#718096' }}>Monthly EMI</div>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
-                ₹{selectedPlan.monthlyEmi.toLocaleString()}
+                {formatAmount(selectedPlan.monthlyEmi)}
               </div>
             </div>
             <div>
@@ -122,7 +135,7 @@ const CustomerEMI = ({ currentUser }) => {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
               <span style={{ fontSize: '0.875rem', color: '#718096' }}>Payment Progress</span>
               <span style={{ fontSize: '0.875rem', fontWeight: '600', color: '#2d3748' }}>
-                ₹{selectedPlan.totalPaid.toLocaleString()} / ₹{selectedPlan.totalAmount.toLocaleString()}
+                {formatAmount(selectedPlan.totalPaid)} / {formatAmount(selectedPlan.totalAmount)}
               </span>
             </div>
             <div style={{ 
@@ -133,7 +146,7 @@ const CustomerEMI = ({ currentUser }) => {
               overflow: 'hidden'
             }}>
               <div style={{ 
-                width: `${(selectedPlan.totalPaid / selectedPlan.totalAmount) * 100}%`, 
+                width: `${selectedPlan.totalAmount > 0 ? (selectedPlan.totalPaid / selectedPlan.totalAmount) * 100 : 0}%`, 
                 height: '100%', 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 transition: 'width 0.3s'
@@ -145,6 +158,7 @@ const CustomerEMI = ({ currentUser }) => {
           <h3 style={{ marginBottom: '1rem', fontSize: '1.125rem', fontWeight: '600' }}>
             Installment Schedule
           </h3>
+          <div className="portal-table-wrap">
           <table className="portal-table">
             <thead>
               <tr>
@@ -160,31 +174,16 @@ const CustomerEMI = ({ currentUser }) => {
               {selectedPlan.installments.map((inst) => (
                 <tr key={inst.installmentNo}>
                   <td><strong>#{inst.installmentNo}</strong></td>
-                  <td>
-                    {inst.dueDate 
-                      ? new Date(inst.dueDate).toLocaleDateString('en-US', {
-                          year: 'numeric',
-                          month: 'short',
-                          day: 'numeric'
-                        })
-                      : 'N/A'}
-                  </td>
-                  <td><strong>₹{inst.amount.toLocaleString()}</strong></td>
-                  <td>₹{inst.paidAmount.toLocaleString()}</td>
+                  <td>{formatDate(inst.dueDate)}</td>
+                  <td><strong>{formatAmount(inst.amount)}</strong></td>
+                  <td>{formatAmount(inst.paidAmount)}</td>
                   <td>{getInstallmentBadge(inst.status)}</td>
-                  <td>
-                    {inst.paidDate 
-                      ? new Date(inst.paidDate).toLocaleDateString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          year: 'numeric'
-                        })
-                      : '-'}
-                  </td>
+                  <td>{inst.paidDate ? formatDate(inst.paidDate) : '-'}</td>
                 </tr>
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     );
@@ -215,6 +214,7 @@ const CustomerEMI = ({ currentUser }) => {
           </div>
         ) : (
           <>
+            <div className="portal-table-wrap">
             <table className="portal-table">
               <thead>
                 <tr>
@@ -231,15 +231,15 @@ const CustomerEMI = ({ currentUser }) => {
               <tbody>
                 {emiPlans.map((emi) => (
                   <tr key={emi.id}>
-                    <td><strong>#{emi.billId.slice(-8)}</strong></td>
-                    <td>₹{emi.principalAmount.toLocaleString()}</td>
+                    <td><strong>#{String(emi.billId || 'N/A').slice(-8)}</strong></td>
+                    <td>{formatAmount(emi.principalAmount)}</td>
                     <td>{emi.tenure} months</td>
-                    <td><strong>₹{emi.monthlyEmi.toLocaleString()}</strong></td>
+                    <td><strong>{formatAmount(emi.monthlyEmi)}</strong></td>
                     <td style={{ color: '#22543d' }}>
-                      ₹{emi.totalPaid.toLocaleString()}
+                      {formatAmount(emi.totalPaid)}
                     </td>
                     <td style={{ color: '#c53030' }}>
-                      ₹{emi.totalPending.toLocaleString()}
+                      {formatAmount(emi.totalPending)}
                     </td>
                     <td>{getStatusBadge(emi.status)}</td>
                     <td>
@@ -255,6 +255,28 @@ const CustomerEMI = ({ currentUser }) => {
                 ))}
               </tbody>
             </table>
+            </div>
+
+            <div className="portal-mobile-list">
+              {emiPlans.map((emi) => (
+                <article className="portal-mobile-card" key={`emi-mobile-${emi.id}`}>
+                  <div className="portal-mobile-row"><span>Bill ID</span><strong>#{String(emi.billId || 'N/A').slice(-8)}</strong></div>
+                  <div className="portal-mobile-row"><span>Amount</span><strong>{formatAmount(emi.principalAmount)}</strong></div>
+                  <div className="portal-mobile-row"><span>Tenure</span><strong>{emi.tenure} months</strong></div>
+                  <div className="portal-mobile-row"><span>Monthly EMI</span><strong>{formatAmount(emi.monthlyEmi)}</strong></div>
+                  <div className="portal-mobile-row"><span>Paid</span><strong>{formatAmount(emi.totalPaid)}</strong></div>
+                  <div className="portal-mobile-row"><span>Pending</span><strong>{formatAmount(emi.totalPending)}</strong></div>
+                  <div style={{ marginTop: '0.5rem' }}>{getStatusBadge(emi.status)}</div>
+                  <button
+                    className="btn-primary"
+                    onClick={() => handleViewDetails(emi.id)}
+                    style={{ padding: '0.6rem 1rem', width: '100%', marginTop: '0.75rem' }}
+                  >
+                    View Details
+                  </button>
+                </article>
+              ))}
+            </div>
 
             {/* Pagination */}
             {pagination.pages > 1 && (

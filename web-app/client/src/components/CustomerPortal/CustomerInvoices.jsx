@@ -49,6 +49,26 @@ const CustomerInvoices = ({ currentUser }) => {
     inv.date?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const formatDate = (value) => {
+    if (!value) return 'N/A';
+    const parsed = new Date(value);
+    if (Number.isNaN(parsed.getTime())) return 'N/A';
+    return parsed.toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  const formatAmount = (value) => `₹${Number(value || 0).toLocaleString()}`;
+
+  const getPaymentLabel = (invoice) => {
+    if (invoice.emiEnabled || String(invoice.paymentMethod || '').toLowerCase() === 'emi') {
+      return 'EMI';
+    }
+    return invoice.paymentMethod || 'cash';
+  };
+
   if (loading && invoices.length === 0) {
     return (
       <div className="loading-spinner">
@@ -95,6 +115,7 @@ const CustomerInvoices = ({ currentUser }) => {
           </div>
         ) : (
           <>
+            <div className="portal-table-wrap">
             <table className="portal-table">
               <thead>
                 <tr>
@@ -110,20 +131,19 @@ const CustomerInvoices = ({ currentUser }) => {
                 {filteredInvoices.map((invoice) => (
                   <tr key={invoice.id}>
                     <td><strong>{invoice.invoiceNo}</strong></td>
-                    <td>
-                      {new Date(invoice.date).toLocaleDateString('en-US', {
-                        year: 'numeric',
-                        month: 'short',
-                        day: 'numeric'
-                      })}
-                    </td>
+                    <td>{formatDate(invoice.date)}</td>
                     <td>{invoice.itemCount || 0} items</td>
                     <td>
                       <span className="badge badge-info">
-                        {invoice.paymentMethod || 'cash'}
+                        {getPaymentLabel(invoice)}
                       </span>
+                      {invoice.emiEnabled && invoice.emiTenure > 0 && (
+                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
+                          {invoice.emiTenure} months • {formatAmount(invoice.emiMonthlyAmount)}/mo
+                        </div>
+                      )}
                     </td>
-                    <td><strong>₹{invoice.total.toLocaleString()}</strong></td>
+                    <td><strong>{formatAmount(invoice.total)}</strong></td>
                     <td>
                       <button
                         className="btn-secondary"
@@ -153,6 +173,30 @@ const CustomerInvoices = ({ currentUser }) => {
                 ))}
               </tbody>
             </table>
+            </div>
+
+            <div className="portal-mobile-list">
+              {filteredInvoices.map((invoice) => (
+                <article key={`mobile-${invoice.id}`} className="portal-mobile-card">
+                  <div className="portal-mobile-row"><span>Invoice</span><strong>{invoice.invoiceNo || 'N/A'}</strong></div>
+                  <div className="portal-mobile-row"><span>Date</span><strong>{formatDate(invoice.date)}</strong></div>
+                  <div className="portal-mobile-row"><span>Items</span><strong>{invoice.itemCount || 0}</strong></div>
+                  <div className="portal-mobile-row"><span>Payment</span><strong>{getPaymentLabel(invoice)}</strong></div>
+                  {invoice.emiEnabled && invoice.emiTenure > 0 && (
+                    <div className="portal-mobile-row"><span>EMI</span><strong>{invoice.emiTenure}m • {formatAmount(invoice.emiMonthlyAmount)}/mo</strong></div>
+                  )}
+                  <div className="portal-mobile-row"><span>Total</span><strong>{formatAmount(invoice.total)}</strong></div>
+                  <button
+                    className="btn-secondary"
+                    onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
+                    disabled={downloadingId === invoice.id}
+                    style={{ marginTop: '0.75rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                  >
+                    {downloadingId === invoice.id ? 'Downloading...' : 'Download PDF'}
+                  </button>
+                </article>
+              ))}
+            </div>
 
             {/* Pagination */}
             {pagination.pages > 1 && (
