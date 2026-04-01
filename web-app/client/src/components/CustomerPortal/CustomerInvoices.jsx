@@ -1,131 +1,194 @@
 /**
  * @file CustomerInvoices.jsx
- * @description Display customer's purchase invoices with download option
+ * @description Customer invoices list with search, filter, and PDF download
  */
 
-import React, { useState } from 'react';
-import Icon from '../../Icon.jsx';
+import React, { useState, useEffect } from 'react';
+import Icon from '../Icon';
+import { fetchCustomerInvoices, downloadInvoicePDF } from '../../services/customerPortalService';
 
-const CustomerInvoices = ({ currentUser, invoices = [], loading, error }) => {
+const CustomerInvoices = ({ currentUser }) => {
+  const [invoices, setInvoices] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [pagination, setPagination] = useState({ page: 1, limit: 10, total: 0, pages: 0 });
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [downloadingId, setDownloadingId] = useState(null);
 
-  const filteredInvoices = (invoices || []).filter(inv => {
-    // Filter by search term
-    const matchesSearch = !searchTerm || 
-      inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      inv.id?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    // Filter by status (paymentMethod)
-    const matchesStatus = filterStatus === 'all' || 
-      (inv.paymentMethod?.toLowerCase() === filterStatus.toLowerCase());
+  useEffect(() => {
+    loadInvoices(pagination.page);
+  }, []);
 
-    return matchesSearch && matchesStatus;
-  });
-
-  const handleDownloadPDF = async (invoiceId) => {
+  const loadInvoices = async (page = 1) => {
     try {
-      const { downloadInvoicePDF } = await import('../../services/customerPortalService');
-      await downloadInvoicePDF(invoiceId);
+      setLoading(true);
+      setError(null);
+      const data = await fetchCustomerInvoices(page, pagination.limit);
+      setInvoices(data.invoices || []);
+      setPagination(data.pagination || pagination);
     } catch (err) {
-      console.error('Failed to download invoice:', err);
-      alert('Failed to download invoice. Please try again later.');
+      setError(err.message || 'Failed to load invoices');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (error) {
+  const handleDownloadPDF = async (invoiceId, invoiceNo) => {
+    try {
+      setDownloadingId(invoiceId);
+      await downloadInvoicePDF(invoiceId);
+    } catch (err) {
+      alert('Failed to download invoice: ' + err.message);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
+  const filteredInvoices = invoices.filter(inv => 
+    inv.invoiceNo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    inv.date?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (loading && invoices.length === 0) {
     return (
-      <div className="portal-section">
-        <div className="error-state">
-          <Icon name="alert" size={32} />
-          <p>{error}</p>
-        </div>
+      <div className="loading-spinner">
+        <div className="spinner"></div>
       </div>
     );
   }
 
   return (
-    <div className="portal-section">
-      <div className="section-header">
-        <h2>My Invoices</h2>
-        <p>View and download your purchase invoices</p>
-      </div>
+    <div className="customer-invoices">
+      <div className="portal-card">
+        <div className="portal-card-header">
+          <h2 className="portal-card-title">
+            <Icon name="layers" size={24} />
+            My Invoices
+          </h2>
+          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+            <input
+              type="text"
+              placeholder="Search invoices..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              style={{
+                padding: '0.5rem 1rem',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0',
+                fontSize: '0.875rem'
+              }}
+            />
+          </div>
+        </div>
 
-      {/* Filters */}
-      <div className="filters-bar">
-        <div className="search-box">
-          <Icon name="search" size={16} />
-          <input
-            type="text"
-            placeholder="Search by invoice number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-        </div>
-        <select
-          value={filterStatus}
-          onChange={(e) => setFilterStatus(e.target.value)}
-          className="status-filter"
-        >
-          <option value="all">All Invoices</option>
-          <option value="paid">Paid</option>
-          <option value="pending">Pending</option>
-        </select>
-      </div>
+        {error && (
+          <div className="error-message">
+            <Icon name="alert-circle" size={20} />
+            <span>{error}</span>
+          </div>
+        )}
 
-      {/* Invoices List */}
-      {loading ? (
-        <div className="loading-state">
-          <p>Loading your invoices...</p>
-        </div>
-      ) : filteredInvoices.length === 0 ? (
-        <div className="empty-state">
-          <Icon name="inbox" size={48} />
-          <p>No invoices found</p>
-          <span>You haven't made any purchases yet</span>
-        </div>
-      ) : (
-        <div className="invoices-list">
-          {filteredInvoices.map(invoice => (
-            <div key={invoice.id} className="invoice-row">
-              <div className="invoice-info">
-                <div className="invoice-number">
-                  <Icon name="layers" size={16} />
-                  <div>
-                    <p className="invoice-id">Invoice #{invoice.invoiceNo || invoice.id.slice(-6)}</p>
-                    <p className="invoice-date">
-                      {new Date(invoice.date).toLocaleDateString('en-IN')}
-                    </p>
-                  </div>
-                </div>
-                <div className="invoice-amount">
-                  <p className="amount">₹{invoice.total?.toLocaleString('en-IN') || 0}</p>
-                  <p className={`status ${invoice.paymentMethod || 'completed'}`}>
-                    {invoice.paymentMethod || 'Completed'}
-                  </p>
-                </div>
-              </div>
-              <div className="invoice-actions">
+        {filteredInvoices.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-state-icon">📄</div>
+            <p>{searchTerm ? 'No invoices found matching your search' : 'No invoices yet'}</p>
+          </div>
+        ) : (
+          <>
+            <table className="portal-table">
+              <thead>
+                <tr>
+                  <th>Invoice No</th>
+                  <th>Date</th>
+                  <th>Items</th>
+                  <th>Payment</th>
+                  <th>Total</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.map((invoice) => (
+                  <tr key={invoice.id}>
+                    <td><strong>{invoice.invoiceNo}</strong></td>
+                    <td>
+                      {new Date(invoice.date).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </td>
+                    <td>{invoice.itemCount || 0} items</td>
+                    <td>
+                      <span className="badge badge-info">
+                        {invoice.paymentMethod || 'cash'}
+                      </span>
+                    </td>
+                    <td><strong>₹{invoice.total.toLocaleString()}</strong></td>
+                    <td>
+                      <button
+                        className="btn-secondary"
+                        onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
+                        disabled={downloadingId === invoice.id}
+                        style={{ 
+                          padding: '0.5rem 1rem',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '0.5rem'
+                        }}
+                      >
+                        {downloadingId === invoice.id ? (
+                          <>
+                            <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
+                            <span>Downloading...</span>
+                          </>
+                        ) : (
+                          <>
+                            <Icon name="download" size={16} />
+                            <span>PDF</span>
+                          </>
+                        )}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+
+            {/* Pagination */}
+            {pagination.pages > 1 && (
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'center', 
+                gap: '0.5rem', 
+                marginTop: '1.5rem' 
+              }}>
                 <button
-                  className="action-btn view-btn"
-                  onClick={() => window.open(`/api/public/invoice/${invoice.id}`, '_blank') || 
-                                 window.open(`/invoice/${invoice.id}`, '_blank')}
-                  title="View Invoice"
+                  className="btn-secondary"
+                  onClick={() => loadInvoices(pagination.page - 1)}
+                  disabled={pagination.page === 1 || loading}
                 >
-                  <Icon name="eye" size={16} />
+                  Previous
                 </button>
+                <span style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  padding: '0 1rem',
+                  color: '#4a5568'
+                }}>
+                  Page {pagination.page} of {pagination.pages}
+                </span>
                 <button
-                  className="action-btn download-btn"
-                  onClick={() => handleDownloadPDF(invoice.id)}
-                  title="Download PDF"
+                  className="btn-secondary"
+                  onClick={() => loadInvoices(pagination.page + 1)}
+                  disabled={pagination.page >= pagination.pages || loading}
                 >
-                  <Icon name="download" size={16} />
+                  Next
                 </button>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            )}
+          </>
+        )}
+      </div>
     </div>
   );
 };

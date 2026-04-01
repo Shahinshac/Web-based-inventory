@@ -1,196 +1,153 @@
 /**
  * @file CustomerDashboard.jsx
- * @description Customer dashboard showing purchase summary and recent activities
+ * @description Customer dashboard showing overview stats and recent activity
  */
 
 import React, { useState, useEffect } from 'react';
-import Icon from '../../Icon.jsx';
-import { apiGet } from '../../utils/api';
-import { downloadPVCCard, downloadVCard, downloadInvoicePDF } from '../../services/customerPortalService';
+import Icon from '../Icon';
+import { fetchDashboardStats } from '../../services/customerPortalService';
 
-const CustomerDashboard = ({ currentUser, stats: incomingStats, loading, error }) => {
-  // Mapping stats from props (Backend returns { stats: { ... }, memberSince: ... })
-  const stats = {
-    invoiceCount: incomingStats?.stats?.totalPurchases || 0,
-    totalSpent: incomingStats?.stats?.totalSpent || 0,
-    warrantyCount: incomingStats?.stats?.activeWarranties || 0,
-    expiringWarranties: incomingStats?.stats?.expiredWarranties || 0,
-    memberSince: incomingStats?.memberSince || new Date().toISOString()
+const CustomerDashboard = ({ currentUser }) => {
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    loadDashboard();
+  }, []);
+
+  const loadDashboard = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const data = await fetchDashboardStats();
+      setStats(data);
+    } catch (err) {
+      setError(err.message || 'Failed to load dashboard');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const StatCard = ({ icon, label, value, trend }) => (
-    <div className="stat-card">
-      <div className="stat-icon">
-        <Icon name={icon} size={24} />
-      </div>
-      <div className="stat-content">
-        <p className="stat-label">{label}</p>
-        <p className="stat-value">{value}</p>
-        {trend && <p className="stat-trend">{trend}</p>}
-      </div>
-    </div>
-  );
-
-  if (error) {
+  if (loading) {
     return (
-      <div className="portal-section">
-        <div className="error-state">
-          <Icon name="alert" size={32} />
-          <p>{error}</p>
-        </div>
+      <div className="loading-spinner">
+        <div className="spinner"></div>
       </div>
     );
   }
 
+  if (error) {
+    return (
+      <div className="error-message">
+        <Icon name="alert-circle" size={20} />
+        <span>{error}</span>
+      </div>
+    );
+  }
+
+  const memberSince = stats?.memberSince 
+    ? new Date(stats.memberSince).toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric' 
+      })
+    : 'N/A';
+
   return (
-    <div className="portal-section">
-      <div className="section-header">
-        <div>
-          <h2>Welcome, {currentUser?.name || 'Customer'}!</h2>
-          <p>Here's a summary of your account</p>
+    <div className="customer-dashboard">
+      {/* Welcome Section */}
+      <div className="portal-card">
+        <h2 className="portal-card-title">
+          <Icon name="smile" size={24} />
+          Welcome back, {currentUser?.name || 'Customer'}!
+        </h2>
+        <p style={{ color: '#718096', marginTop: '0.5rem' }}>
+          Member since {memberSince}
+        </p>
+      </div>
+
+      {/* Stats Grid */}
+      <div className="stats-grid">
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#bee3f8' }}>
+            <Icon name="shopping-bag" size={24} color="#2c5282" />
+          </div>
+          <div className="stat-label">Total Purchases</div>
+          <div className="stat-value">{stats?.stats?.totalPurchases || 0}</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#c6f6d5' }}>
+            <Icon name="dollar-sign" size={24} color="#22543d" />
+          </div>
+          <div className="stat-label">Total Spent</div>
+          <div className="stat-value">₹{stats?.stats?.totalSpent?.toLocaleString() || 0}</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#feebc8' }}>
+            <Icon name="shield" size={24} color="#7c2d12" />
+          </div>
+          <div className="stat-label">Active Warranties</div>
+          <div className="stat-value">{stats?.stats?.activeWarranties || 0}</div>
+        </div>
+
+        <div className="stat-card">
+          <div className="stat-icon" style={{ background: '#fed7d7' }}>
+            <Icon name="shield" size={24} color="#742a2a" />
+          </div>
+          <div className="stat-label">Expired Warranties</div>
+          <div className="stat-value">{stats?.stats?.expiredWarranties || 0}</div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="loading-state">
-          <p>Loading your data...</p>
+      {/* Recent Purchases */}
+      {stats?.recentPurchases && stats.recentPurchases.length > 0 && (
+        <div className="portal-card">
+          <div className="portal-card-header">
+            <h3 className="portal-card-title">
+              <Icon name="clock" size={20} />
+              Recent Purchases
+            </h3>
+          </div>
+          <table className="portal-table">
+            <thead>
+              <tr>
+                <th>Invoice No</th>
+                <th>Date</th>
+                <th>Items</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {stats.recentPurchases.map((purchase) => (
+                <tr key={purchase.id}>
+                  <td><strong>{purchase.invoiceNo}</strong></td>
+                  <td>
+                    {new Date(purchase.date).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric'
+                    })}
+                  </td>
+                  <td>{purchase.itemCount} items</td>
+                  <td><strong>₹{purchase.total.toLocaleString()}</strong></td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
-      ) : (
-        <>
-          {/* Stats Grid */}
-          <div className="stats-grid">
-            <StatCard
-              icon="shopping-bag"
-              label="Total Purchases"
-              value={stats.invoiceCount}
-              trend={`₹${stats.totalSpent?.toLocaleString('en-IN') || 0}`}
-            />
-            <StatCard
-              icon="shield"
-              label="Active Warranties"
-              value={stats.warrantyCount}
-              trend={stats.expiringWarranties ? `${stats.expiringWarranties} expiring soon` : 'All active'}
-            />
-            <StatCard
-              icon="layers"
-              label="Total Invoices"
-              value={stats.invoiceCount}
-            />
-            <StatCard
-              icon="trending-up"
-              label="Member Since"
-              value={stats.memberSince ? new Date(stats.memberSince).getFullYear() : 'New'}
-              trend={stats.memberSince ? `${Math.round((new Date() - new Date(stats.memberSince)) / (1000 * 60 * 60 * 24))} days` : '0 days'}
-            />
-          </div>
+      )}
 
-          {/* Recent Purchases Section */}
-          <div className="portal-section mt-4">
-            <div className="section-header-inline">
-              <h3 className="section-title">Recent Purchases</h3>
-              <a href="#invoices" className="link-more">View All Invoices →</a>
-            </div>
-            
-            <div className="recent-list-container">
-              {incomingStats?.recentPurchases && incomingStats.recentPurchases.length > 0 ? (
-                <div className="table-responsive">
-                  <table className="portal-table">
-                    <thead>
-                      <tr>
-                        <th>Invoice #</th>
-                        <th>Date</th>
-                        <th>Items</th>
-                        <th>Total</th>
-                        <th>Action</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {incomingStats.recentPurchases.map(inv => (
-                        <tr key={inv.id}>
-                          <td className="font-weight-bold">#{inv.invoiceNo}</td>
-                          <td>{new Date(inv.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
-                          <td>{inv.itemCount} items</td>
-                          <td className="font-weight-bold">₹{inv.total.toLocaleString('en-IN')}</td>
-                          <td>
-                            <button 
-                              className="btn-icon-sm" 
-                              onClick={() => downloadInvoicePDF(inv.id)}
-                              title="Download PDF"
-                            >
-                              <Icon name="download" size={14} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="empty-mini">
-                  <Icon name="shopping-bag" size={24} />
-                  <p>No recent purchases found</p>
-                </div>
-              )}
-            </div>
+      {/* Empty State */}
+      {(!stats?.recentPurchases || stats.recentPurchases.length === 0) && (
+        <div className="portal-card">
+          <div className="empty-state">
+            <div className="empty-state-icon">📦</div>
+            <p>No purchases yet</p>
           </div>
-
-          <div className="portal-section mt-4 grid-2">
-            <div className="dashboard-column">
-              <h3 className="section-title">Quick Actions</h3>
-              <div className="quick-actions-list">
-                <a href="#invoices" className="action-row">
-                  <div className="action-icon"><Icon name="layers" size={18} /></div>
-                  <span>View My Invoices</span>
-                  <Icon name="chevron-right" size={14} className="ml-auto" />
-                </a>
-                <a href="#warranties" className="action-row">
-                  <div className="action-icon"><Icon name="shield" size={18} /></div>
-                  <span>Check Warranties</span>
-                  <Icon name="chevron-right" size={14} className="ml-auto" />
-                </a>
-                <a href="#profile" className="action-row">
-                  <div className="action-icon"><Icon name="user" size={18} /></div>
-                  <span>Account Settings</span>
-                  <Icon name="chevron-right" size={14} className="ml-auto" />
-                </a>
-              </div>
-            </div>
-
-            <div className="dashboard-column">
-              <h3 className="section-title">Digital Identity</h3>
-              <div className="identity-card-demo">
-                <div className="card-mockup">
-                  <div className="card-header">
-                    <span className="card-logo">⚡</span>
-                    <span className="card-brand">26:07</span>
-                  </div>
-                  <div className="card-body">
-                    <p className="card-holder">{currentUser?.name || 'Customer'}</p>
-                    <p className="card-type">Premium Member</p>
-                  </div>
-                </div>
-                <div className="identity-actions">
-                  <button onClick={downloadVCard} className="btn-identity">
-                    <Icon name="user-plus" size={16} />
-                    <span>Save Contact</span>
-                  </button>
-                  <button onClick={downloadPVCCard} className="btn-identity secondary">
-                    <Icon name="download" size={16} />
-                    <span>Member ID</span>
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="help-section">
-            <Icon name="help-circle" size={20} />
-            <div>
-              <p className="help-title">Need Help?</p>
-              <p className="help-text">Contact our support team at support@2607electronics.com or call 7594012761</p>
-            </div>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

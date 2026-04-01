@@ -19,13 +19,12 @@ const Login = ({ onLogin }) => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Customer login - OTP based
+  // Customer login - Email + Password based
   const [customerEmail, setCustomerEmail] = useState('');
-  const [customerOtp, setCustomerOtp] = useState('');
+  const [customerPassword, setCustomerPassword] = useState('');
   const [customerError, setCustomerError] = useState('');
   const [customerLoading, setCustomerLoading] = useState(false);
-  const [otpStep, setOtpStep] = useState('email'); // 'email' or 'otp'
-  const [otpTimer, setOtpTimer] = useState(0);
+  const [showCustomerPassword, setShowCustomerPassword] = useState(false);
 
   // Load remembered staff username
   useEffect(() => {
@@ -53,13 +52,6 @@ const Login = ({ onLogin }) => {
     }
   }, [rememberMe, staffUsername]);
 
-  // OTP Timer
-  useEffect(() => {
-    if (otpTimer <= 0) return;
-    const timer = setTimeout(() => setOtpTimer(otpTimer - 1), 1000);
-    return () => clearTimeout(timer);
-  }, [otpTimer]);
-
   // Handle staff login
   const handleStaffLogin = useCallback(async (e) => {
     e.preventDefault();
@@ -83,92 +75,28 @@ const Login = ({ onLogin }) => {
     }
   }, [staffUsername, staffPassword, onLogin]);
 
-  // Handle send OTP
-  const handleSendOtp = useCallback(async (e) => {
+  // Handle customer login
+  const handleCustomerLogin = useCallback(async (e) => {
     e.preventDefault();
     setCustomerError('');
 
-    if (!customerEmail) {
-      setCustomerError('Please enter your email');
+    if (!customerEmail || !customerPassword) {
+      setCustomerError('Please enter both email and password');
       return;
     }
 
     setCustomerLoading(true);
     try {
-      const apiUrl = API('/api/users/send-otp');
-      console.log('🔍 Attempting to send OTP to:', apiUrl);
-
-      // Controller for OTP send request (20 second timeout)
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 20000);
-
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, type: 'login' }),
-        signal: controller.signal
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || `Server error: ${response.status}`);
-      }
-
-      setOtpStep('otp');
-      setOtpTimer(300); // 5 minutes
-    } catch (error) {
-      console.error('❌ OTP Send Error:', error);
-      let errorMsg = error.message || 'Failed to send OTP';
-
-      // Handle different error types
-      if (error.name === 'AbortError') {
-        errorMsg = 'Request timed out - The backend server is slow to respond. This may happen if the server is starting up. Please wait a moment and try again.';
-      } else if (error instanceof TypeError) {
-        errorMsg = 'Cannot connect to the server - Please check your internet connection. If the problem persists, the backend service may be unavailable.';
-      }
-
-      setCustomerError(errorMsg);
-    } finally {
-      setCustomerLoading(false);
-    }
-  }, [customerEmail]);
-
-  // Handle verify OTP
-  const handleVerifyOtp = useCallback(async (e) => {
-    e.preventDefault();
-    setCustomerError('');
-
-    if (!customerOtp || customerOtp.length !== 6) {
-      setCustomerError('Please enter a valid 6-digit OTP');
-      return;
-    }
-
-    setCustomerLoading(true);
-    try {
-      const response = await fetch(API('/api/users/verify-otp'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: customerEmail, otp: customerOtp })
-      });
-
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Invalid OTP');
-      }
-
-      const data = await response.json();
-      const result = await onLogin(customerEmail, null, 'customer', data.token);
+      const result = await onLogin(customerEmail, customerPassword, 'customer');
       if (result && result.error) {
         setCustomerError(result.error);
       }
     } catch (error) {
-      setCustomerError(error.message || 'OTP verification failed. Please try again.');
+      setCustomerError(error.message || 'Login failed. Please try again.');
     } finally {
       setCustomerLoading(false);
     }
-  }, [customerEmail, customerOtp, onLogin]);
+  }, [customerEmail, customerPassword, onLogin]);
 
   const currentYear = new Date().getFullYear();
 
@@ -330,8 +258,6 @@ const Login = ({ onLogin }) => {
                 setMode('customer');
                 setCustomerError('');
                 setStaffError('');
-                setOtpStep('email');
-                setOtpTimer(0);
               }}
               style={{
                 flex: 1,
@@ -659,7 +585,7 @@ const Login = ({ onLogin }) => {
 
             {/* Customer Login */}
             {mode === 'customer' && (
-              <form onSubmit={otpStep === 'email' ? handleSendOtp : handleVerifyOtp}>
+              <form onSubmit={handleCustomerLogin}>
                 <h2 style={{
                   fontSize: '26px',
                   fontWeight: '700',
@@ -670,223 +596,156 @@ const Login = ({ onLogin }) => {
                   margin: '0 0 32px 0',
                   color: '#64748b',
                   fontSize: '15px'
-                }}>Secure OTP-based authentication</p>
+                }}>Secure Email & Password authentication</p>
 
-                {otpStep === 'email' ? (
-                  <>
-                    {/* Email */}
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#0f172a',
-                        marginBottom: '8px'
-                      }}>Email Address</label>
-                      <input
-                        type="email"
-                        value={customerEmail}
-                        onChange={(e) => setCustomerEmail(e.target.value)}
-                        placeholder="your@email.com"
-                        required
-                        autoFocus
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '12px',
-                          fontSize: '15px',
-                          fontFamily: 'inherit',
-                          boxSizing: 'border-box',
-                          transition: 'all 0.2s',
-                          outline: 'none'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                      />
-                    </div>
-
-                    {/* Info */}
-                    <div style={{
-                      padding: '14px 16px',
-                      background: '#f0f9ff',
-                      border: '1px solid #bae6fd',
-                      borderRadius: '12px',
-                      color: '#0c4a6e',
-                      fontSize: '14px',
-                      marginBottom: '24px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '10px'
-                    }}>
-                      <Icon name="shield" size={18} />
-                      <span>We'll send a 6-digit OTP to your email</span>
-                    </div>
-
-                    {/* Error */}
-                    {customerError && (
-                      <div style={{
-                        padding: '14px 16px',
-                        background: '#fee2e2',
-                        border: '1px solid #fca5a5',
-                        borderRadius: '12px',
-                        color: '#991b1b',
-                        fontSize: '14px',
-                        marginBottom: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px'
-                      }}>
-                        <Icon name="alert-circle" size={18} />
-                        {customerError}
-                      </div>
-                    )}
-
-                    {/* Submit */}
-                    <button
-                      type="submit"
-                      disabled={customerLoading}
+                {/* Email */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#0f172a',
+                    marginBottom: '8px'
+                  }}>Email Address</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type="email"
+                      value={customerEmail}
+                      onChange={(e) => setCustomerEmail(e.target.value)}
+                      placeholder="your@email.com"
+                      required
+                      autoFocus
                       style={{
                         width: '100%',
-                        padding: '14px 24px',
-                        background: customerLoading ? '#94a3b8' : '#6366f1',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontWeight: '700',
-                        cursor: customerLoading ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        letterSpacing: '0.5px'
-                      }}
-                      onMouseOver={(e) => !customerLoading && (e.target.style.background = '#4f46e5')}
-                      onMouseOut={(e) => !customerLoading && (e.target.style.background = '#6366f1')}
-                    >
-                      {customerLoading ? '📧 Sending OTP...' : '📧 Send OTP'}
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    {/* OTP Input */}
-                    <div style={{ marginBottom: '20px' }}>
-                      <label style={{
-                        display: 'block',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        color: '#0f172a',
-                        marginBottom: '8px'
-                      }}>One-Time Password</label>
-                      <input
-                        type="text"
-                        value={customerOtp}
-                        onChange={(e) => setCustomerOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
-                        placeholder="000000"
-                        maxLength="6"
-                        required
-                        autoFocus
-                        inputMode="numeric"
-                        style={{
-                          width: '100%',
-                          padding: '12px 16px',
-                          border: '2px solid #e2e8f0',
-                          borderRadius: '12px',
-                          fontSize: '20px',
-                          fontFamily: 'monospace',
-                          letterSpacing: '4px',
-                          fontWeight: '600',
-                          boxSizing: 'border-box',
-                          transition: 'all 0.2s',
-                          outline: 'none',
-                          textAlign: 'center'
-                        }}
-                        onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                        onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
-                      />
-                    </div>
-
-                    {/* Timer */}
-                    {otpTimer > 0 && (
-                      <div style={{
-                        padding: '12px 16px',
-                        background: '#fef3c7',
-                        border: '1px solid #fcd34d',
-                        borderRadius: '12px',
-                        color: '#92400e',
-                        fontSize: '14px',
-                        marginBottom: '20px',
-                        textAlign: 'center',
-                        fontWeight: '600'
-                      }}>
-                        ⏱️ OTP expires in {Math.floor(otpTimer / 60)}:{(otpTimer % 60).toString().padStart(2, '0')}
-                      </div>
-                    )}
-
-                    {/* Error */}
-                    {customerError && (
-                      <div style={{
-                        padding: '14px 16px',
-                        background: '#fee2e2',
-                        border: '1px solid #fca5a5',
-                        borderRadius: '12px',
-                        color: '#991b1b',
-                        fontSize: '14px',
-                        marginBottom: '20px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '10px'
-                      }}>
-                        <Icon name="alert-circle" size={18} />
-                        {customerError}
-                      </div>
-                    )}
-
-                    {/* Submit */}
-                    <button
-                      type="submit"
-                      disabled={customerLoading || customerOtp.length !== 6}
-                      style={{
-                        width: '100%',
-                        padding: '14px 24px',
-                        background: (customerLoading || customerOtp.length !== 6) ? '#94a3b8' : '#6366f1',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontWeight: '700',
-                        cursor: (customerLoading || customerOtp.length !== 6) ? 'not-allowed' : 'pointer',
-                        transition: 'all 0.2s',
-                        letterSpacing: '0.5px'
-                      }}
-                      onMouseOver={(e) => (customerLoading || customerOtp.length !== 6) || (e.target.style.background = '#4f46e5')}
-                      onMouseOut={(e) => (customerLoading || customerOtp.length !== 6) || (e.target.style.background = '#6366f1')}
-                    >
-                      {customerLoading ? '🔄 Verifying...' : '✅ Verify & Login'}
-                    </button>
-
-                    {/* Back */}
-                    <button
-                      type="button"
-                      onClick={() => { setOtpStep('email'); setCustomerOtp(''); setCustomerError(''); }}
-                      style={{
-                        width: '100%',
-                        marginTop: '12px',
-                        padding: '12px 24px',
-                        background: 'transparent',
-                        color: '#6366f1',
+                        padding: '15px 18px 15px 48px',
                         border: '2px solid #e2e8f0',
                         borderRadius: '12px',
-                        fontSize: '14px',
-                        fontWeight: '600',
-                        cursor: 'pointer',
-                        transition: 'all 0.2s'
+                        fontSize: '15px',
+                        fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s',
+                        outline: 'none'
                       }}
-                      onMouseOver={(e) => e.target.style.borderColor = '#6366f1'}
-                      onMouseOut={(e) => e.target.style.borderColor = '#e2e8f0'}
+                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      left: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      pointerEvents: 'none'
+                    }}>
+                      <Icon name="mail" size={20} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div style={{ marginBottom: '20px' }}>
+                  <label style={{
+                    display: 'block',
+                    fontSize: '14px',
+                    fontWeight: '600',
+                    color: '#0f172a',
+                    marginBottom: '8px'
+                  }}>Password</label>
+                  <div style={{ position: 'relative' }}>
+                    <input
+                      type={showCustomerPassword ? 'text' : 'password'}
+                      value={customerPassword}
+                      onChange={(e) => setCustomerPassword(e.target.value)}
+                      placeholder="••••••••"
+                      required
+                      style={{
+                        width: '100%',
+                        padding: '15px 48px 15px 48px',
+                        border: '2px solid #e2e8f0',
+                        borderRadius: '12px',
+                        fontSize: '15px',
+                        fontFamily: 'inherit',
+                        boxSizing: 'border-box',
+                        transition: 'all 0.2s',
+                        outline: 'none'
+                      }}
+                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
+                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
+                    />
+                    <div style={{
+                      position: 'absolute',
+                      left: '16px',
+                      top: '50%',
+                      transform: 'translateY(-50%)',
+                      color: '#94a3b8',
+                      pointerEvents: 'none'
+                    }}>
+                      <Icon name="lock" size={20} />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
+                      style={{
+                        position: 'absolute',
+                        right: '16px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        background: 'none',
+                        border: 'none',
+                        cursor: 'pointer',
+                        color: '#94a3b8',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
                     >
-                      ← Use different email
+                      <Icon name={showCustomerPassword ? 'eye-off' : 'eye'} size={20} />
                     </button>
-                  </>
+                  </div>
+                </div>
+
+                {/* Error */}
+                {customerError && (
+                  <div style={{
+                    padding: '14px 16px',
+                    background: '#fee2e2',
+                    border: '1px solid #fca5a5',
+                    borderRadius: '12px',
+                    color: '#991b1b',
+                    fontSize: '14px',
+                    marginBottom: '20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}>
+                    <Icon name="alert-circle" size={18} />
+                    {customerError}
+                  </div>
                 )}
+
+                {/* Submit */}
+                <button
+                  type="submit"
+                  disabled={customerLoading}
+                  style={{
+                    width: '100%',
+                    padding: '14px 24px',
+                    background: customerLoading ? '#94a3b8' : '#6366f1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    fontSize: '15px',
+                    fontWeight: '700',
+                    cursor: customerLoading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s',
+                    letterSpacing: '0.5px'
+                  }}
+                  onMouseOver={(e) => !customerLoading && (e.target.style.background = '#4f46e5')}
+                  onMouseOut={(e) => !customerLoading && (e.target.style.background = '#6366f1')}
+                >
+                  {customerLoading ? '🔄 Logging in...' : '✅ Login'}
+                </button>
               </form>
             )}
           </div>

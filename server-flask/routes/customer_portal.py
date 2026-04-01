@@ -1,6 +1,6 @@
 """
 Customer Portal Routes
-Handles customer-specific data endpoints like dashboard, invoices, warranties
+Handles customer-specific data endpoints like dashboard, invoices, warranties, EMI
 """
 
 import logging
@@ -9,7 +9,7 @@ from datetime import datetime, timedelta
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, current_app, g, send_file
 from database import get_db
-from utils.auth_middleware import authenticate_token
+from utils.auth_middleware import authenticate_token, require_customer
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
 from services.customer_service import build_vcard, build_pvc_card_pdf
 
@@ -316,6 +316,145 @@ def renew_warranty(warranty_id):
         logger.error(f"Warranty renewal error: {e}")
         return jsonify({"error": "Failed to renew warranty"}), 500
 
+# ==================== EMI PLANS ====================
+
+@customer_portal_bp.route('/emi', methods=['GET'])
+@authenticate_token
+def get_customer_emi_plans():
+    """Get all EMI plans for current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        match_query = get_customer_match_query(customer)
+
+        # Pagination
+        page = max(1, int(request.args.get('page', 1)))
+        limit = min(int(request.args.get('limit', 20)), 100)
+        skip = (page - 1) * limit
+
+        # Fetch EMI plans
+        db = get_db()
+        emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
+        total = db.emi_plans.count_documents(match_query)
+
+        emi_plans = []
+        for emi in emi_cursor:
+            # Calculate paid and pending amounts
+            installments = emi.get('installments', [])
+            total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
+            total_pending = emi.get('totalAmount', 0) - total_paid
+            
+            # Count paid and pending installments
+            paid_count = len([inst for inst in installments if inst.get('status') == 'paid'])
+            pending_count = len([inst for inst in installments if inst.get('status') in ['pending', 'partial']])
+
+            emi_plans.append({
+                "id": str(emi['_id']),
+                "billId": str(emi.get('billId')),
+                "principalAmount": float(emi.get('principalAmount', 0)),
+                "tenure": emi.get('tenure'),
+                "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+                "totalAmount": float(emi.get('totalAmount', 0)),
+                "totalPaid": float(total_paid),
+                "totalPending": float(total_pending),
+                "startDate": emi.get('startDate').isoformat() if emi.get('startDate') else None,
+                "endDate": emi.get('endDate').isoformat() if emi.get('endDate') else None,
+                "status": emi.get('status', 'active'),
+                "installments": [
+                    {
+                        "installmentNo": inst.get('installmentNo'),
+                        "dueDate": inst.get('dueDate').isoformat() if inst.get('dueDate') else None,
+                        "amount": float(inst.get('amount', 0)),
+                        "paidAmount": float(inst.get('paidAmount', 0)),
+                        "status": inst.get('status'),
+                        "paidDate": inst.get('paidDate').isoformat() if inst.get('paidDate') else None
+                    }
+                    for inst in installments
+                ],
+                "paidInstallments": paid_count,
+                "pendingInstallments": pending_count
+            })
+
+        response = jsonify({
+            "emiPlans": emi_plans,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "pages": (total + limit - 1) // limit
+            }
+        })
+        response.headers['X-Total-Count'] = str(total)
+        return response
+
+    except Exception as e:
+        logger.error(f"EMI plans error: {e}")
+        return jsonify({"error": "Failed to fetch EMI plans"}), 500
+
+@customer_portal_bp.route('/emi/<emi_id>', methods=['GET'])
+@authenticate_token
+def get_emi_details(emi_id):
+    """Get detailed information about a specific EMI plan"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        db = get_db()
+        customer_id = customer['_id']
+        
+        # Verify ownership
+        emi = db.emi_plans.find_one({
+            "_id": ObjectId(emi_id),
+            "$or": [
+                {"customerId": customer_id},
+                {"customerId": str(customer_id)},
+                {"customerPhone": customer.get('phone')},
+                {"customerEmail": customer.get('email')}
+            ]
+        })
+
+        if not emi:
+            return jsonify({"error": "EMI plan not found or access denied"}), 404
+
+        # Calculate totals
+        installments = emi.get('installments', [])
+        total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
+        
+        return jsonify({
+            "id": str(emi['_id']),
+            "billId": str(emi.get('billId')),
+            "principalAmount": float(emi.get('principalAmount', 0)),
+            "tenure": emi.get('tenure'),
+            "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+            "totalAmount": float(emi.get('totalAmount', 0)),
+            "totalPaid": float(total_paid),
+            "totalPending": float(emi.get('totalAmount', 0) - total_paid),
+            "startDate": emi.get('startDate').isoformat() if emi.get('startDate') else None,
+            "endDate": emi.get('endDate').isoformat() if emi.get('endDate') else None,
+            "status": emi.get('status'),
+            "notes": emi.get('notes'),
+            "installments": [
+                {
+                    "installmentNo": inst.get('installmentNo'),
+                    "dueDate": inst.get('dueDate').isoformat() if inst.get('dueDate') else None,
+                    "amount": float(inst.get('amount', 0)),
+                    "paidAmount": float(inst.get('paidAmount', 0)),
+                    "status": inst.get('status'),
+                    "paidDate": inst.get('paidDate').isoformat() if inst.get('paidDate') else None,
+                    "paymentMethod": inst.get('paymentMethod'),
+                    "notes": inst.get('notes')
+                }
+                for inst in installments
+            ]
+        })
+
+    except Exception as e:
+        logger.error(f"EMI details error: {e}")
+        return jsonify({"error": "Failed to fetch EMI details"}), 500
+
 # ==================== PROFILE ====================
 
 @customer_portal_bp.route('/profile', methods=['GET'])
@@ -375,10 +514,10 @@ def update_customer_profile():
 @customer_portal_bp.route('/change-password', methods=['POST'])
 @authenticate_token
 def change_customer_password():
-    """Customer cannot change password (OTP-based auth only)"""
+    """Password change is handled by customer_auth blueprint"""
     return jsonify({
-        "error": "Password changes not supported for OTP-based authentication",
-        "message": "Contact support to change your email address"
+        "error": "Use /api/customer-auth/change-password endpoint",
+        "message": "Password changes should be done through the authentication endpoints"
     }), 400
 
 @customer_portal_bp.route('/vcard', methods=['GET'])

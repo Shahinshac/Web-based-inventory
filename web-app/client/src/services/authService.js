@@ -26,38 +26,6 @@ export const loginUser = async (username, password, userMode = 'staff') => {
 }
 
 /**
- * Login customer with OTP (called after OTP verification)
- */
-export const loginCustomerWithOTP = async (email, token) => {
-  const response = await apiPost('/api/users/login-customer-otp', { email, token })
-
-  if (response.user) {
-    if (response.token) {
-      localStorage.setItem('authToken', response.token)
-    }
-    localStorage.setItem('currentUser', JSON.stringify(response.user))
-    localStorage.setItem('isAdmin', 'false')
-    localStorage.setItem('userRole', 'customer')
-  }
-
-  return response
-}
-
-/**
- * Send OTP to email
- */
-export const sendOTP = async (email, type = 'login') => {
-  return await apiPost('/api/users/send-otp', { email, type })
-}
-
-/**
- * Verify OTP
- */
-export const verifyOTP = async (email, otp) => {
-  return await apiPost('/api/users/verify-otp', { email, otp })
-}
-
-/**
  * Register new customer
  */
 export const registerCustomer = async (email, name, phone) => {

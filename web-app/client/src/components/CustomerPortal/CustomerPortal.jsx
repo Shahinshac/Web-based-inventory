@@ -1,17 +1,17 @@
 /**
  * @file CustomerPortal.jsx
- * @description Customer portal main container with navigation and views
- * Displays customer dashboard, invoices, warranties, and profile
+ * @description Main customer portal container with navigation and views
+ * Displays customer dashboard, invoices, warranties, EMI plans, and profile
  */
 
 import React, { useState } from 'react';
-import Icon from '../../Icon.jsx';
+import Icon from '../Icon';
 import CustomerDashboard from './CustomerDashboard';
 import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';
 import CustomerEMI from './CustomerEMI';
 import CustomerProfile from './CustomerProfile';
-import './customerPortal.css';
+import './CustomerPortal.css';
 
 const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -27,41 +27,51 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
   return (
     <div className="customer-portal">
       {/* Header */}
-      <div className="portal-header">
+      <header className="portal-header">
         <div className="portal-brand">
           <Icon name="spark" size={28} />
-          <span>26:07 Electronics</span>
+          <span className="brand-name">26:07 Electronics</span>
         </div>
-        <div className="portal-user-info">
-          <span className="user-name">{currentUser?.name || currentUser?.username}</span>
-          <button className="logout-btn" onClick={onLogout} title="Logout">
-            <Icon name="arrow-right" size={16} />
+        <div className="portal-user-section">
+          <div className="user-info">
+            <Icon name="user" size={18} />
+            <span className="user-name">{currentUser?.name || currentUser?.email}</span>
+          </div>
+          <button 
+            className="logout-btn" 
+            onClick={onLogout} 
+            title="Logout"
+            aria-label="Logout"
+          >
+            <Icon name="log-out" size={18} />
+            <span>Logout</span>
           </button>
         </div>
-      </div>
+      </header>
 
       {/* Navigation Tabs */}
-      <div className="portal-nav">
+      <nav className="portal-nav">
         {tabs.map(tab => (
           <button
             key={tab.id}
             className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
+            aria-current={activeTab === tab.id ? 'page' : undefined}
           >
-            <Icon name={tab.icon} size={18} />
+            <Icon name={tab.icon} size={20} />
             <span>{tab.label}</span>
           </button>
         ))}
-      </div>
+      </nav>
 
-      {/* Content */}
-      <div className="portal-content">
+      {/* Content Area */}
+      <main className="portal-content">
         {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
         {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
         {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
-        {activeTab === 'emi' && <CustomerEMI customerId={currentUser?.id || currentUser?._id} customerName={currentUser?.name || currentUser?.username} />}
+        {activeTab === 'emi' && <CustomerEMI currentUser={currentUser} />}
         {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
-      </div>
+      </main>
     </div>
   );
 };

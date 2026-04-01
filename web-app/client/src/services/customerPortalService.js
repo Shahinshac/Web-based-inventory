@@ -15,15 +15,15 @@ export const fetchDashboardStats = async () => {
 /**
  * Fetch customer's invoices
  */
-export const fetchCustomerInvoices = async () => {
-  return await apiGet('/api/customer/invoices');
+export const fetchCustomerInvoices = async (page = 1, limit = 20) => {
+  return await apiGet(`/api/customer/invoices?page=${page}&limit=${limit}`);
 };
 
 /**
  * Fetch customer's warranties
  */
-export const fetchCustomerWarranties = async () => {
-  return await apiGet('/api/customer/warranties');
+export const fetchCustomerWarranties = async (page = 1, limit = 20) => {
+  return await apiGet(`/api/customer/warranties?page=${page}&limit=${limit}`);
 };
 
 /**
@@ -48,6 +48,20 @@ export const changeCustomerPassword = async (oldPassword, newPassword) => {
     oldPassword,
     newPassword
   });
+};
+
+/**
+ * Fetch customer's EMI plans
+ */
+export const fetchCustomerEMIPlans = async (page = 1, limit = 20) => {
+  return await apiGet(`/api/customer/emi?page=${page}&limit=${limit}`);
+};
+
+/**
+ * Get EMI plan details
+ */
+export const getEMIDetails = async (emiId) => {
+  return await apiGet(`/api/customer/emi/${emiId}`);
 };
 
 /**
@@ -82,8 +96,8 @@ export const downloadInvoicePDF = async (invoiceId) => {
 /**
  * Renew warranty
  */
-export const renewWarranty = async (warrantyId) => {
-  return await apiPost(`/api/customer/warranties/${warrantyId}/renew`, {});
+export const renewWarranty = async (warrantyId, years = 1) => {
+  return await apiPost(`/api/customer/warranties/${warrantyId}/renew`, { years });
 };
 
 /**
