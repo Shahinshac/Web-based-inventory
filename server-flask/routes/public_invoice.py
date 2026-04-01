@@ -116,6 +116,20 @@ def public_invoice_view(token):
     customer_place = invoice.get('customerPlace', '')
     payment_mode = invoice.get('paymentMode', 'cash')
     payment_mode_display = payment_mode.capitalize()
+    
+    emi_details = invoice.get('emiDetails')
+    emi_html = ""
+    if payment_mode == 'emi' and emi_details:
+        emi_html = f"""
+        <div style="margin-top:12px;padding:12px;background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;">
+          <p style="color:#be185d;font-weight:700;font-size:11px;text-transform:uppercase;margin-bottom:6px;">EMI Schedule</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;">
+            <div><span style="color:#94a3b8;">Tenure:</span> <strong>{emi_details.get('months', 0)} Mo</strong></div>
+            <div><span style="color:#94a3b8;">EMI:</span> <strong>&#8377;{float(emi_details.get('emiAmount', 0)):.2f}</strong></div>
+            <div style="grid-column:span 2;"><span style="color:#94a3b8;">Down Pmt:</span> <strong>&#8377;{float(emi_details.get('downPayment', 0)):.2f}</strong></div>
+          </div>
+        </div>
+        """
 
     subtotal = invoice.get('subtotal', 0) or 0
     discount_pct = invoice.get('discountPercent', 0) or 0
@@ -339,6 +353,7 @@ def public_invoice_view(token):
           <h3>Payment Info</h3>
           <p><strong>Method:</strong> {payment_mode_display}</p>
           <p style="margin-top:6px;"><strong>Status:</strong> <span style="color:#10b981;font-weight:700;">Paid &#10003;</span></p>
+          {emi_html}
         </div>
       </div>
 

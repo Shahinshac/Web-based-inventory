@@ -129,6 +129,16 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
                 )}
               </div>
             )}
+            {invoice.paymentMode === 'emi' && invoice.emiDetails && (
+              <div className="emi-payment-details" style={{ marginTop: '8px', padding: '12px', background: '#fdf2f8', borderRadius: '8px', border: '1px solid #fbcfe8' }}>
+                <h5 style={{ margin: '0 0 8px 0', color: '#be185d', fontSize: '13px' }}>EMI Information</h5>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+                  <div><span style={{ color: '#6b7280' }}>Tenure:</span> <strong>{invoice.emiDetails.months} Months</strong></div>
+                  <div><span style={{ color: '#6b7280' }}>Monthly EMI:</span> <strong>{formatCurrency(invoice.emiDetails.emiAmount)}</strong></div>
+                  <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#6b7280' }}>Down Payment:</span> <strong>{formatCurrency(invoice.emiDetails.downPayment)}</strong></div>
+                </div>
+              </div>
+            )}
             {invoice.createdByUsername && (
               <div className="detail-row" style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e5e7eb' }}>
                 <span>Salesperson:</span>

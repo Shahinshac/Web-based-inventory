@@ -2,7 +2,7 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 from database import connect_db
 from routes.auth import auth_bp
-from routes.customer_auth import customer_auth_bp
+from routes.customer_auth import customer_auth_v2_bp
 from routes.products import products_bp
 from routes.customers import customers_bp
 from routes.pos import pos_bp
@@ -60,7 +60,7 @@ init_cloudinary(app)
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')
-app.register_blueprint(customer_auth_bp, url_prefix='/api/customer-auth')
+app.register_blueprint(customer_auth_v2_bp, url_prefix='/api/customer-auth')
 app.register_blueprint(products_bp, url_prefix='/api/products')
 app.register_blueprint(customers_bp, url_prefix='/api/customers')
 app.register_blueprint(pos_bp, url_prefix='/api/checkout')

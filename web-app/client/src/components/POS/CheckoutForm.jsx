@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import SplitPaymentForm from './SplitPaymentForm';
+import EMIDetailsForm from './EMIDetailsForm';
 import PaymentLinkModal from './PaymentLinkModal';
 import Button from '../Common/Button';
 import Icon from '../../Icon';
@@ -26,15 +27,18 @@ export default function CheckoutForm({
   const [cashAmount, setCashAmount] = useState('');
   const [upiAmount, setUpiAmount] = useState('');
   const [cardAmount, setCardAmount] = useState('');
+  
+  // EMI State
+  const [emiMonths, setEmiMonths] = useState('');
+  const [emiAmount, setEmiAmount] = useState('');
+  const [downPayment, setDownPayment] = useState('');
+  
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
   const [customerSearch, setCustomerSearch] = useState('');
   const [showCustomerForm, setShowCustomerForm] = useState(false);
   const [showPaymentLinkModal, setShowPaymentLinkModal] = useState(false);
   const [paymentLinkLoading, setPaymentLinkLoading] = useState(false);
-  const [enableEMI, setEnableEMI] = useState(false);
-  const [selectedTenure, setSelectedTenure] = useState(null);
-  const [showEMISchedule, setShowEMISchedule] = useState(false);
 
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
@@ -46,50 +50,18 @@ export default function CheckoutForm({
   const filteredCustomers = useMemo(() => {
     if (!customerSearch.trim()) return customers;
     const search = customerSearch.toLowerCase();
-    return customers.filter(c =>
-      c.name?.toLowerCase().includes(search) ||
+    return customers.filter(c => 
+      c.name?.toLowerCase().includes(search) || 
       c.phone?.includes(search)
     );
   }, [customers, customerSearch]);
-
-  // EMI configuration
-  const EMI_TENURES = [3, 6, 12, 24];
-  const EMI_MIN_AMOUNT = 5000;
-  const EMI_INTEREST_RATE = 0; // 0% interest
-
-  const emiPossible = finalTotal >= EMI_MIN_AMOUNT && selectedCustomer;
-
-  // Calculate EMI for selected tenure
-  const calculateEMI = (tenure) => {
-    if (!tenure) return 0;
-    return Math.round((finalTotal / tenure) * 100) / 100;
-  };
-
-  // Generate installment schedule for preview
-  const generateInstallmentSchedule = (tenure) => {
-    if (!tenure) return [];
-    const monthlyEMI = calculateEMI(tenure);
-    const lastEMI = finalTotal - (monthlyEMI * (tenure - 1));
-    const schedule = [];
-    let currentDate = new Date();
-
-    for (let i = 1; i <= tenure; i++) {
-      currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, currentDate.getDate());
-      const amount = i === tenure ? lastEMI : monthlyEMI;
-      schedule.push({
-        installmentNo: i,
-        dueDate: currentDate.toLocaleDateString('en-IN'),
-        amount: amount
-      });
-    }
-    return schedule;
-  };
 
   // Payment modes configuration with enhanced visuals
   const paymentModes = [
     { value: PAYMENT_MODES.CASH, label: 'Cash', icon: 'dollar-sign', color: '#10b981', desc: 'Cash Payment' },
     { value: PAYMENT_MODES.UPI, label: 'UPI', icon: 'smartphone', color: '#6366f1', desc: 'GPay, PhonePe, Paytm' },
     { value: PAYMENT_MODES.CARD, label: 'Card', icon: 'credit-card', color: '#f59e0b', desc: 'Credit/Debit Card' },
+    { value: PAYMENT_MODES.EMI, label: 'EMI', icon: 'calendar', color: '#ec4899', desc: 'Monthly Installments' },
     { value: PAYMENT_MODES.CHEQUE, label: 'Cheque', icon: 'file-text', color: '#8b5cf6', desc: 'Bank Cheque' },
   ];
 
@@ -173,14 +145,14 @@ export default function CheckoutForm({
       }
     }
 
-    // Validate EMI if enabled
-    if (enableEMI) {
-      if (!selectedTenure) {
-        setCheckoutError('Please select EMI tenure')
+    // Validate EMI if selected
+    if (paymentMode === PAYMENT_MODES.EMI) {
+      if (!emiMonths || !emiAmount) {
+        setCheckoutError('Please enter EMI months and amount');
         return;
       }
-      if (!emiPossible) {
-        setCheckoutError(`EMI requires minimum amount of ₹${EMI_MIN_AMOUNT} and a registered customer`)
+      if (!selectedCustomer) {
+        setCheckoutError('Registered customer is required for EMI payments');
         return;
       }
     }
@@ -197,12 +169,10 @@ export default function CheckoutForm({
         upi: parseFloat(upiAmount) || 0,
         card: parseFloat(cardAmount) || 0
       } : null,
-      emiDetails: enableEMI ? {
-        enabled: true,
-        tenure: selectedTenure,
-        principalAmount: finalTotal,
-        monthlyEMI: calculateEMI(selectedTenure),
-        interestRate: EMI_INTEREST_RATE
+      emiDetails: paymentMode === PAYMENT_MODES.EMI ? {
+        months: parseInt(emiMonths) || 0,
+        emiAmount: parseFloat(emiAmount) || 0,
+        downPayment: parseFloat(downPayment) || 0
       } : null,
       subtotal,
       discountAmount,
@@ -225,10 +195,10 @@ export default function CheckoutForm({
         setCashAmount('');
         setUpiAmount('');
         setCardAmount('');
+        setEmiMonths('');
+        setEmiAmount('');
+        setDownPayment('');
         setCustomerSearch('');
-        setEnableEMI(false);
-        setSelectedTenure(null);
-        setShowEMISchedule(false);
         onSelectCustomer(null);
       }
     } finally {
@@ -454,6 +424,17 @@ export default function CheckoutForm({
           />
         )}
 
+        {paymentMode === PAYMENT_MODES.EMI && !splitPayment && (
+          <EMIDetailsForm
+            months={emiMonths}
+            emiAmount={emiAmount}
+            downPayment={downPayment}
+            onMonthsChange={setEmiMonths}
+            onEmiAmountChange={setEmiAmount}
+            onDownPaymentChange={setDownPayment}
+          />
+        )}
+
         {/* Generate Payment Link Button for UPI */}
         {paymentMode === PAYMENT_MODES.UPI && selectedCustomer && (
           <button
@@ -467,121 +448,6 @@ export default function CheckoutForm({
           </button>
         )}
       </div>
-
-      {/* EMI Section */}
-      {emiPossible && (
-        <div className="checkout-card emi-card">
-          <div className="checkout-card-header">
-            <div className="checkout-card-title">
-              <Icon name="credit-card" size={18} />
-              <span>EMI Option</span>
-            </div>
-            <label className="emi-toggle-modern">
-              <input
-                type="checkbox"
-                checked={enableEMI}
-                onChange={(e) => {
-                  setEnableEMI(e.target.checked);
-                  if (!e.target.checked) {
-                    setSelectedTenure(null);
-                    setShowEMISchedule(false);
-                  }
-                }}
-              />
-              <span className="toggle-switch"></span>
-              <span className="toggle-label">Enable EMI</span>
-            </label>
-          </div>
-
-          {enableEMI && (
-            <div className="emi-content">
-              <div className="emi-info-banner">
-                <Icon name="info" size={16} />
-                <span>Zero Interest EMI - Equal monthly payments</span>
-              </div>
-
-              <div className="emi-tenure-grid">
-                {EMI_TENURES.map(tenure => (
-                  <button
-                    key={tenure}
-                    className={`emi-tenure-btn ${selectedTenure === tenure ? 'active' : ''}`}
-                    onClick={() => {
-                      setSelectedTenure(tenure);
-                      setShowEMISchedule(false);
-                    }}
-                  >
-                    <div className="tenure-months">{tenure} months</div>
-                    <div className="tenure-emi">₹{calculateEMI(tenure).toLocaleString('en-IN')}</div>
-                  </button>
-                ))}
-              </div>
-
-              {selectedTenure && (
-                <>
-                  <div className="emi-summary">
-                    <div className="emi-summary-row">
-                      <span>Principal Amount</span>
-                      <strong>{formatCurrency0(finalTotal)}</strong>
-                    </div>
-                    <div className="emi-summary-row">
-                      <span>Tenure</span>
-                      <strong>{selectedTenure} months</strong>
-                    </div>
-                    <div className="emi-summary-row">
-                      <span>Monthly EMI</span>
-                      <strong className="emi-amount">₹{calculateEMI(selectedTenure).toLocaleString('en-IN')}</strong>
-                    </div>
-                    <div className="emi-summary-row">
-                      <span>Interest Rate</span>
-                      <strong>0%</strong>
-                    </div>
-                  </div>
-
-                  <button
-                    className="emi-schedule-toggle"
-                    onClick={() => setShowEMISchedule(!showEMISchedule)}
-                  >
-                    <Icon name={showEMISchedule ? 'chevron-up' : 'chevron-down'} size={16} />
-                    <span>{showEMISchedule ? 'Hide' : 'View'} Payment Schedule</span>
-                  </button>
-
-                  {showEMISchedule && (
-                    <div className="emi-schedule-table">
-                      <table>
-                        <thead>
-                          <tr>
-                            <th>Installment</th>
-                            <th>Due Date</th>
-                            <th>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {generateInstallmentSchedule(selectedTenure).map((inst, idx) => (
-                            <tr key={idx}>
-                              <td>#{inst.installmentNo}</td>
-                              <td>{inst.dueDate}</td>
-                              <td>₹{inst.amount.toLocaleString('en-IN')}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  )}
-                </>
-              )}
-            </div>
-          )}
-        </div>
-      )}
-
-      {!emiPossible && (enableEMI || showEMISchedule) && (
-        <div className="checkout-card emi-card">
-          <div className="emi-disabled-message">
-            <Icon name="lock" size={18} />
-            <span>EMI requires minimum amount of ₹{EMI_MIN_AMOUNT.toLocaleString('en-IN')} and a registered customer</span>
-          </div>
-        </div>
-      )}
 
       {/* Order Summary */}
       <div className="checkout-card summary-card">
@@ -615,20 +481,6 @@ export default function CheckoutForm({
             <strong>Total</strong>
             <strong className="total-amount">{formatCurrency0(finalTotal)}</strong>
           </div>
-          {enableEMI && selectedTenure && (
-            <>
-              <div className="emi-divider"></div>
-              <div className="emi-info-summary">
-                <div className="summary-row">
-                  <span className="emi-label">
-                    <Icon name="calendar" size={14} />
-                    EMI Plan
-                  </span>
-                  <strong>{selectedTenure}M @ ₹{calculateEMI(selectedTenure).toLocaleString('en-IN')}/mo</strong>
-                </div>
-              </div>
-            </>
-          )}
         </div>
       </div>
 

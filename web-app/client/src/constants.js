@@ -67,6 +67,7 @@ export const PAYMENT_MODES = {
   UPI: 'upi',
   CARD: 'card',
   CHEQUE: 'cheque',
+  EMI: 'emi',
   SPLIT: 'split'
 };
 
@@ -76,6 +77,7 @@ export const PAYMENT_MODE_LABELS = {
   [PAYMENT_MODES.UPI]: 'UPI',
   [PAYMENT_MODES.CARD]: 'Card',
   [PAYMENT_MODES.CHEQUE]: 'Cheque',
+  [PAYMENT_MODES.EMI]: 'EMI',
   [PAYMENT_MODES.SPLIT]: 'Split Payment'
 };
 

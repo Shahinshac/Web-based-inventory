@@ -1,772 +1,363 @@
 /**
  * @file Login.jsx
- * @description Professional full-screen authentication - Staff & Customer Login
+ * @description Ultra-premium centered authentication portal - Staff & Customer
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import PropTypes from 'prop-types';
 import Icon from './Icon.jsx';
-import { API } from './utils/api.js';
+import './LoginLayout.css';
 
 const Login = ({ onLogin }) => {
   const [mode, setMode] = useState('staff'); // 'staff' or 'customer'
-
-  // Staff login
+  const [customerTab, setCustomerTab] = useState('login'); // 'login' or 'register'
+  
+  // Staff state
   const [staffUsername, setStaffUsername] = useState('');
   const [staffPassword, setStaffPassword] = useState('');
   const [staffError, setStaffError] = useState('');
   const [staffLoading, setStaffLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
+  const [showStaffPw, setShowStaffPw] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // Customer login - Email + Password based
-  const [customerEmail, setCustomerEmail] = useState('');
-  const [customerPassword, setCustomerPassword] = useState('');
+  // Customer state
+  const [loginEmail, setLoginEmail] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [regName, setRegName] = useState('');
+  const [regEmail, setRegEmail] = useState('');
+  const [regPhone, setRegPhone] = useState('');
+  const [regPassword, setRegPassword] = useState('');
+  
   const [customerError, setCustomerError] = useState('');
   const [customerLoading, setCustomerLoading] = useState(false);
-  const [showCustomerPassword, setShowCustomerPassword] = useState(false);
+  const [showLoginPw, setShowLoginPw] = useState(false);
+  const [showRegPw, setShowRegPw] = useState(false);
+
+  const [connStatus, setConnStatus] = useState('online');
 
   // Load remembered staff username
   useEffect(() => {
-    try {
-      const remembered = localStorage.getItem('rememberedUser');
-      if (remembered) {
-        setStaffUsername(remembered);
-        setRememberMe(true);
-      }
-    } catch (error) {
-      console.error('Failed to load remembered user:', error);
+    const remembered = localStorage.getItem('rememberedUser');
+    if (remembered) {
+      setStaffUsername(remembered);
+      setRememberMe(true);
     }
+
+    const handleOnline = () => setConnStatus('online');
+    const handleOffline = () => setConnStatus('offline');
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    setConnStatus(navigator.onLine ? 'online' : 'offline');
+
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
 
   // Save/remove remembered username
   useEffect(() => {
-    try {
-      if (rememberMe && staffUsername) {
-        localStorage.setItem('rememberedUser', staffUsername);
-      } else if (!rememberMe) {
-        localStorage.removeItem('rememberedUser');
-      }
-    } catch (error) {
-      console.error('Failed to update remembered user:', error);
+    if (rememberMe && staffUsername) {
+      localStorage.setItem('rememberedUser', staffUsername);
+    } else if (!rememberMe) {
+      localStorage.removeItem('rememberedUser');
     }
   }, [rememberMe, staffUsername]);
 
-  // Handle staff login
-  const handleStaffLogin = useCallback(async (e) => {
+  const clearErrors = () => {
+    setStaffError('');
+    setCustomerError('');
+  };
+
+  const handleStaffLogin = async (e) => {
     e.preventDefault();
     setStaffError('');
-
-    if (!staffUsername || !staffPassword) {
-      setStaffError('Please fill in all fields');
-      return;
-    }
-
     setStaffLoading(true);
     try {
       const result = await onLogin(staffUsername, staffPassword, 'staff');
-      if (result && result.error) {
-        setStaffError(result.error);
-      }
-    } catch (error) {
-      setStaffError(error.message || 'Login failed. Please try again.');
+      if (result?.error) setStaffError(result.error);
+    } catch (err) {
+      setStaffError('System error. Please try again.');
     } finally {
       setStaffLoading(false);
     }
-  }, [staffUsername, staffPassword, onLogin]);
+  };
 
-  // Handle customer login
-  const handleCustomerLogin = useCallback(async (e) => {
+  const handleCustomerLogin = async (e) => {
     e.preventDefault();
     setCustomerError('');
-
-    if (!customerEmail || !customerPassword) {
-      setCustomerError('Please enter both email and password');
-      return;
-    }
-
     setCustomerLoading(true);
     try {
-      const result = await onLogin(customerEmail, customerPassword, 'customer');
-      if (result && result.error) {
-        setCustomerError(result.error);
-      }
-    } catch (error) {
-      setCustomerError(error.message || 'Login failed. Please try again.');
+      const result = await onLogin(loginEmail, loginPassword, 'customer');
+      if (result?.error) setCustomerError(result.error);
+    } catch (err) {
+      setCustomerError('Login failed. Check your connection.');
     } finally {
       setCustomerLoading(false);
     }
-  }, [customerEmail, customerPassword, onLogin]);
+  };
 
-  const currentYear = new Date().getFullYear();
+  const handleCustomerRegister = async (e) => {
+    e.preventDefault();
+    setCustomerError('');
+    setCustomerLoading(true);
+    try {
+      // In this app, register is often a separate API call, 
+      // but for simplicity in this centralized onLogin handler:
+      const result = await onLogin({
+        name: regName,
+        email: regEmail,
+        phone: regPhone,
+        password: regPassword
+      }, null, 'customer_register');
+      
+      if (result?.error) setCustomerError(result.error);
+    } catch (err) {
+      setCustomerError('Registration failed. Try again.');
+    } finally {
+      setCustomerLoading(false);
+    }
+  };
+
+  const renderError = (msg) => msg && (
+    <div className="ultra-error">
+      <Icon name="alert-circle" size={14} />
+      <span>{msg}</span>
+    </div>
+  );
+
+  const EyeBtn = ({ show, onToggle }) => (
+    <button type="button" className="ultra-eye" onClick={onToggle}>
+      <Icon name={show ? 'eye' : 'eye-off'} size={18} />
+    </button>
+  );
 
   return (
-    <div style={{
-      width: '100%',
-      minHeight: '100vh',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-      padding: '20px',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      {/* Animated Background Elements */}
-      <div style={{
-        position: 'absolute',
-        top: '-50%',
-        left: '-50%',
-        width: '200%',
-        height: '200%',
-        background: 'radial-gradient(circle at 30% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%)',
-        animation: 'drift 20s infinite alternate',
-        pointerEvents: 'none'
-      }}></div>
-      <div style={{
-        position: 'absolute',
-        bottom: '-50%',
-        right: '-50%',
-        width: '200%',
-        height: '200%',
-        background: 'radial-gradient(circle at 70% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 50%)',
-        animation: 'drift 25s infinite alternate-reverse',
-        pointerEvents: 'none'
-      }}></div>
-      
-      <div style={{ width: '100%', maxWidth: '420px', position: 'relative', zIndex: 1 }}>
-        {/* Header */}
-        <div style={{
-          textAlign: 'center',
-          marginBottom: '32px',
-          color: 'white',
-          animation: 'fadeInDown 0.6s ease-out'
-        }}>
-          <div style={{
-            fontSize: '64px',
-            marginBottom: '20px',
-            filter: 'drop-shadow(0 4px 12px rgba(0, 0, 0, 0.2))',
-            animation: 'pulse 3s infinite'
-          }}>⚡</div>
-          <h1 style={{
-            fontSize: '32px',
-            fontWeight: '800',
-            margin: '0 0 10px 0',
-            letterSpacing: '-0.5px',
-            textShadow: '0 2px 8px rgba(0, 0, 0, 0.2)'
-          }}>26:07 Electronics</h1>
-          <p style={{
-            fontSize: '16px',
-            opacity: 0.95,
-            margin: '0',
-            fontWeight: '500',
-            textShadow: '0 1px 4px rgba(0, 0, 0, 0.15)'
-          }}>Smart Inventory & POS Management</p>
+    <div className="ultra-login-container">
+      <div className="grid-overlay" />
+      <div className="bg-blobs">
+        <div className="blob blob-1" />
+        <div className="blob blob-2" />
+        <div className="blob blob-3" />
+      </div>
+
+      <div className="ultra-card">
+        {/* Connection status */}
+        <div className={`ultra-conn-status ${connStatus}`}>
+          <Icon name={connStatus === 'online' ? 'activity' : 'wifi-off'} size={12} />
+          <span>{connStatus === 'online' ? 'Online' : 'Offline'}</span>
         </div>
-        
-        <style>{`
-          @keyframes fadeInDown {
-            from {
-              opacity: 0;
-              transform: translateY(-20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-          @keyframes pulse {
-            0%, 100% {
-              transform: scale(1);
-            }
-            50% {
-              transform: scale(1.05);
-            }
-          }
-          @keyframes drift {
-            from {
-              transform: translate(0, 0) rotate(0deg);
-            }
-            to {
-              transform: translate(50px, 50px) rotate(5deg);
-            }
-          }
-          @keyframes fadeInUp {
-            from {
-              opacity: 0;
-              transform: translateY(20px);
-            }
-            to {
-              opacity: 1;
-              transform: translateY(0);
-            }
-          }
-        `}</style>
 
-        {/* Card */}
-        <div style={{
-          background: 'rgba(255, 255, 255, 0.98)',
-          backdropFilter: 'blur(20px)',
-          borderRadius: '24px',
-          boxShadow: '0 25px 70px rgba(0,0,0,0.3), 0 10px 30px rgba(0,0,0,0.15)',
-          overflow: 'hidden',
-          marginBottom: '24px',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          animation: 'fadeInUp 0.6s ease-out 0.2s both'
-        }}>
-          {/* Tabs */}
-          <div style={{
-            display: 'flex',
-            background: 'linear-gradient(to bottom, #f8fafc, #f1f5f9)',
-            borderBottom: '1px solid #e2e8f0',
-            padding: '12px',
-            gap: '8px'
-          }}>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('staff');
-                setCustomerError('');
-                setStaffError('');
-              }}
-              style={{
-                flex: 1,
-                padding: '18px 24px',
-                background: mode === 'staff' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
-                color: mode === 'staff' ? '#6366f1' : '#64748b',
-                border: mode === 'staff' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                boxShadow: mode === 'staff' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
-                transform: mode === 'staff' ? 'translateY(-2px)' : 'none'
-              }}
-            >
-              <Icon name="lock" size={20} />
-              Staff Login
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setMode('customer');
-                setCustomerError('');
-                setStaffError('');
-              }}
-              style={{
-                flex: 1,
-                padding: '18px 24px',
-                background: mode === 'customer' ? 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)' : 'transparent',
-                color: mode === 'customer' ? '#6366f1' : '#64748b',
-                border: mode === 'customer' ? '1.5px solid rgba(99, 102, 241, 0.2)' : '1.5px solid transparent',
-                borderRadius: '14px',
-                fontWeight: '700',
-                fontSize: '15px',
-                cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '10px',
-                boxShadow: mode === 'customer' ? '0 4px 16px rgba(99, 102, 241, 0.15)' : 'none',
-                transform: mode === 'customer' ? 'translateY(-2px)' : 'none'
-              }}
-            >
-              <Icon name="mail" size={20} />
-              Customer Login
-            </button>
+        <div className="ultra-header">
+          <div className="ultra-logo-box">
+            <Icon name="zap" size={32} />
           </div>
+          <h1 className="ultra-brand-title">26:07<br />Electronics</h1>
+          <p className="ultra-brand-subtitle">Enterprise POS & Inventory Platform</p>
+        </div>
 
-          {/* Content */}
-          <div style={{ padding: '40px 36px' }}>
-            {/* Staff Login */}
-            {mode === 'staff' && (
-              <form onSubmit={handleStaffLogin}>
-                <div style={{ marginBottom: '32px' }}>
-                  <h2 style={{
-                    fontSize: '30px',
-                    fontWeight: '800',
-                    margin: '0 0 8px 0',
-                    color: '#0f172a',
-                    letterSpacing: '-0.8px',
-                    background: 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                    backgroundClip: 'text'
-                  }}>Staff Portal</h2>
-                  <p style={{
-                    margin: '0',
-                    color: '#64748b',
-                    fontSize: '15px',
-                    fontWeight: '500',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}>
-                    <Icon name="shield" size={16} />
-                    Secure access for authorized personnel
-                  </p>
-                </div>
+        {/* Staff / Customer switcher */}
+        <div className="ultra-segment-control">
+          <div className={`ultra-segment-indicator ${mode === 'customer' ? 'ultra-segment-customer' : ''}`} />
+          <button
+            type="button"
+            className={`ultra-segment-btn ${mode === 'staff' ? 'active' : ''}`}
+            onClick={() => { setMode('staff'); clearErrors(); }}
+          >
+            <Icon name="shield" size={14} /> Staff
+          </button>
+          <button
+            type="button"
+            className={`ultra-segment-btn ${mode === 'customer' ? 'active' : ''}`}
+            onClick={() => { setMode('customer'); clearErrors(); }}
+          >
+            <Icon name="users" size={14} /> Customer
+          </button>
+        </div>
 
-                {/* Username */}
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#1e293b',
-                    marginBottom: '10px',
-                    letterSpacing: '0.3px'
-                  }}>Username</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      value={staffUsername}
-                      onChange={(e) => setStaffUsername(e.target.value)}
-                      placeholder="Enter your username"
-                      required
-                      autoFocus
-                      style={{
-                        width: '100%',
-                        padding: '15px 18px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        outline: 'none',
-                        background: '#f8fafc',
-                        color: '#0f172a',
-                        fontWeight: '500'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#f8fafc';
-                        e.target.style.boxShadow = 'none';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none',
-                      transition: 'color 0.3s'
-                    }}>
-                      <Icon name="user" size={20} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Password */}
-                <div style={{ marginBottom: '24px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    color: '#1e293b',
-                    marginBottom: '10px',
-                    letterSpacing: '0.3px'
-                  }}>Password</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      value={staffPassword}
-                      onChange={(e) => setStaffPassword(e.target.value)}
-                      placeholder="Enter your password"
-                      required
-                      style={{
-                        width: '100%',
-                        padding: '15px 50px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                        outline: 'none',
-                        background: '#f8fafc',
-                        letterSpacing: showPassword ? 'normal' : '0.2em',
-                        color: '#0f172a',
-                        fontWeight: '500'
-                      }}
-                      onFocus={(e) => {
-                        e.target.style.borderColor = '#6366f1';
-                        e.target.style.background = 'white';
-                        e.target.style.boxShadow = '0 0 0 4px rgba(99, 102, 241, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04)';
-                        e.target.style.transform = 'translateY(-1px)';
-                      }}
-                      onBlur={(e) => {
-                        e.target.style.borderColor = '#e2e8f0';
-                        e.target.style.background = '#f8fafc';
-                        e.target.style.boxShadow = 'none';
-                        e.target.style.transform = 'translateY(0)';
-                      }}
-                    />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none',
-                      transition: 'color 0.3s'
-                    }}>
-                      <Icon name="lock" size={20} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowPassword(!showPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '12px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#94a3b8',
-                        padding: '10px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        transition: 'all 0.2s',
-                        borderRadius: '8px'
-                      }}
-                      onMouseOver={(e) => {
-                        e.currentTarget.style.color = '#6366f1';
-                        e.currentTarget.style.background = 'rgba(99, 102, 241, 0.08)';
-                      }}
-                      onMouseOut={(e) => {
-                        e.currentTarget.style.color = '#94a3b8';
-                        e.currentTarget.style.background = 'none';
-                      }}
-                    >
-                      <Icon name={showPassword ? "eye" : "eye-off"} size={20} />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Remember Me */}
-                <label style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  fontSize: '14px',
-                  cursor: 'pointer',
-                  marginBottom: '32px',
-                  color: '#475569',
-                  fontWeight: '600',
-                  padding: '8px 4px',
-                  transition: 'color 0.2s'
-                }}
-                onMouseOver={(e) => e.currentTarget.style.color = '#1e293b'}
-                onMouseOut={(e) => e.currentTarget.style.color = '#475569'}
-                >
+        {/* ─────────── STAFF FORM ─────────── */}
+        {mode === 'staff' ? (
+          <div className="fade-in">
+            <form onSubmit={handleStaffLogin}>
+              <div className="ultra-input-group">
+                <label>Username</label>
+                <div className="ultra-input-wrapper">
+                  <span className="input-icon"><Icon name="user" size={18} /></span>
                   <input
-                    type="checkbox"
-                    checked={rememberMe}
-                    onChange={(e) => setRememberMe(e.target.checked)}
-                    style={{
-                      cursor: 'pointer',
-                      width: '18px',
-                      height: '18px',
-                      accentColor: '#6366f1'
-                    }}
+                    type="text"
+                    className="ultra-input has-icon"
+                    placeholder="Enter username"
+                    value={staffUsername}
+                    onChange={e => setStaffUsername(e.target.value)}
+                    autoComplete="username"
+                    required
                   />
-                  <span>Keep me signed in on this device</span>
+                </div>
+              </div>
+
+              <div className="ultra-input-group">
+                <label>Password</label>
+                <div className="ultra-input-wrapper">
+                  <span className="input-icon"><Icon name="lock" size={18} /></span>
+                  <input
+                    type={showStaffPw ? 'text' : 'password'}
+                    className="ultra-input has-icon"
+                    placeholder="Enter password"
+                    value={staffPassword}
+                    onChange={e => setStaffPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <EyeBtn show={showStaffPw} onToggle={() => setShowStaffPw(p => !p)} />
+                </div>
+              </div>
+
+              {renderError(staffError)}
+
+              <div className="ultra-options">
+                <label className="ultra-remember">
+                  <input type="checkbox" checked={rememberMe} onChange={e => setRememberMe(e.target.checked)} />
+                  <span>Keep me signed in</span>
                 </label>
+                <button type="button" className="ultra-link">Forgot Password?</button>
+              </div>
 
-                {/* Error */}
-                {staffError && (
-                  <div style={{
-                    padding: '13px 14px',
-                    background: '#fee2e2',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '10px',
-                    color: '#991b1b',
-                    fontSize: '13px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    fontWeight: '500'
-                  }}>
-                    <Icon name="alert-circle" size={18} />
-                    {staffError}
-                  </div>
-                )}
+              <button type="submit" className="ultra-btn" disabled={staffLoading}>
+                {staffLoading
+                  ? <><Icon name="loader" size={18} className="spin" /> Authenticating...</>
+                  : <>Sign In <Icon name="arrow-right" size={18} /></>}
+              </button>
+            </form>
+          </div>
+        ) : (
+          /* ─────────── CUSTOMER FORM ─────────── */
+          <div className="fade-in">
+            <div className="ultra-sub-tabs">
+              <button
+                type="button"
+                className={`ultra-sub-tab ${customerTab === 'login' ? 'active' : ''}`}
+                onClick={() => { setCustomerTab('login'); clearErrors(); }}
+              >
+                Sign In
+              </button>
+              <button
+                type="button"
+                className={`ultra-sub-tab ${customerTab === 'register' ? 'active' : ''}`}
+                onClick={() => { setCustomerTab('register'); clearErrors(); }}
+              >
+                Register
+              </button>
+            </div>
 
-                {/* Submit Button */}
-                <button
-                  type="submit"
-                  disabled={staffLoading}
-                  style={{
-                    width: '100%',
-                    padding: '14px 24px',
-                    background: staffLoading ? '#cbd5e1' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '10px',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    cursor: staffLoading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    letterSpacing: '0.5px',
-                    textTransform: 'uppercase',
-                    boxShadow: staffLoading ? 'none' : '0 4px 12px rgba(99, 102, 241, 0.3)',
-                    position: 'relative',
-                    overflow: 'hidden'
-                  }}
-                  onMouseOver={(e) => {
-                    if (!staffLoading) {
-                      e.target.style.transform = 'translateY(-2px)';
-                      e.target.style.boxShadow = '0 6px 20px rgba(99, 102, 241, 0.4)';
-                    }
-                  }}
-                  onMouseOut={(e) => {
-                    if (!staffLoading) {
-                      e.target.style.transform = 'translateY(0)';
-                      e.target.style.boxShadow = '0 4px 12px rgba(99, 102, 241, 0.3)';
-                    }
-                  }}
-                >
-                  {staffLoading ? '🔄 Signing in...' : '🔐 Sign In'}
-                </button>
-
-                {/* Divider */}
-                <div style={{
-                  margin: '24px 0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  color: '#cbd5e1'
-                }}>
-                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
-                  <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: '600' }}>OR</span>
-                  <div style={{ flex: 1, height: '1px', background: '#e2e8f0' }}></div>
-                </div>
-
-                {/* Help */}
-                <div style={{
-                  padding: '14px 16px',
-                  background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)',
-                  border: '1.5px solid #bae6fd',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  color: '#0c4a6e',
-                  display: 'flex',
-                  alignItems: 'flex-start',
-                  gap: '10px',
-                  fontWeight: '500',
-                  lineHeight: '1.5'
-                }}>
-                  <div style={{ marginTop: '2px', flexShrink: 0 }}>
-                    <Icon name="info" size={16} />
-                  </div>
-                  <span>Don't have an account? Contact your <strong>administrator</strong> to request access.</span>
-                </div>
-              </form>
-            )}
-
-            {/* Customer Login */}
-            {mode === 'customer' && (
+            {customerTab === 'login' ? (
               <form onSubmit={handleCustomerLogin}>
-                <h2 style={{
-                  fontSize: '26px',
-                  fontWeight: '700',
-                  margin: '0 0 8px 0',
-                  color: '#0f172a'
-                }}>Customer Login</h2>
-                <p style={{
-                  margin: '0 0 32px 0',
-                  color: '#64748b',
-                  fontSize: '15px'
-                }}>Secure Email & Password authentication</p>
-
-                {/* Email */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    marginBottom: '8px'
-                  }}>Email Address</label>
-                  <div style={{ position: 'relative' }}>
+                <div className="ultra-input-group">
+                  <label>Email Address</label>
+                  <div className="ultra-input-wrapper">
+                    <span className="input-icon"><Icon name="mail" size={18} /></span>
                     <input
                       type="email"
-                      value={customerEmail}
-                      onChange={(e) => setCustomerEmail(e.target.value)}
-                      placeholder="your@email.com"
+                      className="ultra-input has-icon"
+                      placeholder="name@email.com"
+                      value={loginEmail}
+                      onChange={e => setLoginEmail(e.target.value)}
                       required
-                      autoFocus
-                      style={{
-                        width: '100%',
-                        padding: '15px 18px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        outline: 'none'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none'
-                    }}>
-                      <Icon name="mail" size={20} />
-                    </div>
                   </div>
                 </div>
 
-                {/* Password */}
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{
-                    display: 'block',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    color: '#0f172a',
-                    marginBottom: '8px'
-                  }}>Password</label>
-                  <div style={{ position: 'relative' }}>
+                <div className="ultra-input-group">
+                  <label>Password</label>
+                  <div className="ultra-input-wrapper">
+                    <span className="input-icon"><Icon name="lock" size={18} /></span>
                     <input
-                      type={showCustomerPassword ? 'text' : 'password'}
-                      value={customerPassword}
-                      onChange={(e) => setCustomerPassword(e.target.value)}
+                      type={showLoginPw ? 'text' : 'password'}
+                      className="ultra-input has-icon"
                       placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={e => setLoginPassword(e.target.value)}
                       required
-                      style={{
-                        width: '100%',
-                        padding: '15px 48px 15px 48px',
-                        border: '2px solid #e2e8f0',
-                        borderRadius: '12px',
-                        fontSize: '15px',
-                        fontFamily: 'inherit',
-                        boxSizing: 'border-box',
-                        transition: 'all 0.2s',
-                        outline: 'none'
-                      }}
-                      onFocus={(e) => e.target.style.borderColor = '#6366f1'}
-                      onBlur={(e) => e.target.style.borderColor = '#e2e8f0'}
                     />
-                    <div style={{
-                      position: 'absolute',
-                      left: '16px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      color: '#94a3b8',
-                      pointerEvents: 'none'
-                    }}>
-                      <Icon name="lock" size={20} />
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setShowCustomerPassword(!showCustomerPassword)}
-                      style={{
-                        position: 'absolute',
-                        right: '16px',
-                        top: '50%',
-                        transform: 'translateY(-50%)',
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        color: '#94a3b8',
-                        padding: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                      }}
-                    >
-                      <Icon name={showCustomerPassword ? 'eye-off' : 'eye'} size={20} />
-                    </button>
+                    <EyeBtn show={showLoginPw} onToggle={() => setShowLoginPw(p => !p)} />
                   </div>
                 </div>
 
-                {/* Error */}
-                {customerError && (
-                  <div style={{
-                    padding: '14px 16px',
-                    background: '#fee2e2',
-                    border: '1px solid #fca5a5',
-                    borderRadius: '12px',
-                    color: '#991b1b',
-                    fontSize: '14px',
-                    marginBottom: '20px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px'
-                  }}>
-                    <Icon name="alert-circle" size={18} />
-                    {customerError}
-                  </div>
-                )}
+                {renderError(customerError)}
 
-                {/* Submit */}
-                <button
-                  type="submit"
-                  disabled={customerLoading}
-                  style={{
-                    width: '100%',
-                    padding: '14px 24px',
-                    background: customerLoading ? '#94a3b8' : '#6366f1',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '12px',
-                    fontSize: '15px',
-                    fontWeight: '700',
-                    cursor: customerLoading ? 'not-allowed' : 'pointer',
-                    transition: 'all 0.2s',
-                    letterSpacing: '0.5px'
-                  }}
-                  onMouseOver={(e) => !customerLoading && (e.target.style.background = '#4f46e5')}
-                  onMouseOut={(e) => !customerLoading && (e.target.style.background = '#6366f1')}
-                >
-                  {customerLoading ? '🔄 Logging in...' : '✅ Login'}
+                <button type="submit" className="ultra-btn" disabled={customerLoading}>
+                  {customerLoading
+                    ? <><Icon name="loader" size={18} className="spin" /> Signing In...</>
+                    : <>Customer Login <Icon name="user" size={18} /></>}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleCustomerRegister}>
+                <div className="ultra-input-group">
+                  <label>Full Name</label>
+                  <input
+                    type="text"
+                    className="ultra-input"
+                    placeholder="John Doe"
+                    value={regName}
+                    onChange={e => setRegName(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="ultra-input-group">
+                  <label>Email</label>
+                  <input
+                    type="email"
+                    className="ultra-input"
+                    placeholder="john@example.com"
+                    value={regEmail}
+                    onChange={e => setRegEmail(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="ultra-input-group">
+                  <label>Phone</label>
+                  <input
+                    type="tel"
+                    className="ultra-input"
+                    placeholder="9876543210"
+                    value={regPhone}
+                    onChange={e => setRegPhone(e.target.value)}
+                    required
+                  />
+                </div>
+                <div className="ultra-input-group">
+                  <label>Create Password</label>
+                  <div className="ultra-input-wrapper">
+                    <input
+                      type={showRegPw ? 'text' : 'password'}
+                      className="ultra-input"
+                      placeholder="Minimum 6 chars"
+                      value={regPassword}
+                      onChange={e => setRegPassword(e.target.value)}
+                      minLength={6}
+                      required
+                    />
+                    <EyeBtn show={showRegPw} onToggle={() => setShowRegPw(p => !p)} />
+                  </div>
+                </div>
+
+                {renderError(customerError)}
+
+                <button type="submit" className="ultra-btn" disabled={customerLoading}>
+                  {customerLoading
+                    ? <><Icon name="loader" size={18} className="spin" /> Creating Account...</>
+                    : <>Register Now <Icon name="user-plus" size={18} /></>}
                 </button>
               </form>
             )}
           </div>
-        </div>
+        )}
 
-        {/* Footer */}
-        <div style={{
-          textAlign: 'center',
-          color: 'rgba(255,255,255,0.85)',
-          fontSize: '13px',
-          fontWeight: '500'
-        }}>
-          © {currentYear} 26:07 Electronics · Secure & Reliable
+        <div className="ultra-footer">
+          <p>© {new Date().getFullYear()} 26:07 Electronics. All rights reserved.</p>
         </div>
       </div>
     </div>
   );
-};
-
-Login.propTypes = {
-  onLogin: PropTypes.func.isRequired,
 };
 
 export default Login;

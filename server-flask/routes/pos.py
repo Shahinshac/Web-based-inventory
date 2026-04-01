@@ -110,6 +110,14 @@ def checkout():
 
     if split_payment_details:
         bill["splitPaymentDetails"] = split_payment_details
+    
+    if payment_mode == 'emi':
+        emi_data = data.get('emiDetails', {})
+        bill["emiDetails"] = {
+            "months": int(emi_data.get('months', 0)),
+            "emiAmount": float(emi_data.get('emiAmount', 0)),
+            "downPayment": float(emi_data.get('downPayment', 0))
+        }
 
     # Calculate item aggregates
     # discount_factor is applied proportionally to each item's subtotal for per-item GST
@@ -255,7 +263,8 @@ def checkout():
         "igst": bill["igst"],
         "gstAmount": bill["gstAmount"],
         "grandTotal": bill["grandTotal"],
-        "profit": bill["totalProfit"]
+        "profit": bill["totalProfit"],
+        "emiDetails": bill.get("emiDetails")
     })
 
 @pos_bp.route('/', methods=['GET'])
@@ -289,6 +298,7 @@ def get_invoices():
             "paymentMode": b.get("paymentMode", "cash"),
             "paymentStatus": b.get("paymentStatus", "Paid"),
             "splitPaymentDetails": spd,
+            "emiDetails": b.get("emiDetails"),
             "items": [{
                 "productId": str(i.get("productId")) if i.get("productId") else None,
                 "name": i.get("productName", "Unknown"),
@@ -341,7 +351,8 @@ def get_invoice(id):
         "igst": invoice.get("igst", 0),
         "gstAmount": invoice.get("gstAmount"),
         "grandTotal": invoice.get("grandTotal"),
-        "paymentMode": invoice.get("paymentMode")
+        "paymentMode": invoice.get("paymentMode"),
+        "emiDetails": invoice.get("emiDetails")
     })
 
 @pos_bp.route('/<id>/public', methods=['POST'])

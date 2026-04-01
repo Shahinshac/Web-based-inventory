@@ -20,12 +20,17 @@ from services.audit_service import log_audit
 
 logger = logging.getLogger(__name__)
 
-customer_auth_bp = Blueprint('customer_auth', __name__)
+customer_auth_v2_bp = Blueprint('customer_auth_v2', __name__)
+
+
+@customer_auth_v2_bp.route('/check-active', methods=['GET'])
+def check_active():
+    return jsonify({"status": "active", "blueprint": "customer_auth_v2"}), 200
 
 
 # ── REGISTER ─────────────────────────────────────────────────────────────────
 
-@customer_auth_bp.route('/register', methods=['POST'])
+@customer_auth_v2_bp.route('/register', methods=['POST'])
 def customer_register():
     """Register a customer account with email + password.
     Only emails that already exist in the customers collection can register."""
@@ -76,7 +81,7 @@ def customer_register():
 
 # ── LOGIN ─────────────────────────────────────────────────────────────────────
 
-@customer_auth_bp.route('/login', methods=['POST'])
+@customer_auth_v2_bp.route('/login', methods=['POST'])
 def customer_login():
     """Login a customer with email + password. Returns a JWT token."""
     data = request.get_json() or {}
@@ -142,7 +147,7 @@ def customer_login():
 
 # ── CHANGE PASSWORD ───────────────────────────────────────────────────────────
 
-@customer_auth_bp.route('/change-password', methods=['POST'])
+@customer_auth_v2_bp.route('/change-password', methods=['POST'])
 def customer_change_password():
     """Allow a customer to change their password (must supply current password)."""
     data = request.get_json() or {}
