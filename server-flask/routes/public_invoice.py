@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, request, jsonify
@@ -6,6 +7,7 @@ from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
 
 public_invoice_bp = Blueprint('public_invoice', __name__)
+logger = logging.getLogger(__name__)
 
 # Public Invoice View Route (No Authentication Required)
 @public_invoice_bp.route('/<token>', methods=['GET'])
@@ -141,6 +143,14 @@ def public_invoice_view(token):
     gst_amount = invoice.get('gstAmount', 0) or 0
     grand_total = invoice.get('grandTotal', 0) or 0
 
+    # EMI data
+    emi_enabled = invoice.get('emiEnabled', False)
+    emi_down_payment = invoice.get('emiDownPayment', 0) or 0
+    emi_monthly_amount = invoice.get('emiMonthlyAmount', 0) or 0
+    emi_tenure = invoice.get('emiTenure', 0) or 0
+    emi_total_amount = invoice.get('emiTotalAmount', 0) or 0
+    emi_plan_id = invoice.get('emiPlanId')
+
     # Build items rows
     items_html = ""
     for idx, item in enumerate(invoice.get('items', []), 1):
@@ -184,6 +194,92 @@ def public_invoice_view(token):
     place_row = f'<p>{customer_place}</p>' if customer_place else ''
     disc_row = (f'<div class="sum-row discount"><span>Discount ({discount_pct}%)</span>'
                 f'<span>-&#8377;{discount_amt:.2f}</span></div>') if discount_amt > 0 else ''
+
+    # EMI section HTML
+    emi_section = ''
+    if emi_enabled and emi_monthly_amount > 0:
+        # Fetch EMI plan details for installment schedule
+        emi_installments_html = ''
+        if emi_plan_id:
+            try:
+                emi_plan = db.emi_plans.find_one({"_id": ObjectId(emi_plan_id)})
+                if emi_plan and emi_plan.get('installments'):
+                    # Show first 3 installments as preview
+                    for inst in emi_plan['installments'][:3]:
+                        inst_no = inst.get('installmentNo', 0)
+                        inst_due = inst.get('dueDate')
+                        inst_amt = inst.get('amount', 0)
+                        inst_status = inst.get('status', 'pending')
+                        
+                        if isinstance(inst_due, datetime):
+                            inst_due_str = inst_due.strftime('%d %b %Y')
+                        else:
+                            inst_due_str = str(inst_due)
+                        
+                        status_badge = {
+                            'paid': '<span style="color:#10b981;font-weight:600;">&#10003; Paid</span>',
+                            'partial': '<span style="color:#f59e0b;font-weight:600;">&#9679; Partial</span>',
+                            'pending': '<span style="color:#94a3b8;font-weight:600;">&#9679; Pending</span>'
+                        }.get(inst_status, '<span style="color:#94a3b8;">Pending</span>')
+                        
+                        emi_installments_html += f'''
+                        <tr>
+                          <td style="text-align:center;color:#64748b;">{inst_no}</td>
+                          <td>{inst_due_str}</td>
+                          <td style="text-align:right;">&#8377;{inst_amt:.2f}</td>
+                          <td style="text-align:center;">{status_badge}</td>
+                        </tr>
+                        '''
+                    
+                    if len(emi_plan['installments']) > 3:
+                        remaining = len(emi_plan['installments']) - 3
+                        emi_installments_html += f'''
+                        <tr>
+                          <td colspan="4" style="text-align:center;color:#94a3b8;font-size:11px;padding:8px;">
+                            ... and {remaining} more installment(s)
+                          </td>
+                        </tr>
+                        '''
+            except Exception as e:
+                logger.error(f"Error fetching EMI installments: {e}")
+        
+        down_payment_row = f'<div class="emi-info-row"><span>Down Payment:</span><span>&#8377;{emi_down_payment:.2f}</span></div>' if emi_down_payment > 0 else ''
+        
+        installments_table = f'''
+        <div style="margin-top:16px;">
+          <h4 style="font-size:12px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;">Installment Schedule Preview</h4>
+          <table style="width:100%;font-size:12px;border-collapse:collapse;">
+            <thead>
+              <tr style="background:#f8fafc;border-bottom:1px solid #e2e8f0;">
+                <th style="padding:8px;text-align:center;color:#64748b;font-weight:600;">#</th>
+                <th style="padding:8px;text-align:left;color:#64748b;font-weight:600;">Due Date</th>
+                <th style="padding:8px;text-align:right;color:#64748b;font-weight:600;">Amount</th>
+                <th style="padding:8px;text-align:center;color:#64748b;font-weight:600;">Status</th>
+              </tr>
+            </thead>
+            <tbody>{emi_installments_html}</tbody>
+          </table>
+        </div>
+        ''' if emi_installments_html else ''
+        
+        emi_section = f'''
+        <div class="emi-section">
+          <div class="emi-header">
+            <h3>&#128179; EMI Payment Plan</h3>
+            <span class="emi-badge">Zero Interest</span>
+          </div>
+          <div class="emi-content">
+            <div class="emi-info-grid">
+              {down_payment_row}
+              <div class="emi-info-row"><span>Monthly EMI:</span><span style="font-size:18px;font-weight:800;color:#10b981;">&#8377;{emi_monthly_amount:.2f}</span></div>
+              <div class="emi-info-row"><span>Tenure:</span><span><strong>{emi_tenure} months</strong></span></div>
+              <div class="emi-info-row"><span>Total Financed:</span><span>&#8377;{(emi_total_amount - emi_down_payment):.2f}</span></div>
+              <div class="emi-info-row"><span>Interest Rate:</span><span style="color:#10b981;font-weight:700;">0% (Zero Interest)</span></div>
+            </div>
+            {installments_table}
+          </div>
+        </div>
+        '''
 
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -277,6 +373,56 @@ def public_invoice_view(token):
       margin-top:10px;padding-top:12px;border-top:2px solid #e2e8f0;
       font-size:18px;font-weight:800;color:#4f46e5;
     }}
+    .emi-section{{
+      background:linear-gradient(135deg,#ecfdf5 0%,#d1fae5 100%);
+      border:2px solid #10b981;
+      border-radius:12px;
+      padding:24px;
+      margin-bottom:32px;
+    }}
+    .emi-header{{
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      margin-bottom:16px;
+      padding-bottom:12px;
+      border-bottom:2px solid #a7f3d0;
+    }}
+    .emi-header h3{{
+      font-size:16px;
+      font-weight:800;
+      color:#065f46;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }}
+    .emi-badge{{
+      background:#10b981;
+      color:#fff;
+      padding:4px 12px;
+      border-radius:20px;
+      font-size:11px;
+      font-weight:700;
+      text-transform:uppercase;
+      letter-spacing:0.5px;
+    }}
+    .emi-content{{color:#064e3b;}}
+    .emi-info-grid{{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:12px;
+      margin-bottom:8px;
+    }}
+    .emi-info-row{{
+      display:flex;
+      justify-content:space-between;
+      padding:10px 14px;
+      background:#fff;
+      border-radius:8px;
+      font-size:13px;
+      border:1px solid #a7f3d0;
+    }}
+    .emi-info-row span:first-child{{color:#64748b;font-weight:500;}}
+    .emi-info-row span:last-child{{color:#0f172a;font-weight:700;}}
     .inv-footer{{
       position:absolute;bottom:0;left:0;right:0;
       padding:20px 44px 24px;text-align:center;
@@ -381,6 +527,8 @@ def public_invoice_view(token):
           <div class="sum-row total"><span>Grand Total</span><span>&#8377;{grand_total:.2f}</span></div>
         </div>
       </div>
+
+      {emi_section}
     </div>
 
     <div class="inv-footer">
