@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import Icon from '../Icon';
+import Icon from '../../Icon';
 import { fetchCustomerInvoices, downloadInvoicePDF } from '../../services/customerPortalService';
 
 const CustomerInvoices = ({ currentUser }) => {

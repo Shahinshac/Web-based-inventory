@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from 'react';
-import Icon from '../Icon';
+import Icon from '../../Icon';
 import CustomerDashboard from './CustomerDashboard';
 import CustomerInvoices from './CustomerInvoices';
 import CustomerWarranties from './CustomerWarranties';

@@ -4,8 +4,8 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import Icon from '../Icon';
-import { 
+import Icon from '../../Icon';
+import {
   fetchCustomerProfile, 
   updateCustomerProfile,
   downloadVCard,
