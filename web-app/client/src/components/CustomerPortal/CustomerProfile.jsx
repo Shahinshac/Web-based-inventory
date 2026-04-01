@@ -1,320 +1,353 @@
 /**
  * @file CustomerProfile.jsx
- * @description Customer profile management with edit capabilities
+ * @description Customer profile with editable fields and downloads
  */
 
-import React, { useState } from 'react';
-import Icon from '../../Icon.jsx';
-import { apiPatch } from '../../utils/api';
+import React, { useState, useEffect } from 'react';
+import Icon from '../Icon';
+import { 
+  fetchCustomerProfile, 
+  updateCustomerProfile,
+  downloadVCard,
+  downloadPVCCard
+} from '../../services/customerPortalService';
 
 const CustomerProfile = ({ currentUser }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [profile, setProfile] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [successMessage, setSuccessMessage] = useState(null);
-
+  const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: currentUser?.name || '',
-    email: currentUser?.email || '',
-    phone: currentUser?.phone || currentUser?.username || '',
-    address: currentUser?.address || '',
-    city: currentUser?.city || '',
-    pincode: currentUser?.pincode || ''
+    name: '',
+    phone: ''
   });
+  const [saving, setSaving] = useState(false);
 
-  const [passwordData, setPasswordData] = useState({
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  });
+  useEffect(() => {
+    loadProfile();
+  }, []);
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handlePasswordChange = (e) => {
-    const { name, value } = e.target;
-    setPasswordData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSaveProfile = async () => {
+  const loadProfile = async () => {
     try {
       setLoading(true);
       setError(null);
-      await apiPatch('/api/customer/profile', formData);
-      setSuccessMessage('Profile updated successfully!');
-      setIsEditing(false);
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (err) {
-      setError(err.message);
-      console.error('Failed to update profile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleChangePassword = async () => {
-    if (passwordData.newPassword !== passwordData.confirmPassword) {
-      setError('New passwords do not match');
-      return;
-    }
-
-    if (passwordData.newPassword.length < 6) {
-      setError('Password must be at least 6 characters');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      await apiPatch('/api/customer/change-password', {
-        oldPassword: passwordData.oldPassword,
-        newPassword: passwordData.newPassword
+      const data = await fetchCustomerProfile();
+      setProfile(data);
+      setFormData({
+        name: data.name || '',
+        phone: data.phone || ''
       });
-      setSuccessMessage('Password changed successfully!');
-      setPasswordData({ oldPassword: '', newPassword: '', confirmPassword: '' });
-      setTimeout(() => setSuccessMessage(null), 3000);
     } catch (err) {
-      setError(err.message);
-      console.error('Failed to change password:', err);
+      setError(err.message || 'Failed to load profile');
     } finally {
       setLoading(false);
     }
   };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    try {
+      setSaving(true);
+      await updateCustomerProfile(formData);
+      setProfile({ ...profile, ...formData });
+      setEditing(false);
+      alert('Profile updated successfully!');
+    } catch (err) {
+      alert('Failed to update profile: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    setFormData({
+      name: profile?.name || '',
+      phone: profile?.phone || ''
+    });
+    setEditing(false);
+  };
+
+  const handleDownloadVCard = async () => {
+    try {
+      await downloadVCard();
+    } catch (err) {
+      alert('Failed to download vCard: ' + err.message);
+    }
+  };
+
+  const handleDownloadPVCCard = async () => {
+    try {
+      await downloadPVCCard();
+    } catch (err) {
+      alert('Failed to download membership card: ' + err.message);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="loading-spinner">
+        <div className="spinner"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="error-message">
+        <Icon name="alert-circle" size={20} />
+        <span>{error}</span>
+      </div>
+    );
+  }
 
   return (
-    <div className="portal-section">
-      {/* Profile Header & Avatar */}
-      <div className="profile-header-detailed">
-        <div className="profile-avatar-large">
-          {currentUser?.name?.charAt(0) || 'C'}
-        </div>
-        <div className="profile-info-summary">
-          <h3>{currentUser?.name || 'Customer'}</h3>
-          <p>{currentUser?.email || 'No email provided'}</p>
-          <div className="profile-badges">
-            <span className="badge-premium">Premium</span>
-            <span className="badge-verified">Verified</span>
-          </div>
-        </div>
-      </div>
-
-      {error && (
-        <div className="alert alert-error">
-          <Icon name="alert-circle" size={16} />
-          {error}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="alert alert-success">
-          <Icon name="check-circle" size={16} />
-          {successMessage}
-        </div>
-      )}
-
-      {/* Profile Information */}
-      <div className="profile-section">
-        <div className="section-title-bar">
-          <h3>Account Information</h3>
-          {!isEditing && (
+    <div className="customer-profile">
+      {/* Profile Card */}
+      <div className="portal-card">
+        <div className="portal-card-header">
+          <h2 className="portal-card-title">
+            <Icon name="user" size={24} />
+            My Profile
+          </h2>
+          {!editing && (
             <button
-              className="edit-btn"
-              onClick={() => setIsEditing(true)}
+              className="btn-primary"
+              onClick={() => setEditing(true)}
             >
               <Icon name="edit" size={16} />
-              Edit
+              Edit Profile
             </button>
           )}
         </div>
 
-        <div className="profile-grid">
-          <div className="profile-field">
-            <label>Full Name</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="name"
-                value={formData.name}
-                onChange={handleInputChange}
-                className="form-control"
-              />
-            ) : (
-              <p className="field-value">{formData.name}</p>
-            )}
-          </div>
+        {editing ? (
+          <form onSubmit={handleSubmit}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '600',
+                  color: '#4a5568'
+                }}>
+                  Full Name *
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '1rem'
+                  }}
+                />
+              </div>
 
-          <div className="profile-field">
-            <label>Email Address</label>
-            {isEditing ? (
-              <input
-                type="email"
-                name="email"
-                value={formData.email}
-                onChange={handleInputChange}
-                className="form-control"
-              />
-            ) : (
-              <p className="field-value">{formData.email || 'Not provided'}</p>
-            )}
-          </div>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '600',
+                  color: '#4a5568'
+                }}>
+                  Phone Number *
+                </label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  required
+                  pattern="[0-9]{10}"
+                  maxLength="10"
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '1rem'
+                  }}
+                />
+                <small style={{ color: '#718096', fontSize: '0.875rem' }}>
+                  10-digit mobile number
+                </small>
+              </div>
 
-          <div className="profile-field">
-            <label>Phone Number</label>
-            {isEditing ? (
-              <input
-                type="tel"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                disabled
-                className="form-control"
-              />
-            ) : (
-              <p className="field-value">{formData.phone}</p>
-            )}
-          </div>
+              <div>
+                <label style={{ 
+                  display: 'block', 
+                  marginBottom: '0.5rem', 
+                  fontWeight: '600',
+                  color: '#4a5568'
+                }}>
+                  Email Address
+                </label>
+                <input
+                  type="email"
+                  value={profile?.email || ''}
+                  disabled
+                  style={{
+                    width: '100%',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    fontSize: '1rem',
+                    background: '#f7fafc',
+                    color: '#a0aec0'
+                  }}
+                />
+                <small style={{ color: '#718096', fontSize: '0.875rem' }}>
+                  Email cannot be changed
+                </small>
+              </div>
 
-          <div className="profile-field">
-            <label>Address</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="address"
-                value={formData.address}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="Street address"
-              />
-            ) : (
-              <p className="field-value">{formData.address || 'Not provided'}</p>
-            )}
-          </div>
-
-          <div className="profile-field">
-            <label>City</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="city"
-                value={formData.city}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="City"
-              />
-            ) : (
-              <p className="field-value">{formData.city || 'Not provided'}</p>
-            )}
-          </div>
-
-          <div className="profile-field">
-            <label>Pincode</label>
-            {isEditing ? (
-              <input
-                type="text"
-                name="pincode"
-                value={formData.pincode}
-                onChange={handleInputChange}
-                className="form-control"
-                placeholder="6-digit pincode"
-                maxLength="6"
-              />
-            ) : (
-              <p className="field-value">{formData.pincode || 'Not provided'}</p>
-            )}
-          </div>
-
-          {isEditing && (
-            <div className="profile-field full-width">
-              <div style={{gap: '8px', display: 'flex'}}>
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
                 <button
-                  className="btn btn-primary"
-                  onClick={handleSaveProfile}
-                  disabled={loading}
+                  type="submit"
+                  className="btn-primary"
+                  disabled={saving}
+                  style={{ flex: 1 }}
                 >
-                  {loading ? 'Saving...' : 'Save Changes'}
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
                 <button
-                  className="btn btn-secondary"
-                  onClick={() => setIsEditing(false)}
-                  disabled={loading}
+                  type="button"
+                  className="btn-secondary"
+                  onClick={handleCancel}
+                  disabled={saving}
+                  style={{ flex: 1 }}
                 >
                   Cancel
                 </button>
               </div>
             </div>
-          )}
+          </form>
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: '#718096',
+                marginBottom: '0.25rem'
+              }}>
+                Full Name
+              </div>
+              <div style={{ 
+                fontSize: '1.125rem', 
+                fontWeight: '600',
+                color: '#2d3748'
+              }}>
+                {profile?.name || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: '#718096',
+                marginBottom: '0.25rem'
+              }}>
+                Email Address
+              </div>
+              <div style={{ 
+                fontSize: '1.125rem', 
+                fontWeight: '600',
+                color: '#2d3748'
+              }}>
+                {profile?.email || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: '#718096',
+                marginBottom: '0.25rem'
+              }}>
+                Phone Number
+              </div>
+              <div style={{ 
+                fontSize: '1.125rem', 
+                fontWeight: '600',
+                color: '#2d3748'
+              }}>
+                {profile?.phone || 'N/A'}
+              </div>
+            </div>
+
+            <div>
+              <div style={{ 
+                fontSize: '0.875rem', 
+                color: '#718096',
+                marginBottom: '0.25rem'
+              }}>
+                Account Type
+              </div>
+              <div>
+                <span className="badge badge-info">
+                  {profile?.role || 'Customer'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Downloads Card */}
+      <div className="portal-card">
+        <div className="portal-card-header">
+          <h2 className="portal-card-title">
+            <Icon name="download" size={24} />
+            Downloads
+          </h2>
+        </div>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <button
+            className="btn-secondary"
+            onClick={handleDownloadVCard}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem',
+              justifyContent: 'center',
+              padding: '1rem'
+            }}
+          >
+            <Icon name="credit-card" size={20} />
+            <span>Download Business Contact (vCard)</span>
+          </button>
+          <button
+            className="btn-secondary"
+            onClick={handleDownloadPVCCard}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.75rem',
+              justifyContent: 'center',
+              padding: '1rem'
+            }}
+          >
+            <Icon name="id-card" size={20} />
+            <span>Download Membership Card (PDF)</span>
+          </button>
         </div>
       </div>
 
-      {/* Change Password */}
-      <div className="profile-section-card mt-4">
-        <h3>Change Password</h3>
-        <p className="section-desc-text">Keep your account secure with a strong password</p>
-        <div className="profile-grid">
-          <div className="profile-field full-width">
-            <label>Current Password</label>
-            <input
-              type="password"
-              name="oldPassword"
-              value={passwordData.oldPassword}
-              onChange={handlePasswordChange}
-              className="form-control"
-            />
-          </div>
-
-          <div className="profile-field full-width">
-            <label>New Password</label>
-            <input
-              type="password"
-              name="newPassword"
-              value={passwordData.newPassword}
-              onChange={handlePasswordChange}
-              className="form-control"
-            />
-          </div>
-
-          <div className="profile-field full-width">
-            <label>Confirm Password</label>
-            <input
-              type="password"
-              name="confirmPassword"
-              value={passwordData.confirmPassword}
-              onChange={handlePasswordChange}
-              className="form-control"
-            />
-          </div>
-
-          <div className="profile-field full-width">
-            <button
-              className="btn btn-primary"
-              onClick={handleChangePassword}
-              disabled={loading || !passwordData.oldPassword || !passwordData.newPassword}
-            >
-              {loading ? 'Changing...' : 'Change Password'}
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Account Stats */}
-      <div className="profile-section-card mt-4">
-        <div className="info-grid">
+      {/* Security Note */}
+      <div className="portal-card" style={{ background: '#f7fafc' }}>
+        <div style={{ display: 'flex', gap: '1rem' }}>
+          <Icon name="lock" size={24} color="#667eea" />
           <div>
-            <p className="info-label">Account Created</p>
-            <p className="info-value">{new Date(currentUser?.createdAt).toLocaleDateString('en-IN') || 'Jan 2024'}</p>
-          </div>
-          <div>
-            <p className="info-label">Account Status</p>
-            <p className="info-value">
-              <span className="status-badge green">Active Member</span>
+            <h3 style={{ fontSize: '1rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              Security Note
+            </h3>
+            <p style={{ color: '#718096', fontSize: '0.875rem', lineHeight: '1.6' }}>
+              This portal uses password-based authentication. Your email address is used as your 
+              login identifier and cannot be changed. If you need to update your email, please 
+              contact our support team.
             </p>
           </div>
         </div>
