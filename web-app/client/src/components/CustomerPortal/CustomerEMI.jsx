@@ -4,7 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import Icon from '../Icon';
+import Icon from '../../Icon';
 import { fetchCustomerEMIPlans, getEMIDetails } from '../../services/customerPortalService';
 
 const CustomerEMI = ({ currentUser }) => {
