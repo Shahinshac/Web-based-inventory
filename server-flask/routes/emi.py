@@ -30,18 +30,29 @@ def create_emi():
     try:
         bill_id = ObjectId(data['billId'])
         customer_id = ObjectId(data['customerId'])
-        principal_amount = float(data['amount'])
+        total_amount = float(data['amount'])
+        down_payment = float(data.get('downPayment', 0))  # Can be 0 or higher
         tenure = int(data['tenure'])
     except (ValueError, TypeError) as e:
         return jsonify({"error": f"Invalid data format: {str(e)}"}), 400
+
+    # Validate down payment
+    if down_payment < 0:
+        return jsonify({"error": "Down payment cannot be negative"}), 400
+    
+    if down_payment >= total_amount:
+        return jsonify({"error": "Down payment must be less than total amount"}), 400
+
+    # Calculate principal amount (amount to be financed via EMI)
+    principal_amount = total_amount - down_payment
 
     # Validate tenure
     if tenure not in EMI_TENURES:
         return jsonify({"error": f"Invalid tenure. Allowed: {EMI_TENURES}"}), 400
 
-    # Validate amount
+    # Validate EMI amount (not total amount)
     if principal_amount < EMI_MIN_AMOUNT:
-        return jsonify({"error": f"EMI minimum amount is ₹{EMI_MIN_AMOUNT}"}), 400
+        return jsonify({"error": f"EMI principal amount (after down payment) must be at least ₹{EMI_MIN_AMOUNT}"}), 400
 
     db = get_db()
 
@@ -85,11 +96,12 @@ def create_emi():
         "customerId": customer_id,
         "customerName": customer.get('name'),
         "customerPhone": customer.get('phone'),
-        "principalAmount": principal_amount,
+        "totalAmount": total_amount,  # Total bill amount
+        "downPayment": down_payment,  # Down payment amount (can be 0)
+        "principalAmount": principal_amount,  # Amount to be financed
         "tenure": tenure,
         "monthlyEmi": monthly_emi,
         "totalInterest": 0,  # Zero interest
-        "totalAmount": principal_amount,
         "startDate": start_date,
         "endDate": start_date + timedelta(days=30 * tenure),
         "status": "active",  # active, closed, defaulted
@@ -110,6 +122,10 @@ def create_emi():
         {"$set": {
             "emiPlanId": result.inserted_id,
             "emiEnabled": True,
+            "emiDownPayment": down_payment,
+            "emiTotalAmount": total_amount,
+            "emiMonthlyAmount": monthly_emi,
+            "emiTenure": tenure,
             "updatedAt": datetime.utcnow()
         }}
     )
@@ -119,17 +135,20 @@ def create_emi():
         action="create_emi",
         entity="EMI Plan",
         entity_id=str(result.inserted_id),
-        details=f"Created EMI plan for bill {bill.get('billNumber')} - {tenure} months"
+        details=f"Created EMI plan for bill {bill.get('billNumber')} - {tenure} months, Down payment: ₹{down_payment}"
     )
 
+    down_payment_msg = f" (Down payment: ₹{down_payment})" if down_payment > 0 else ""
     return jsonify({
         "success": True,
         "emiPlanId": str(result.inserted_id),
-        "message": f"EMI plan created: {tenure} months @ ₹{monthly_emi}/month",
+        "message": f"EMI plan created: {tenure} months @ ₹{monthly_emi}/month{down_payment_msg}",
         "emiPlan": {
             "_id": str(emi_plan['_id']),
+            "totalAmount": total_amount,
+            "downPayment": down_payment,
+            "principalAmount": principal_amount,
             "monthlyEmi": monthly_emi,
-            "totalAmount": principal_amount,
             "tenure": tenure,
             "startDate": start_date.isoformat(),
             "endDate": (start_date + timedelta(days=30 * tenure)).isoformat()
