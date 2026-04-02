@@ -17,6 +17,8 @@ from routes.customer_portal import customer_portal_bp
 from routes.payment_links import payment_links_bp
 from routes.emi import emi_bp
 from routes.exports import exports_bp
+from routes.employees import employees_bp
+from routes.salary import salary_bp
 from services.cloudinary_service import init_cloudinary
 import logging
 import os
@@ -73,6 +75,8 @@ app.register_blueprint(customer_portal_bp, url_prefix='/api/customer')
 app.register_blueprint(payment_links_bp, url_prefix='/api/payment-links')
 app.register_blueprint(emi_bp, url_prefix='/api/emi')
 app.register_blueprint(exports_bp, url_prefix='/api/exports')
+app.register_blueprint(employees_bp, url_prefix='/api/employees')
+app.register_blueprint(salary_bp, url_prefix='/api/salary')
 # Public invoice viewing (no authentication required)
 app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
 # Public customer card viewing (no authentication required)
