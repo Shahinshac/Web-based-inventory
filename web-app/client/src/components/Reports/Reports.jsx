@@ -45,7 +45,28 @@ export default function Reports({
 
         if (res.ok) {
           const data = await res.json();
-          setFinancialSummary(data);
+
+          // Normalize response to handle both old and new API response structures
+          const normalizedData = {
+            ...data,
+            sales: data.sales || {
+              totalSales: data.revenue?.totalRevenue || 0,
+              totalReturns: 0,
+              netRevenue: data.revenue?.baseRevenue || 0
+            },
+            costs: data.costs || {
+              totalCogs: data.costs?.cogs || 0,
+              totalReturnCost: 0,
+              netCogs: data.costs?.cogs || 0
+            },
+            profitSummary: {
+              ...data.profitSummary,
+              netProfit: data.profitSummary?.netProfit || data.netProfit?.netProfit || data.profitSummary?.grossProfit || 0,
+              netProfitMargin: data.profitSummary?.netProfitMargin || data.netProfit?.netProfitMargin || 0
+            }
+          };
+
+          setFinancialSummary(normalizedData);
         } else {
           console.warn('Failed to fetch financial summary');
         }
@@ -143,18 +164,18 @@ export default function Reports({
               <Icon name="dollar-sign" size={24} />
               <div>
                 <span>Total Sales (incl GST)</span>
-                <strong>{formatCurrency0(financialSummary.sales.totalSales)}</strong>
+                <strong>{formatCurrency0(financialSummary?.sales?.totalSales || financialSummary?.revenue?.totalRevenue || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Gross revenue</small>
               </div>
             </div>
 
             {/* Returns Adjustment - Show if there are returns */}
-            {financialSummary.sales.totalReturns > 0 && (
+            {(financialSummary?.sales?.totalReturns || 0) > 0 && (
               <div className="summary-item" style={{ color: '#ef4444' }}>
                 <Icon name="arrow-down" size={24} />
                 <div>
                   <span>Returns & Refunds</span>
-                  <strong>-{formatCurrency0(financialSummary.sales.totalReturns)}</strong>
+                  <strong>-{formatCurrency0(financialSummary?.sales?.totalReturns || 0)}</strong>
                   <small style={{ color: '#64748b', fontSize: '11px' }}>Refunded to customers</small>
                 </div>
               </div>
@@ -164,7 +185,7 @@ export default function Reports({
               <Icon name="dollar-sign" size={24} />
               <div>
                 <span>Net Revenue (excl GST)</span>
-                <strong>{formatCurrency0(financialSummary.sales.netRevenue)}</strong>
+                <strong>{formatCurrency0(financialSummary?.sales?.netRevenue || financialSummary?.revenue?.baseRevenue || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>After returns & GST</small>
               </div>
             </div>
@@ -173,18 +194,18 @@ export default function Reports({
               <Icon name="shopping-cart" size={24} />
               <div>
                 <span>Product Cost (COGS)</span>
-                <strong>{formatCurrency0(financialSummary.costs.totalCogs)}</strong>
+                <strong>{formatCurrency0(financialSummary?.costs?.totalCogs || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Cost price of sold items</small>
               </div>
             </div>
 
             {/* Return Costs Adjustment - Show if there are returns */}
-            {financialSummary.costs.totalReturnCost > 0 && (
+            {(financialSummary?.costs?.totalReturnCost || 0) > 0 && (
               <div className="summary-item" style={{ color: '#10b981' }}>
                 <Icon name="arrow-up" size={24} />
                 <div>
                   <span>Return Costs Recovered</span>
-                  <strong>-{formatCurrency0(financialSummary.costs.totalReturnCost)}</strong>
+                  <strong>-{formatCurrency0(financialSummary?.costs?.totalReturnCost || 0)}</strong>
                   <small style={{ color: '#64748b', fontSize: '11px' }}>Cost saved from returns</small>
                 </div>
               </div>
@@ -194,7 +215,7 @@ export default function Reports({
               <Icon name="shopping-cart" size={24} />
               <div>
                 <span>Net COGS (after returns)</span>
-                <strong>{formatCurrency0(financialSummary.costs.netCogs)}</strong>
+                <strong>{formatCurrency0(financialSummary?.costs?.netCogs || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Adjusted for returns</small>
               </div>
             </div>
@@ -203,22 +224,22 @@ export default function Reports({
               <Icon name="trending-up" size={24} />
               <div>
                 <span>Gross Profit</span>
-                <strong>{formatCurrency0(financialSummary.profitSummary.grossProfit)}</strong>
+                <strong>{formatCurrency0(financialSummary?.profitSummary?.grossProfit || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>
-                  {financialSummary.profitSummary.grossProfitMargin}% margin
+                  {financialSummary?.profitSummary?.grossProfitMargin || 0}% margin
                 </small>
               </div>
             </div>
 
             <div className="summary-item" style={{
-              color: financialSummary.profitSummary.netProfit >= 0 ? '#10b981' : '#ef4444'
+              color: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : '#ef4444'
             }}>
               <Icon name="trending-up" size={24} />
               <div>
                 <span>Net Profit</span>
-                <strong>{formatCurrency0(financialSummary.profitSummary.netProfit)}</strong>
+                <strong>{formatCurrency0(financialSummary?.profitSummary?.netProfit || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>
-                  {financialSummary.profitSummary.netProfitMargin}% margin
+                  {financialSummary?.profitSummary?.netProfitMargin || 0}% margin
                 </small>
               </div>
             </div>
@@ -227,7 +248,7 @@ export default function Reports({
               <Icon name="percent" size={24} />
               <div>
                 <span>GST Collected</span>
-                <strong>{formatCurrency0(financialSummary.revenue.gstCollected)}</strong>
+                <strong>{formatCurrency0(financialSummary?.revenue?.gstCollected || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>To government</small>
               </div>
             </div>
@@ -247,7 +268,7 @@ export default function Reports({
                   <span>{category}</span>
                   <strong>{formatCurrency0(amount)}</strong>
                   <small style={{ color: '#64748b', fontSize: '11px' }}>
-                    {((amount / (financialSummary?.operatingExpenses.total || 1)) * 100).toFixed(1)}% of total
+                    {((amount / (financialSummary?.operatingExpenses?.total || 1)) * 100).toFixed(1)}% of total
                   </small>
                 </div>
               </div>
