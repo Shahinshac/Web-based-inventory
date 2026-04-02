@@ -4,7 +4,7 @@ import os
 import shutil
 from datetime import datetime
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, g
+from flask import Blueprint, request, jsonify, g, current_app
 
 from database import get_db
 from utils.auth_middleware import authenticate_token, require_admin
@@ -96,38 +96,39 @@ def clear_database():
 
     db = get_db()
     admin = db.users.find_one({"username": admin_username.lower(), "role": "admin"})
-    
+
     if not admin or not bcrypt.checkpw(admin_password.encode('utf-8'), admin['password'].encode('utf-8')):
         return jsonify({"error": "Invalid admin credentials"}), 401
 
     results = {}
-    collections_to_drop = [
+    # Comprehensive collection list - all business data
+    collections_to_clear = [
         'products', 'customers', 'bills', 'invoices', 'expenses',
         'audit_logs', 'product_images', 'user_images', 'returns',
-        'public_invoice_links', 'notifications', 'categories',
-        'warranties', 'payment_links', 'otp_codes'  # New collections for new features
+        'public_invoice_links', 'public_customer_cards', 'notifications',
+        'categories', 'warranties', 'payment_links', 'otp_codes',
+        'emi_plans', 'employees'  # Added missing collections
     ]
-    
-    for coll in collections_to_drop:
+
+    for coll in collections_to_clear:
         try:
             res = getattr(db, coll).delete_many({})
             results[coll] = res.deleted_count
         except Exception as e:
             results[coll] = 0
             logger.warning(f"Failed to clear {coll}: {e}")
-        
+
     try:
         usr_res = db.users.delete_many({"role": {"$ne": "admin"}})
-        results['users'] = usr_res.deleted_count
+        results['users_non_admin'] = usr_res.deleted_count
     except Exception as e:
-        results['users'] = 0
+        results['users_non_admin'] = 0
         logger.warning(f"Failed to clear non-admin users: {e}")
 
-    results['photos'] = 0
     total = sum(results.values())
 
     log_audit(db, "ADMIN_CLEAR_DATABASE", str(admin["_id"]), admin["username"], results)
-    
+
     return jsonify({
         "success": True,
         "message": "All data cleared successfully",
@@ -135,6 +136,119 @@ def clear_database():
         "total": total,
         "timestamp": to_iso_string(utc_now())
     })
+
+@admin_bp.route('/wipe-data', methods=['DELETE'])
+@authenticate_token
+@require_admin
+def wipe_data():
+    """
+    Comprehensive data wipe endpoint.
+    Removes all business data while preserving admin users.
+    Requires admin authentication.
+    """
+    try:
+        user_id = g.user.get('userId')
+        username = g.user.get('username', 'Unknown')
+
+        db = get_db()
+
+        # All business data collections to wipe
+        wipe_results = {}
+        collections_to_wipe = [
+            'products', 'customers', 'bills', 'expenses',
+            'returns', 'warranties', 'emi_plans', 'payment_links',
+            'public_invoice_links', 'public_customer_cards', 'otp_codes',
+            'product_images', 'user_images', 'notifications', 'categories'
+        ]
+
+        # Wipe each collection completely
+        for collection_name in collections_to_wipe:
+            try:
+                coll = getattr(db, collection_name)
+                result = coll.delete_many({})
+                wipe_results[collection_name] = {
+                    "deleted": result.deleted_count,
+                    "status": "success"
+                }
+                logger.info(f"Wiped {collection_name}: {result.deleted_count} records deleted")
+            except Exception as e:
+                wipe_results[collection_name] = {
+                    "deleted": 0,
+                    "status": "failed",
+                    "error": str(e)
+                }
+                logger.warning(f"Failed to wipe {collection_name}: {e}")
+
+        # Delete non-admin users (preserve admin users)
+        try:
+            usr_result = db.users.delete_many({"role": {"$ne": "admin"}})
+            wipe_results['users_non_admin'] = {
+                "deleted": usr_result.deleted_count,
+                "status": "success"
+            }
+            logger.info(f"Deleted non-admin users: {usr_result.deleted_count}")
+        except Exception as e:
+            wipe_results['users_non_admin'] = {
+                "deleted": 0,
+                "status": "failed",
+                "error": str(e)
+            }
+            logger.warning(f"Failed to delete non-admin users: {e}")
+
+        # Clear audit logs (after logging this action)
+        try:
+            audit_result = db.audit_logs.delete_many({})
+            wipe_results['audit_logs'] = {
+                "deleted": audit_result.deleted_count,
+                "status": "success"
+            }
+        except Exception as e:
+            wipe_results['audit_logs'] = {
+                "deleted": 0,
+                "status": "failed",
+                "error": str(e)
+            }
+
+        # Count total records wiped
+        total_wiped = sum(
+            r.get('deleted', 0) for r in wipe_results.values()
+            if isinstance(r, dict)
+        )
+
+        # Verify admin users still exist
+        admin_count = db.users.count_documents({"role": "admin"})
+
+        response = {
+            "success": True,
+            "message": f"Successfully wiped all data. {total_wiped} records deleted across {len(wipe_results)} collections.",
+            "details": wipe_results,
+            "stats": {
+                "total_records_deleted": total_wiped,
+                "collections_wiped": len([r for r in wipe_results.values() if isinstance(r, dict) and r.get('status') == 'success']),
+                "admin_users_preserved": admin_count
+            },
+            "timestamp": to_iso_string(utc_now())
+        }
+
+        # Log this critical action
+        try:
+            log_audit(db, "ADMIN_WIPE_DATA", str(user_id), username, {
+                "total_deleted": total_wiped,
+                "collections": len(collections_to_wipe),
+                "results": {k: v.get('deleted', 0) for k, v in wipe_results.items()}
+            })
+        except Exception as e:
+            logger.warning(f"Could not log wipe action: {e}")
+
+        return jsonify(response), 200
+
+    except Exception as e:
+        logger.error(f"Wipe data error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Data wipe failed",
+            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred during wipe"
+        }), 500
+
 
 @admin_bp.route('/database-stats', methods=['GET'])
 @authenticate_token

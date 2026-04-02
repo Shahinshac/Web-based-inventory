@@ -12,6 +12,7 @@ import InvoicesList from './components/Invoices/InvoicesList';
 import Reports from './components/Reports/Reports';
 import UsersList from './components/Users/UsersList';
 import AuditLogs from './components/AuditLogs/AuditLogs';
+import AdminSettings from './components/AdminSettings/AdminSettings';
 import StockManagement from './components/Inventory/StockManagement';
 import Returns from './components/Returns/Returns';
 import Expenses from './components/Expenses/Expenses';
@@ -1283,6 +1284,12 @@ Esc: Close modals/dialogs`;
             onDeleteUserPhoto={handleDeleteUserPhoto}
           />
         );
+
+      case 'admin-settings':
+        if (!isAdmin) {
+          return <div className="error-message">Admin access required</div>;
+        }
+        return <AdminSettings />;
 
       default:
         return <div>Page not found</div>;
