@@ -272,7 +272,9 @@ def revenue_profit():
     exp_list = list(expenses_cursor)
     total_expenses = exp_list[0]['total'] if exp_list else 0
 
-    net_profit = total_rev - total_expenses
+    # Net Profit = Gross Profit - Operational Expenses
+    # (Revenue - Cost is already accounted for in totalProfit)
+    net_profit = total_prof - total_expenses
 
     daily_map = {}
     for bill in bills:
@@ -297,6 +299,24 @@ def revenue_profit():
     profit_margin = round((total_prof / total_rev * 100), 2) if total_rev > 0 else 0
     avg_order = round(total_rev / total_sales) if total_sales > 0 else 0
 
+    # Calculate EMI-aware payment tracking
+    total_collected = 0
+    total_pending = 0
+    emi_count = 0
+    
+    for bill in bills:
+        grand_total = bill.get("grandTotal", 0)
+        payment_mode = bill.get("paymentMode", "cash")
+        
+        if payment_mode == "emi" and bill.get("emiDetails"):
+            emi_count += 1
+            down_payment = bill["emiDetails"].get("downPayment", 0)
+            total_collected += down_payment
+            total_pending += (grand_total - down_payment)
+        else:
+            # Non-EMI: full amount collected
+            total_collected += grand_total
+    
     return jsonify({
         "totalRevenue": round(total_rev),
         "totalProfit": round(total_prof),
@@ -306,5 +326,10 @@ def revenue_profit():
         "totalSales": total_sales,
         "profitMargin": f"{profit_margin:.2f}",
         "averageOrderValue": avg_order,
-        "dailyData": daily_data
+        "dailyData": daily_data,
+        "paymentSummary": {
+            "totalCollected": round(total_collected),
+            "totalPending": round(total_pending),
+            "emiCount": emi_count
+        }
     })

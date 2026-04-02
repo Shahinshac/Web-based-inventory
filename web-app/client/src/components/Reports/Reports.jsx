@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DateRangeSelector from './DateRangeSelector';
 import Icon from '../../Icon';
-import { formatCurrency0 } from '../../constants';
+import { formatCurrency0, formatCurrency } from '../../constants';
 import { API, getAuthHeaders } from '../../utils/api';
 
 export default function Reports({ 
@@ -20,14 +20,38 @@ export default function Reports({
     return invDate >= new Date(startDate) && invDate <= new Date(endDate);
   });
 
-  const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.total || 0), 0);
-  const totalProfit = filteredInvoices.reduce((sum, inv) => {
-    const items = inv.items || [];
-    const itemProfit = items.reduce((s, item) => {
-      return s + ((item.price - (item.costPrice || 0)) * item.quantity);
-    }, 0);
-    return sum + itemProfit;
-  }, 0);
+  // CORRECT CALCULATIONS
+  // Revenue = grandTotal (what customer pays, including GST)
+  const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.grandTotal || inv.total || 0), 0);
+  
+  // Base Revenue = afterDiscount (revenue excluding GST)
+  const baseRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.afterDiscount || 0), 0);
+  
+  // GST Collected (goes to government, not company profit)
+  const totalGST = filteredInvoices.reduce((sum, inv) => sum + (inv.gstAmount || 0), 0);
+  
+  // Cost of Goods Sold
+  const totalCost = filteredInvoices.reduce((sum, inv) => sum + (inv.totalCost || 0), 0);
+  
+  // Gross Profit = Use backend-calculated profit (already accounts for GST properly)
+  const totalProfit = filteredInvoices.reduce((sum, inv) => sum + (inv.totalProfit || inv.profit || 0), 0);
+
+  // Payment tracking (EMI-aware)
+  const paymentSummary = filteredInvoices.reduce((acc, inv) => {
+    const grandTotal = inv.grandTotal || inv.total || 0;
+    const paymentMode = (inv.paymentMode || 'cash').toLowerCase();
+    
+    if (paymentMode === 'emi' && inv.emiDetails) {
+      const downPayment = inv.emiDetails.downPayment || 0;
+      acc.collected += downPayment;
+      acc.pending += (grandTotal - downPayment);
+      acc.emiCount += 1;
+    } else {
+      acc.collected += grandTotal;
+    }
+    
+    return acc;
+  }, { collected: 0, pending: 0, emiCount: 0 });
 
   // compute expenses for the same period
   useEffect(() => {
@@ -64,12 +88,16 @@ export default function Reports({
     period: startDate && endDate ? `${startDate} to ${endDate}` : 'All Time',
     totalInvoices: filteredInvoices.length,
     totalRevenue,
+    baseRevenue,
+    totalGST,
+    totalCost,
     totalProfit,
     totalExpenses,
     netProfit: totalProfit - totalExpenses,
     totalProducts: products.length,
     totalCustomers: customers.length,
-    lowStockCount: products.filter(p => p.quantity < p.minStock).length
+    lowStockCount: products.filter(p => p.quantity < p.minStock).length,
+    paymentSummary
   };
 
   return (
@@ -89,7 +117,7 @@ export default function Reports({
       />
 
       <div className="report-summary">
-        <h3>Report Summary</h3>
+        <h3>📊 Summary</h3>
         <div className="summary-grid">
           <div className="summary-item">
             <Icon name="calendar" size={24} />
@@ -117,10 +145,10 @@ export default function Reports({
 
           {canViewProfit && (
             <>
-              <div className="summary-item">
+              <div className="summary-item" style={{ color: '#10b981' }}>
                 <Icon name="trending-up" size={24} />
                 <div>
-                  <span>Total Profit</span>
+                  <span>Gross Profit</span>
                   <strong>{formatCurrency0(reportData.totalProfit)}</strong>
                 </div>
               </div>
@@ -131,7 +159,7 @@ export default function Reports({
                   <strong>{formatCurrency0(reportData.totalExpenses)}</strong>
                 </div>
               </div>
-              <div className="summary-item">
+              <div className="summary-item" style={{ color: reportData.netProfit >= 0 ? '#10b981' : '#ef4444' }}>
                 <Icon name="dollar-sign" size={24} />
                 <div>
                   <span>Net Profit</span>
@@ -158,6 +186,135 @@ export default function Reports({
           </div>
         </div>
       </div>
+
+      {/* Payment Summary Section */}
+      <div className="report-summary" style={{ marginTop: '24px' }}>
+        <h3>💰 Payment Summary</h3>
+        <div className="summary-grid">
+          <div className="summary-item">
+            <Icon name="dollar-sign" size={24} />
+            <div>
+              <span>Total Revenue</span>
+              <strong>{formatCurrency0(reportData.totalRevenue)}</strong>
+              <small style={{ color: '#64748b', fontSize: '11px' }}>Total billed amount</small>
+            </div>
+          </div>
+          
+          <div className="summary-item" style={{ color: '#10b981' }}>
+            <Icon name="check-circle" size={24} />
+            <div>
+              <span>Collected Amount</span>
+              <strong>{formatCurrency0(reportData.paymentSummary.collected)}</strong>
+              <small style={{ color: '#64748b', fontSize: '11px' }}>Cash received</small>
+            </div>
+          </div>
+          
+          {reportData.paymentSummary.pending > 0 && (
+            <div className="summary-item" style={{ color: '#f59e0b' }}>
+              <Icon name="clock" size={24} />
+              <div>
+                <span>Pending Amount</span>
+                <strong>{formatCurrency0(reportData.paymentSummary.pending)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>{reportData.paymentSummary.emiCount} EMI invoice(s)</small>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Financial Breakdown Section */}
+      {canViewProfit && (
+        <div className="report-summary" style={{ marginTop: '24px' }}>
+          <h3>📈 Financial Breakdown</h3>
+          <div className="summary-grid">
+            <div className="summary-item">
+              <Icon name="dollar-sign" size={24} />
+              <div>
+                <span>Base Revenue (Excl. GST)</span>
+                <strong>{formatCurrency0(reportData.baseRevenue)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Revenue before tax</small>
+              </div>
+            </div>
+            
+            <div className="summary-item">
+              <Icon name="percent" size={24} />
+              <div>
+                <span>GST Collected</span>
+                <strong>{formatCurrency0(reportData.totalGST)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Paid to government</small>
+              </div>
+            </div>
+            
+            <div className="summary-item">
+              <Icon name="shopping-cart" size={24} />
+              <div>
+                <span>Total Cost (COGS)</span>
+                <strong>{formatCurrency0(reportData.totalCost)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Cost of goods sold</small>
+              </div>
+            </div>
+            
+            <div className="summary-item" style={{ color: '#10b981' }}>
+              <Icon name="trending-up" size={24} />
+              <div>
+                <span>Gross Profit</span>
+                <strong>{formatCurrency0(reportData.totalProfit)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>
+                  {reportData.baseRevenue > 0 ? `${((reportData.totalProfit / reportData.baseRevenue) * 100).toFixed(1)}% margin` : '0% margin'}
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* EMI Details Section */}
+      {reportData.paymentSummary.emiCount > 0 && (
+        <div className="report-summary" style={{ marginTop: '24px' }}>
+          <h3>💳 EMI Summary</h3>
+          <div className="summary-grid">
+            <div className="summary-item">
+              <Icon name="file-text" size={24} />
+              <div>
+                <span>EMI Invoices</span>
+                <strong>{reportData.paymentSummary.emiCount}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Active EMI plans</small>
+              </div>
+            </div>
+            
+            <div className="summary-item" style={{ color: '#10b981' }}>
+              <Icon name="check-circle" size={24} />
+              <div>
+                <span>Down Payments</span>
+                <strong>{formatCurrency0(reportData.paymentSummary.collected)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Initial collection</small>
+              </div>
+            </div>
+            
+            <div className="summary-item" style={{ color: '#f59e0b' }}>
+              <Icon name="clock" size={24} />
+              <div>
+                <span>Remaining Amount</span>
+                <strong>{formatCurrency0(reportData.paymentSummary.pending)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>To be collected</small>
+              </div>
+            </div>
+            
+            <div className="summary-item">
+              <Icon name="activity" size={24} />
+              <div>
+                <span>Collection Status</span>
+                <strong>
+                  {reportData.totalRevenue > 0 
+                    ? `${((reportData.paymentSummary.collected / reportData.totalRevenue) * 100).toFixed(1)}%` 
+                    : '0%'}
+                </strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Amount collected</small>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
