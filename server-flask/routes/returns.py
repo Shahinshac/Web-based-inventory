@@ -117,6 +117,12 @@ def process_return():
                 except Exception:
                     pass
 
+        # Calculate total cost of returned items
+        total_return_cost = sum(
+            float(i.get('quantity', 0)) * float(i.get('costPrice', 0))
+            for i in items
+        )
+
         return_doc = {
             "invoiceId": invoice_id,
             "billNumber": bill_number,
@@ -126,9 +132,12 @@ def process_return():
                 "name": i.get('name', i.get('productName')),
                 "quantity": float(i.get('quantity', 0)),
                 "price": float(i.get('price', i.get('unitPrice', 0))),
-                "total": float(i.get('quantity', 0)) * float(i.get('price', i.get('unitPrice', 0)))
+                "costPrice": float(i.get('costPrice', 0)),
+                "total": float(i.get('quantity', 0)) * float(i.get('price', i.get('unitPrice', 0))),
+                "totalCost": float(i.get('quantity', 0)) * float(i.get('costPrice', 0))
             } for i in items],
             "refundAmount": refund_amount,
+            "totalReturnCost": total_return_cost,
             "reason": reason,
             "status": 'completed',
             "createdAt": utc_now(),

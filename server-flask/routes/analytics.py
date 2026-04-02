@@ -271,9 +271,27 @@ def financial_summary():
     # Sum of totalCost from all bills
     cogs = sum(b.get("totalCost", 0) for b in bills)
 
+    # ===== RETURNS ADJUSTMENTS =====
+    # Query returns in same period and aggregate refunded amounts + return costs
+    returns_agg = list(db.returns.aggregate([
+        {"$match": {"createdAt": {"$gte": start_date}}},
+        {"$group": {
+            "_id": None,
+            "totalRefunded": {"$sum": "$refundAmount"},
+            "totalReturnCost": {"$sum": {"$ifNull": ["$totalReturnCost", 0]}}
+        }}
+    ]))
+
+    total_refunded = returns_agg[0]['totalRefunded'] if returns_agg else 0
+    total_return_cost = returns_agg[0]['totalReturnCost'] if returns_agg else 0
+
+    # Adjust revenue and COGS for returns
+    net_revenue = base_revenue - total_refunded
+    net_cogs = cogs - total_return_cost
+
     # ===== GROSS PROFIT =====
-    # grossProfit = baseRevenue - COGS
-    gross_profit = base_revenue - cogs
+    # grossProfit = netRevenue - netCOGS
+    gross_profit = net_revenue - net_cogs
 
     # ===== OPERATING EXPENSES =====
     # Only include manual operational expenses (Salary, Rent, Utilities, etc.)
@@ -315,20 +333,30 @@ def financial_summary():
             "days": days,
             "startDate": start_date.isoformat()
         },
+        "sales": {
+            "totalSales": round(total_revenue_with_gst, 2),
+            "totalReturns": round(total_refunded, 2),
+            "netRevenue": round(net_revenue, 2),
+            "description": "Net Revenue = Total Sales - Returns (both excluding GST)"
+        },
         "revenue": {
             "totalRevenue": round(total_revenue_with_gst, 2),
             "gstCollected": round(total_gst, 2),
             "baseRevenue": round(base_revenue, 2),
-            "description": "Base Revenue = Total Revenue - GST"
+            "description": "Base Revenue = Total Revenue - GST (before returns adjustment)"
         },
         "costs": {
-            "cogs": round(cogs, 2),
-            "description": "COGS = Cost of Goods Sold (cost_price × qty for sold items)"
+            "totalCogs": round(cogs, 2),
+            "totalReturnCost": round(total_return_cost, 2),
+            "netCogs": round(net_cogs, 2),
+            "description": "Net COGS = Total COGS - Returned Item Costs"
         },
         "profitSummary": {
             "grossProfit": round(gross_profit, 2),
-            "grossProfitMargin": round((gross_profit / base_revenue * 100), 2) if base_revenue > 0 else 0,
-            "description": "Gross Profit = Base Revenue - COGS"
+            "grossProfitMargin": round((gross_profit / net_revenue * 100), 2) if net_revenue > 0 else 0,
+            "netProfit": round(net_profit, 2),
+            "netProfitMargin": round((net_profit / net_revenue * 100), 2) if net_revenue > 0 else 0,
+            "description": "Profit based on net revenue (after returns)"
         },
         "operatingExpenses": {
             "total": round(operating_expenses, 2),
@@ -339,11 +367,6 @@ def financial_summary():
             "operatingExpenses": round(operating_expenses, 2),
             "total": round(total_expenses, 2),
             "description": "Total Expenses = COGS + Operating Expenses"
-        },
-        "netProfit": {
-            "netProfit": round(net_profit, 2),
-            "netProfitMargin": round((net_profit / base_revenue * 100), 2) if base_revenue > 0 else 0,
-            "description": "Net Profit = Gross Profit - Operating Expenses"
         }
     })
 

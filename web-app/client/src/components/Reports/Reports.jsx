@@ -134,7 +134,7 @@ export default function Reports({
         onEndDateChange={setEndDate}
       />
 
-      {/* SECTION 1: PROFIT SUMMARY */}
+      {/* SECTION 1: PROFIT SUMMARY WITH RETURNS ADJUSTMENTS */}
       {canViewProfit && financialSummary && (
         <div className="report-summary">
           <h3>💰 Profit Summary</h3>
@@ -142,27 +142,60 @@ export default function Reports({
             <div className="summary-item">
               <Icon name="dollar-sign" size={24} />
               <div>
-                <span>Revenue (incl GST)</span>
-                <strong>{formatCurrency0(financialSummary.revenue.totalRevenue)}</strong>
-                <small style={{ color: '#64748b', fontSize: '11px' }}>Total customer paid</small>
+                <span>Total Sales (incl GST)</span>
+                <strong>{formatCurrency0(financialSummary.sales.totalSales)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Gross revenue</small>
               </div>
             </div>
 
-            <div className="summary-item">
+            {/* Returns Adjustment - Show if there are returns */}
+            {financialSummary.sales.totalReturns > 0 && (
+              <div className="summary-item" style={{ color: '#ef4444' }}>
+                <Icon name="arrow-down" size={24} />
+                <div>
+                  <span>Returns & Refunds</span>
+                  <strong>-{formatCurrency0(financialSummary.sales.totalReturns)}</strong>
+                  <small style={{ color: '#64748b', fontSize: '11px' }}>Refunded to customers</small>
+                </div>
+              </div>
+            )}
+
+            <div className="summary-item" style={{ color: '#3b82f6', fontWeight: 600 }}>
               <Icon name="dollar-sign" size={24} />
               <div>
-                <span>Base Revenue (excl GST)</span>
-                <strong>{formatCurrency0(financialSummary.revenue.baseRevenue)}</strong>
-                <small style={{ color: '#64748b', fontSize: '11px' }}>Company revenue</small>
+                <span>Net Revenue (excl GST)</span>
+                <strong>{formatCurrency0(financialSummary.sales.netRevenue)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>After returns & GST</small>
               </div>
             </div>
 
             <div className="summary-item">
               <Icon name="shopping-cart" size={24} />
               <div>
-                <span>COGS (Cost of Goods Sold)</span>
-                <strong>{formatCurrency0(financialSummary.costs.cogs)}</strong>
+                <span>Product Cost (COGS)</span>
+                <strong>{formatCurrency0(financialSummary.costs.totalCogs)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Cost price of sold items</small>
+              </div>
+            </div>
+
+            {/* Return Costs Adjustment - Show if there are returns */}
+            {financialSummary.costs.totalReturnCost > 0 && (
+              <div className="summary-item" style={{ color: '#10b981' }}>
+                <Icon name="arrow-up" size={24} />
+                <div>
+                  <span>Return Costs Recovered</span>
+                  <strong>-{formatCurrency0(financialSummary.costs.totalReturnCost)}</strong>
+                  <small style={{ color: '#64748b', fontSize: '11px' }}>Cost saved from returns</small>
+                </div>
+              </div>
+            )}
+
+            <div className="summary-item" style={{ color: '#3b82f6', fontWeight: 600 }}>
+              <Icon name="shopping-cart" size={24} />
+              <div>
+                <span>Net COGS (after returns)</span>
+                <strong>{formatCurrency0(financialSummary.costs.netCogs)}</strong>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>Adjusted for returns</small>
               </div>
             </div>
 
@@ -178,14 +211,14 @@ export default function Reports({
             </div>
 
             <div className="summary-item" style={{
-              color: financialSummary.netProfit.netProfit >= 0 ? '#10b981' : '#ef4444'
+              color: financialSummary.profitSummary.netProfit >= 0 ? '#10b981' : '#ef4444'
             }}>
               <Icon name="trending-up" size={24} />
               <div>
                 <span>Net Profit</span>
-                <strong>{formatCurrency0(financialSummary.netProfit.netProfit)}</strong>
+                <strong>{formatCurrency0(financialSummary.profitSummary.netProfit)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>
-                  {financialSummary.netProfit.netProfitMargin}% margin
+                  {financialSummary.profitSummary.netProfitMargin}% margin
                 </small>
               </div>
             </div>
