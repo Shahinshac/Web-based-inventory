@@ -192,60 +192,83 @@ Esc: Close modals/dialogs`;
   // Fetch recent activity from audit logs
   const fetchRecentActivity = async () => {
     try {
-      const response = await fetch(API('/api/admin/audit-logs?limit=10'), { headers: getAuthHeaders() });
-      if (response.ok) {
-        const data = await response.json();
-        const logs = data.logs || data || [];
-
-        // Format activities for display
-        const activities = logs.map(log => {
-          let text = '';
-
-          switch (log.action) {
-            case 'PRODUCT_ADDED':
-              text = `Added product "${log.details?.productName || 'Unknown'}"`;
-              break;
-            case 'PRODUCT_UPDATED':
-              text = `Updated product "${log.details?.productName || 'Unknown'}"`;
-              break;
-            case 'PRODUCT_DELETED':
-              text = `Deleted product "${log.details?.productName || 'Unknown'}"`;
-              break;
-            case 'PRODUCT_STOCK_UPDATED':
-              text = `Updated stock for "${log.details?.productName || 'Unknown'}"`;
-              break;
-            case 'SALE_COMPLETED':
-            case 'INVOICE_CREATED':
-              const amount = log.details?.grandTotal || log.details?.total;
-              text = `Completed sale - ${amount ? `₹${amount}` : 'N/A'}`;
-              break;
-            case 'CUSTOMER_ADDED':
-              text = `Added customer "${log.details?.customerName || 'Unknown'}"`;
-              break;
-            case 'CUSTOMER_UPDATED':
-              text = `Updated customer "${log.details?.customerName || 'Unknown'}"`;
-              break;
-            case 'USER_LOGIN':
-              text = `${log.username} logged in`;
-              break;
-            case 'USER_REGISTERED':
-              text = `New user registered: ${log.username}`;
-              break;
-            default:
-              text = log.action.replace(/_/g, ' ').toLowerCase();
-          }
-
-          return {
-            text,
-            time: formatTimestampIST(log.timestamp),
-            timestamp: log.timestamp
-          };
-        });
-
-        setRecentActivity(activities);
+      // Check user role - audit logs are admin-only
+      const userRole = localStorage.getItem('userRole');
+      if (userRole !== 'admin') {
+        console.log('[App] Audit logs available for admin users only');
+        setRecentActivity([]);
+        return;
       }
+
+      const response = await fetch(API('/api/admin/audit-logs?limit=10'), { headers: getAuthHeaders() });
+
+      // Handle different response statuses gracefully - don't block app load on 403
+      if (!response.ok) {
+        if (response.status === 403) {
+          console.log('[App] Access denied to audit logs (403) - non-blocking');
+          setRecentActivity([]);
+          return;
+        } else if (response.status === 401) {
+          console.error('[App] Authentication failed (401)');
+          setRecentActivity([]);
+          return;
+        }
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      const logs = data.logs || data || [];
+
+      // Format activities for display
+      const activities = logs.map(log => {
+        let text = '';
+
+        switch (log.action) {
+          case 'PRODUCT_ADDED':
+            text = `Added product "${log.details?.productName || 'Unknown'}"`;
+            break;
+          case 'PRODUCT_UPDATED':
+            text = `Updated product "${log.details?.productName || 'Unknown'}"`;
+            break;
+          case 'PRODUCT_DELETED':
+            text = `Deleted product "${log.details?.productName || 'Unknown'}"`;
+            break;
+          case 'PRODUCT_STOCK_UPDATED':
+            text = `Updated stock for "${log.details?.productName || 'Unknown'}"`;
+            break;
+          case 'SALE_COMPLETED':
+          case 'INVOICE_CREATED':
+            const amount = log.details?.grandTotal || log.details?.total;
+            text = `Completed sale - ${amount ? `₹${amount}` : 'N/A'}`;
+            break;
+          case 'CUSTOMER_ADDED':
+            text = `Added customer "${log.details?.customerName || 'Unknown'}"`;
+            break;
+          case 'CUSTOMER_UPDATED':
+            text = `Updated customer "${log.details?.customerName || 'Unknown'}"`;
+            break;
+          case 'USER_LOGIN':
+            text = `${log.username} logged in`;
+            break;
+          case 'USER_REGISTERED':
+            text = `New user registered: ${log.username}`;
+            break;
+          default:
+            text = log.action.replace(/_/g, ' ').toLowerCase();
+        }
+
+        return {
+          text,
+          time: formatTimestampIST(log.timestamp),
+          timestamp: log.timestamp
+        };
+      });
+
+      setRecentActivity(activities);
     } catch (error) {
-      console.error('Error fetching recent activity:', error);
+      // Non-blocking error - allow app to load
+      console.warn('[App] Audit logs fetch failed (non-blocking):', error.message);
+      setRecentActivity([]);
     }
   };
 
