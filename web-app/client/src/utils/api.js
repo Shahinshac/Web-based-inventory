@@ -167,17 +167,69 @@ const retryFetch = async (
 };
 
 /**
+ * Build a structured error object with status code and user-friendly message
+ */
+const createApiError = (status, body, endpoint) => {
+  const error = new Error();
+  error.status = status;
+  error.endpoint = endpoint;
+  error.isAuthError = false;
+  error.isNetworkError = false;
+
+  // Parse error details from response body
+  let serverMessage = '';
+  if (typeof body === 'object' && body.error) {
+    serverMessage = body.error;
+  } else if (typeof body === 'string') {
+    serverMessage = body;
+  }
+
+  // Determine error type and user-friendly message
+  switch (status) {
+    case 401:
+      error.isAuthError = true;
+      error.message = 'Session expired or invalid. Please login again.';
+      error.details = serverMessage || 'Authentication failed';
+      break;
+
+    case 403:
+      error.message = 'You do not have permission to access this resource.';
+      error.details = serverMessage || 'Access denied';
+      break;
+
+    case 404:
+      error.message = `Resource not found (${endpoint})`;
+      error.details = serverMessage || 'The requested resource does not exist';
+      break;
+
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      error.message = 'Server error. Please try again later.';
+      error.details = serverMessage || `HTTP ${status}`;
+      break;
+
+    default:
+      error.message = serverMessage || `API error: ${status}`;
+      error.details = `HTTP ${status}`;
+  }
+
+  return error;
+};
+
+/**
  * Generic fetch wrapper with error handling and retry logic
  */
 export const apiFetch = async (endpoint, options = {}) => {
   const maxRetries = options.retries ?? 2; // Default 2 retries for transient errors
   const baseUrl = getApiBaseUrl();
+  const token = localStorage.getItem('authToken');
+  const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {};
 
   try {
-    const token = localStorage.getItem('authToken')
-    const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {}
-
     console.log(`[api] ${options.method || 'GET'} ${baseUrl}${endpoint}`);
+    console.log('[api] Token present:', !!token);
 
     const response = await retryFetch(
       API(endpoint),
@@ -192,30 +244,35 @@ export const apiFetch = async (endpoint, options = {}) => {
       maxRetries
     );
 
+    // Handle non-2xx HTTP responses
     if (!response.ok) {
-      let errorMessage = `API error: ${response.status}`;
+      let responseBody = {};
       try {
-        const error = await response.json()
-        errorMessage = error.error || errorMessage
+        responseBody = await response.json();
       } catch (e) {
-        // Response body is not JSON, use status text
-        errorMessage = response.statusText || errorMessage
+        // Response is not JSON, that's ok
       }
-      throw new Error(errorMessage)
+
+      const error = createApiError(response.status, responseBody, endpoint);
+      console.error(`[api] ${error.message}`, error.details);
+      throw error;
     }
 
-    return await response.json()
+    return await response.json();
   } catch (error) {
-    // Transform network errors into user-friendly messages
-    if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      const baseUrl = getApiBaseUrl();
-      error.message = `Unable to connect to server (${baseUrl}). Please ensure the backend is running and accessible.`;
-    } else if (error.message.includes('AbortError')) {
-      error.message = 'Request timeout. Backend may be slow or unreachable.';
+    // Handle network errors (not HTTP errors, but actual connection failures)
+    if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+      error.isNetworkError = true;
+      error.message = `Unable to connect to server (${baseUrl}). The backend may be unreachable or waking up.`;
+      console.error('[api] Network error:', error.message);
+    } else if (error.message && error.message.includes('AbortError')) {
+      error.isNetworkError = true;
+      error.message = 'Request timeout. The server is taking too long to respond.';
+      console.error('[api] Request timeout:', error.message);
     }
 
-    console.error(`[api] Error for ${endpoint}:`, error)
-    throw error
+    console.error(`[api] Error for ${endpoint}:`, error);
+    throw error;
   }
 }
 
@@ -262,10 +319,48 @@ export const getAuthHeaders = () => {
 }
 
 /**
+ * Helper function: check if error is an authentication error (401)
+ */
+export const isAuthError = (error) => {
+  return error && (error.isAuthError === true || error.status === 401);
+}
+
+/**
+ * Helper function: check if error is a network/connection error
+ */
+export const isNetworkError = (error) => {
+  return error && error.isNetworkError === true;
+}
+
+/**
+ * Helper function: get user-friendly error message
+ */
+export const getErrorMessage = (error) => {
+  if (!error) return 'An unknown error occurred.';
+  return error.message || 'An unknown error occurred.';
+}
+
+/**
+ * Helper function: get detailed error information (for logging)
+ */
+export const getErrorDetails = (error) => {
+  if (!error) return null;
+  return {
+    message: error.message,
+    details: error.details,
+    status: error.status,
+    isAuthError: error.isAuthError,
+    isNetworkError: error.isNetworkError,
+    endpoint: error.endpoint
+  };
+}
+
+/**
  * Upload file (multipart/form-data) - includes auth header with retry logic
  */
 export const apiUpload = async (endpoint, formData, method = 'POST') => {
   const maxRetries = 2;
+  const baseUrl = getApiBaseUrl();
 
   try {
     const response = await retryFetch(
@@ -279,13 +374,32 @@ export const apiUpload = async (endpoint, formData, method = 'POST') => {
     );
 
     if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || 'Upload failed')
+      let responseBody = {};
+      try {
+        responseBody = await response.json();
+      } catch (e) {
+        // Response is not JSON
+      }
+
+      const error = createApiError(response.status, responseBody, endpoint);
+      console.error(`[api] Upload ${error.message}`, error.details);
+      throw error;
     }
 
-    return await response.json()
+    return await response.json();
   } catch (error) {
-    console.error(`Upload error for ${endpoint}:`, error)
-    throw error
+    // Handle network errors
+    if (error.message && (error.message.includes('Failed to fetch') || error.message.includes('NetworkError'))) {
+      error.isNetworkError = true;
+      error.message = `Unable to upload file. Connection to server (${baseUrl}) failed.`;
+      console.error('[api] Upload network error:', error.message);
+    } else if (error.message && error.message.includes('AbortError')) {
+      error.isNetworkError = true;
+      error.message = 'Upload timeout. The server is taking too long to respond.';
+      console.error('[api] Upload timeout:', error.message);
+    }
+
+    console.error(`Upload error for ${endpoint}:`, error);
+    throw error;
   }
-}
+};
