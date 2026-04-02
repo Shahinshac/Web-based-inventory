@@ -30,8 +30,10 @@ export default function CheckoutForm({
   
   // EMI State
   const [emiMonths, setEmiMonths] = useState('');
-  const [emiAmount, setEmiAmount] = useState('');
   const [downPayment, setDownPayment] = useState('');
+
+  const EMI_TENURES = [3, 6, 12, 24];
+  const EMI_MIN_AMOUNT = 5000;
   
   const [loading, setLoading] = useState(false);
   const [checkoutError, setCheckoutError] = useState('');
@@ -43,6 +45,13 @@ export default function CheckoutForm({
   const subtotal = cartTotal;
   const discountAmount = (subtotal * discount) / 100;
   const finalTotal = subtotal - discountAmount;
+  const downPaymentValue = Math.max(0, parseFloat(downPayment) || 0);
+  const financedAmount = Math.max(0, finalTotal - downPaymentValue);
+  const monthlyEmiAmount = useMemo(() => {
+    const tenure = parseInt(emiMonths, 10) || 0;
+    if (tenure <= 0) return 0;
+    return Number((financedAmount / tenure).toFixed(2));
+  }, [emiMonths, financedAmount]);
   // Calculate backwards for inclusive GST display
   const gstAmount = finalTotal - (finalTotal / (1 + (GST_PERCENT / 100)));
 
@@ -147,12 +156,21 @@ export default function CheckoutForm({
 
     // Validate EMI if selected
     if (paymentMode === PAYMENT_MODES.EMI) {
-      if (!emiMonths || !emiAmount) {
-        setCheckoutError('Please enter EMI months and amount');
+      const tenure = parseInt(emiMonths, 10);
+      if (!tenure || !EMI_TENURES.includes(tenure)) {
+        setCheckoutError(`Please select EMI tenure (${EMI_TENURES.join(', ')} months)`);
         return;
       }
       if (!selectedCustomer) {
         setCheckoutError('Registered customer is required for EMI payments');
+        return;
+      }
+      if (downPaymentValue >= finalTotal) {
+        setCheckoutError('Down payment must be less than total amount');
+        return;
+      }
+      if (financedAmount < EMI_MIN_AMOUNT) {
+        setCheckoutError(`Financed amount after down payment must be at least ₹${EMI_MIN_AMOUNT}`);
         return;
       }
     }
@@ -170,9 +188,15 @@ export default function CheckoutForm({
         card: parseFloat(cardAmount) || 0
       } : null,
       emiDetails: paymentMode === PAYMENT_MODES.EMI ? {
-        months: parseInt(emiMonths) || 0,
-        emiAmount: parseFloat(emiAmount) || 0,
-        downPayment: parseFloat(downPayment) || 0
+        enabled: true,
+        months: parseInt(emiMonths, 10) || 0,
+        tenure: parseInt(emiMonths, 10) || 0,
+        downPayment: downPaymentValue,
+        totalAmount: Number(finalTotal.toFixed(2)),
+        principalAmount: Number(financedAmount.toFixed(2)),
+        emiAmount: monthlyEmiAmount,
+        monthlyEMI: monthlyEmiAmount,
+        interestRate: 0
       } : null,
       subtotal,
       discountAmount,
@@ -196,7 +220,6 @@ export default function CheckoutForm({
         setUpiAmount('');
         setCardAmount('');
         setEmiMonths('');
-        setEmiAmount('');
         setDownPayment('');
         setCustomerSearch('');
         onSelectCustomer(null);
@@ -427,10 +450,12 @@ export default function CheckoutForm({
         {paymentMode === PAYMENT_MODES.EMI && !splitPayment && (
           <EMIDetailsForm
             months={emiMonths}
-            emiAmount={emiAmount}
             downPayment={downPayment}
+            totalAmount={finalTotal}
+            financedAmount={financedAmount}
+            emiAmount={monthlyEmiAmount > 0 ? monthlyEmiAmount : ''}
+            tenureOptions={EMI_TENURES}
             onMonthsChange={setEmiMonths}
-            onEmiAmountChange={setEmiAmount}
             onDownPaymentChange={setDownPayment}
           />
         )}

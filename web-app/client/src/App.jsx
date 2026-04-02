@@ -269,8 +269,9 @@ Esc: Close modals/dialogs`;
             const emiResult = await emiService.createEMIPlan({
               billId: result.invoice.id,
               customerId: billData.customerId,
-              amount: billData.emiDetails.principalAmount,
+              amount: billData.emiDetails.totalAmount || billData.total,
               tenure: billData.emiDetails.tenure,
+              downPayment: billData.emiDetails.downPayment || 0,
               notes: `EMI created for bill #${result.invoice.billNumber}`
             });
 
