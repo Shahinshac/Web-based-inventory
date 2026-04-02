@@ -108,6 +108,34 @@ def index():
 def health_check():
     return jsonify({"api": "healthy"}), 200
 
+# Global Error Handler - catch all unhandled exceptions
+@app.errorhandler(Exception)
+def handle_error(error):
+    """Catch all unhandled exceptions and return proper JSON error response"""
+    logger.error(f"[ERROR] Unhandled exception: {str(error)}", exc_info=True)
+
+    # Return JSON error response instead of HTML error page
+    return jsonify({
+        "error": "Internal server error",
+        "message": str(error) if app.config.get('DEBUG') else "An unexpected error occurred"
+    }), 500
+
+# 404 Error Handler
+@app.errorhandler(404)
+def not_found(error):
+    return jsonify({
+        "error": "Not found",
+        "message": "The requested resource does not exist"
+    }), 404
+
+# 405 Method Not Allowed
+@app.errorhandler(405)
+def method_not_allowed(error):
+    return jsonify({
+        "error": "Method not allowed",
+        "message": f"The {request.method} method is not allowed for this endpoint"
+    }), 405
+
 if __name__ == '__main__':
     logger.info(f"🚀 Starting Flask Server on port {app.config['PORT']}...")
     app.run(host='0.0.0.0', port=app.config['PORT'], debug=app.config['DEBUG'])

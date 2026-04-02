@@ -98,7 +98,7 @@ def get_dashboard():
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
         return jsonify({
-            "memberSince": customer.get('createdAt').isoformat() if customer.get('createdAt') else None,
+            "memberSince": customer.get('createdAt').isoformat() if customer.get('createdAt') and hasattr(customer.get('createdAt'), 'isoformat') else None,
             "stats": {
                 "totalPurchases": total_purchases,
                 "totalSpent": round(total_spent, 2),
@@ -109,7 +109,7 @@ def get_dashboard():
                 {
                     "id": str(inv['_id']),
                     "invoiceNo": inv.get('billNumber'),
-                    "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                    "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
                     "total": float(inv.get('grandTotal', 0)),
                     "itemCount": len(inv.get('items', []))
                 }
@@ -149,7 +149,7 @@ def get_customer_invoices():
             invoices.append({
                 "id": str(inv['_id']),
                 "invoiceNo": inv.get('billNumber'),
-                "date": inv.get('billDate').isoformat() if inv.get('billDate') else None,
+                "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
                 "total": float(inv.get('grandTotal', 0)),
                 "paymentMethod": inv.get('paymentMode', 'cash'),
                 "emiEnabled": bool(inv.get('emiEnabled', False)),
@@ -200,9 +200,27 @@ def download_invoice_pdf(invoice_id):
         if not invoice:
             return jsonify({"error": "Invoice not found or access denied"}), 404
 
-        # Use the public_invoice logic to generate the response (already has PDF generation)
-        from routes.public_invoice import generate_invoice_pdf_response
-        return generate_invoice_pdf_response(invoice)
+        # Return the invoice data as JSON for the customer portal
+        def safe_isoformat(dt):
+            return dt.isoformat() if dt and hasattr(dt, 'isoformat') else str(dt)
+
+        return jsonify({
+            "id": str(invoice.get("_id")),
+            "billNumber": invoice.get("billNumber"),
+            "customerName": invoice.get("customerName"),
+            "billDate": safe_isoformat(invoice.get("billDate")),
+            "items": invoice.get("items", []),
+            "subtotal": invoice.get("subtotal"),
+            "discountPercent": invoice.get("discountPercent", 0),
+            "discountAmount": invoice.get("discountAmount", 0),
+            "cgst": invoice.get("cgst", 0),
+            "sgst": invoice.get("sgst", 0),
+            "igst": invoice.get("igst", 0),
+            "gstAmount": invoice.get("gstAmount"),
+            "grandTotal": invoice.get("grandTotal"),
+            "paymentMode": invoice.get("paymentMode"),
+            "emiDetails": invoice.get("emiDetails")
+        })
 
     except Exception as e:
         logger.error(f"PDF download error: {e}")

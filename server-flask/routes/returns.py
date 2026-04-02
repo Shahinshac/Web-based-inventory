@@ -47,7 +47,7 @@ def get_returns():
             "refundAmount": r.get('refundAmount'),
             "reason": r.get('reason'),
             "status": r.get('status'),
-            "createdAt": r.get('createdAt').isoformat() if isinstance(r.get('createdAt'), datetime) else str(r.get('createdAt')),
+            "createdAt": r.get('createdAt').isoformat() if r.get('createdAt') and isinstance(r.get('createdAt'), datetime) else str(r.get('createdAt')) if r.get('createdAt') else None,
             "processedBy": r.get('processedBy'),
             "processedByUsername": r.get('processedByUsername')
         })
@@ -60,16 +60,19 @@ def lookup_invoice(billNumber):
     db = get_db()
     regex = re.compile('^' + re.escape(billNumber) + '$', re.IGNORECASE)
     invoice = db.bills.find_one({"billNumber": {"$regex": regex}})
-    
+
     if not invoice:
         return jsonify({"error": "Invoice not found"}), 404
-        
+
+    bill_date = invoice.get("billDate")
+    bill_date_str = bill_date.isoformat() if bill_date and isinstance(bill_date, datetime) else str(bill_date) if bill_date else None
+
     return jsonify({
-        "id": str(invoice["_id"]),
+        "id": str(invoice.get("_id")),
         "billNumber": invoice.get("billNumber"),
         "customerName": invoice.get("customerName"),
         "customerPhone": invoice.get("customerPhone"),
-        "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDate": bill_date_str,
         "grandTotal": invoice.get("grandTotal"),
         "items": [{
             "productId": str(item.get("productId")) if item.get("productId") else None,
@@ -84,68 +87,76 @@ def lookup_invoice(billNumber):
 @returns_bp.route('/', methods=['POST'])
 @authenticate_token
 def process_return():
-    data = request.get_json()
-    invoice_id = data.get('invoiceId')
-    bill_number = data.get('billNumber', 'N/A')
-    customer_name = data.get('customerName', 'Walk-in')
-    items = data.get('items', [])
-    refund_amount = float(data.get('refundAmount') or 0)
-    reason = data.get('reason')
-    
-    user_id = g.user.get('userId')
-    username = g.user.get('username', 'Unknown')
-    
-    if not items or len(items) == 0:
-        return jsonify({"error": "At least one item is required for return"}), 400
-    if not reason:
-        return jsonify({"error": "Return reason is required"}), 400
-        
-    db = get_db()
-    
-    for item in items:
-        pid = item.get('productId')
-        if pid:
-            try:
-                db.products.update_one(
-                    {"_id": ObjectId(pid)},
-                    {"$inc": {"quantity": float(item.get('quantity', 0))}}
-                )
-            except: pass
+    try:
+        data = request.get_json()
+        invoice_id = data.get('invoiceId')
+        bill_number = data.get('billNumber', 'N/A')
+        customer_name = data.get('customerName', 'Walk-in')
+        items = data.get('items', [])
+        refund_amount = float(data.get('refundAmount') or 0)
+        reason = data.get('reason')
 
-    return_doc = {
-        "invoiceId": invoice_id,
-        "billNumber": bill_number,
-        "customerName": customer_name,
-        "items": [{
-            "productId": i.get('productId'),
-            "name": i.get('name', i.get('productName')),
-            "quantity": float(i.get('quantity', 0)),
-            "price": float(i.get('price', i.get('unitPrice', 0))),
-            "total": float(i.get('quantity', 0)) * float(i.get('price', i.get('unitPrice', 0)))
-        } for i in items],
-        "refundAmount": refund_amount,
-        "reason": reason,
-        "status": 'completed',
-        "createdAt": utc_now(),
-        "processedBy": user_id,
-        "processedByUsername": username
-    }
-    
-    result = db.returns.insert_one(return_doc)
-    
-    log_audit(db, "RETURN_PROCESSED", user_id, username, {
-        "returnId": str(result.inserted_id),
-        "billNumber": bill_number,
-        "refundAmount": refund_amount,
-        "itemCount": len(items),
-        "reason": reason
-    })
-    
-    return_doc['id'] = str(result.inserted_id)
-    return_doc['createdAt'] = return_doc['createdAt'].isoformat()
-    if '_id' in return_doc: del return_doc['_id']
-    
-    return jsonify(return_doc)
+        user_id = g.user.get('userId')
+        username = g.user.get('username', 'Unknown')
+
+        if not items or len(items) == 0:
+            return jsonify({"error": "At least one item is required for return"}), 400
+        if not reason:
+            return jsonify({"error": "Return reason is required"}), 400
+
+        db = get_db()
+
+        for item in items:
+            pid = item.get('productId')
+            if pid:
+                try:
+                    db.products.update_one(
+                        {"_id": ObjectId(pid)},
+                        {"$inc": {"quantity": float(item.get('quantity', 0))}}
+                    )
+                except Exception:
+                    pass
+
+        return_doc = {
+            "invoiceId": invoice_id,
+            "billNumber": bill_number,
+            "customerName": customer_name,
+            "items": [{
+                "productId": i.get('productId'),
+                "name": i.get('name', i.get('productName')),
+                "quantity": float(i.get('quantity', 0)),
+                "price": float(i.get('price', i.get('unitPrice', 0))),
+                "total": float(i.get('quantity', 0)) * float(i.get('price', i.get('unitPrice', 0)))
+            } for i in items],
+            "refundAmount": refund_amount,
+            "reason": reason,
+            "status": 'completed',
+            "createdAt": utc_now(),
+            "processedBy": user_id,
+            "processedByUsername": username
+        }
+
+        result = db.returns.insert_one(return_doc)
+
+        log_audit(db, "RETURN_PROCESSED", user_id, username, {
+            "returnId": str(result.inserted_id),
+            "billNumber": bill_number,
+            "refundAmount": refund_amount,
+            "itemCount": len(items),
+            "reason": reason
+        })
+
+        return_doc['id'] = str(result.inserted_id)
+        created_at = return_doc.get('createdAt')
+        return_doc['createdAt'] = created_at.isoformat() if created_at and hasattr(created_at, 'isoformat') else str(created_at)
+        if '_id' in return_doc:
+            del return_doc['_id']
+
+        return jsonify(return_doc)
+
+    except Exception as e:
+        logger.error(f"Return processing error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Failed to process return", "message": str(e)}), 500
 
 @returns_bp.route('/<id>', methods=['DELETE'])
 @authenticate_token

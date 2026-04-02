@@ -19,269 +19,274 @@ pos_bp = Blueprint('pos', __name__)
 @pos_bp.route('/', methods=['POST'])
 @authenticate_token
 def checkout():
-    data = request.get_json()
-    items = data.get('items', [])
-    if not isinstance(items, list) or len(items) == 0:
-        return jsonify({"error": "Cart cannot be empty"}), 400
+    try:
+        data = request.get_json()
+        items = data.get('items', [])
+        if not isinstance(items, list) or len(items) == 0:
+            return jsonify({"error": "Cart cannot be empty"}), 400
 
-    customer_id = data.get('customerId')
-    discount_percent = float(data.get('discountPercent') or 0)
-    customer_state = data.get('customerState', 'Same')
-    payment_mode = str(data.get('paymentMode', 'cash')).lower()
-    
-    user_id = g.user.get('userId')
-    username = g.user.get('username', 'Unknown')
+        customer_id = data.get('customerId')
+        discount_percent = float(data.get('discountPercent') or 0)
+        customer_state = data.get('customerState', 'Same')
+        payment_mode = str(data.get('paymentMode', 'cash')).lower()
 
-    split_payment_details = None
-    if payment_mode == 'split':
-        spd = data.get('splitPaymentDetails', {})
-        split_payment_details = {
-            "cashAmount": float(spd.get('cash', data.get('cashAmount', 0))),
-            "upiAmount": float(spd.get('upi', data.get('upiAmount', 0))),
-            "cardAmount": float(spd.get('card', data.get('cardAmount', 0))),
-            "totalAmount": float(data.get('total') or data.get('totalAmount') or 0)
+        user_id = g.user.get('userId')
+        username = g.user.get('username', 'Unknown')
+
+        split_payment_details = None
+        if payment_mode == 'split':
+            spd = data.get('splitPaymentDetails', {})
+            split_payment_details = {
+                "cashAmount": float(spd.get('cash', data.get('cashAmount', 0))),
+                "upiAmount": float(spd.get('upi', data.get('upiAmount', 0))),
+                "cardAmount": float(spd.get('card', data.get('cardAmount', 0))),
+                "totalAmount": float(data.get('total') or data.get('totalAmount') or 0)
+            }
+
+        db = get_db()
+
+        # Get customer details
+        customer_name = "Walk-in Customer"
+        customer_phone = None
+        customer_email = None
+        customer_address = ""
+        customer_place = ""
+        customer_pincode = ""
+
+        if customer_id:
+            try:
+                customer = db.customers.find_one({"_id": ObjectId(customer_id)})
+                if customer:
+                    customer_name = customer.get('name')
+                    customer_phone = customer.get('phone')
+                    customer_email = customer.get('email')
+                    customer_address = customer.get('address', '')
+                    customer_place = customer.get('place', '')
+                    customer_pincode = customer.get('pincode', '')
+            except Exception:
+                pass # Invalid ObjectId
+
+        # Generate Invoice Number
+        current_year = utc_now().year
+        prefix = f"INV-{current_year}-"
+        # To find count, regex search is simple
+        bill_count = db.bills.count_documents({"billNumber": {"$regex": f"^{prefix}"}})
+        bill_number = f"{prefix}{str(bill_count + 1).zfill(4)}"
+
+        subtotal = 0.0
+        total_cost = 0.0
+        is_same_state = (customer_state == 'Same')
+
+        # Store invoice timestamp in UTC (frontend will convert to IST for display)
+        bill_date = utc_now()
+
+        bill = {
+            "billNumber": bill_number,
+            "customerId": ObjectId(customer_id) if customer_id else None,
+            "customerName": customer_name,
+            "customerPhone": customer_phone,
+            "customerEmail": customer_email,
+            "customerAddress": customer_address,
+            "customerState": customer_state,
+            "customerPlace": customer_place,
+            "customerPincode": customer_pincode,
+            "isSameState": is_same_state,
+            "discountPercent": discount_percent,
+            "paymentMode": payment_mode,
+            "paymentStatus": "Paid",
+            "billDate": bill_date,
+            "items": [],
+            "createdBy": user_id,
+            "createdByUsername": username
         }
 
-    db = get_db()
+        if split_payment_details:
+            bill["splitPaymentDetails"] = split_payment_details
 
-    # Get customer details
-    customer_name = "Walk-in Customer"
-    customer_phone = None
-    customer_email = None
-    customer_address = ""
-    customer_place = ""
-    customer_pincode = ""
+        if payment_mode == 'emi':
+            emi_data = data.get('emiDetails', {})
+            months = int(emi_data.get('months', 0))
+            down_payment = float(emi_data.get('downPayment', 0))
+            emi_amount = float(emi_data.get('emiAmount', 0))
+            interest_rate = float(emi_data.get('interestRate', 0))
 
-    if customer_id:
-        try:
-            customer = db.customers.find_one({"_id": ObjectId(customer_id)})
-            if customer:
-                customer_name = customer.get('name')
-                customer_phone = customer.get('phone')
-                customer_email = customer.get('email')
-                customer_address = customer.get('address', '')
-                customer_place = customer.get('place', '')
-                customer_pincode = customer.get('pincode', '')
-        except Exception:
-            pass # Invalid ObjectId
+            # Calculate total amount from items (will be set later)
+            # EMI start date is bill date, end date is months later
+            emi_start = bill_date
+            emi_end = bill_date + timedelta(days=30 * months)
 
-    # Generate Invoice Number
-    current_year = utc_now().year
-    prefix = f"INV-{current_year}-"
-    # To find count, regex search is simple
-    bill_count = db.bills.count_documents({"billNumber": {"$regex": f"^{prefix}"}})
-    bill_number = f"{prefix}{str(bill_count + 1).zfill(4)}"
+            bill["emiDetails"] = {
+                "months": months,
+                "emiAmount": emi_amount,
+                "downPayment": down_payment,
+                "interestRate": interest_rate,
+                "startDate": emi_start,
+                "endDate": emi_end
+            }
 
-    subtotal = 0.0
-    total_cost = 0.0
-    is_same_state = (customer_state == 'Same')
+        # Calculate item aggregates
+        # discount_factor is applied proportionally to each item's subtotal for per-item GST
+        discount_factor = 1.0 - (discount_percent / 100.0)
 
-    # Store invoice timestamp in UTC (frontend will convert to IST for display)
-    bill_date = utc_now()
+        for it in items:
+            prod_id = it.get('productId')
+            if not prod_id: continue
 
-    bill = {
-        "billNumber": bill_number,
-        "customerId": ObjectId(customer_id) if customer_id else None,
-        "customerName": customer_name,
-        "customerPhone": customer_phone,
-        "customerEmail": customer_email,
-        "customerAddress": customer_address,
-        "customerState": customer_state,
-        "customerPlace": customer_place,
-        "customerPincode": customer_pincode,
-        "isSameState": is_same_state,
-        "discountPercent": discount_percent,
-        "paymentMode": payment_mode,
-        "paymentStatus": "Paid",
-        "billDate": bill_date,
-        "items": [],
-        "createdBy": user_id,
-        "createdByUsername": username
-    }
+            product = db.products.find_one({"_id": ObjectId(prod_id)})
+            if not product: continue
 
-    if split_payment_details:
-        bill["splitPaymentDetails"] = split_payment_details
-    
-    if payment_mode == 'emi':
-        emi_data = data.get('emiDetails', {})
-        months = int(emi_data.get('months', 0))
-        down_payment = float(emi_data.get('downPayment', 0))
-        emi_amount = float(emi_data.get('emiAmount', 0))
-        interest_rate = float(emi_data.get('interestRate', 0))
-        
-        # Calculate total amount from items (will be set later)
-        # EMI start date is bill date, end date is months later
-        emi_start = bill_date
-        emi_end = bill_date + timedelta(days=30 * months)
-        
-        bill["emiDetails"] = {
-            "months": months,
-            "emiAmount": emi_amount,
-            "downPayment": down_payment,
-            "interestRate": interest_rate,
-            "startDate": emi_start,
-            "endDate": emi_end
-        }
+            qty = float(it.get('quantity', 0))
+            unit_price = float(it.get('price', 0)) # Inclusive of GST
+            prod_cost = float(product.get('costPrice', 0))
+            line_gst_percent = float(product.get('gstPercent', 18) or 18)
 
-    # Calculate item aggregates
-    # discount_factor is applied proportionally to each item's subtotal for per-item GST
-    discount_factor = 1.0 - (discount_percent / 100.0)
+            # Extract base price by removing GST component
+            gst_factor = 1 + (line_gst_percent / 100.0)
+            base_unit_price = unit_price / gst_factor
 
-    for it in items:
-        prod_id = it.get('productId')
-        if not prod_id: continue
+            line_subtotal_inclusive = unit_price * qty
+            line_subtotal_base = base_unit_price * qty
+            line_cost = prod_cost * qty
+            line_profit = line_subtotal_base - line_cost
 
-        product = db.products.find_one({"_id": ObjectId(prod_id)})
-        if not product: continue
+            # Taxable value for this line (base subtotal after proportional discount)
+            line_taxable = line_subtotal_base * discount_factor
+            # GST amount for this line
+            line_gst_amount = round(line_taxable * (line_gst_percent / 100.0), 2)
 
-        qty = float(it.get('quantity', 0))
-        unit_price = float(it.get('price', 0)) # Inclusive of GST
-        prod_cost = float(product.get('costPrice', 0))
-        line_gst_percent = float(product.get('gstPercent', 18) or 18)
-        
-        # Extract base price by removing GST component
-        gst_factor = 1 + (line_gst_percent / 100.0)
-        base_unit_price = unit_price / gst_factor
-
-        line_subtotal_inclusive = unit_price * qty
-        line_subtotal_base = base_unit_price * qty
-        line_cost = prod_cost * qty
-        line_profit = line_subtotal_base - line_cost
-
-        # Taxable value for this line (base subtotal after proportional discount)
-        line_taxable = line_subtotal_base * discount_factor
-        # GST amount for this line
-        line_gst_amount = round(line_taxable * (line_gst_percent / 100.0), 2)
-
-        bill["items"].append({
-            "productId": ObjectId(prod_id),
-            "productName": product.get('name'),
-            "hsnCode": product.get('hsnCode', '9999'),
-            "quantity": qty,
-            "costPrice": prod_cost,
-            "unitPrice": unit_price, # Store inclusive price to match UI
-            "gstPercent": line_gst_percent,
-            "lineSubtotal": line_subtotal_inclusive, # Store inclusive subtotal
-            "lineCost": line_cost,
-            "lineProfit": line_profit,
-            "lineGstAmount": line_gst_amount
-        })
-
-        # We accumulate inclusive sum for the bill's subtotal
-        subtotal += line_subtotal_inclusive
-        total_cost += line_cost
-
-        # Deduct inventory
-        db.products.update_one(
-            {"_id": ObjectId(prod_id)},
-            {"$inc": {"quantity": -qty}}
-        )
-
-    # Tax & Discount Math (subtotal is inclusive of GST)
-    discount_amount = (subtotal * discount_percent) / 100
-    after_discount = subtotal - discount_amount
-
-    # GST is collected for the government and is NOT company revenue or profit.
-    gst_amount = sum(i["lineGstAmount"] for i in bill["items"])
-
-    cgst = sgst = igst = 0.0
-    if is_same_state:
-        cgst = round(gst_amount / 2, 2)
-        sgst = round(gst_amount - cgst, 2)  # Derived to ensure cgst + sgst == gst_amount
-    else:
-        igst = round(gst_amount, 2)      # Full GST as IGST
-
-    # grand_total is already after_discount because after_discount is inclusive of GST
-    grand_total = after_discount
-    
-    # Profit = (revenue excluding GST) minus cost of goods sold (COGS).
-    # Since total_profit is calculated via per-item line_profit, we sum it and apply discount factor 
-    # to account for the profit loss due to the global discount.
-    pre_discount_profit = sum(i["lineProfit"] for i in bill["items"])
-    # The discount effectively eats directly into profit (base amount lost)
-    total_base_lost_to_discount = (subtotal - gst_amount) * (discount_percent / 100.0)
-    total_profit = pre_discount_profit - total_base_lost_to_discount
-
-    bill["subtotal"] = round(subtotal, 2)
-    bill["discountAmount"] = round(discount_amount, 2)
-    bill["afterDiscount"] = round(after_discount, 2)
-    bill["cgst"] = round(cgst, 2)
-    bill["sgst"] = round(sgst, 2)
-    bill["igst"] = round(igst, 2)
-    bill["gstAmount"] = round(gst_amount, 2)
-    bill["grandTotal"] = round(grand_total)  # Nearest integer
-    bill["totalCost"] = round(total_cost, 2)
-    bill["totalProfit"] = round(total_profit, 2)
-    
-    # Add total amount to EMI details
-    if payment_mode == 'emi' and "emiDetails" in bill:
-        bill["emiDetails"]["totalAmount"] = bill["grandTotal"]
-
-    result = db.bills.insert_one(bill)
-
-    # Auto-generate warranties for registered customers (1 year from invoice date)
-    if customer_id:
-        for i in bill["items"]:
-            db.warranties.insert_one({
-                "customerId": ObjectId(customer_id),
-                "productName": i["productName"],
-                "productSku": i.get("hsnCode", "N/A"),
-                "warrantyType": "1 Year Standard",
-                "startDate": bill_date,
-                "expiryDate": bill_date + timedelta(days=365),
-                "status": "active",
-                "invoiceNo": bill_number, 
-                "createdAt": utc_now()
+            bill["items"].append({
+                "productId": ObjectId(prod_id),
+                "productName": product.get('name'),
+                "hsnCode": product.get('hsnCode', '9999'),
+                "quantity": qty,
+                "costPrice": prod_cost,
+                "unitPrice": unit_price, # Store inclusive price to match UI
+                "gstPercent": line_gst_percent,
+                "lineSubtotal": line_subtotal_inclusive, # Store inclusive subtotal
+                "lineCost": line_cost,
+                "lineProfit": line_profit,
+                "lineGstAmount": line_gst_amount
             })
 
-    log_audit(db, "SALE_COMPLETED", user_id, username, {
-        "billId": str(result.inserted_id),
-        "billNumber": bill_number,
-        "customerName": customer_name,
-        "grandTotal": getattr(bill, 'grandTotal', round(grand_total)),
-        "itemCount": len(bill["items"]),
-        "paymentMode": payment_mode
-    })
+            # We accumulate inclusive sum for the bill's subtotal
+            subtotal += line_subtotal_inclusive
+            total_cost += line_cost
 
-    # Prepare response JSON (converting objectids, dates)
-    return jsonify({
-        "billId": str(result.inserted_id),
-        "billNumber": bill_number,
-        "customerName": customer_name,
-        "customerPhone": customer_phone,
-        "customerPlace": customer_place,
-        "paymentMode": payment_mode,
-        "billDate": bill_date.isoformat(),
-        "isSameState": is_same_state,
-        "items": [{
-            "productName": i["productName"],
-            "hsnCode": i["hsnCode"],
-            "quantity": i["quantity"],
-            "unitPrice": i["unitPrice"],
-            "gstPercent": i["gstPercent"],
-            "lineSubtotal": i["lineSubtotal"],
-            "lineGstAmount": i["lineGstAmount"]
-        } for i in bill["items"]],
-        "subtotal": bill["subtotal"],
-        "discountPercent": discount_percent,
-        "discountAmount": bill["discountAmount"],
-        "afterDiscount": bill["afterDiscount"],
-        "cgst": bill["cgst"],
-        "sgst": bill["sgst"],
-        "igst": bill["igst"],
-        "gstAmount": bill["gstAmount"],
-        "grandTotal": bill["grandTotal"],
-        "profit": bill["totalProfit"],
-        "emiDetails": {
-            "totalAmount": bill["emiDetails"]["totalAmount"],
-            "downPayment": bill["emiDetails"]["downPayment"],
-            "months": bill["emiDetails"]["months"],
-            "emiAmount": bill["emiDetails"]["emiAmount"],
-            "interestRate": bill["emiDetails"]["interestRate"],
-            "startDate": to_iso_string(bill["emiDetails"]["startDate"]),
-            "endDate": to_iso_string(bill["emiDetails"]["endDate"])
-        } if bill.get("emiDetails") else None
-    })
+            # Deduct inventory
+            db.products.update_one(
+                {"_id": ObjectId(prod_id)},
+                {"$inc": {"quantity": -qty}}
+            )
+
+        # Tax & Discount Math (subtotal is inclusive of GST)
+        discount_amount = (subtotal * discount_percent) / 100
+        after_discount = subtotal - discount_amount
+
+        # GST is collected for the government and is NOT company revenue or profit.
+        gst_amount = sum(i["lineGstAmount"] for i in bill["items"])
+
+        cgst = sgst = igst = 0.0
+        if is_same_state:
+            cgst = round(gst_amount / 2, 2)
+            sgst = round(gst_amount - cgst, 2)  # Derived to ensure cgst + sgst == gst_amount
+        else:
+            igst = round(gst_amount, 2)      # Full GST as IGST
+
+        # grand_total is already after_discount because after_discount is inclusive of GST
+        grand_total = after_discount
+
+        # Profit = (revenue excluding GST) minus cost of goods sold (COGS).
+        # Since total_profit is calculated via per-item line_profit, we sum it and apply discount factor
+        # to account for the profit loss due to the global discount.
+        pre_discount_profit = sum(i["lineProfit"] for i in bill["items"])
+        # The discount effectively eats directly into profit (base amount lost)
+        total_base_lost_to_discount = (subtotal - gst_amount) * (discount_percent / 100.0)
+        total_profit = pre_discount_profit - total_base_lost_to_discount
+
+        bill["subtotal"] = round(subtotal, 2)
+        bill["discountAmount"] = round(discount_amount, 2)
+        bill["afterDiscount"] = round(after_discount, 2)
+        bill["cgst"] = round(cgst, 2)
+        bill["sgst"] = round(sgst, 2)
+        bill["igst"] = round(igst, 2)
+        bill["gstAmount"] = round(gst_amount, 2)
+        bill["grandTotal"] = round(grand_total)  # Nearest integer
+        bill["totalCost"] = round(total_cost, 2)
+        bill["totalProfit"] = round(total_profit, 2)
+
+        # Add total amount to EMI details
+        if payment_mode == 'emi' and "emiDetails" in bill:
+            bill["emiDetails"]["totalAmount"] = bill["grandTotal"]
+
+        result = db.bills.insert_one(bill)
+
+        # Auto-generate warranties for registered customers (1 year from invoice date)
+        if customer_id:
+            for i in bill["items"]:
+                db.warranties.insert_one({
+                    "customerId": ObjectId(customer_id),
+                    "productName": i["productName"],
+                    "productSku": i.get("hsnCode", "N/A"),
+                    "warrantyType": "1 Year Standard",
+                    "startDate": bill_date,
+                    "expiryDate": bill_date + timedelta(days=365),
+                    "status": "active",
+                    "invoiceNo": bill_number,
+                    "createdAt": utc_now()
+                })
+
+        log_audit(db, "SALE_COMPLETED", user_id, username, {
+            "billId": str(result.inserted_id),
+            "billNumber": bill_number,
+            "customerName": customer_name,
+            "grandTotal": bill.get('grandTotal', round(grand_total)),
+            "itemCount": len(bill["items"]),
+            "paymentMode": payment_mode
+        })
+
+        # Prepare response JSON (converting objectids, dates)
+        return jsonify({
+            "billId": str(result.inserted_id),
+            "billNumber": bill_number,
+            "customerName": customer_name,
+            "customerPhone": customer_phone,
+            "customerPlace": customer_place,
+            "paymentMode": payment_mode,
+            "billDate": bill_date.isoformat(),
+            "isSameState": is_same_state,
+            "items": [{
+                "productName": i["productName"],
+                "hsnCode": i["hsnCode"],
+                "quantity": i["quantity"],
+                "unitPrice": i["unitPrice"],
+                "gstPercent": i["gstPercent"],
+                "lineSubtotal": i["lineSubtotal"],
+                "lineGstAmount": i["lineGstAmount"]
+            } for i in bill["items"]],
+            "subtotal": bill["subtotal"],
+            "discountPercent": discount_percent,
+            "discountAmount": bill["discountAmount"],
+            "afterDiscount": bill["afterDiscount"],
+            "cgst": bill["cgst"],
+            "sgst": bill["sgst"],
+            "igst": bill["igst"],
+            "gstAmount": bill["gstAmount"],
+            "grandTotal": bill["grandTotal"],
+            "profit": bill["totalProfit"],
+            "emiDetails": {
+                "totalAmount": bill.get("emiDetails", {}).get("totalAmount"),
+                "downPayment": bill.get("emiDetails", {}).get("downPayment"),
+                "months": bill.get("emiDetails", {}).get("months"),
+                "emiAmount": bill.get("emiDetails", {}).get("emiAmount"),
+                "interestRate": bill.get("emiDetails", {}).get("interestRate"),
+                "startDate": to_iso_string(bill.get("emiDetails", {}).get("startDate")),
+                "endDate": to_iso_string(bill.get("emiDetails", {}).get("endDate"))
+            } if bill.get("emiDetails") else None
+        })
+
+    except Exception as e:
+        logger.error(f"Checkout error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Checkout failed", "message": str(e)}), 500
 
 @pos_bp.route('/', methods=['GET'])
 @authenticate_token
@@ -345,7 +350,7 @@ def get_invoice(id):
         return jsonify({"error": "Invoice not found"}), 404
 
     return jsonify({
-        "id": str(invoice["_id"]),
+        "id": str(invoice.get("_id")),
         "billNumber": invoice.get("billNumber"),
         "customerName": invoice.get("customerName"),
         "customerPhone": invoice.get("customerPhone"),
@@ -373,13 +378,13 @@ def get_invoice(id):
         "grandTotal": invoice.get("grandTotal"),
         "paymentMode": invoice.get("paymentMode"),
         "emiDetails": {
-            "totalAmount": invoice["emiDetails"]["totalAmount"],
-            "downPayment": invoice["emiDetails"]["downPayment"],
-            "months": invoice["emiDetails"]["months"],
-            "emiAmount": invoice["emiDetails"]["emiAmount"],
-            "interestRate": invoice["emiDetails"]["interestRate"],
-            "startDate": to_iso_string(invoice["emiDetails"]["startDate"]),
-            "endDate": to_iso_string(invoice["emiDetails"]["endDate"])
+            "totalAmount": invoice.get("emiDetails", {}).get("totalAmount"),
+            "downPayment": invoice.get("emiDetails", {}).get("downPayment"),
+            "months": invoice.get("emiDetails", {}).get("months"),
+            "emiAmount": invoice.get("emiDetails", {}).get("emiAmount"),
+            "interestRate": invoice.get("emiDetails", {}).get("interestRate"),
+            "startDate": to_iso_string(invoice.get("emiDetails", {}).get("startDate")),
+            "endDate": to_iso_string(invoice.get("emiDetails", {}).get("endDate"))
         } if invoice.get("emiDetails") else None
     })
 

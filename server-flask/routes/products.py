@@ -184,7 +184,7 @@ def update_stock(id):
         "productName": product.get('name'),
         "oldQuantity": old_quantity,
         "newQuantity": new_quantity,
-        "change": added_qty
+        "change": new_quantity - old_quantity
     })
 
     return jsonify({"success": True})
