@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build": "cd web-app/client && npm install && npm run build"
+  },
   "dependencies": {
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0"

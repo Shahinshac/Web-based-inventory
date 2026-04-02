@@ -1,0 +1,4 @@
+{
+  "buildCommand": "cd web-app/client && npm install && npm run build",
+  "outputDirectory": "web-app/client/dist"
+}
