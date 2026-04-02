@@ -5,7 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
-from utils.tzutils import utc_now, to_iso_string
+from utils.tzutils import utc_now, to_iso_string, format_ist_date, format_ist_time
 
 public_invoice_bp = Blueprint('public_invoice', __name__)
 logger = logging.getLogger(__name__)
@@ -105,22 +105,8 @@ def public_invoice_view(token):
 
     # Format invoice data - Convert UTC to IST for display
     bill_date = invoice.get('billDate')
-    if isinstance(bill_date, datetime):
-        # Convert UTC to IST using Python's timezone conversion
-        from datetime import timezone, timedelta
-        ist_offset = timedelta(hours=5, minutes=30)
-        # If bill_date has timezone info, convert to IST
-        if bill_date.tzinfo is not None:
-            ist_date = bill_date.astimezone(timezone(ist_offset))
-        else:
-            # Assume UTC if naive datetime
-            ist_date = bill_date.replace(tzinfo=timezone.utc).astimezone(timezone(ist_offset))
-        
-        bill_date_str = ist_date.strftime('%d %b %Y')
-        bill_time_str = ist_date.strftime('%I:%M %p')
-    else:
-        bill_date_str = str(bill_date)
-        bill_time_str = ''
+    bill_date_str = format_ist_date(bill_date) if bill_date else 'N/A'
+    bill_time_str = format_ist_time(bill_date) if bill_date else ''
 
     bill_number = invoice.get('billNumber', 'N/A')
     customer_name = invoice.get('customerName', 'Walk-in Customer')
@@ -140,29 +126,8 @@ def public_invoice_view(token):
         interest = float(emi_details.get('interestRate', 0))
         
         # Format dates in IST
-        start_date_str = 'N/A'
-        end_date_str = 'N/A'
-        if emi_details.get('startDate'):
-            start_date = emi_details['startDate']
-            if isinstance(start_date, datetime):
-                from datetime import timezone, timedelta
-                ist_offset = timedelta(hours=5, minutes=30)
-                if start_date.tzinfo is not None:
-                    ist_start = start_date.astimezone(timezone(ist_offset))
-                else:
-                    ist_start = start_date.replace(tzinfo=timezone.utc).astimezone(timezone(ist_offset))
-                start_date_str = ist_start.strftime('%d %b %Y')
-        
-        if emi_details.get('endDate'):
-            end_date = emi_details['endDate']
-            if isinstance(end_date, datetime):
-                from datetime import timezone, timedelta
-                ist_offset = timedelta(hours=5, minutes=30)
-                if end_date.tzinfo is not None:
-                    ist_end = end_date.astimezone(timezone(ist_offset))
-                else:
-                    ist_end = end_date.replace(tzinfo=timezone.utc).astimezone(timezone(ist_offset))
-                end_date_str = ist_end.strftime('%d %b %Y')
+        start_date_str = format_ist_date(emi_details.get('startDate')) if emi_details.get('startDate') else 'N/A'
+        end_date_str = format_ist_date(emi_details.get('endDate')) if emi_details.get('endDate') else 'N/A'
         
         emi_html = f"""
         <div style="margin-top:12px;padding:14px;background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;">
@@ -256,11 +221,7 @@ def public_invoice_view(token):
                         inst_due = inst.get('dueDate')
                         inst_amt = inst.get('amount', 0)
                         inst_status = inst.get('status', 'pending')
-                        
-                        if isinstance(inst_due, datetime):
-                            inst_due_str = inst_due.strftime('%d %b %Y')
-                        else:
-                            inst_due_str = str(inst_due)
+                        inst_due_str = format_ist_date(inst_due) if inst_due else 'N/A'
                         
                         status_badge = {
                             'paid': '<span style="color:#10b981;font-weight:600;">&#10003; Paid</span>',

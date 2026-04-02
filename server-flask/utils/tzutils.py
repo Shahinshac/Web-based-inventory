@@ -62,6 +62,83 @@ def to_iso_string(dt):
     return dt.isoformat()
 
 
+def utc_to_ist(dt):
+    """Convert UTC datetime to India Standard Time (IST / Asia/Kolkata).
+
+    IST is UTC+5:30 (no DST)
+
+    Args:
+        dt (datetime): UTC datetime object (or naive datetime)
+
+    Returns:
+        datetime: Datetime in IST timezone
+        Example: 2026-04-02 21:00:45.123456+05:30
+    """
+    if dt is None:
+        return None
+
+    if isinstance(dt, str):
+        dt = utc_from_iso(dt)
+
+    # IST is UTC+5:30
+    ist_offset = timezone(timedelta(hours=5, minutes=30))
+
+    # Ensure timezone aware (assume UTC if naive)
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+
+    # Convert to IST
+    return dt.astimezone(ist_offset)
+
+
+def format_ist_date(dt):
+    """Format datetime in IST as date string: '02 Apr 2026'
+
+    Args:
+        dt (datetime): UTC datetime object
+
+    Returns:
+        str: Formatted date string
+    """
+    if dt is None:
+        return 'N/A'
+
+    ist_dt = utc_to_ist(dt)
+    return ist_dt.strftime('%d %b %Y')
+
+
+def format_ist_time(dt):
+    """Format datetime in IST as time string: '08:15 PM'
+
+    Args:
+        dt (datetime): UTC datetime object
+
+    Returns:
+        str: Formatted time string
+    """
+    if dt is None:
+        return 'N/A'
+
+    ist_dt = utc_to_ist(dt)
+    return ist_dt.strftime('%I:%M %p')
+
+
+def format_ist_datetime(dt):
+    """Format datetime in IST as full datetime: '02 Apr 2026 08:15 PM'
+
+    Args:
+        dt (datetime): UTC datetime object
+
+    Returns:
+        str: Formatted datetime string
+    """
+    if dt is None:
+        return 'N/A'
+
+    ist_dt = utc_to_ist(dt)
+    return ist_dt.strftime('%d %b %Y %I:%M %p')
+
+
 def utc_plus_days(days=0, hours=0, minutes=0):
     """Get UTC time offset by days, hours, or minutes.
 
