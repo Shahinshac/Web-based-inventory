@@ -116,6 +116,17 @@ def public_invoice_view(token):
     payment_mode = invoice.get('paymentMode', 'cash')
     payment_mode_display = payment_mode.capitalize()
     
+    # Extract financial data first (before using in EMI section)
+    subtotal = invoice.get('subtotal', 0) or 0
+    discount_pct = invoice.get('discountPercent', 0) or 0
+    discount_amt = invoice.get('discountAmount', 0) or 0
+    after_discount = invoice.get('afterDiscount', subtotal - discount_amt) or 0
+    cgst = invoice.get('cgst', 0) or 0
+    sgst = invoice.get('sgst', 0) or 0
+    igst = invoice.get('igst', 0) or 0
+    gst_amount = invoice.get('gstAmount', 0) or 0
+    grand_total = invoice.get('grandTotal', 0) or 0
+
     emi_details = invoice.get('emiDetails')
     emi_html = ""
     if payment_mode == 'emi' and emi_details:
@@ -124,11 +135,11 @@ def public_invoice_view(token):
         monthly_emi = float(emi_details.get('emiAmount', 0))
         tenure = int(emi_details.get('months', 0))
         interest = float(emi_details.get('interestRate', 0))
-        
+
         # Format dates in IST
         start_date_str = format_ist_date(emi_details.get('startDate')) if emi_details.get('startDate') else 'N/A'
         end_date_str = format_ist_date(emi_details.get('endDate')) if emi_details.get('endDate') else 'N/A'
-        
+
         emi_html = f"""
         <div style="margin-top:12px;padding:14px;background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;">
           <p style="color:#be185d;font-weight:700;font-size:12px;text-transform:uppercase;margin-bottom:8px;">📊 EMI Payment Plan</p>
@@ -143,16 +154,6 @@ def public_invoice_view(token):
           </div>
         </div>
         """
-
-    subtotal = invoice.get('subtotal', 0) or 0
-    discount_pct = invoice.get('discountPercent', 0) or 0
-    discount_amt = invoice.get('discountAmount', 0) or 0
-    after_discount = invoice.get('afterDiscount', subtotal - discount_amt) or 0
-    cgst = invoice.get('cgst', 0) or 0
-    sgst = invoice.get('sgst', 0) or 0
-    igst = invoice.get('igst', 0) or 0
-    gst_amount = invoice.get('gstAmount', 0) or 0
-    grand_total = invoice.get('grandTotal', 0) or 0
 
     # EMI data
     emi_enabled = invoice.get('emiEnabled', False)
