@@ -23,16 +23,16 @@ export default function Reports({
   // CORRECT CALCULATIONS
   // Revenue = grandTotal (what customer pays, including GST)
   const totalRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.grandTotal || inv.total || 0), 0);
-  
-  // Base Revenue = afterDiscount (revenue excluding GST)
-  const baseRevenue = filteredInvoices.reduce((sum, inv) => sum + (inv.afterDiscount || 0), 0);
-  
+
+  // Base Revenue = afterDiscount - GST (revenue excluding GST, after discount applied)
+  const baseRevenue = filteredInvoices.reduce((sum, inv) => sum + ((inv.afterDiscount || 0) - (inv.gstAmount || 0)), 0);
+
   // GST Collected (goes to government, not company profit)
   const totalGST = filteredInvoices.reduce((sum, inv) => sum + (inv.gstAmount || 0), 0);
-  
+
   // Cost of Goods Sold
   const totalCost = filteredInvoices.reduce((sum, inv) => sum + (inv.totalCost || 0), 0);
-  
+
   // Gross Profit = Use backend-calculated profit (already accounts for GST properly)
   const totalProfit = filteredInvoices.reduce((sum, inv) => sum + (inv.totalProfit || inv.profit || 0), 0);
 

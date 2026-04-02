@@ -40,8 +40,14 @@ const normalizeInvoice = (inv) => {
     // Map subtotal / total correctly
     subtotal: inv.subtotal ?? inv.total ?? 0,
     total: inv.total ?? inv.grandTotal ?? 0,
+    grandTotal: inv.grandTotal ?? inv.total ?? 0,
+    afterDiscount: inv.afterDiscount ?? 0,
     gstAmount: inv.gstAmount ?? inv.taxAmount ?? 0,
     discountAmount: inv.discountAmount ?? 0,
+    // Map financial fields (critical for Reports)
+    totalCost: inv.totalCost ?? 0,
+    totalProfit: inv.totalProfit ?? inv.profit ?? 0,
+    profit: inv.totalProfit ?? inv.profit ?? 0,
   };
 };
 
