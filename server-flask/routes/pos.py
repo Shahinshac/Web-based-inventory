@@ -76,18 +76,8 @@ def checkout():
     total_cost = 0.0
     is_same_state = (customer_state == 'Same')
 
-    # Set exact local time (IST is +5:30 ahead of UTC)
-    bill_date = utc_now() + timedelta(hours=5, minutes=30)
-    client_time = data.get('clientTime')
-    if client_time:
-        try:
-            # simple parse if provided
-            # JavaScript date string e.g., "2023-10-15T12:00:00Z"
-            from dateutil import parser
-            parsed_time = parser.parse(client_time)
-            bill_date = parsed_time
-        except Exception:
-            pass
+    # Store invoice timestamp in UTC (frontend will convert to IST for display)
+    bill_date = utc_now()
 
     bill = {
         "billNumber": bill_number,
@@ -114,10 +104,23 @@ def checkout():
     
     if payment_mode == 'emi':
         emi_data = data.get('emiDetails', {})
+        months = int(emi_data.get('months', 0))
+        down_payment = float(emi_data.get('downPayment', 0))
+        emi_amount = float(emi_data.get('emiAmount', 0))
+        interest_rate = float(emi_data.get('interestRate', 0))
+        
+        # Calculate total amount from items (will be set later)
+        # EMI start date is bill date, end date is months later
+        emi_start = bill_date
+        emi_end = bill_date + timedelta(days=30 * months)
+        
         bill["emiDetails"] = {
-            "months": int(emi_data.get('months', 0)),
-            "emiAmount": float(emi_data.get('emiAmount', 0)),
-            "downPayment": float(emi_data.get('downPayment', 0))
+            "months": months,
+            "emiAmount": emi_amount,
+            "downPayment": down_payment,
+            "interestRate": interest_rate,
+            "startDate": emi_start,
+            "endDate": emi_end
         }
 
     # Calculate item aggregates
@@ -209,6 +212,10 @@ def checkout():
     bill["grandTotal"] = round(grand_total)  # Nearest integer
     bill["totalCost"] = round(total_cost, 2)
     bill["totalProfit"] = round(total_profit, 2)
+    
+    # Add total amount to EMI details
+    if payment_mode == 'emi' and "emiDetails" in bill:
+        bill["emiDetails"]["totalAmount"] = bill["grandTotal"]
 
     result = db.bills.insert_one(bill)
 
@@ -224,7 +231,7 @@ def checkout():
                 "expiryDate": bill_date + timedelta(days=365),
                 "status": "active",
                 "invoiceNo": bill_number, 
-                "createdAt": utc_now() + timedelta(hours=5, minutes=30)
+                "createdAt": utc_now()
             })
 
     log_audit(db, "SALE_COMPLETED", user_id, username, {
@@ -265,7 +272,15 @@ def checkout():
         "gstAmount": bill["gstAmount"],
         "grandTotal": bill["grandTotal"],
         "profit": bill["totalProfit"],
-        "emiDetails": bill.get("emiDetails")
+        "emiDetails": {
+            "totalAmount": bill["emiDetails"]["totalAmount"],
+            "downPayment": bill["emiDetails"]["downPayment"],
+            "months": bill["emiDetails"]["months"],
+            "emiAmount": bill["emiDetails"]["emiAmount"],
+            "interestRate": bill["emiDetails"]["interestRate"],
+            "startDate": to_iso_string(bill["emiDetails"]["startDate"]),
+            "endDate": to_iso_string(bill["emiDetails"]["endDate"])
+        } if bill.get("emiDetails") else None
     })
 
 @pos_bp.route('/', methods=['GET'])
@@ -353,7 +368,15 @@ def get_invoice(id):
         "gstAmount": invoice.get("gstAmount"),
         "grandTotal": invoice.get("grandTotal"),
         "paymentMode": invoice.get("paymentMode"),
-        "emiDetails": invoice.get("emiDetails")
+        "emiDetails": {
+            "totalAmount": invoice["emiDetails"]["totalAmount"],
+            "downPayment": invoice["emiDetails"]["downPayment"],
+            "months": invoice["emiDetails"]["months"],
+            "emiAmount": invoice["emiDetails"]["emiAmount"],
+            "interestRate": invoice["emiDetails"]["interestRate"],
+            "startDate": to_iso_string(invoice["emiDetails"]["startDate"]),
+            "endDate": to_iso_string(invoice["emiDetails"]["endDate"])
+        } if invoice.get("emiDetails") else None
     })
 
 @pos_bp.route('/<id>/public', methods=['POST'])

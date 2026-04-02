@@ -342,6 +342,33 @@ Esc: Close modals/dialogs`;
           </div>`;
       }
 
+      // EMI payment details
+      let emiInfo = '';
+      if (paymentMode === 'emi' && invoice.emiDetails) {
+        const emi = invoice.emiDetails;
+        const totalAmt = emi.totalAmount || grandTotal;
+        const downPmt = Number(emi.downPayment || 0);
+        const monthlyEmi = Number(emi.emiAmount || (emi.months ? (totalAmt - downPmt) / emi.months : 0));
+        const tenure = emi.months || 0;
+        const interest = Number(emi.interestRate || 0);
+        const startDate = emi.startDate ? new Date(emi.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'N/A';
+        const endDate = emi.endDate ? new Date(emi.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' }) : 'N/A';
+        
+        emiInfo = `
+          <div style="margin-top:12px;padding:14px;background:#fdf2f8;border:1px solid #fbcfe8;border-radius:8px;">
+            <div style="font-weight:700;color:#be185d;font-size:13px;margin-bottom:10px;">📊 EMI Payment Plan</div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px;color:#334155;">
+              <div><span style="color:#64748b;">Total Amount:</span> <strong>₹${totalAmt.toFixed(2)}</strong></div>
+              <div><span style="color:#64748b;">Down Payment:</span> <strong>₹${downPmt.toFixed(2)}</strong></div>
+              <div><span style="color:#64748b;">Monthly EMI:</span> <strong style="color:#be185d;">₹${monthlyEmi.toFixed(2)}</strong></div>
+              <div><span style="color:#64748b;">Tenure:</span> <strong>${tenure} Months</strong></div>
+              <div><span style="color:#64748b;">Interest Rate:</span> <strong>${interest}%</strong></div>
+              <div><span style="color:#64748b;">Start Date:</span> <strong>${startDate}</strong></div>
+              <div style="grid-column:span 2;"><span style="color:#64748b;">End Date:</span> <strong>${endDate}</strong></div>
+            </div>
+          </div>`;
+      }
+
       const html = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -608,6 +635,7 @@ Esc: Close modals/dialogs`;
           <h3>Payment Info</h3>
           <p><strong>Method:</strong> ${paymentMode.charAt(0).toUpperCase() + paymentMode.slice(1)}</p>
           ${splitInfo}
+          ${emiInfo}
           <p style="margin-top:6px;"><strong>Status:</strong> <span style="color:#10b981;font-weight:700;">Paid ✓</span></p>
         </div>
       </div>

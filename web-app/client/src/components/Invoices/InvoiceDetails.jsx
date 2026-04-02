@@ -130,12 +130,20 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
               </div>
             )}
             {invoice.paymentMode === 'emi' && invoice.emiDetails && (
-              <div className="emi-payment-details" style={{ marginTop: '8px', padding: '12px', background: '#fdf2f8', borderRadius: '8px', border: '1px solid #fbcfe8' }}>
-                <h5 style={{ margin: '0 0 8px 0', color: '#be185d', fontSize: '13px' }}>EMI Information</h5>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', fontSize: '12px' }}>
+              <div className="emi-payment-details" style={{ marginTop: '12px', padding: '16px', background: '#fdf2f8', borderRadius: '8px', border: '1px solid #fbcfe8' }}>
+                <h5 style={{ margin: '0 0 12px 0', color: '#be185d', fontSize: '14px', fontWeight: '700' }}>EMI Payment Plan</h5>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', fontSize: '13px' }}>
+                  <div><span style={{ color: '#6b7280' }}>Total Amount:</span> <strong>{formatCurrency(invoice.emiDetails.totalAmount || invoice.grandTotal)}</strong></div>
+                  <div><span style={{ color: '#6b7280' }}>Down Payment:</span> <strong>{formatCurrency(invoice.emiDetails.downPayment || 0)}</strong></div>
+                  <div><span style={{ color: '#6b7280' }}>Monthly EMI:</span> <strong>{formatCurrency(invoice.emiDetails.emiAmount || invoice.emiDetails.months ? (invoice.emiDetails.totalAmount - invoice.emiDetails.downPayment) / invoice.emiDetails.months : 0)}</strong></div>
                   <div><span style={{ color: '#6b7280' }}>Tenure:</span> <strong>{invoice.emiDetails.months} Months</strong></div>
-                  <div><span style={{ color: '#6b7280' }}>Monthly EMI:</span> <strong>{formatCurrency(invoice.emiDetails.emiAmount)}</strong></div>
-                  <div style={{ gridColumn: 'span 2' }}><span style={{ color: '#6b7280' }}>Down Payment:</span> <strong>{formatCurrency(invoice.emiDetails.downPayment)}</strong></div>
+                  <div><span style={{ color: '#6b7280' }}>Interest Rate:</span> <strong>{invoice.emiDetails.interestRate || 0}%</strong></div>
+                  {invoice.emiDetails.startDate && (
+                    <div><span style={{ color: '#6b7280' }}>Start Date:</span> <strong>{new Date(invoice.emiDetails.startDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}</strong></div>
+                  )}
+                  {invoice.emiDetails.endDate && (
+                    <div><span style={{ color: '#6b7280' }}>End Date:</span> <strong>{new Date(invoice.emiDetails.endDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' })}</strong></div>
+                  )}
                 </div>
               </div>
             )}
