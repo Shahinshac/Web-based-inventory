@@ -26,52 +26,69 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
 
   return (
     <div className="customer-portal">
-      {/* Header */}
-      <header className="portal-header">
-        <div className="portal-brand">
-          <Icon name="spark" size={28} />
-          <span className="brand-name">26:07 Electronics</span>
-        </div>
-        <div className="portal-user-section">
-          <div className="user-info">
-            <Icon name="user" size={18} />
-            <span className="user-name">{currentUser?.name || currentUser?.email}</span>
+      <div className="portal-shell">
+        {/* Header */}
+        <header className="portal-header">
+          <div className="portal-brand">
+            <Icon name="spark" size={24} />
+            <span className="brand-name">26:07 Electronics</span>
           </div>
-          <button 
-            className="logout-btn" 
-            onClick={onLogout} 
-            title="Logout"
-            aria-label="Logout"
-          >
-            <Icon name="log-out" size={18} />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
+          <div className="portal-user-section">
+            <div className="user-info">
+              <Icon name="user" size={16} />
+              <span className="user-name">{currentUser?.name || currentUser?.email}</span>
+            </div>
+            <button 
+              className="logout-btn" 
+              onClick={onLogout} 
+              title="Logout"
+              aria-label="Logout"
+            >
+              <Icon name="log-out" size={16} />
+              <span>Logout</span>
+            </button>
+          </div>
+        </header>
 
-      {/* Navigation Tabs */}
-      <nav className="portal-nav">
+        {/* Navigation Tabs - Desktop */}
+        <nav className="portal-nav portal-nav-desktop" aria-label="Customer portal navigation">
+          {tabs.map(tab => (
+            <button
+              key={tab.id}
+              className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+              onClick={() => setActiveTab(tab.id)}
+              aria-current={activeTab === tab.id ? 'page' : undefined}
+            >
+              <Icon name={tab.icon} size={18} />
+              <span>{tab.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Content Area */}
+        <main className="portal-content">
+          {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
+          {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
+          {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
+          {activeTab === 'emi' && <CustomerEMI currentUser={currentUser} />}
+          {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
+        </main>
+      </div>
+
+      {/* Navigation Tabs - Mobile */}
+      <nav className="portal-nav-mobile" aria-label="Customer portal mobile navigation">
         {tabs.map(tab => (
           <button
-            key={tab.id}
-            className={`nav-tab ${activeTab === tab.id ? 'active' : ''}`}
+            key={`mobile-${tab.id}`}
+            className={`portal-mobile-tab ${activeTab === tab.id ? 'active' : ''}`}
             onClick={() => setActiveTab(tab.id)}
             aria-current={activeTab === tab.id ? 'page' : undefined}
           >
-            <Icon name={tab.icon} size={20} />
+            <Icon name={tab.icon} size={18} />
             <span>{tab.label}</span>
           </button>
         ))}
       </nav>
-
-      {/* Content Area */}
-      <main className="portal-content">
-        {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
-        {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
-        {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
-        {activeTab === 'emi' && <CustomerEMI currentUser={currentUser} />}
-        {activeTab === 'profile' && <CustomerProfile currentUser={currentUser} />}
-      </main>
     </div>
   );
 };
