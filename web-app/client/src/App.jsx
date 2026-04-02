@@ -825,7 +825,7 @@ Esc: Close modals/dialogs`;
       // Call backend to get public invoice link (for fallback)
       let publicUrl = '';
       try {
-        const linkData = await apiPost(`/api/invoices/${invoice.id}/whatsapp-link`, {
+        const linkData = await apiPost(`/api/checkout/${invoice.id}/whatsapp-link`, {
           requestedBy: currentUser?.username || 'system',
           company: companyInfo.name
         });

@@ -1,5 +1,6 @@
 import io
 import logging
+import re
 import secrets
 import urllib.parse
 from datetime import datetime, timedelta
@@ -331,12 +332,19 @@ def get_pvc_card_pdf(id):
 def get_customer_purchases(id):
     """Fetch all purchase history and associated warranties for a customer."""
     db = get_db()
+
+    # Validate and fetch customer
     try:
         customer = db.customers.find_one({"_id": ObjectId(id)})
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
-        
-        # Aggressive Match: ID (as ObjectId or String), Phone, Email, or Name (case-insensitive)
+    except Exception as e:
+        logger.warning(f"Invalid customer ID format: {e}")
+        return jsonify({"error": "Invalid customer ID"}), 400
+
+    if not customer:
+        return jsonify({"error": "Customer not found"}), 404
+
+    try:
+        # Build aggressive matching conditions (ID, Phone, Email, Name)
         match_conditions = [
             {"customerId": ObjectId(id)},
             {"customerId": id}
@@ -357,58 +365,80 @@ def get_customer_purchases(id):
         if customer_email:
             match_conditions.append({"customerEmail": customer_email})
 
-            import re
             email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
             match_conditions.append({"customerEmail": email_regex})
 
         customer_name = str(customer.get('name', '')).strip()
         if customer_name and customer_name.lower() != 'walk-in customer':
-            import re
             name_regex = re.compile(f"^{re.escape(customer_name)}$", re.I)
             match_conditions.append({"customerName": customer_name})
             match_conditions.append({"customerName": name_regex})
-            
+
         match_query = {"$or": match_conditions}
-        
-        # Fetch Bills
+
+        # Fetch Bills with safe datetime handling
         bills_cursor = db.bills.find(match_query).sort("billDate", -1)
         bills = []
         for bill in bills_cursor:
-            # Handle varied date formats and total fields
-            b_date = bill.get('billDate')
-            if isinstance(b_date, datetime):
-                b_date_str = b_date.isoformat()
-            else:
-                b_date_str = str(b_date) if b_date else None
-                
-            bills.append({
-                "id": str(bill['_id']),
-                "billNumber": bill.get('billNumber', 'N/A'),
-                "billDate": b_date_str,
-                "total": float(bill.get('grandTotal') or bill.get('total') or 0),
-                "paymentMode": bill.get('paymentMode', 'cash'),
-                "emiEnabled": bool(bill.get('emiEnabled', False)),
-                "emiTenure": int(bill.get('emiTenure', 0) or 0),
-                "emiMonthlyAmount": float(bill.get('emiMonthlyAmount', 0) or 0),
-                "items": bill.get('items', [])
-            })
-            
-        # Fetch Warranties
+            try:
+                # Handle varied date formats and total fields
+                b_date = bill.get('billDate')
+                if isinstance(b_date, datetime):
+                    b_date_str = b_date.isoformat()
+                else:
+                    b_date_str = str(b_date) if b_date else None
+
+                bills.append({
+                    "id": str(bill['_id']),
+                    "billNumber": bill.get('billNumber', 'N/A'),
+                    "billDate": b_date_str,
+                    "total": float(bill.get('grandTotal') or bill.get('total') or 0),
+                    "paymentMode": bill.get('paymentMode', 'cash'),
+                    # EMI status: check emiDetails object (true source), fallback to root-level fields
+                    "emiEnabled": bool(bill.get('emiDetails', {}).get('months', 0) > 0),
+                    "emiTenure": int(bill.get('emiDetails', {}).get('months', 0) or 0),
+                    "emiMonthlyAmount": float(bill.get('emiDetails', {}).get('emiAmount', 0) or 0),
+                    "items": bill.get('items', [])
+                })
+            except Exception as bill_err:
+                logger.warning(f"Error processing bill {bill.get('_id')}: {bill_err}")
+                # Skip this bill and continue with next
+                continue
+
+        # Fetch Warranties with safe datetime handling
         warranties_cursor = db.warranties.find(match_query).sort("expiryDate", -1)
         warranties = []
         for w in warranties_cursor:
-            s_date = w.get('startDate')
-            e_date = w.get('expiryDate')
-            
-            warranties.append({
-                "id": str(w['_id']),
-                "productName": w.get('productName', 'Unknown Product'),
-                "productSku": w.get('productSku', 'N/A'),
-                "startDate": s_date.isoformat() if isinstance(s_date, datetime) else str(s_date) if s_date else None,
-                "expiryDate": e_date.isoformat() if isinstance(e_date, datetime) else str(e_date) if e_date else None,
-                "status": w.get('status', 'active')
-            })
-            
+            try:
+                s_date = w.get('startDate')
+                e_date = w.get('expiryDate')
+
+                # Safe datetime conversion
+                start_date_str = None
+                if isinstance(s_date, datetime):
+                    start_date_str = s_date.isoformat()
+                elif s_date:
+                    start_date_str = str(s_date)
+
+                expiry_date_str = None
+                if isinstance(e_date, datetime):
+                    expiry_date_str = e_date.isoformat()
+                elif e_date:
+                    expiry_date_str = str(e_date)
+
+                warranties.append({
+                    "id": str(w['_id']),
+                    "productName": w.get('productName', 'Unknown Product'),
+                    "productSku": w.get('productSku', 'N/A'),
+                    "startDate": start_date_str,
+                    "expiryDate": expiry_date_str,
+                    "status": w.get('status', 'active')
+                })
+            except Exception as warranty_err:
+                logger.warning(f"Error processing warranty {w.get('_id')}: {warranty_err}")
+                # Skip this warranty and continue with next
+                continue
+
         return jsonify({
             "customerId": id,
             "customerName": customer.get('name'),
@@ -421,7 +451,10 @@ def get_customer_purchases(id):
             }
         })
     except Exception as e:
-        logger.error(f"Error fetching customer purchases: {e}")
-        return jsonify({"error": str(e)}), 500
+        logger.error(f"Error fetching customer purchases: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch customer purchase history",
+            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred"
+        }), 500
 
 
