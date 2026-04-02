@@ -7,6 +7,7 @@ from flask import Blueprint, request, jsonify, g
 from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -125,7 +126,7 @@ def process_return():
         "refundAmount": refund_amount,
         "reason": reason,
         "status": 'completed',
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "processedBy": user_id,
         "processedByUsername": username
     }
@@ -198,7 +199,7 @@ def get_return_stats():
     refund_list = list(refund_cursor)
     total_refunded = refund_list[0]['total'] if refund_list else 0
     
-    today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today = utc_now().replace(hour=0, minute=0, second=0, microsecond=0)
     today_returns = db.returns.count_documents({"createdAt": {"$gte": today}})
     
     month_start = today.replace(day=1)

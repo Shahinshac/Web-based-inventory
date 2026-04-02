@@ -17,6 +17,7 @@ from flask import Blueprint, request, jsonify, current_app
 
 from database import get_db
 from services.audit_service import log_audit
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -111,7 +112,7 @@ def customer_login():
             return jsonify({"error": "Invalid email or password"}), 401
 
         # Update last login timestamp
-        db.customers.update_one({"_id": customer['_id']}, {"$set": {"lastLogin": datetime.utcnow()}})
+        db.customers.update_one({"_id": customer['_id']}, {"$set": {"lastLogin": utc_now()}})
 
         # Issue JWT
         session_version = customer.get('sessionVersion', 1)
@@ -121,7 +122,7 @@ def customer_login():
             "name": customer.get('name'),
             "role": 'customer',
             "sessionVersion": session_version,
-            "exp": datetime.utcnow() + timedelta(days=7)
+            "exp": utc_now() + timedelta(days=7)
         }
         token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')
 

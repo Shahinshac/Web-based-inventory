@@ -2,7 +2,6 @@ import logging
 import bcrypt
 import os
 import shutil
-from datetime import datetime
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, g
 
@@ -10,6 +9,7 @@ from database import get_db
 from utils.auth_middleware import authenticate_token, require_admin
 from services.audit_service import log_audit
 from utils.constants import ALLOW_ADMIN_PASSWORD_CHANGE
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -128,11 +128,11 @@ def clear_database():
     log_audit(db, "ADMIN_CLEAR_DATABASE", str(admin["_id"]), admin["username"], results)
     
     return jsonify({
-        "success": True, 
+        "success": True,
         "message": "All data cleared successfully",
         "results": results,
         "total": total,
-        "timestamp": datetime.utcnow().isoformat()
+        "timestamp": to_iso_string(utc_now())
     })
 
 @admin_bp.route('/database-stats', methods=['GET'])
@@ -206,7 +206,7 @@ def get_audit_logs():
             "action": log.get('action'),
             "userId": str(log.get('userId')) if log.get('userId') else None,
             "username": log.get('username'),
-            "timestamp": log.get('timestamp').isoformat() if isinstance(log.get('timestamp'), datetime) else str(log.get('timestamp')),
+            "timestamp": to_iso_string(log.get('timestamp')),
             "details": log.get('details'),
             "metadata": log.get('metadata')
         })

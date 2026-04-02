@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime
+from utils.tzutils import utc_now
 
 logger = logging.getLogger(__name__)
 
@@ -7,10 +7,11 @@ def log_audit(db, action, user_id, username, details=None):
     """
     Python equivalent of the Node.js audit logging service.
     Records critical security and application actions into 'audit_logs'.
+    All timestamps are stored in UTC with timezone awareness.
     """
     if details is None:
         details = {}
-        
+
     try:
         if db is None:
             logger.warning("📝 Audit log skipped: No database connection available.")
@@ -21,7 +22,7 @@ def log_audit(db, action, user_id, username, details=None):
             "userId": user_id,
             "username": username,
             "details": details,
-            "timestamp": datetime.utcnow()
+            "timestamp": utc_now()
         }
         
         db.audit_logs.insert_one(log_entry)

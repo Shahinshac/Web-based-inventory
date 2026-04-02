@@ -9,6 +9,7 @@ from flask import Blueprint, request, jsonify, current_app, g
 from database import get_db
 from utils.auth_middleware import authenticate_token, require_admin
 from services.audit_service import log_audit
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -53,7 +54,7 @@ def create_user():
         "email": email,
         "role": assigned_role,
         "approved": True,
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "createdBy": g.user.get('username'),
         "lastLogin": None,
         "sessionVersion": 1
@@ -100,7 +101,7 @@ def login():
     if not user.get('approved', False):
         return jsonify({"error": "Your account is disabled. Please contact your admin.", "approved": False}), 403
 
-    db.users.update_one({"_id": user['_id']}, {"$set": {"lastLogin": datetime.utcnow()}})
+    db.users.update_one({"_id": user['_id']}, {"$set": {"lastLogin": utc_now()}})
 
     ip_addr = request.headers.get('X-Forwarded-For', request.remote_addr)
     log_audit(db, "USER_LOGIN", str(user['_id']), user['username'], {
@@ -115,7 +116,7 @@ def login():
         "username": user['username'],
         "role": user.get('role'),
         "sessionVersion": session_version,
-        "exp": datetime.utcnow() + timedelta(days=7)
+        "exp": utc_now() + timedelta(days=7)
     }
 
     token = jwt.encode(token_payload, current_app.config['SECRET_KEY'], algorithm='HS256')

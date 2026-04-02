@@ -12,6 +12,7 @@ from database import get_db
 from utils.auth_middleware import authenticate_token, require_customer
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
 from services.customer_service import build_vcard, build_pvc_card_pdf
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ def get_dashboard():
         total_spent = sum(float(inv.get('grandTotal', 0)) for inv in invoices)
 
         # Get latest purchases
-        recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', datetime.utcnow()), reverse=True)[:5]
+        recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', utc_now()), reverse=True)[:5]
 
         # Get warranties
         warranties = list(db.warranties.find(match_query))
@@ -237,7 +238,7 @@ def get_customer_warranties():
             status = 'expired'
 
             if expiry_date:
-                days_left = (expiry_date - datetime.utcnow()).days
+                days_left = (expiry_date - utc_now()).days
                 if days_left > 0:
                     status = 'active'
                     if days_left <= 30:
@@ -306,7 +307,7 @@ def renew_warranty(warranty_id):
         years = int(data.get('years', 1))
 
         # Calculate new expiry
-        current_expiry = warranty.get('expiryDate', datetime.utcnow())
+        current_expiry = warranty.get('expiryDate', utc_now())
         new_expiry = current_expiry + timedelta(days=365 * years)
 
         # Update warranty
@@ -315,7 +316,7 @@ def renew_warranty(warranty_id):
             {
                 "$set": {
                     "expiryDate": new_expiry,
-                    "renewalDate": datetime.utcnow(),
+                    "renewalDate": utc_now(),
                     "status": "active"
                 }
             }

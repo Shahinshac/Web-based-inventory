@@ -10,6 +10,7 @@ from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -65,7 +66,7 @@ def checkout():
             pass # Invalid ObjectId
 
     # Generate Invoice Number
-    current_year = datetime.utcnow().year
+    current_year = utc_now().year
     prefix = f"INV-{current_year}-"
     # To find count, regex search is simple
     bill_count = db.bills.count_documents({"billNumber": {"$regex": f"^{prefix}"}})
@@ -76,7 +77,7 @@ def checkout():
     is_same_state = (customer_state == 'Same')
 
     # Set exact local time (IST is +5:30 ahead of UTC)
-    bill_date = datetime.utcnow() + timedelta(hours=5, minutes=30)
+    bill_date = utc_now() + timedelta(hours=5, minutes=30)
     client_time = data.get('clientTime')
     if client_time:
         try:
@@ -223,7 +224,7 @@ def checkout():
                 "expiryDate": bill_date + timedelta(days=365),
                 "status": "active",
                 "invoiceNo": bill_number, 
-                "createdAt": datetime.utcnow() + timedelta(hours=5, minutes=30)
+                "createdAt": utc_now() + timedelta(hours=5, minutes=30)
             })
 
     log_audit(db, "SALE_COMPLETED", user_id, username, {
@@ -307,7 +308,7 @@ def get_invoices():
                 "price": i.get("unitPrice", 0),
                 "lineSubtotal": i.get("lineSubtotal", 0)
             } for i in b.get("items", [])],
-            "date": b.get("billDate", datetime.utcnow()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
+            "date": b.get("billDate", utc_now()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -367,12 +368,12 @@ def create_public_link(id):
         return jsonify({"error": "Invoice not found"}), 404
 
     token = secrets.token_hex(16)
-    expires = datetime.utcnow() + timedelta(days=1)
+    expires = utc_now() + timedelta(days=1)
 
     db.public_invoice_links.insert_one({
         "token": token,
         "invoiceId": str(invoice["_id"]),
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "expiresAt": expires,
         "createdBy": "system",
         "companySnapshot": {
@@ -412,11 +413,11 @@ def whatsapp_link(id):
 
         # Create link
         token = secrets.token_hex(16)
-        expires = datetime.utcnow() + timedelta(days=1)
+        expires = utc_now() + timedelta(days=1)
         db.public_invoice_links.insert_one({
             "token": token,
             "invoiceId": str(invoice["_id"]),
-            "createdAt": datetime.utcnow(),
+            "createdAt": utc_now(),
             "expiresAt": expires,
             "createdBy": "system",
             "companySnapshot": {

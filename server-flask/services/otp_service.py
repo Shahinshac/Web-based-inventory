@@ -2,8 +2,9 @@
 
 import random
 import string
-from datetime import datetime, timedelta
+from datetime import timedelta
 from database import get_db
+from utils.tzutils import utc_now
 
 def generate_otp() -> str:
     """Generate a 6-digit OTP"""
@@ -13,7 +14,7 @@ def store_otp(email: str, otp: str, expiry_minutes: int = 10) -> bool:
     """Store OTP in database with expiry"""
     try:
         db = get_db()
-        expiry_time = datetime.utcnow() + timedelta(minutes=expiry_minutes)
+        expiry_time = utc_now() + timedelta(minutes=expiry_minutes)
 
         # Store OTP (replace if exists)
         db.otp_codes.update_one(
@@ -22,7 +23,7 @@ def store_otp(email: str, otp: str, expiry_minutes: int = 10) -> bool:
                 "$set": {
                     "email": email,
                     "otp": otp,
-                    "created_at": datetime.utcnow(),
+                    "created_at": utc_now(),
                     "expires_at": expiry_time,
                     "attempts": 0
                 }
@@ -44,7 +45,14 @@ def verify_otp(email: str, otp: str, max_attempts: int = 5) -> dict:
             return {"valid": False, "error": "No OTP found. Please request a new one."}
 
         # Check if expired
-        if datetime.utcnow() > otp_record.get("expires_at", datetime.utcnow()):
+        current_time = utc_now()
+        expires_at = otp_record.get("expires_at")
+
+        # Ensure timezone aware comparison
+        if expires_at and expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=utc_now().tzinfo)
+
+        if expires_at and current_time > expires_at:
             db.otp_codes.delete_one({"email": email})
             return {"valid": False, "error": "OTP has expired. Please request a new one."}
 

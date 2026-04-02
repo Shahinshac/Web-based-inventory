@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchCustomerEMIPlans, getEMIDetails } from '../../services/customerPortalService';
+import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerEMI = ({ currentUser }) => {
   const [emiPlans, setEmiPlans] = useState([]);
@@ -61,16 +62,7 @@ const CustomerEMI = ({ currentUser }) => {
 
   const formatAmount = (value) => `₹${Number(value || 0).toLocaleString()}`;
 
-  const formatDate = (value) => {
-    if (!value) return 'N/A';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'N/A';
-    return parsed.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (value) => formatDateOnlyIST(value);
 
   if (loading && emiPlans.length === 0) {
     return (

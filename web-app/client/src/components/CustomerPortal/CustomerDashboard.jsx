@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchDashboardStats } from '../../services/customerPortalService';
+import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerDashboard = ({ currentUser }) => {
   const [stats, setStats] = useState(null);
@@ -46,12 +47,8 @@ const CustomerDashboard = ({ currentUser }) => {
     );
   }
 
-  const memberSince = stats?.memberSince 
-    ? new Date(stats.memberSince).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'long', 
-        day: 'numeric' 
-      })
+  const memberSince = stats?.memberSince
+    ? formatDateOnlyIST(stats.memberSince)
     : 'N/A';
 
   return (
@@ -125,11 +122,7 @@ const CustomerDashboard = ({ currentUser }) => {
                 <tr key={purchase.id}>
                   <td><strong>{purchase.invoiceNo}</strong></td>
                   <td>
-                    {new Date(purchase.date).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
+                    {formatDateOnlyIST(purchase.date)}
                   </td>
                   <td>{purchase.itemCount} items</td>
                   <td><strong>₹{purchase.total.toLocaleString()}</strong></td>

@@ -10,6 +10,7 @@ from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
 from services.customer_service import build_vcard, build_pvc_card_pdf
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -82,7 +83,7 @@ def add_customer():
         "gstin": gstin,
         "purchasesCount": 0,
         "totalPurchases": 0,
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "createdBy": user_id,
         "createdByUsername": username
     }
@@ -146,7 +147,7 @@ def update_customer(id):
         "country": country,
         "pincode": pincode,
         "gstin": gstin,
-        "updatedAt": datetime.utcnow(),
+        "updatedAt": utc_now(),
         "updatedBy": user_id,
         "updatedByUsername": username
     }
@@ -215,12 +216,12 @@ def customer_whatsapp_share(id):
 
     # Create public customer card link
     token = secrets.token_hex(16)
-    expires = datetime.utcnow() + timedelta(days=7)  # Valid for 7 days
+    expires = utc_now() + timedelta(days=7)  # Valid for 7 days
 
     db.public_customer_cards.insert_one({
         "token": token,
         "customerId": str(customer["_id"]),
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "expiresAt": expires,
         "companySnapshot": {
             "name": COMPANY_NAME,

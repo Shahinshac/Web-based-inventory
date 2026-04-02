@@ -19,6 +19,7 @@ import ExportData from './components/ExportData/ExportData';
 import Dashboard from './components/Dashboard/Dashboard';
 import Toast from './components/Common/Toast';
 import { useAuth } from './hooks/useAuth';
+import { formatTimestampIST } from './utils/dateFormatter';
 
 import { useProducts } from './hooks/useProducts';
 import { useCustomers } from './hooks/useCustomers';
@@ -165,12 +166,11 @@ Esc: Close modals/dialogs`;
       if (response.ok) {
         const data = await response.json();
         const logs = data.logs || data || [];
-        
+
         // Format activities for display
         const activities = logs.map(log => {
-          const timeAgo = getTimeAgo(new Date(log.timestamp));
           let text = '';
-          
+
           switch (log.action) {
             case 'PRODUCT_ADDED':
               text = `Added product "${log.details?.productName || 'Unknown'}"`;
@@ -204,33 +204,19 @@ Esc: Close modals/dialogs`;
             default:
               text = log.action.replace(/_/g, ' ').toLowerCase();
           }
-          
+
           return {
             text,
-            time: timeAgo,
+            time: formatTimestampIST(log.timestamp),
             timestamp: log.timestamp
           };
         });
-        
+
         setRecentActivity(activities);
       }
     } catch (error) {
       console.error('Error fetching recent activity:', error);
     }
-  };
-
-  // Helper function to calculate time ago
-  const getTimeAgo = (date) => {
-    const seconds = Math.floor((new Date() - date) / 1000);
-    
-    if (seconds < 60) return 'Just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
   };
 
   // Show notification helper

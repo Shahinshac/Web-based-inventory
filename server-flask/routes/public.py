@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request, render_template_string
 from datetime import datetime
 from bson import ObjectId
 from database import get_db
+from utils.tzutils import utc_now, to_iso_string
 
 public_bp = Blueprint('public', __name__)
 
@@ -364,7 +365,7 @@ def view_public_invoice(token):
     bill_dt = bill.get("billDate")
     if not isinstance(bill_dt, datetime):
         # fallback to now if broken
-        bill_dt = datetime.utcnow()
+        bill_dt = utc_now()
         
     bill_date_str = bill_dt.strftime("%d %b, %Y")
     bill_time_str = bill_dt.strftime("%I:%M %p")

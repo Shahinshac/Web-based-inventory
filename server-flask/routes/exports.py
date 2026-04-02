@@ -5,6 +5,7 @@ from datetime import datetime
 from flask import Blueprint, request, send_file, jsonify
 from database import get_db
 from utils.auth_middleware import authenticate_token
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ def export_products():
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f"products_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        download_name=f"products_export_{utc_now().strftime('%Y%m%d')}.csv"
     )
 
 @exports_bp.route('/customers', methods=['GET'])
@@ -75,7 +76,7 @@ def export_customers():
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f"customers_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        download_name=f"customers_export_{utc_now().strftime('%Y%m%d')}.csv"
     )
 
 @exports_bp.route('/invoices', methods=['GET'])
@@ -123,7 +124,7 @@ def export_invoices():
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f"invoices_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        download_name=f"invoices_export_{utc_now().strftime('%Y%m%d')}.csv"
     )
 
 @exports_bp.route('/expenses', methods=['GET'])
@@ -167,7 +168,7 @@ def export_expenses():
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f"expenses_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        download_name=f"expenses_export_{utc_now().strftime('%Y%m%d')}.csv"
     )
 
 @exports_bp.route('/returns', methods=['GET'])
@@ -213,5 +214,5 @@ def export_returns():
         io.BytesIO(output.getvalue().encode('utf-8')),
         mimetype='text/csv',
         as_attachment=True,
-        download_name=f"returns_export_{datetime.now().strftime('%Y%m%d')}.csv"
+        download_name=f"returns_export_{utc_now().strftime('%Y%m%d')}.csv"
     )

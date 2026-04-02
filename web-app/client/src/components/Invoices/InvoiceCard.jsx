@@ -4,13 +4,14 @@ import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
 import { formatCurrency, formatCurrency0, PAYMENT_MODE_LABELS } from '../../constants';
+import { formatDateOnlyIST, formatTimeOnlyIST } from '../../utils/dateFormatter';
 
 export default function InvoiceCard({ invoice, onView, onDelete, onExport, onShare }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
-  const formattedDate = date.toLocaleDateString('en-IN', { timeZone: 'Asia/Kolkata' });
-  const formattedTime = date.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+  const formattedDate = formatDateOnlyIST(date);
+  const formattedTime = formatTimeOnlyIST(date);
 
   const billNumber = invoice.billNumber || invoice.id;
   const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';

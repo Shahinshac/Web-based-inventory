@@ -6,6 +6,7 @@ from flask import Blueprint, request, jsonify, g
 from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -44,7 +45,7 @@ def add_expense():
     
     # client time vs server time
     date_str = data.get('date')
-    expense_date = datetime.utcnow()
+    expense_date = utc_now()
     if date_str:
         try:
             from dateutil import parser
@@ -70,7 +71,7 @@ def add_expense():
         "amount": amount,
         "category": category,
         "date": expense_date,
-        "createdAt": datetime.utcnow(),
+        "createdAt": utc_now(),
         "createdBy": user_id,
         "createdByUsername": username
     }

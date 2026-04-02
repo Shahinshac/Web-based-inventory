@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify, g
 from database import get_db
 from utils.auth_middleware import authenticate_token, require_customer
 from services.audit_service import log_audit
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -73,7 +74,7 @@ def create_emi():
 
     # Generate installments
     installments = []
-    start_date = datetime.utcnow()
+    start_date = utc_now()
 
     for i in range(tenure):
         due_date = start_date + timedelta(days=30 * (i + 1))
@@ -107,8 +108,8 @@ def create_emi():
         "status": "active",  # active, closed, defaulted
         "installments": installments,
         "createdBy": g.user.get('userId'),
-        "createdAt": datetime.utcnow(),
-        "updatedAt": datetime.utcnow(),
+        "createdAt": utc_now(),
+        "updatedAt": utc_now(),
         "notes": data.get('notes', '')
     }
 
@@ -126,7 +127,7 @@ def create_emi():
             "emiTotalAmount": total_amount,
             "emiMonthlyAmount": monthly_emi,
             "emiTenure": tenure,
-            "updatedAt": datetime.utcnow()
+            "updatedAt": utc_now()
         }}
     )
 
@@ -301,7 +302,7 @@ def record_emi_payment(emi_id):
 
     # Update installment
     installment['paidAmount'] = min(installment['paidAmount'] + paid_amount, due_amount)
-    installment['paidDate'] = datetime.utcnow()
+    installment['paidDate'] = utc_now()
     installment['paymentMethod'] = payment_method
     installment['notes'] = notes
 
@@ -320,7 +321,7 @@ def record_emi_payment(emi_id):
         {"$set": {
             "installments": emi_plan['installments'],
             "status": new_status,
-            "updatedAt": datetime.utcnow()
+            "updatedAt": utc_now()
         }}
     )
 
@@ -371,7 +372,7 @@ def update_emi_status(emi_id):
         {"_id": emi_id_obj},
         {"$set": {
             "status": new_status,
-            "updatedAt": datetime.utcnow()
+            "updatedAt": utc_now()
         }}
     )
 

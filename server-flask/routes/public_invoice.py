@@ -5,6 +5,7 @@ from flask import Blueprint, request, jsonify
 
 from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
+from utils.tzutils import utc_now, to_iso_string
 
 public_invoice_bp = Blueprint('public_invoice', __name__)
 logger = logging.getLogger(__name__)
@@ -42,7 +43,7 @@ def public_invoice_view(token):
         """, 404
 
     # Check if expired
-    if datetime.utcnow() > public_link.get('expiresAt'):
+    if utc_now() > public_link.get('expiresAt'):
         return """
         <!DOCTYPE html>
         <html>

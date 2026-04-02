@@ -7,6 +7,7 @@ import base64
 
 from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
+from utils.tzutils import utc_now, to_iso_string
 
 public_customer_card_bp = Blueprint('public_customer_card', __name__)
 
@@ -43,7 +44,7 @@ def public_customer_card_view(token):
         """, 404
 
     # Check if expired
-    if datetime.utcnow() > public_link.get('expiresAt'):
+    if utc_now() > public_link.get('expiresAt'):
         return """
         <!DOCTYPE html>
         <html>

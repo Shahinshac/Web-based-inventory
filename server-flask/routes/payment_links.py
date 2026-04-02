@@ -13,6 +13,7 @@ from flask import Blueprint, request, jsonify, current_app, g
 
 from database import get_db
 from utils.auth_middleware import authenticate_token, require_admin
+from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
@@ -98,7 +99,7 @@ def create_payment_link():
         db = get_db()
 
         # Create transaction ID
-        transaction_id = f"PAY-{datetime.utcnow().strftime('%Y%m%d%H%M%S')}-{customer_phone[-4:]}"
+        transaction_id = f"PAY-{utc_now().strftime('%Y%m%d%H%M%S')}-{customer_phone[-4:]}"
 
         # Get UPI config from Flask config (will use env variables or defaults)
         company_upi = current_app.config.get('COMPANY_UPI', '7594012761@super')
@@ -114,7 +115,7 @@ def create_payment_link():
             return jsonify({"error": "Failed to generate QR code"}), 500
 
         # Create payment link record
-        expiry_date = datetime.utcnow() + timedelta(days=PAYMENT_LINK_EXPIRY_DAYS)
+        expiry_date = utc_now() + timedelta(days=PAYMENT_LINK_EXPIRY_DAYS)
 
         payment_link = {
             "transactionId": transaction_id,
@@ -126,7 +127,7 @@ def create_payment_link():
             "upiString": upi_string,
             "qrCode": qr_code,
             "status": "pending",  # pending, paid, expired, cancelled
-            "createdAt": datetime.utcnow(),
+            "createdAt": utc_now(),
             "expiryDate": expiry_date,
             "paidAt": None,
             "paidAmount": None,
@@ -282,7 +283,7 @@ def update_payment_link(payment_link_id):
             update_data['status'] = status
             # If marked as paid, set paid timestamp
             if status == 'paid':
-                update_data['paidAt'] = datetime.utcnow()
+                update_data['paidAt'] = utc_now()
                 update_data['paidAmount'] = link.get('amount')
 
         if notes is not None:
@@ -350,7 +351,7 @@ def cleanup_expired_links():
         # Find and update expired links
         result = db.payment_links.update_many(
             {
-                "expiryDate": {"$lt": datetime.utcnow()},
+                "expiryDate": {"$lt": utc_now()},
                 "status": {"$in": ["pending"]}
             },
             {

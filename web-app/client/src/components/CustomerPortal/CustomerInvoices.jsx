@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchCustomerInvoices, downloadInvoicePDF } from '../../services/customerPortalService';
+import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerInvoices = ({ currentUser }) => {
   const [invoices, setInvoices] = useState([]);
@@ -49,16 +50,7 @@ const CustomerInvoices = ({ currentUser }) => {
     inv.date?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (value) => {
-    if (!value) return 'N/A';
-    const parsed = new Date(value);
-    if (Number.isNaN(parsed.getTime())) return 'N/A';
-    return parsed.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
-  };
+  const formatDate = (value) => formatDateOnlyIST(value);
 
   const formatAmount = (value) => `₹${Number(value || 0).toLocaleString()}`;
 

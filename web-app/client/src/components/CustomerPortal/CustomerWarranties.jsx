@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchCustomerWarranties, renewWarranty } from '../../services/customerPortalService';
+import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerWarranties = ({ currentUser }) => {
   const [warranties, setWarranties] = useState([]);
@@ -53,11 +54,7 @@ const CustomerWarranties = ({ currentUser }) => {
   const formatDate = (value) => {
     const parsed = parseDate(value);
     if (!parsed) return 'N/A';
-    return parsed.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
-    });
+    return formatDateOnlyIST(parsed);
   };
 
   const loadWarranties = async (page = 1) => {
