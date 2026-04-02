@@ -29,7 +29,7 @@ import { usePWA } from './hooks/usePWA';
 import { useOffline } from './hooks/useOffline';
 import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 // Removed unused constants import
-import { API, apiPost, apiPatch, getAuthHeaders } from './utils/api';
+import { API, apiPost, apiPatch, getAuthHeaders, getApiBaseUrl, checkBackendHealth } from './utils/api';
 import { createPaymentLink } from './services/paymentLinkService';
 import { emiService } from './services/emiService';
 import './styles.css';
@@ -38,6 +38,7 @@ export default function App() {
   // State
   const [tab, setTab] = useState('dashboard');
   const [notification, setNotification] = useState(null);
+  const [backendStatus, setBackendStatus] = useState('checking'); // 'checking', 'online', 'offline'
   const [companyInfo] = useState({
     name: '26:07 Electronics',
     address: 'Electronics Plaza, Tech Street, City - 560001',
@@ -46,7 +47,7 @@ export default function App() {
     gstin: '29AABCU9603R1ZX',
     logo: '⚡'
   });
-  
+
   const [recentActivity, setRecentActivity] = useState([]);
 
   // Custom hooks
@@ -143,6 +144,35 @@ Esc: Close modals/dialogs`;
   useEffect(() => {
     initAnalytics();
     trackPageView('Inventory Management App');
+  }, []);
+
+  // Check backend health on app load and periodically
+  useEffect(() => {
+    const checkHealth = async () => {
+      const baseUrl = getApiBaseUrl();
+      console.log(`[App] Checking backend health at ${baseUrl}...`);
+      const isHealthy = await checkBackendHealth(3, 1000); // 3 retries, 1s initial delay
+
+      if (isHealthy) {
+        setBackendStatus('online');
+        console.log('[App] Backend is online ✅');
+      } else {
+        setBackendStatus('offline');
+        console.error(`[App] Backend at ${baseUrl} is not responding ❌`);
+        setNotification({
+          message: `Unable to connect to backend (${baseUrl}). Some features may not work. Please check your connection or contact support.`,
+          type: 'error',
+          duration: 0 // Don't auto-dismiss
+        });
+      }
+    };
+
+    // Check on initial load
+    checkHealth();
+
+    // Recheck every 30 seconds if offline
+    const interval = setInterval(checkHealth, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Fetch recent activity when authenticated or when tab changes to dashboard

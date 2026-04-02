@@ -8,11 +8,11 @@ export const getApiBaseUrl = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/$/, '');
   }
-  
+
   // Intelligent resolution for local network testing (e.g. mobile phones)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    
+
     // If we're on localhost, use localhost:5000
     if (hostname === 'localhost' || hostname === '127.0.0.1') {
       return 'http://localhost:5000';
@@ -34,13 +34,45 @@ export const getApiBaseUrl = () => {
 
     return `http://${hostname}:5000`;
   }
-  
+
   return 'http://localhost:5000';
 }
 
 export const API = (path) => {
   const baseUrl = getApiBaseUrl()
   return baseUrl + path
+}
+
+/**
+ * Check if backend is healthy (handles Render sleep mode)
+ * Returns true if backend is accessible, false otherwise
+ */
+export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
+  const baseUrl = getApiBaseUrl();
+
+  for (let attempt = 1; attempt <= retries; attempt++) {
+    try {
+      const response = await fetch(`${baseUrl}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000) // 5 second timeout
+      });
+
+      if (response.ok) {
+        console.log(`[api] Backend health check passed on attempt ${attempt}`);
+        return true;
+      }
+    } catch (error) {
+      console.warn(`[api] Health check attempt ${attempt}/${retries} failed:`, error.message);
+
+      // If not the last attempt, wait before retrying
+      if (attempt < retries) {
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      }
+    }
+  }
+
+  console.error('[api] Backend health check failed after all retries');
+  return false;
 }
 
 /**
@@ -89,24 +121,79 @@ export const normalizePhotoUrl = (photoUrl) => {
 };
 
 /**
- * Generic fetch wrapper with error handling
+ * Retry fetch with exponential backoff for transient failures
+ * (handles Render free tier sleep mode)
+ */
+const retryFetch = async (
+  url,
+  options = {},
+  maxRetries = 3,
+  initialDelayMs = 1000
+) => {
+  let lastError;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const response = await fetch(url, {
+        ...options,
+        signal: AbortSignal.timeout(10000) // 10 second timeout per request
+      });
+
+      return response;
+    } catch (error) {
+      lastError = error;
+
+      // Log the attempt
+      const isNetworkError =
+        error.message.includes('Failed to fetch') ||
+        error.message.includes('NetworkError') ||
+        error.message.includes('AbortError');
+
+      if (isNetworkError && attempt < maxRetries) {
+        const delayMs = initialDelayMs * Math.pow(2, attempt - 1); // Exponential backoff
+        console.warn(
+          `[api] Request failed (attempt ${attempt}/${maxRetries}). Retrying in ${delayMs}ms...`,
+          error.message
+        );
+        await new Promise(resolve => setTimeout(resolve, delayMs));
+      } else {
+        // Not a network error or last attempt
+        throw error;
+      }
+    }
+  }
+
+  throw lastError;
+};
+
+/**
+ * Generic fetch wrapper with error handling and retry logic
  */
 export const apiFetch = async (endpoint, options = {}) => {
+  const maxRetries = options.retries ?? 2; // Default 2 retries for transient errors
+  const baseUrl = getApiBaseUrl();
+
   try {
     const token = localStorage.getItem('authToken')
     const authHeaders = token ? { 'Authorization': `Bearer ${token}` } : {}
 
-    const response = await fetch(API(endpoint), {
-      headers: {
-        'Content-Type': 'application/json',
-        ...authHeaders,
-        ...options.headers
+    console.log(`[api] ${options.method || 'GET'} ${baseUrl}${endpoint}`);
+
+    const response = await retryFetch(
+      API(endpoint),
+      {
+        headers: {
+          'Content-Type': 'application/json',
+          ...authHeaders,
+          ...options.headers
+        },
+        ...options
       },
-      ...options
-    })
+      maxRetries
+    );
 
     if (!response.ok) {
-      let errorMessage = `API error: ${response.status}`
+      let errorMessage = `API error: ${response.status}`;
       try {
         const error = await response.json()
         errorMessage = error.error || errorMessage
@@ -119,10 +206,15 @@ export const apiFetch = async (endpoint, options = {}) => {
 
     return await response.json()
   } catch (error) {
+    // Transform network errors into user-friendly messages
     if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
-      error.message = 'Unable to connect to the server. Please ensure the backend is running and accessible.';
+      const baseUrl = getApiBaseUrl();
+      error.message = `Unable to connect to server (${baseUrl}). Please ensure the backend is running and accessible.`;
+    } else if (error.message.includes('AbortError')) {
+      error.message = 'Request timeout. Backend may be slow or unreachable.';
     }
-    console.error(`API fetch error for ${endpoint}:`, error)
+
+    console.error(`[api] Error for ${endpoint}:`, error)
     throw error
   }
 }
@@ -170,15 +262,21 @@ export const getAuthHeaders = () => {
 }
 
 /**
- * Upload file (multipart/form-data) - includes auth header
+ * Upload file (multipart/form-data) - includes auth header with retry logic
  */
 export const apiUpload = async (endpoint, formData, method = 'POST') => {
+  const maxRetries = 2;
+
   try {
-    const response = await fetch(API(endpoint), {
-      method,
-      headers: getAuthHeaders(), // Auth header only, NOT Content-Type (browser sets multipart boundary)
-      body: formData
-    })
+    const response = await retryFetch(
+      API(endpoint),
+      {
+        method,
+        headers: getAuthHeaders(), // Auth header only, NOT Content-Type
+        body: formData
+      },
+      maxRetries
+    );
 
     if (!response.ok) {
       const error = await response.json()
