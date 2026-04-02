@@ -41,16 +41,28 @@ def get_customer_match_query(customer):
         {"customerId": customer_id},
         {"customerId": str(customer_id)}
     ]
-    
+
     if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
-        or_conditions.append({"customerName": customer.get('name')})
-        
+        import re
+        customer_name = str(customer.get('name')).strip()
+        or_conditions.append({"customerName": customer_name})
+        or_conditions.append({"customerName": re.compile(f"^{re.escape(customer_name)}$", re.I)})
+
     if customer.get('phone') and str(customer.get('phone')).strip() != "":
-        or_conditions.append({"customerPhone": str(customer.get('phone'))})
-        
+        customer_phone = str(customer.get('phone')).strip()
+        or_conditions.append({"customerPhone": customer_phone})
+
+        normalized_phone = ''.join(ch for ch in customer_phone if ch.isdigit())
+        if normalized_phone:
+            or_conditions.append({"customerPhone": normalized_phone})
+            if normalized_phone.startswith('91') and len(normalized_phone) > 10:
+                or_conditions.append({"customerPhone": normalized_phone[-10:]})
+
     if customer.get('email') and str(customer.get('email')).strip() != "":
         import re
-        email_regex = re.compile(f"^{re.escape(customer.get('email'))}$", re.I)
+        customer_email = str(customer.get('email')).strip()
+        or_conditions.append({"customerEmail": customer_email})
+        email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
         or_conditions.append({"customerEmail": email_regex})
         
     return {"$or": or_conditions}

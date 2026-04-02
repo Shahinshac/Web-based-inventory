@@ -18,9 +18,15 @@ export const getApiBaseUrl = () => {
       return 'http://localhost:5000';
     }
 
-    // For any other hostname (including production domains), the VITE_API_URL
-    // environment variable must be set at build time to point to the backend.
-    // Log a warning so developers can diagnose the issue quickly.
+    // Production fallback for known hosted frontend domains.
+    // This prevents customer-portal pages (Invoices/EMI) from failing when
+    // VITE_API_URL is not set in Vercel.
+    if (hostname.includes('vercel.app') || hostname === '26-07inventory.vercel.app') {
+      return 'https://web-based-inventory.onrender.com';
+    }
+
+    // For any other hostname, VITE_API_URL should be set at build time.
+    // Keep a sane fallback and log warning for quick diagnosis.
     console.warn(
       `[api] VITE_API_URL is not set. API calls may fail on host "${hostname}". ` +
       'Set VITE_API_URL to your backend URL (e.g. https://your-backend.onrender.com).'
