@@ -1,9 +1,10 @@
 import io
 import logging
 import secrets
+import urllib.parse
 from datetime import datetime, timedelta
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, g, send_file
+from flask import Blueprint, request, jsonify, g, send_file, current_app
 
 from database import get_db
 from utils.auth_middleware import authenticate_token
@@ -202,58 +203,90 @@ def delete_customer(id):
 @authenticate_token
 def customer_whatsapp_share(id):
     """Generate WhatsApp share link for customer card"""
-    db = get_db()
-
     try:
-        customer = db.customers.find_one({"_id": ObjectId(id)})
-    except Exception:
-        return jsonify({"error": "Invalid customer ID"}), 400
+        db = get_db()
 
-    if not customer:
-        return jsonify({"error": "Customer not found"}), 404
+        # Fetch customer
+        try:
+            customer = db.customers.find_one({"_id": ObjectId(id)})
+        except Exception as e:
+            logger.warning(f"Invalid customer ID format: {e}")
+            return jsonify({"error": "Invalid customer ID"}), 400
 
-    customer_phone = customer.get('phone')
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
 
-    # Create public customer card link
-    token = secrets.token_hex(16)
-    expires = utc_now() + timedelta(days=7)  # Valid for 7 days
+        customer_phone = customer.get('phone')
+        customer_name = customer.get('name', 'Customer')
 
-    db.public_customer_cards.insert_one({
-        "token": token,
-        "customerId": str(customer["_id"]),
-        "createdAt": utc_now(),
-        "expiresAt": expires,
-        "companySnapshot": {
-            "name": COMPANY_NAME,
-            "phone": COMPANY_PHONE
-        }
-    })
+        # Create public customer card link
+        try:
+            token = secrets.token_hex(16)
+            expires = utc_now() + timedelta(days=7)  # Valid for 7 days
 
-    public_url = f"{request.host_url.rstrip('/')}/public/customer-card/{token}"
+            db.public_customer_cards.insert_one({
+                "token": token,
+                "customerId": str(customer["_id"]),
+                "createdAt": utc_now(),
+                "expiresAt": expires,
+                "companySnapshot": {
+                    "name": COMPANY_NAME,
+                    "phone": COMPANY_PHONE
+                }
+            })
+        except Exception as e:
+            logger.error(f"Failed to create public customer card link: {e}")
+            return jsonify({"error": "Failed to create public link"}), 500
 
-    import urllib.parse
-    portal_message = (
-        f"\n\n🎁 *Customer Portal:*"
-        f"\nRegister & login to view your invoices, warranties and purchase history."
-        f"\n🔗 https://26-07inventory.vercel.app"
-        f"\n(Use the email you provided during billing)"
-    )
-    message = f"Hi {customer.get('name', 'Customer')}, here's your customer identity card from {COMPANY_NAME}.\n\n🆔 View Card: {public_url}{portal_message}"
+        # Build public URL
+        public_url = f"{request.host_url.rstrip('/')}/public/customer-card/{token}"
 
-    whatsapp_url = None
-    if customer_phone:
-        clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
-        if len(clean_phone) == 10:
-            clean_phone = f"91{clean_phone}"
-        whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+        # Build WhatsApp message
+        portal_message = (
+            f"\n\n🎁 *Customer Portal:*"
+            f"\nRegister & login to view your invoices, warranties and purchase history."
+            f"\n🔗 https://26-07inventory.vercel.app"
+            f"\n(Use the email you provided during billing)"
+        )
+        message = f"Hi {customer_name}, here's your customer identity card from {COMPANY_NAME}.\n\n🆔 View Card: {public_url}{portal_message}"
 
-    return jsonify({
-        "publicUrl": public_url,
-        "whatsappUrl": whatsapp_url,
-        "token": token,
-        "hasPhone": bool(customer_phone),
-        "customerName": customer.get('name', 'Customer')
-    })
+        # Generate WhatsApp URL if phone exists
+        whatsapp_url = None
+        if customer_phone:
+            try:
+                # Clean phone number - extract only digits
+                clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
+
+                # Validate phone length
+                if not clean_phone:
+                    logger.warning(f"Invalid phone number format: {customer_phone}")
+                elif len(clean_phone) == 10:
+                    # Indian phone: add country code
+                    clean_phone = f"91{clean_phone}"
+                elif len(clean_phone) < 10 or len(clean_phone) > 15:
+                    logger.warning(f"Phone number out of valid range: {clean_phone}")
+                    clean_phone = None
+
+                if clean_phone:
+                    whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+            except Exception as e:
+                logger.warning(f"Failed to generate WhatsApp URL: {e}")
+
+        return jsonify({
+            "publicUrl": public_url,
+            "whatsappUrl": whatsapp_url,
+            "token": token,
+            "hasPhone": bool(customer_phone),
+            "customerName": customer_name
+        })
+
+    except Exception as e:
+        logger.error(f"Customer WhatsApp share error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to generate customer card link",
+            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred"
+        }), 500
+
 
 @customers_bp.route('/<id>/vcard', methods=['GET'])
 @authenticate_token

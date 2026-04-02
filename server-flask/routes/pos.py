@@ -4,7 +4,7 @@ import secrets
 import urllib.parse
 from datetime import datetime, timedelta
 from bson import ObjectId
-from flask import Blueprint, request, jsonify, g, url_for
+from flask import Blueprint, request, jsonify, g, url_for, current_app
 
 from database import get_db
 from utils.auth_middleware import authenticate_token
@@ -427,65 +427,122 @@ def create_public_link(id):
 
 @pos_bp.route('/<id>/whatsapp-link', methods=['POST'])
 def whatsapp_link(id):
+    """Generate WhatsApp sharing link for invoice"""
     try:
         db = get_db()
+
+        # Find invoice by ObjectId or billNumber
+        invoice = None
         try:
             invoice = db.bills.find_one({"_id": ObjectId(id)})
-        except Exception:
+        except Exception as e:
+            logger.debug(f"ObjectId lookup failed: {e}, trying billNumber")
             invoice = db.bills.find_one({"billNumber": id})
 
         if not invoice:
             return jsonify({"error": "Invoice not found"}), 404
 
+        # Get customer phone (from invoice or customer record)
         customer_phone = invoice.get('customerPhone')
+
+        # If not in invoice, try to fetch from customer record
         if not customer_phone and invoice.get('customerId'):
-            cust = db.customers.find_one({"_id": invoice.get('customerId')})
-            if cust:
-                customer_phone = cust.get('phone')
+            try:
+                customer_id = invoice.get('customerId')
+                # Handle both ObjectId and string formats
+                if isinstance(customer_id, str):
+                    customer_id = ObjectId(customer_id)
 
-        # Create link
-        token = secrets.token_hex(16)
-        expires = utc_now() + timedelta(days=1)
-        db.public_invoice_links.insert_one({
-            "token": token,
-            "invoiceId": str(invoice["_id"]),
-            "createdAt": utc_now(),
-            "expiresAt": expires,
-            "createdBy": "system",
-            "companySnapshot": {
-                "name": COMPANY_NAME,
-                "phone": COMPANY_PHONE,
-                "address": COMPANY_ADDRESS,
-                "email": COMPANY_EMAIL,
-                "gstin": COMPANY_GSTIN
-            }
-        })
+                cust = db.customers.find_one({"_id": customer_id})
+                if cust:
+                    customer_phone = cust.get('phone')
+            except Exception as e:
+                logger.warning(f"Failed to fetch customer phone: {e}")
 
+        # Validate required data
+        bill_number = invoice.get('billNumber')
+        if not bill_number:
+            return jsonify({"error": "Invoice number missing"}), 400
+
+        customer_name = invoice.get('customerName', 'Customer')
+        grand_total = invoice.get('grandTotal', 0)
+        if grand_total is None:
+            grand_total = 0
+
+        # Create public link for invoice
+        try:
+            token = secrets.token_hex(16)
+            expires = utc_now() + timedelta(days=1)
+            db.public_invoice_links.insert_one({
+                "token": token,
+                "invoiceId": str(invoice["_id"]),
+                "createdAt": utc_now(),
+                "expiresAt": expires,
+                "createdBy": "system",
+                "companySnapshot": {
+                    "name": COMPANY_NAME,
+                    "phone": COMPANY_PHONE,
+                    "address": COMPANY_ADDRESS,
+                    "email": COMPANY_EMAIL,
+                    "gstin": COMPANY_GSTIN
+                }
+            })
+        except Exception as e:
+            logger.error(f"Failed to create public invoice link: {e}")
+            return jsonify({"error": "Failed to create public link"}), 500
+
+        # Build public URL
         public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
 
+        # Build WhatsApp message
         portal_message = (
             f"\n\n🎁 *Customer Portal:*"
             f"\nRegister & login to view your invoices, warranties and purchase history."
             f"\n🔗 https://26-07inventory.vercel.app"
             f"\n(Use the email you provided during billing)"
         )
-        message = f"Hi {invoice.get('customerName', 'Customer')}, here's your invoice #{invoice.get('billNumber')} from {COMPANY_NAME}. Total: Rs{invoice.get('grandTotal')}.\n\n📄 View Invoice: {public_url}{portal_message}"
 
+        message = (
+            f"Hi {customer_name}, here's your invoice #{bill_number} from {COMPANY_NAME}. "
+            f"Total: ₹{grand_total:.2f}\n\n📄 View Invoice: {public_url}{portal_message}"
+        )
+
+        # Generate WhatsApp URL if phone exists
         whatsapp_url = None
         if customer_phone:
-            clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
-            if len(clean_phone) == 10:
-                clean_phone = f"91{clean_phone}"
-            whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+            try:
+                # Clean phone number - extract only digits
+                clean_phone = ''.join(c for c in str(customer_phone) if c.isdigit())
+
+                # Validate phone length
+                if not clean_phone:
+                    logger.warning(f"Invalid phone number format: {customer_phone}")
+                elif len(clean_phone) == 10:
+                    # Indian phone: add country code
+                    clean_phone = f"91{clean_phone}"
+                elif len(clean_phone) < 10 or len(clean_phone) > 15:
+                    logger.warning(f"Phone number out of valid range: {clean_phone}")
+                    clean_phone = None
+
+                if clean_phone:
+                    whatsapp_url = f"https://wa.me/{clean_phone}?text={urllib.parse.quote(message)}"
+            except Exception as e:
+                logger.warning(f"Failed to generate WhatsApp URL: {e}")
 
         return jsonify({
             "publicUrl": public_url,
             "whatsappUrl": whatsapp_url,
             "token": token,
             "hasPhone": bool(customer_phone),
-            "customerName": invoice.get('customerName', 'Customer')
+            "customerName": customer_name,
+            "billNumber": bill_number
         })
+
     except Exception as e:
-        logger.error(f"WhatsApp link error: {e}", exc_info=True)
-        return jsonify({"error": f"Failed to generate WhatsApp link: {str(e)}"}), 500
+        logger.error(f"WhatsApp link error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to generate WhatsApp link",
+            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred"
+        }), 500
+
 
