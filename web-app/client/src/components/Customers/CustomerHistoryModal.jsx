@@ -8,13 +8,58 @@ export default function CustomerHistoryModal({
   onClose, 
   customer, 
   data, 
-  isLoading 
+  isLoading,
+  error
 }) {
   const [activeTab, setActiveTab] = useState('purchases');
 
   if (!isOpen) return null;
 
   const { bills = [], warranties = [], stats = {} } = data || {};
+
+  const parseDateValue = (value) => {
+    if (!value) return null;
+    if (value instanceof Date) return value;
+    const raw = String(value).trim();
+    if (!raw) return null;
+
+    let parsed = new Date(raw);
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+
+    // Handle server strings like "YYYY-MM-DD HH:mm:ss" by converting to ISO-like format.
+    parsed = new Date(raw.replace(' ', 'T'));
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+
+    // Fallback for space-separated timestamps with milliseconds.
+    parsed = new Date(raw.replace(' ', 'T').replace(' UTC', 'Z'));
+    if (!Number.isNaN(parsed.getTime())) return parsed;
+
+    return null;
+  };
+
+  const formatDateTime = (value) => {
+    const date = parseDateValue(value);
+    if (!date) return 'N/A';
+    return date.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata'
+    });
+  };
+
+  const formatMoney = (value) => `₹${Number(value || 0).toFixed(2)}`;
+
+  const getPaymentLabel = (bill) => {
+    if (bill.emiEnabled || String(bill.paymentMode || '').toLowerCase() === 'emi') {
+      return 'EMI';
+    }
+    return bill.paymentMode || 'cash';
+  };
 
   return (
     <Modal
@@ -39,7 +84,7 @@ export default function CustomerHistoryModal({
                 </div>
                 <div className="stat-info">
                   <span className="stat-label">Total Spent</span>
-                  <span className="stat-value">₹{(stats.totalSpent || 0).toFixed(2)}</span>
+                  <span className="stat-value">{formatMoney(stats.totalSpent)}</span>
                 </div>
               </div>
               <div className="stat-card">
@@ -81,13 +126,20 @@ export default function CustomerHistoryModal({
             </div>
 
             <div className="tab-contents">
+              {error && (
+                <div className="history-error" role="alert">
+                  <Icon name="alert-circle" size={16} />
+                  <span>{error}</span>
+                </div>
+              )}
+
               {activeTab === 'purchases' && (
                 <div className="history-table-container">
                   {bills.length > 0 ? (
                     <table className="history-table">
                       <thead>
                         <tr>
-                          <th>Date</th>
+                          <th>Date & Time</th>
                           <th>Invoice No.</th>
                           <th>Total Amount</th>
                           <th>Method</th>
@@ -97,10 +149,15 @@ export default function CustomerHistoryModal({
                       <tbody>
                         {bills.map(bill => (
                           <tr key={bill.id}>
-                            <td>{new Date(bill.billDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                            <td>{formatDateTime(bill.billDate)}</td>
                             <td><span className="bill-badge">{bill.billNumber}</span></td>
-                            <td>₹{bill.total.toFixed(2)}</td>
-                            <td><span className="method-badge">{bill.paymentMode}</span></td>
+                            <td>{formatMoney(bill.total)}</td>
+                            <td>
+                              <span className="method-badge">{getPaymentLabel(bill)}</span>
+                              {bill.emiEnabled && bill.emiTenure > 0 && (
+                                <div className="emi-meta">{bill.emiTenure}m • {formatMoney(bill.emiMonthlyAmount)}/mo</div>
+                              )}
+                            </td>
                             <td>{bill.items?.length || 0} items</td>
                           </tr>
                         ))}
@@ -133,8 +190,8 @@ export default function CustomerHistoryModal({
                           <tr key={w.id}>
                             <td>{w.productName}</td>
                             <td>{w.productSku || 'N/A'}</td>
-                            <td>{new Date(w.startDate).toLocaleDateString('en-IN')}</td>
-                            <td>{new Date(w.expiryDate).toLocaleDateString('en-IN')}</td>
+                            <td>{formatDateTime(w.startDate)}</td>
+                            <td>{formatDateTime(w.expiryDate)}</td>
                             <td>
                               <span className={`status-pill ${w.status}`}>
                                 {w.status.toUpperCase()}
@@ -281,6 +338,25 @@ export default function CustomerHistoryModal({
           font-size: 11px;
           font-weight: 700;
           text-transform: uppercase;
+        }
+
+        .emi-meta {
+          margin-top: 4px;
+          font-size: 11px;
+          color: #475569;
+          font-weight: 600;
+        }
+
+        .history-error {
+          background: #fff1f2;
+          border: 1px solid #fecdd3;
+          border-radius: 8px;
+          color: #be123c;
+          padding: 10px 12px;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          font-size: 13px;
         }
 
         .status-pill {

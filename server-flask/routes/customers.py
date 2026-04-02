@@ -302,17 +302,37 @@ def get_customer_purchases(id):
         if not customer:
             return jsonify({"error": "Customer not found"}), 404
         
-        # Aggressive Match: ID (as ObjectId or String), Phone, or Name
+        # Aggressive Match: ID (as ObjectId or String), Phone, Email, or Name (case-insensitive)
         match_conditions = [
             {"customerId": ObjectId(id)},
             {"customerId": id}
         ]
-        
-        if customer.get('phone'):
-            match_conditions.append({"customerPhone": str(customer['phone'])})
-            
-        if customer.get('name') and customer['name'].lower() != 'walk-in customer':
-            match_conditions.append({"customerName": customer['name']})
+
+        customer_phone = str(customer.get('phone', '')).strip()
+        if customer_phone:
+            match_conditions.append({"customerPhone": customer_phone})
+
+            normalized_phone = ''.join(ch for ch in customer_phone if ch.isdigit())
+            if normalized_phone:
+                match_conditions.append({"customerPhone": normalized_phone})
+
+                if normalized_phone.startswith('91') and len(normalized_phone) > 10:
+                    match_conditions.append({"customerPhone": normalized_phone[-10:]})
+
+        customer_email = str(customer.get('email', '')).strip()
+        if customer_email:
+            match_conditions.append({"customerEmail": customer_email})
+
+            import re
+            email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
+            match_conditions.append({"customerEmail": email_regex})
+
+        customer_name = str(customer.get('name', '')).strip()
+        if customer_name and customer_name.lower() != 'walk-in customer':
+            import re
+            name_regex = re.compile(f"^{re.escape(customer_name)}$", re.I)
+            match_conditions.append({"customerName": customer_name})
+            match_conditions.append({"customerName": name_regex})
             
         match_query = {"$or": match_conditions}
         
@@ -333,6 +353,9 @@ def get_customer_purchases(id):
                 "billDate": b_date_str,
                 "total": float(bill.get('grandTotal') or bill.get('total') or 0),
                 "paymentMode": bill.get('paymentMode', 'cash'),
+                "emiEnabled": bool(bill.get('emiEnabled', False)),
+                "emiTenure": int(bill.get('emiTenure', 0) or 0),
+                "emiMonthlyAmount": float(bill.get('emiMonthlyAmount', 0) or 0),
                 "items": bill.get('items', [])
             })
             

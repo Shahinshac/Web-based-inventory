@@ -31,6 +31,7 @@ export default function CustomersList({
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [historyData, setHistoryData] = useState({ bills: [], warranties: [], stats: {} });
   const [isHistoryLoading, setIsHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState('');
 
   const filteredCustomers = customers.filter(customer => {
     const query = searchQuery.toLowerCase();
@@ -64,6 +65,7 @@ export default function CustomersList({
   const handleViewHistory = async (customer) => {
     setSelectedCustomer(customer);
     setHistoryData({ bills: [], warranties: [], stats: {} });
+    setHistoryError('');
     setIsHistoryOpen(true);
     setIsHistoryLoading(true);
 
@@ -77,9 +79,11 @@ export default function CustomersList({
         });
       } else {
         console.error('Failed to load history:', result.error);
+        setHistoryError(result.error || 'Failed to load customer history');
       }
     } catch (err) {
       console.error('History fetch error:', err);
+      setHistoryError(err.message || 'Failed to load customer history');
     } finally {
       setIsHistoryLoading(false);
     }
@@ -205,6 +209,7 @@ export default function CustomersList({
         customer={selectedCustomer}
         data={historyData}
         isLoading={isHistoryLoading}
+        error={historyError}
       />
     </div>
   );
