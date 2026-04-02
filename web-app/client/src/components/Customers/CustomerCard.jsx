@@ -12,7 +12,6 @@ export default function CustomerCard({
 }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isSharing, setIsSharing] = useState(false);
-  const [isDownloading, setIsDownloading] = useState(false);
 
   const handleWhatsAppShare = async () => {
     setIsSharing(true);
