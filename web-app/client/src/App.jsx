@@ -886,7 +886,7 @@ Esc: Close modals/dialogs`;
       if (canShareFiles) {
         try {
           // Download the PDF as a blob
-          const pdfResponse = await fetch(API(`/api/invoices/${invoice.id}/pdf`), {
+          const pdfResponse = await fetch(API(`/api/customer/invoices/${invoice.id}/pdf`), {
             headers: getAuthHeaders()
           });
           

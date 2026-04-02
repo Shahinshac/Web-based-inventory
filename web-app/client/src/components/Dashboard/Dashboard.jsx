@@ -4,8 +4,8 @@ import Button from '../Common/Button';
 import { formatCurrency, formatCurrency0 } from '../../constants';
 import { API, getAuthHeaders } from '../../utils/api';
 
-export default function Dashboard({ 
-  stats, 
+export default function Dashboard({
+  stats,
   recentActivity,
   lowStockProducts,
   onNavigate,
@@ -17,53 +17,6 @@ export default function Dashboard({
 }) {
   const [greeting, setGreeting] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [clearing, setClearing] = useState(false);
-
-  const handleClearDatabase = async () => {
-    if (!window.confirm('⚠️ WARNING: This will permanently delete ALL data!\n\n• Products\n• Customers\n• Invoices\n• Expenses\n• Returns\n• Audit Logs\n• Notifications\n\nAdmin users will be preserved.\n\nAre you absolutely sure?')) {
-      return;
-    }
-
-    const password = prompt('🔐 Enter admin password to confirm:');
-    if (!password) {
-      alert('❌ Password required to clear database');
-      return;
-    }
-
-    try {
-      setClearing(true);
-      
-      const apiUrl = API('/api/admin/clear-database');
-      console.log('Clearing database with URL:', apiUrl);
-      
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          ...getAuthHeaders()
-        },
-        body: JSON.stringify({
-          adminUsername: currentUser?.username || 'admin',
-          adminPassword: password
-        })
-      });
-
-      const data = await response.json();
-      console.log('Clear database response:', data);
-
-      if (response.ok) {
-        alert('✅ Database cleared successfully!\n\n' + JSON.stringify(data, null, 2) + '\n\nPage will reload in 2 seconds.');
-        setTimeout(() => window.location.reload(), 2000);
-      } else {
-        alert('❌ Error: ' + (data.error || 'Failed to clear database'));
-      }
-    } catch (error) {
-      console.error('Clear database error:', error);
-      alert('❌ Error: ' + error.message);
-    } finally {
-      setClearing(false);
-    }
-  };
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -117,22 +70,6 @@ export default function Dashboard({
             <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#64748b', marginTop: '8px' }}>Here's what's happening today</p>
           </div>
           <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {isAdmin && (
-              <button
-                onClick={handleClearDatabase}
-                disabled={clearing}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: '8px', padding: '10px 20px',
-                  background: clearing ? '#475569' : 'rgba(239, 68, 68, 0.1)',
-                  color: clearing ? '#94a3b8' : '#ef4444', border: '1px solid rgba(239, 68, 68, 0.2)',
-                  borderRadius: '12px', fontSize: '14px', fontWeight: '600', cursor: clearing ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease', backdropFilter: 'blur(10px)'
-                }}
-              >
-                <Icon name={clearing ? "loader" : "trash-2"} size={18} />
-                <span>{clearing ? 'Clearing...' : 'Wipe Data'}</span>
-              </button>
-            )}
             {/* Live Clock */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '10px 16px', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '15px', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
               <Icon name="clock" size={18} />
