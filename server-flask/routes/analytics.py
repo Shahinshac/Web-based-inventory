@@ -272,9 +272,9 @@ def revenue_profit():
     exp_list = list(expenses_cursor)
     total_expenses = exp_list[0]['total'] if exp_list else 0
 
-    # Net Profit = Gross Profit - Operational Expenses
-    # (Revenue - Cost is already accounted for in totalProfit)
-    net_profit = total_prof - total_expenses
+    # Net Profit = Gross Profit (profit already has cost subtracted once)
+    # Operating expenses are tracked separately but don't double-count cost
+    net_profit = total_prof
 
     daily_map = {}
     for bill in bills:

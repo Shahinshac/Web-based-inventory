@@ -93,7 +93,7 @@ export default function Reports({
     totalCost,
     totalProfit,
     totalExpenses,
-    netProfit: totalProfit - totalExpenses,
+    netProfit: totalProfit,
     totalProducts: products.length,
     totalCustomers: customers.length,
     lowStockCount: products.filter(p => p.quantity < p.minStock).length,
