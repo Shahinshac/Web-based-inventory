@@ -165,7 +165,9 @@ export default function Reports({
               <div>
                 <span>Total Sales (incl GST)</span>
                 <strong>{formatCurrency0(financialSummary?.sales?.totalSales || financialSummary?.revenue?.totalRevenue || 0)}</strong>
-                <small style={{ color: '#64748b', fontSize: '11px' }}>Gross revenue</small>
+                <small style={{ color: '#64748b', fontSize: '11px' }}>
+                  Includes ₹{formatCurrency0(financialSummary?.revenue?.gstCollected || 0)} GST
+                </small>
               </div>
             </div>
 
@@ -244,15 +246,7 @@ export default function Reports({
               </div>
             </div>
 
-            <div className="summary-item">
-              <Icon name="percent" size={24} />
-              <div>
-                <span>GST Collected</span>
-                <strong>{formatCurrency0(financialSummary?.revenue?.gstCollected || 0)}</strong>
-                <small style={{ color: '#64748b', fontSize: '11px' }}>To government</small>
-              </div>
             </div>
-          </div>
         </div>
       )}
 
