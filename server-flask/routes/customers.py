@@ -16,6 +16,19 @@ from utils.tzutils import utc_now, to_iso_string
 
 logger = logging.getLogger(__name__)
 
+def serialize_for_json(obj):
+    """Recursively convert ObjectId and datetime objects to JSON-serializable format"""
+    if isinstance(obj, ObjectId):
+        return str(obj)
+    elif isinstance(obj, datetime):
+        return obj.isoformat()
+    elif isinstance(obj, dict):
+        return {k: serialize_for_json(v) for k, v in obj.items()}
+    elif isinstance(obj, (list, tuple)):
+        return [serialize_for_json(item) for item in obj]
+    else:
+        return obj
+
 customers_bp = Blueprint('customers', __name__)
 
 @customers_bp.route('/', methods=['GET'])
@@ -420,7 +433,7 @@ def get_customer_purchases(id):
                     "emiEnabled": bool(bill.get('emiDetails', {}).get('months', 0) > 0),
                     "emiTenure": int(bill.get('emiDetails', {}).get('months', 0) or 0),
                     "emiMonthlyAmount": float(bill.get('emiDetails', {}).get('emiAmount', 0) or 0),
-                    "items": bill.get('items', [])
+                    "items": serialize_for_json(bill.get('items', []))  # Ensure items are JSON serializable
                 }
                 bills.append(bill_record)
                 logger.debug(f"[get_customer_purchases] 📄 Processed bill #{bill.get('billNumber')}: {bill_record['total']}")
@@ -483,8 +496,8 @@ def get_customer_purchases(id):
         response_data = {
             "customerId": id,
             "customerName": customer.get('name'),
-            "bills": bills,
-            "warranties": warranties,
+            "bills": serialize_for_json(bills),
+            "warranties": serialize_for_json(warranties),
             "stats": {
                 "totalSpent": total_spent,
                 "purchaseCount": len(bills),
