@@ -23,6 +23,7 @@ from services.cloudinary_service import init_cloudinary
 import logging
 import os
 import re
+from datetime import datetime
 
 from config import Config
 
@@ -107,6 +108,109 @@ def index():
 @app.route('/health', methods=['GET', 'HEAD', 'OPTIONS'])
 def health_check():
     return jsonify({"api": "healthy"}), 200
+
+# Detailed Health/Diagnostics Route (for debugging frontend issues)
+@app.route('/health/details', methods=['GET'])
+def health_details():
+    """
+    Comprehensive health check with database diagnostics.
+    Helps frontend diagnose why customer purchase fetch fails even when API health is OK.
+    """
+    try:
+        db = app.db  # Get global database connection
+
+        diagnostics = {
+            "api": "healthy",
+            "timestamp": datetime.now().isoformat(),
+            "database": {
+                "status": "checking...",
+                "collections": {},
+                "sample_customer": None
+            },
+            "debug_info": None
+        }
+
+        # Try to connect and query database
+        try:
+            logger.info("[health/details] 🔍 Checking database connectivity...")
+
+            # Test database by checking if customers collection exists and is accessible
+            customers_count = db.customers.count_documents({})
+            diagnostics["database"]["status"] = "connected"
+            diagnostics["database"]["collections"]["customers"] = {
+                "count": customers_count,
+                "status": "accessible"
+            }
+            logger.info(f"[health/details] ✅ Customers collection: {customers_count} documents")
+
+            # Count bills
+            bills_count = db.bills.count_documents({})
+            diagnostics["database"]["collections"]["bills"] = {
+                "count": bills_count,
+                "status": "accessible"
+            }
+            logger.info(f"[health/details] ✅ Bills collection: {bills_count} documents")
+
+            # Count warranties
+            warranties_count = db.warranties.count_documents({})
+            diagnostics["database"]["collections"]["warranties"] = {
+                "count": warranties_count,
+                "status": "accessible"
+            }
+            logger.info(f"[health/details] ✅ Warranties collection: {warranties_count} documents")
+
+            # Try to find customer SHAHINSHA (for debugging the specific issue)
+            try:
+                from bson import ObjectId
+                shahinsha_regex = {"$regex": "^shahinsha$", "$options": "i"}
+                shahinsha = db.customers.find_one({"name": shahinsha_regex})
+
+                if shahinsha:
+                    diagnostics["database"]["sample_customer"] = {
+                        "name": shahinsha.get('name'),
+                        "id": str(shahinsha['_id']),
+                        "phone": shahinsha.get('phone', 'N/A'),
+                        "email": shahinsha.get('email', 'N/A'),
+                        "bills_count": db.bills.count_documents({
+                            "$or": [
+                                {"customerId": ObjectId(shahinsha['_id'])},
+                                {"customerId": str(shahinsha['_id'])},
+                                {"customerPhone": shahinsha.get('phone', '')},
+                                {"customerName": shahinsha.get('name', '')}
+                            ]
+                        })
+                    }
+                    logger.info(f"[health/details] ✅ Found SHAHINSHA customer: {diagnostics['database']['sample_customer']}")
+                else:
+                    diagnostics["database"]["sample_customer"] = {"status": "not found", "query": "name regex ^shahinsha$"}
+                    logger.warning("[health/details] ⚠️  Customer SHAHINSHA not found in database")
+            except Exception as find_err:
+                diagnostics["database"]["sample_customer"] = {"status": "error", "error": str(find_err)}
+                logger.error(f"[health/details] ❌ Error finding SHAHINSHA: {find_err}")
+
+        except Exception as db_err:
+            diagnostics["database"]["status"] = "error"
+            diagnostics["database"]["error"] = str(db_err)
+            logger.error(f"[health/details] ❌ Database error: {db_err}", exc_info=True)
+
+        # Add debug info if enabled
+        if app.config.get('DEBUG'):
+            diagnostics["debug_info"] = {
+                "flask_env": app.config.get('ENV'),
+                "database_url": "***hidden***",  # Don't expose real URL for security
+                "cors_enabled": True
+            }
+
+        logger.info(f"[health/details] 📊 Diagnostics complete: {diagnostics}")
+        return jsonify(diagnostics), 200
+
+    except Exception as e:
+        logger.error(f"[health/details] ❌ Unexpected error in health/details: {str(e)}", exc_info=True)
+        return jsonify({
+            "api": "unhealthy",
+            "error": "Health check failed",
+            "message": str(e) if app.config.get('DEBUG') else "An error occurred during health check"
+        }), 500
 
 # Global Error Handler - catch all unhandled exceptions
 @app.errorhandler(Exception)

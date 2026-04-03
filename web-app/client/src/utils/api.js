@@ -105,6 +105,46 @@ export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
 }
 
 /**
+ * Fetch detailed backend diagnostics for debugging API issues
+ * Returns comprehensive database and connection status information
+ */
+export const getBackendDiagnostics = async () => {
+  const baseUrl = getApiBaseUrl();
+  try {
+    console.log(`[api] 🔍 Fetching detailed diagnostics from ${baseUrl}/health/details`);
+    const response = await fetch(`${baseUrl}/health/details`, {
+      signal: AbortSignal.timeout(10000)
+    });
+
+    const data = await response.json();
+    console.log(`[api] 📊 Backend diagnostics:`, data);
+
+    // Provide helpful diagnostic summary
+    if (data.database?.status === 'connected') {
+      console.log(`[api] ✅ Database is connected`);
+      const counts = data.database.collections;
+      if (counts.customers?.count > 0) {
+        console.log(`[api] 📋 Found ${counts.customers.count} customers`);
+      }
+      if (data.database.sample_customer) {
+        console.log(`[api] 🔎 Sample customer SHAHINSHA:`, data.database.sample_customer);
+      }
+    } else {
+      console.error(`[api] ❌ Database status: ${data.database?.status}`, data.database?.error);
+    }
+
+    return data;
+  } catch (err) {
+    console.error(`[api] ❌ Failed to fetch diagnostics:`, err.message);
+    return {
+      status: 'error',
+      message: err.message,
+      url: `${baseUrl}/health/details`
+    };
+  }
+}
+
+/**
  * Normalize photo URLs to a usable absolute URL.
  *
  * Priority:

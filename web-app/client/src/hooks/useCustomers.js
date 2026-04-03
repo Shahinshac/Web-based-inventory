@@ -110,44 +110,102 @@ export function useCustomers(isOnline, isAuthenticated, activeTab) {
   }, []);
 
   const getCustomerPurchases = useCallback(async (customerId) => {
+    const startTime = Date.now();
     try {
       // Validate customer ID
       if (!customerId) {
         throw new Error('Customer ID is required');
       }
 
-      console.log(`[useCustomers] Fetching purchases for customer: ${customerId}`);
+      const url = API(`/api/customers/${customerId}/purchases`);
+      const headers = getAuthHeaders();
 
-      const res = await fetch(API(`/api/customers/${customerId}/purchases`), {
-        headers: getAuthHeaders(),
+      console.log(`[useCustomers] 📤 Starting fetch for customer: ${customerId}`);
+      console.log(`[useCustomers] 🔗 URL: ${url}`);
+      console.log(`[useCustomers] 🔐 Auth headers present: ${Object.keys(headers).length > 0 ? 'YES' : 'NO (⚠️  MISSING TOKEN)'}`);
+
+      const res = await fetch(url, {
+        headers: headers,
         signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+
+      const elapsedMs = Date.now() - startTime;
+      console.log(`[useCustomers] ⏱️  Response received in ${elapsedMs}ms (Status: ${res.status})`);
+      console.log(`[useCustomers] 📊 Response headers:`, {
+        contentType: res.headers.get('content-type'),
+        contentLength: res.headers.get('content-length'),
+        cacheControl: res.headers.get('cache-control')
       });
 
       if (!res.ok) {
         let errorMessage = `Failed to fetch customer purchases (HTTP ${res.status})`;
+        let errorData = null;
+
         try {
-          const errorData = await res.json();
-          if (errorData.error) {
-            errorMessage = errorData.error;
-          } else if (errorData.message) {
-            errorMessage = errorData.message;
+          const textResponse = await res.text();
+          console.error(`[useCustomers] 📨 Raw error response (${textResponse.length} bytes):`, textResponse);
+
+          // Try to parse as JSON
+          if (textResponse) {
+            try {
+              errorData = JSON.parse(textResponse);
+              console.error(`[useCustomers] 📋 Parsed error JSON:`, errorData);
+
+              if (errorData.error) {
+                errorMessage = errorData.error;
+              } else if (errorData.message) {
+                errorMessage = errorData.message;
+              }
+            } catch (jsonErr) {
+              console.warn(`[useCustomers] ⚠️  Could not parse response as JSON:`, jsonErr.message);
+            }
           }
-        } catch (e) {
-          // Could not parse error response
+        } catch (readErr) {
+          console.error(`[useCustomers] ❌ Error reading response body:`, readErr.message);
         }
 
-        // Log detailed error for debugging
-        console.error(`[useCustomers] Error response: ${res.status}`, errorMessage);
+        console.error(`[useCustomers] 🚫 API Error Status ${res.status}: ${errorMessage}`);
+        console.error(`[useCustomers] Full error context:`, {
+          url,
+          status: res.status,
+          statusText: res.statusText,
+          errorData,
+          customerId
+        });
+
         throw new Error(errorMessage);
       }
 
       const data = await res.json();
-      console.log(`[useCustomers] Successfully fetched purchases:`, data);
+      console.log(`[useCustomers] ✅ Successfully fetched purchases in ${elapsedMs}ms`, {
+        customerId,
+        billCount: data.bills?.length || 0,
+        warrantyCount: data.warranties?.length || 0,
+        stats: data.stats
+      });
 
       return { success: true, purchases: data };
     } catch (err) {
+      const elapsedMs = Date.now() - startTime;
       const errorMsg = err.message || 'Failed to fetch customer purchases';
-      console.error(`[useCustomers] Catch error: ${errorMsg}`, err);
+
+      // Categorize error for better diagnostics
+      let errorCategory = 'UNKNOWN';
+      if (err.name === 'AbortError') {
+        errorCategory = 'TIMEOUT (10s exceeded)';
+      } else if (err.message.includes('Failed to fetch')) {
+        errorCategory = 'NETWORK_ERROR (CORS, DNS, or network issue)';
+      } else if (err.message.includes('Customer ID')) {
+        errorCategory = 'VALIDATION_ERROR';
+      }
+
+      console.error(`[useCustomers] ❌ Final catch after ${elapsedMs}ms - ${errorCategory}:`, {
+        error: errorMsg,
+        customerId,
+        errorName: err.name,
+        fullError: err
+      });
+
       return { success: false, error: errorMsg, purchases: [] };
     }
   }, []);
