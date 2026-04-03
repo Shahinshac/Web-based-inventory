@@ -1,6 +1,6 @@
 /**
  * @file CustomerWarranties.jsx
- * @description Customer warranties with status tracking and renewal
+ * @description Rebuilt customer warranty tracker
  */
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import Icon from '../../Icon';
 import { fetchCustomerWarranties, renewWarranty } from '../../services/customerPortalService';
 import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
-const CustomerWarranties = ({ currentUser }) => {
+const CustomerWarranties = () => {
   const [warranties, setWarranties] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,7 +17,7 @@ const CustomerWarranties = ({ currentUser }) => {
   const [now, setNow] = useState(() => new Date());
 
   useEffect(() => {
-    loadWarranties();
+    loadWarranties(1);
   }, []);
 
   useEffect(() => {
@@ -63,7 +63,7 @@ const CustomerWarranties = ({ currentUser }) => {
       setError(null);
       const data = await fetchCustomerWarranties(page, pagination.limit);
       setWarranties(data.warranties || []);
-      setPagination(data.pagination || pagination);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, pages: 1 });
     } catch (err) {
       setError(err.message || 'Failed to load warranties');
     } finally {
@@ -114,7 +114,7 @@ const CustomerWarranties = ({ currentUser }) => {
     );
   }
 
-  const activeCoun = warrantiesWithLiveStatus.filter(w => w.liveStatus === 'active').length;
+  const activeCount = warrantiesWithLiveStatus.filter(w => w.liveStatus === 'active').length;
   const expiringCount = warrantiesWithLiveStatus.filter(w => w.liveStatus === 'expiring_soon').length;
   const expiredCount = warrantiesWithLiveStatus.filter(w => w.liveStatus === 'expired').length;
 
@@ -126,36 +126,40 @@ const CustomerWarranties = ({ currentUser }) => {
             <Icon name="shield" size={24} />
             My Warranties
           </h2>
-          <div className="portal-filter-row">
-            <button
-              className={`btn-${filter === 'all' ? 'primary' : 'secondary'}`}
-              onClick={() => setFilter('all')}
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              All ({warranties.length})
-            </button>
-            <button
-              className={`btn-${filter === 'active' ? 'primary' : 'secondary'}`}
-              onClick={() => setFilter('active')}
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              Active ({activeCoun})
-            </button>
-            <button
-              className={`btn-${filter === 'expiring_soon' ? 'primary' : 'secondary'}`}
-              onClick={() => setFilter('expiring_soon')}
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              Expiring ({expiringCount})
-            </button>
-            <button
-              className={`btn-${filter === 'expired' ? 'primary' : 'secondary'}`}
-              onClick={() => setFilter('expired')}
-              style={{ padding: '0.5rem 1rem' }}
-            >
-              Expired ({expiredCount})
-            </button>
-          </div>
+          <button className="btn-secondary" onClick={() => loadWarranties(pagination.page)} disabled={loading}>
+            Refresh
+          </button>
+        </div>
+
+        <div className="portal-filter-row" style={{ marginBottom: '1rem' }}>
+          <button
+            className={`btn-${filter === 'all' ? 'primary' : 'secondary'}`}
+            onClick={() => setFilter('all')}
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            All ({warranties.length})
+          </button>
+          <button
+            className={`btn-${filter === 'active' ? 'primary' : 'secondary'}`}
+            onClick={() => setFilter('active')}
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Active ({activeCount})
+          </button>
+          <button
+            className={`btn-${filter === 'expiring_soon' ? 'primary' : 'secondary'}`}
+            onClick={() => setFilter('expiring_soon')}
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Expiring ({expiringCount})
+          </button>
+          <button
+            className={`btn-${filter === 'expired' ? 'primary' : 'secondary'}`}
+            onClick={() => setFilter('expired')}
+            style={{ padding: '0.5rem 1rem' }}
+          >
+            Expired ({expiredCount})
+          </button>
         </div>
 
         {error && (
@@ -179,6 +183,7 @@ const CustomerWarranties = ({ currentUser }) => {
                   <th>Product</th>
                   <th>SKU</th>
                   <th>Type</th>
+                  <th>Invoice</th>
                   <th>Start Date</th>
                   <th>Expiry Date</th>
                   <th>Days Left</th>
@@ -189,9 +194,10 @@ const CustomerWarranties = ({ currentUser }) => {
               <tbody>
                 {filteredWarranties.map((warranty) => (
                   <tr key={warranty.id}>
-                    <td><strong>{warranty.productName}</strong></td>
-                    <td>{warranty.productSku}</td>
+                    <td><strong>{warranty.productName || 'Unknown Product'}</strong></td>
+                    <td>{warranty.productSku || 'N/A'}</td>
                     <td>{warranty.warrantyType || 'Standard'}</td>
+                    <td>{warranty.invoiceNumber || 'N/A'}</td>
                     <td>{formatDate(warranty.startDate)}</td>
                     <td>{formatDate(warranty.expiryDate)}</td>
                     <td>
@@ -224,9 +230,10 @@ const CustomerWarranties = ({ currentUser }) => {
             <div className="portal-mobile-list">
               {filteredWarranties.map((warranty) => (
                 <article className="portal-mobile-card" key={`warranty-${warranty.id}`}>
-                  <div className="portal-mobile-row"><span>Product</span><strong>{warranty.productName}</strong></div>
+                  <div className="portal-mobile-row"><span>Product</span><strong>{warranty.productName || 'Unknown Product'}</strong></div>
                   <div className="portal-mobile-row"><span>SKU</span><strong>{warranty.productSku || 'N/A'}</strong></div>
                   <div className="portal-mobile-row"><span>Type</span><strong>{warranty.warrantyType || 'Standard'}</strong></div>
+                  <div className="portal-mobile-row"><span>Invoice</span><strong>{warranty.invoiceNumber || 'N/A'}</strong></div>
                   <div className="portal-mobile-row"><span>Start</span><strong>{formatDate(warranty.startDate)}</strong></div>
                   <div className="portal-mobile-row"><span>Expiry</span><strong>{formatDate(warranty.expiryDate)}</strong></div>
                   <div className="portal-mobile-row"><span>Days Left</span><strong>{warranty.liveDaysLeft > 0 ? `${warranty.liveDaysLeft} days` : 'Expired'}</strong></div>
@@ -244,13 +251,12 @@ const CustomerWarranties = ({ currentUser }) => {
               ))}
             </div>
 
-            {/* Pagination */}
             {pagination.pages > 1 && (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: '0.5rem', 
-                marginTop: '1.5rem' 
+              <div style={{
+                display: 'flex',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                marginTop: '1.5rem'
               }}>
                 <button
                   className="btn-secondary"
@@ -259,9 +265,9 @@ const CustomerWarranties = ({ currentUser }) => {
                 >
                   Previous
                 </button>
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
+                <span style={{
+                  display: 'flex',
+                  alignItems: 'center',
                   padding: '0 1rem',
                   color: '#4a5568'
                 }}>

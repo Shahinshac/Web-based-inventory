@@ -5,6 +5,13 @@
 
 import { apiGet, apiPatch, apiPost, API, getAuthHeaders } from '../utils/api';
 
+const normalizePagination = (pagination = {}) => ({
+  page: Number(pagination.page || 1),
+  limit: Number(pagination.limit || 20),
+  total: Number(pagination.total || 0),
+  pages: Number(pagination.pages || pagination.totalPages || 1)
+});
+
 /**
  * Fetch customer dashboard statistics
  */
@@ -25,7 +32,11 @@ export const fetchCustomerInvoices = async (page = 1, limit = 20) => {
 export const fetchCustomerWarranties = async (page = 1, limit = 20) => {
   try {
     const response = await apiGet(`/api/customer/warranties?page=${page}&limit=${limit}`);
-    return response;
+    return {
+      ...response,
+      warranties: response?.warranties || [],
+      pagination: normalizePagination(response?.pagination)
+    };
   } catch (error) {
     console.error('[fetchCustomerWarranties] Error:', error);
     throw error;
@@ -38,7 +49,7 @@ export const fetchCustomerWarranties = async (page = 1, limit = 20) => {
 export const getWarrantyDetails = async (warrantyId) => {
   try {
     const response = await apiGet(`/api/customer/warranties/${warrantyId}`);
-    return response;
+    return response?.warranty || response;
   } catch (error) {
     console.error('[getWarrantyDetails] Error:', error);
     throw error;
@@ -64,7 +75,11 @@ export const renewWarranty = async (warrantyId, years = 1) => {
 export const fetchCustomerEMIPlans = async (page = 1, limit = 20) => {
   try {
     const response = await apiGet(`/api/customer/emi?page=${page}&limit=${limit}`);
-    return response;
+    return {
+      ...response,
+      emiPlans: response?.emiPlans || [],
+      pagination: normalizePagination(response?.pagination)
+    };
   } catch (error) {
     console.error('[fetchCustomerEMIPlans] Error:', error);
     throw error;
@@ -77,7 +92,7 @@ export const fetchCustomerEMIPlans = async (page = 1, limit = 20) => {
 export const getEMIDetails = async (emiId) => {
   try {
     const response = await apiGet(`/api/customer/emi/${emiId}`);
-    return response;
+    return response?.emi || response;
   } catch (error) {
     console.error('[getEMIDetails] Error:', error);
     throw error;

@@ -1,6 +1,6 @@
 /**
  * @file CustomerEMI.jsx
- * @description Customer EMI plans with payment schedule and history
+ * @description Rebuilt EMI tracker for customer portal
  */
 
 import React, { useState, useEffect } from 'react';
@@ -8,7 +8,7 @@ import Icon from '../../Icon';
 import { fetchCustomerEMIPlans, getEMIDetails } from '../../services/customerPortalService';
 import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
-const CustomerEMI = ({ currentUser }) => {
+const CustomerEMI = () => {
   const [emiPlans, setEmiPlans] = useState([]);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,7 +16,7 @@ const CustomerEMI = ({ currentUser }) => {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
 
   useEffect(() => {
-    loadEMIPlans();
+    loadEMIPlans(1);
   }, []);
 
   const loadEMIPlans = async (page = 1) => {
@@ -25,7 +25,7 @@ const CustomerEMI = ({ currentUser }) => {
       setError(null);
       const data = await fetchCustomerEMIPlans(page, pagination.limit);
       setEmiPlans(data.emiPlans || []);
-      setPagination(data.pagination || pagination);
+      setPagination(data.pagination || { page: 1, limit: 20, total: 0, pages: 1 });
     } catch (err) {
       setError(err.message || 'Failed to load EMI plans');
     } finally {
@@ -35,10 +35,14 @@ const CustomerEMI = ({ currentUser }) => {
 
   const handleViewDetails = async (emiId) => {
     try {
+      setLoading(true);
+      setError(null);
       const details = await getEMIDetails(emiId);
       setSelectedPlan(details);
     } catch (err) {
-      alert('Failed to load EMI details: ' + err.message);
+      setError(err.message || 'Failed to load EMI details');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -64,6 +68,12 @@ const CustomerEMI = ({ currentUser }) => {
 
   const formatDate = (value) => formatDateOnlyIST(value);
 
+  const planIdLabel = (plan) => plan?.billNumber || String(plan?.id || '').slice(-8) || 'N/A';
+
+  const progress = selectedPlan?.totalAmount
+    ? Math.min(100, Math.max(0, (selectedPlan.totalPaid / selectedPlan.totalAmount) * 100))
+    : 0;
+
   if (loading && emiPlans.length === 0) {
     return (
       <div className="loading-spinner">
@@ -80,7 +90,7 @@ const CustomerEMI = ({ currentUser }) => {
           <div className="portal-card-header">
             <h2 className="portal-card-title">
               <Icon name="credit-card" size={24} />
-              EMI Plan Details
+              EMI Details - #{planIdLabel(selectedPlan)}
             </h2>
             <button
               className="btn-secondary"
@@ -105,6 +115,12 @@ const CustomerEMI = ({ currentUser }) => {
               </div>
             </div>
             <div>
+              <div style={{ fontSize: '0.875rem', color: '#718096' }}>Down Payment</div>
+              <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
+                {formatAmount(selectedPlan.downPayment)}
+              </div>
+            </div>
+            <div>
               <div style={{ fontSize: '0.875rem', color: '#718096' }}>Monthly EMI</div>
               <div style={{ fontSize: '1.5rem', fontWeight: '700', color: '#2d3748' }}>
                 {formatAmount(selectedPlan.monthlyEmi)}
@@ -120,6 +136,10 @@ const CustomerEMI = ({ currentUser }) => {
               <div style={{ fontSize: '0.875rem', color: '#718096' }}>Status</div>
               <div style={{ marginTop: '0.5rem' }}>{getStatusBadge(selectedPlan.status)}</div>
             </div>
+          </div>
+
+          <div style={{ marginBottom: '2rem', color: '#4a5568', fontSize: '0.95rem' }}>
+            <strong>Start:</strong> {formatDate(selectedPlan.startDate)} | <strong>End:</strong> {formatDate(selectedPlan.endDate)}
           </div>
 
           {/* Progress */}
@@ -138,7 +158,7 @@ const CustomerEMI = ({ currentUser }) => {
               overflow: 'hidden'
             }}>
               <div style={{ 
-                width: `${selectedPlan.totalAmount > 0 ? (selectedPlan.totalPaid / selectedPlan.totalAmount) * 100 : 0}%`, 
+                width: `${progress}%`, 
                 height: '100%', 
                 background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
                 transition: 'width 0.3s'
@@ -163,7 +183,7 @@ const CustomerEMI = ({ currentUser }) => {
               </tr>
             </thead>
             <tbody>
-              {selectedPlan.installments.map((inst) => (
+              {(selectedPlan.installments || []).map((inst) => (
                 <tr key={inst.installmentNo}>
                   <td><strong>#{inst.installmentNo}</strong></td>
                   <td>{formatDate(inst.dueDate)}</td>
@@ -173,6 +193,11 @@ const CustomerEMI = ({ currentUser }) => {
                   <td>{inst.paidDate ? formatDate(inst.paidDate) : '-'}</td>
                 </tr>
               ))}
+              {(selectedPlan.installments || []).length === 0 && (
+                <tr>
+                  <td colSpan="6" style={{ textAlign: 'center', color: '#718096' }}>No installment schedule available</td>
+                </tr>
+              )}
             </tbody>
           </table>
           </div>
@@ -190,6 +215,9 @@ const CustomerEMI = ({ currentUser }) => {
             <Icon name="credit-card" size={24} />
             My EMI Plans
           </h2>
+          <button className="btn-secondary" onClick={() => loadEMIPlans(pagination.page)} disabled={loading}>
+            Refresh
+          </button>
         </div>
 
         {error && (
@@ -223,7 +251,7 @@ const CustomerEMI = ({ currentUser }) => {
               <tbody>
                 {emiPlans.map((emi) => (
                   <tr key={emi.id}>
-                    <td><strong>#{String(emi.billId || 'N/A').slice(-8)}</strong></td>
+                    <td><strong>#{planIdLabel(emi)}</strong></td>
                     <td>{formatAmount(emi.principalAmount)}</td>
                     <td>{emi.tenure} months</td>
                     <td><strong>{formatAmount(emi.monthlyEmi)}</strong></td>
@@ -252,7 +280,7 @@ const CustomerEMI = ({ currentUser }) => {
             <div className="portal-mobile-list">
               {emiPlans.map((emi) => (
                 <article className="portal-mobile-card" key={`emi-mobile-${emi.id}`}>
-                  <div className="portal-mobile-row"><span>Bill ID</span><strong>#{String(emi.billId || 'N/A').slice(-8)}</strong></div>
+                  <div className="portal-mobile-row"><span>Bill ID</span><strong>#{planIdLabel(emi)}</strong></div>
                   <div className="portal-mobile-row"><span>Amount</span><strong>{formatAmount(emi.principalAmount)}</strong></div>
                   <div className="portal-mobile-row"><span>Tenure</span><strong>{emi.tenure} months</strong></div>
                   <div className="portal-mobile-row"><span>Monthly EMI</span><strong>{formatAmount(emi.monthlyEmi)}</strong></div>
