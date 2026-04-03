@@ -10,7 +10,7 @@ from database import get_db
 from utils.auth_middleware import authenticate_token
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
-from utils.tzutils import utc_now, to_iso_string
+from utils.tzutils import utc_now, to_iso_string, format_ist_datetime, utc_to_ist
 
 logger = logging.getLogger(__name__)
 
@@ -359,6 +359,7 @@ def get_invoice(id):
         "customerPlace": invoice.get("customerPlace", ""),
         "isSameState": invoice.get("isSameState", True),
         "billDate": invoice.get("billDate").isoformat() if isinstance(invoice.get("billDate"), datetime) else str(invoice.get("billDate")),
+        "billDateIST": format_ist_datetime(invoice.get("billDate")) if invoice.get("billDate") else None,
         "items": [{
              "productName": i.get("productName"),
              "hsnCode": i.get("hsnCode", "9999"),
@@ -466,11 +467,19 @@ def whatsapp_link(id):
         customer_name = invoice.get('customerName', 'Customer')
         bill_date = invoice.get('billDate')
 
-        # Format date
+        # Format date in IST (India Standard Time)
         if isinstance(bill_date, datetime):
-            formatted_date = bill_date.strftime('%d-%m-%Y')
+            ist_date = utc_to_ist(bill_date)
+            formatted_date = ist_date.strftime('%d-%m-%Y %H:%M:%S')
+            formatted_date_display = ist_date.strftime('%d %b %Y')
+            formatted_time = ist_date.strftime('%I:%M %p')
         else:
             formatted_date = str(bill_date)
+            formatted_date_display = str(bill_date)
+            formatted_time = "N/A"
+
+        logger.info(f"[whatsapp_link] 📅 Bill date (UTC): {bill_date}")
+        logger.info(f"[whatsapp_link] 📅 Bill date (IST): {formatted_date}")
 
         # Get invoice totals
         subtotal = float(invoice.get('subtotal', 0))
@@ -482,15 +491,19 @@ def whatsapp_link(id):
         grand_total = float(invoice.get('grandTotal', 0))
         payment_mode = invoice.get('paymentMode', 'Cash')
 
-        # Build items list for message
+        # Build items list for message (safely handle all data types)
         items_text = ""
         items = invoice.get('items', [])
         for idx, item in enumerate(items, 1):
-            qty = item.get('quantity', 0)
-            price = item.get('unitPrice', 0)
-            line_total = item.get('lineSubtotal', 0)
-            product_name = item.get('productName', 'Item')
-            items_text += f"\n{idx}. {product_name}\n   {qty} × ₹{float(price):.2f} = ₹{float(line_total):.2f}"
+            try:
+                qty = float(item.get('quantity', 0))
+                price = float(item.get('unitPrice', 0))
+                line_total = float(item.get('lineSubtotal', 0))
+                product_name = str(item.get('productName', 'Item'))
+                items_text += f"\n{idx}. {product_name}\n   {qty} × ₹{price:.2f} = ₹{line_total:.2f}"
+            except Exception as item_err:
+                logger.warning(f"[whatsapp_link] ⚠️ Error processing item {idx}: {item_err}")
+                continue
 
         # Build comprehensive WhatsApp message (like PDF)
         message = f"""*INVOICE #{bill_number}*
