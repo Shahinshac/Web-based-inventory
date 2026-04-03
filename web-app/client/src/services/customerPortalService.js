@@ -23,45 +23,65 @@ export const fetchCustomerInvoices = async (page = 1, limit = 20) => {
  * Fetch customer's warranties
  */
 export const fetchCustomerWarranties = async (page = 1, limit = 20) => {
-  return await apiGet(`/api/customer/warranties?page=${page}&limit=${limit}`);
+  try {
+    const response = await apiGet(`/api/customer/warranties?page=${page}&limit=${limit}`);
+    return response;
+  } catch (error) {
+    console.error('[fetchCustomerWarranties] Error:', error);
+    throw error;
+  }
 };
 
 /**
- * Get customer profile
+ * Get warranty details
  */
-export const fetchCustomerProfile = async () => {
-  return await apiGet('/api/customer/profile');
+export const getWarrantyDetails = async (warrantyId) => {
+  try {
+    const response = await apiGet(`/api/customer/warranties/${warrantyId}`);
+    return response;
+  } catch (error) {
+    console.error('[getWarrantyDetails] Error:', error);
+    throw error;
+  }
 };
 
 /**
- * Update customer profile
+ * Renew warranty
  */
-export const updateCustomerProfile = async (data) => {
-  return await apiPatch('/api/customer/profile', data);
-};
-
-/**
- * Change customer password
- */
-export const changeCustomerPassword = async (oldPassword, newPassword) => {
-  return await apiPost('/api/customer/change-password', {
-    oldPassword,
-    newPassword
-  });
+export const renewWarranty = async (warrantyId, years = 1) => {
+  try {
+    const response = await apiPost(`/api/customer/warranties/${warrantyId}/renew`, { years });
+    return response;
+  } catch (error) {
+    console.error('[renewWarranty] Error:', error);
+    throw error;
+  }
 };
 
 /**
  * Fetch customer's EMI plans
  */
 export const fetchCustomerEMIPlans = async (page = 1, limit = 20) => {
-  return await apiGet(`/api/customer/emi?page=${page}&limit=${limit}`);
+  try {
+    const response = await apiGet(`/api/customer/emi?page=${page}&limit=${limit}`);
+    return response;
+  } catch (error) {
+    console.error('[fetchCustomerEMIPlans] Error:', error);
+    throw error;
+  }
 };
 
 /**
  * Get EMI plan details
  */
 export const getEMIDetails = async (emiId) => {
-  return await apiGet(`/api/customer/emi/${emiId}`);
+  try {
+    const response = await apiGet(`/api/customer/emi/${emiId}`);
+    return response;
+  } catch (error) {
+    console.error('[getEMIDetails] Error:', error);
+    throw error;
+  }
 };
 
 /**
@@ -97,10 +117,27 @@ export const downloadInvoicePDF = async (invoiceId) => {
 };
 
 /**
- * Renew warranty
+ * Get customer profile
  */
-export const renewWarranty = async (warrantyId, years = 1) => {
-  return await apiPost(`/api/customer/warranties/${warrantyId}/renew`, { years });
+export const fetchCustomerProfile = async () => {
+  return await apiGet('/api/customer/profile');
+};
+
+/**
+ * Update customer profile
+ */
+export const updateCustomerProfile = async (data) => {
+  return await apiPatch('/api/customer/profile', data);
+};
+
+/**
+ * Change customer password
+ */
+export const changeCustomerPassword = async (oldPassword, newPassword) => {
+  return await apiPost('/api/customer/change-password', {
+    oldPassword,
+    newPassword
+  });
 };
 
 /**
@@ -111,9 +148,9 @@ export const downloadVCard = async () => {
     const response = await fetch(API('/api/customer/vcard'), {
       headers: getAuthHeaders()
     });
-    
+
     if (!response.ok) throw new Error('Failed to download vCard');
-    
+
     const text = await response.text();
     const blob = new Blob([text], { type: 'text/vcard' });
     const url = window.URL.createObjectURL(blob);
@@ -138,9 +175,9 @@ export const downloadPVCCard = async () => {
     const response = await fetch(API('/api/customer/pvc-card'), {
       headers: getAuthHeaders()
     });
-    
+
     if (!response.ok) throw new Error('Failed to download identity card');
-    
+
     const blob = await response.blob();
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
