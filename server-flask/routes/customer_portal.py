@@ -65,8 +65,11 @@ def get_customer_match_query(customer):
         or_conditions.append({"customerEmail": customer_email})
         email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
         or_conditions.append({"customerEmail": email_regex})
-        
-    return {"$or": or_conditions}
+
+    match_query = {"$or": or_conditions}
+    logger.info(f"[get_customer_match_query] 🔍 Match query for {customer.get('name')} ({customer_id}): {match_query}")
+
+    return match_query
 
 # ==================== DASHBOARD ====================
 
@@ -198,35 +201,51 @@ def get_customer_invoices():
 @customer_portal_bp.route('/invoices/<invoice_id>/pdf', methods=['GET'])
 @authenticate_token
 def download_invoice_pdf(invoice_id):
-    """Download invoice as PDF"""
+    """Download invoice data as JSON (for frontend PDF generation or display)"""
     try:
         customer = get_current_customer()
         if not customer:
+            logger.warning(f"[download_invoice_pdf] Customer not found")
             return jsonify({"error": "Customer not found"}), 404
 
         db = get_db()
-        # Verify ownership (can be by ID, phone, or email)
+
+        # Find invoice by ID or bill number
+        invoice = None
+        try:
+            invoice = db.bills.find_one({"_id": ObjectId(invoice_id)})
+        except:
+            invoice = db.bills.find_one({"billNumber": invoice_id})
+
+        if not invoice:
+            logger.warning(f"[download_invoice_pdf] Invoice not found: {invoice_id}")
+            return jsonify({"error": "Invoice not found"}), 404
+
+        # Verify customer owns this invoice
         customer_id = customer['_id']
-        invoice = db.bills.find_one({
-            "_id": ObjectId(invoice_id),
+        match_query = {
             "$or": [
                 {"customerId": customer_id},
                 {"customerId": str(customer_id)},
                 {"customerPhone": customer.get('phone')},
                 {"customerEmail": customer.get('email')}
             ]
-        })
+        }
 
-        if not invoice:
-            logger.warning(f"[download_invoice_pdf] Invoice not found or access denied: {invoice_id}")
+        if not db.bills.find_one({"_id": invoice["_id"], **match_query}):
+            logger.warning(f"[download_invoice_pdf] Access denied for invoice: {invoice_id}")
             return jsonify({"error": "Invoice not found or access denied"}), 404
 
-        # Return the invoice data as JSON for the customer portal
+        logger.info(f"[download_invoice_pdf] 📄 Returning invoice data: {invoice.get('billNumber')}")
+
+        # Serialize invoice data safely
         def safe_isoformat(dt):
+            if dt is None:
+                return None
             return dt.isoformat() if dt and hasattr(dt, 'isoformat') else str(dt)
 
         def serialize_items(items):
-            """Serialize items array, converting all ObjectIds and ensuring JSON safety"""
+            """Serialize items array with safe type conversion"""
             serialized = []
             for item in items:
                 try:
@@ -251,18 +270,19 @@ def download_invoice_pdf(invoice_id):
             try:
                 emi = invoice.get("emiDetails")
                 emi_details = {
-                    "totalAmount": float(emi.get("totalAmount", 0)),
-                    "downPayment": float(emi.get("downPayment", 0)),
-                    "months": int(emi.get("months", 0)),
-                    "emiAmount": float(emi.get("emiAmount", 0)),
-                    "interestRate": float(emi.get("interestRate", 0)),
+                    "totalAmount": float(emi.get("totalAmount", 0)) if emi.get("totalAmount") else None,
+                    "downPayment": float(emi.get("downPayment", 0)) if emi.get("downPayment") else None,
+                    "months": int(emi.get("months", 0)) if emi.get("months") else None,
+                    "emiAmount": float(emi.get("emiAmount", 0)) if emi.get("emiAmount") else None,
+                    "interestRate": float(emi.get("interestRate", 0)) if emi.get("interestRate") else None,
                     "startDate": safe_isoformat(emi.get("startDate")),
                     "endDate": safe_isoformat(emi.get("endDate"))
                 }
+                logger.info(f"[download_invoice_pdf] ✅ EMI details: {emi_details}")
             except Exception as emi_err:
                 logger.warning(f"[download_invoice_pdf] Error serializing EMI details: {emi_err}")
 
-        return jsonify({
+        response_data = {
             "id": str(invoice.get("_id")),
             "billNumber": str(invoice.get("billNumber", "N/A")),
             "customerName": str(invoice.get("customerName", "Customer")),
@@ -283,14 +303,18 @@ def download_invoice_pdf(invoice_id):
             "paymentMode": str(invoice.get("paymentMode", "Cash")),
             "emiDetails": emi_details,
             "isSameState": bool(invoice.get("isSameState", True))
-        })
+        }
+
+        logger.info(f"[download_invoice_pdf] 📊 Response data prepared successfully")
+        return jsonify(response_data), 200
 
     except Exception as e:
-        logger.error(f"[download_invoice_pdf] ❌ PDF download error: {str(e)}", exc_info=True)
+        logger.error(f"[download_invoice_pdf] ❌ Error: {str(e)}", exc_info=True)
         return jsonify({
-            "error": "Failed to download invoice",
+            "error": "Failed to fetch invoice",
             "message": str(e),
-            "details": str(e)
+            "details": str(e),
+            "errorType": type(e).__name__
         }), 500
 
 # ==================== WARRANTIES ====================
@@ -315,6 +339,8 @@ def get_customer_warranties():
         db = get_db()
         warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
         total = db.warranties.count_documents(match_query)
+
+        logger.info(f"[get_customer_warranties] 🔎 Query result: {total} total warranties found")
 
         warranties = []
         for w in warranties_cursor:
@@ -368,11 +394,12 @@ def get_customer_warranties():
         return response
 
     except Exception as e:
-        logger.error(f"[get_customer_warranties] ❌ Warranties error: {str(e)}", exc_info=True)
+        logger.error(f"[get_customer_warranties] ❌ Error: {str(e)}", exc_info=True)
         return jsonify({
             "error": "Failed to fetch warranties",
             "message": str(e),
-            "details": str(e)
+            "details": str(e),
+            "errorType": type(e).__name__
         }), 500
 
 @customer_portal_bp.route('/warranties/<warranty_id>/renew', methods=['POST'])
@@ -458,43 +485,72 @@ def get_customer_emi_plans():
         emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
         total = db.emi_plans.count_documents(match_query)
 
+        logger.info(f"[get_customer_emi_plans] 🔎 Query result: {total} total EMI plans found")
+
         emi_plans = []
         for emi in emi_cursor:
-            # Calculate paid and pending amounts
-            installments = emi.get('installments', [])
-            total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
-            total_pending = emi.get('totalAmount', 0) - total_paid
-            
-            # Count paid and pending installments
-            paid_count = len([inst for inst in installments if inst.get('status') == 'paid'])
-            pending_count = len([inst for inst in installments if inst.get('status') in ['pending', 'partial']])
+            try:
+                # Calculate paid and pending amounts
+                installments = emi.get('installments', [])
+                total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
+                total_pending = emi.get('totalAmount', 0) - total_paid
 
-            emi_plans.append({
-                "id": str(emi['_id']),
-                "billId": str(emi.get('billId')),
-                "principalAmount": float(emi.get('principalAmount', 0)),
-                "tenure": emi.get('tenure'),
-                "monthlyEmi": float(emi.get('monthlyEmi', 0)),
-                "totalAmount": float(emi.get('totalAmount', 0)),
-                "totalPaid": float(total_paid),
-                "totalPending": float(total_pending),
-                "startDate": emi.get('startDate').isoformat() if emi.get('startDate') else None,
-                "endDate": emi.get('endDate').isoformat() if emi.get('endDate') else None,
-                "status": emi.get('status', 'active'),
-                "installments": [
-                    {
-                        "installmentNo": inst.get('installmentNo'),
-                        "dueDate": inst.get('dueDate').isoformat() if inst.get('dueDate') else None,
-                        "amount": float(inst.get('amount', 0)),
-                        "paidAmount": float(inst.get('paidAmount', 0)),
-                        "status": inst.get('status'),
-                        "paidDate": inst.get('paidDate').isoformat() if inst.get('paidDate') else None
-                    }
-                    for inst in installments
-                ],
-                "paidInstallments": paid_count,
-                "pendingInstallments": pending_count
-            })
+                # Count paid and pending installments
+                paid_count = len([inst for inst in installments if inst.get('status') == 'paid'])
+                pending_count = len([inst for inst in installments if inst.get('status') in ['pending', 'partial']])
+
+                # Safe date conversion
+                start_date_str = None
+                if emi.get('startDate'):
+                    start_date_str = emi['startDate'].isoformat() if hasattr(emi['startDate'], 'isoformat') else str(emi['startDate'])
+
+                end_date_str = None
+                if emi.get('endDate'):
+                    end_date_str = emi['endDate'].isoformat() if hasattr(emi['endDate'], 'isoformat') else str(emi['endDate'])
+
+                # Safe installment serialization
+                safe_installments = []
+                for inst in installments:
+                    try:
+                        due_date_str = None
+                        if inst.get('dueDate'):
+                            due_date_str = inst['dueDate'].isoformat() if hasattr(inst['dueDate'], 'isoformat') else str(inst['dueDate'])
+
+                        paid_date_str = None
+                        if inst.get('paidDate'):
+                            paid_date_str = inst['paidDate'].isoformat() if hasattr(inst['paidDate'], 'isoformat') else str(inst['paidDate'])
+
+                        safe_installments.append({
+                            "installmentNo": int(inst.get('installmentNo', 0)) if inst.get('installmentNo') else None,
+                            "dueDate": due_date_str,
+                            "amount": float(inst.get('amount', 0)),
+                            "paidAmount": float(inst.get('paidAmount', 0)),
+                            "status": str(inst.get('status', 'pending')),
+                            "paidDate": paid_date_str
+                        })
+                    except Exception as inst_err:
+                        logger.warning(f"[get_customer_emi_plans] ⚠️ Error processing installment: {inst_err}")
+                        continue
+
+                emi_plans.append({
+                    "id": str(emi['_id']),
+                    "billId": str(emi.get('billId')),
+                    "principalAmount": float(emi.get('principalAmount', 0)),
+                    "tenure": int(emi.get('tenure', 0)) if emi.get('tenure') else None,
+                    "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+                    "totalAmount": float(emi.get('totalAmount', 0)),
+                    "totalPaid": float(total_paid),
+                    "totalPending": float(total_pending),
+                    "startDate": start_date_str,
+                    "endDate": end_date_str,
+                    "status": str(emi.get('status', 'active')),
+                    "installments": safe_installments,
+                    "paidInstallments": paid_count,
+                    "pendingInstallments": pending_count
+                })
+            except Exception as emi_err:
+                logger.warning(f"[get_customer_emi_plans] ⚠️ Error processing EMI plan {emi.get('_id')}: {emi_err}")
+                continue
 
         response = jsonify({
             "emiPlans": emi_plans,
@@ -509,8 +565,13 @@ def get_customer_emi_plans():
         return response
 
     except Exception as e:
-        logger.error(f"EMI plans error: {e}")
-        return jsonify({"error": "Failed to fetch EMI plans"}), 500
+        logger.error(f"[get_customer_emi_plans] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch EMI plans",
+            "message": str(e),
+            "details": str(e),
+            "errorType": type(e).__name__
+        }), 500
 
 @customer_portal_bp.route('/emi/<emi_id>', methods=['GET'])
 @authenticate_token
@@ -541,38 +602,66 @@ def get_emi_details(emi_id):
         # Calculate totals
         installments = emi.get('installments', [])
         total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
-        
+
+        # Safe date conversion
+        start_date_str = None
+        if emi.get('startDate'):
+            start_date_str = emi['startDate'].isoformat() if hasattr(emi['startDate'], 'isoformat') else str(emi['startDate'])
+
+        end_date_str = None
+        if emi.get('endDate'):
+            end_date_str = emi['endDate'].isoformat() if hasattr(emi['endDate'], 'isoformat') else str(emi['endDate'])
+
+        # Safe installment serialization
+        safe_installments = []
+        for inst in installments:
+            try:
+                due_date_str = None
+                if inst.get('dueDate'):
+                    due_date_str = inst['dueDate'].isoformat() if hasattr(inst['dueDate'], 'isoformat') else str(inst['dueDate'])
+
+                paid_date_str = None
+                if inst.get('paidDate'):
+                    paid_date_str = inst['paidDate'].isoformat() if hasattr(inst['paidDate'], 'isoformat') else str(inst['paidDate'])
+
+                safe_installments.append({
+                    "installmentNo": int(inst.get('installmentNo', 0)) if inst.get('installmentNo') else None,
+                    "dueDate": due_date_str,
+                    "amount": float(inst.get('amount', 0)),
+                    "paidAmount": float(inst.get('paidAmount', 0)),
+                    "status": str(inst.get('status', 'pending')),
+                    "paidDate": paid_date_str,
+                    "paymentMethod": str(inst.get('paymentMethod', '')) if inst.get('paymentMethod') else None,
+                    "notes": str(inst.get('notes', '')) if inst.get('notes') else None
+                })
+            except Exception as inst_err:
+                logger.warning(f"[get_emi_details] ⚠️ Error processing installment: {inst_err}")
+                continue
+
         return jsonify({
             "id": str(emi['_id']),
             "billId": str(emi.get('billId')),
             "principalAmount": float(emi.get('principalAmount', 0)),
-            "tenure": emi.get('tenure'),
+            "tenure": int(emi.get('tenure', 0)) if emi.get('tenure') else None,
             "monthlyEmi": float(emi.get('monthlyEmi', 0)),
             "totalAmount": float(emi.get('totalAmount', 0)),
             "totalPaid": float(total_paid),
             "totalPending": float(emi.get('totalAmount', 0) - total_paid),
-            "startDate": emi.get('startDate').isoformat() if emi.get('startDate') else None,
-            "endDate": emi.get('endDate').isoformat() if emi.get('endDate') else None,
-            "status": emi.get('status'),
-            "notes": emi.get('notes'),
-            "installments": [
-                {
-                    "installmentNo": inst.get('installmentNo'),
-                    "dueDate": inst.get('dueDate').isoformat() if inst.get('dueDate') else None,
-                    "amount": float(inst.get('amount', 0)),
-                    "paidAmount": float(inst.get('paidAmount', 0)),
-                    "status": inst.get('status'),
-                    "paidDate": inst.get('paidDate').isoformat() if inst.get('paidDate') else None,
-                    "paymentMethod": inst.get('paymentMethod'),
-                    "notes": inst.get('notes')
-                }
-                for inst in installments
-            ]
+            "startDate": start_date_str,
+            "endDate": end_date_str,
+            "status": str(emi.get('status', 'active')),
+            "notes": str(emi.get('notes', '')) if emi.get('notes') else None,
+            "installments": safe_installments
         })
 
     except Exception as e:
-        logger.error(f"EMI details error: {e}")
-        return jsonify({"error": "Failed to fetch EMI details"}), 500
+        logger.error(f"[get_emi_details] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch EMI details",
+            "message": str(e),
+            "details": str(e),
+            "errorType": type(e).__name__
+        }), 500
 
 # ==================== PROFILE ====================
 
