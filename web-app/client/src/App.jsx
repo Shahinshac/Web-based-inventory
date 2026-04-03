@@ -151,17 +151,27 @@ Esc: Close modals/dialogs`;
   useEffect(() => {
     const checkHealth = async () => {
       const baseUrl = getApiBaseUrl();
-      console.log(`[App] Checking backend health at ${baseUrl}...`);
+      console.log(`[App] 🔍 Checking backend health at ${baseUrl}/health...`);
       const isHealthy = await checkBackendHealth(3, 1000); // 3 retries, 1s initial delay
 
       if (isHealthy) {
         setBackendStatus('online');
-        console.log('[App] Backend is online ✅');
+        console.log('[App] ✅ Backend is online');
       } else {
         setBackendStatus('offline');
-        console.error(`[App] Backend at ${baseUrl} is not responding ❌`);
+        console.error(`[App] ❌ Backend at ${baseUrl} is not responding`);
+
+        // Provide helpful error messages
+        let errorMsg = `Unable to connect to backend (${baseUrl}).`;
+
+        if (baseUrl.includes('render.com') || baseUrl.includes('onrender.com')) {
+          errorMsg += ' Render backend may be starting up (can take 30-50s for free tier). Retrying...';
+        } else {
+          errorMsg += ' Please check your connection or contact support.';
+        }
+
         setNotification({
-          message: `Unable to connect to backend (${baseUrl}). Some features may not work. Please check your connection or contact support.`,
+          message: errorMsg + ' Some features may not work.',
           type: 'error',
           duration: 0 // Don't auto-dismiss
         });

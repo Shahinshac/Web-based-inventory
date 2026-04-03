@@ -52,26 +52,55 @@ export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
+      console.log(`[api] Health check attempt ${attempt}/${retries} to ${baseUrl}/health`);
+
       const response = await fetch(`${baseUrl}/health`, {
         method: 'GET',
         signal: AbortSignal.timeout(5000) // 5 second timeout
       });
 
+      // Log response details for debugging
+      console.log(`[api] Health check response: ${response.status} ${response.statusText}`);
+      console.log(`[api] Response headers:`, {
+        'content-type': response.headers.get('content-type'),
+        'access-control-allow-origin': response.headers.get('access-control-allow-origin')
+      });
+
       if (response.ok) {
-        console.log(`[api] Backend health check passed on attempt ${attempt}`);
+        // Verify it's JSON with expected structure
+        const data = await response.json();
+        console.log(`[api] Backend health check PASSED on attempt ${attempt} ✅`, data);
         return true;
+      } else {
+        console.warn(`[api] Health check returned non-ok status: ${response.status}`);
       }
     } catch (error) {
-      console.warn(`[api] Health check attempt ${attempt}/${retries} failed:`, error.message);
+      // Distinguish between CORS errors, network errors, and timeouts
+      let errorType = 'Unknown error';
+      if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
+        errorType = 'Network/CORS error';
+      } else if (error.message.includes('AbortError') || error.message.includes('timeout')) {
+        errorType = 'Timeout - Render backend is sleeping';
+      }
+
+      console.error(
+        `[api] Health check attempt ${attempt}/${retries} FAILED`,
+        {
+          errorType,
+          message: error.message,
+          url: `${baseUrl}/health`
+        }
+      );
 
       // If not the last attempt, wait before retrying
       if (attempt < retries) {
-        await new Promise(resolve => setTimeout(resolve, delayMs));
+        console.log(`[api] Retrying in ${delayMs * attempt}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
       }
     }
   }
 
-  console.error('[api] Backend health check failed after all retries');
+  console.error('[api] ❌ Backend health check FAILED after all retries');
   return false;
 }
 
