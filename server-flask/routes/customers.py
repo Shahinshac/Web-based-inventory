@@ -332,6 +332,7 @@ def get_pvc_card_pdf(id):
 def get_customer_purchases(id):
     """Fetch all purchase history and associated warranties for a customer."""
     db = get_db()
+    customer_name = 'Unknown'  # Initialize for use in exception handlers
     logger.info(f"[get_customer_purchases] 📥 Request for customer ID: {id}")
 
     # Validate and fetch customer
