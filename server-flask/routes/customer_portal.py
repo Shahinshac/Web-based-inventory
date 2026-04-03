@@ -567,6 +567,449 @@ def download_invoice_pdf(invoice_id):
         }), 500
 
 
+# ==================== WARRANTIES ====================
+
+@customer_portal_bp.route('/warranties', methods=['GET'])
+@authenticate_token
+def get_customer_warranties():
+    """Get all warranties for current customer with pagination"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            logger.warning(f"[get_customer_warranties] ❌ Customer not found")
+            return jsonify({"error": "Customer not found"}), 404
+
+        # Build match query for finding customer's warranties
+        customer_id = customer['_id']
+        match_query = get_customer_match_query(customer)
+
+        # Pagination
+        page = max(1, int(request.args.get('page', 1)))
+        limit = min(int(request.args.get('limit', 20)), 100)
+        skip = (page - 1) * limit
+
+        db = get_db()
+
+        # Count total and fetch paginated warranties
+        total = db.warranties.count_documents(match_query)
+        warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
+
+        logger.info(f"[get_customer_warranties] 🔎 Found {total} total warranties, returning {min(limit, total - skip)} on page {page}")
+
+        warranties = []
+        for warranty in warranties_cursor:
+            try:
+                # Calculate warranty status
+                expiry_date = warranty.get('expiryDate')
+                start_date = warranty.get('startDate')
+                days_left = 0
+                status = 'expired'
+
+                if expiry_date:
+                    days_diff = (expiry_date - utc_now()).days
+                    days_left = max(0, days_diff)
+
+                    if days_diff > 0:
+                        status = 'active'
+                        if days_diff <= 30:
+                            status = 'expiring_soon'
+
+                # Safe date formatting
+                start_date_str = start_date.isoformat() if start_date and hasattr(start_date, 'isoformat') else None
+                expiry_date_str = expiry_date.isoformat() if expiry_date and hasattr(expiry_date, 'isoformat') else None
+
+                warranty_data = {
+                    "id": str(warranty['_id']),
+                    "productName": str(warranty.get('productName', 'Unknown')),
+                    "productSku": str(warranty.get('productSku', 'N/A')),
+                    "hsnCode": str(warranty.get('hsnCode', 'N/A')),
+                    "warrantyType": str(warranty.get('warrantyType', 'Standard')),
+                    "startDate": start_date_str,
+                    "expiryDate": expiry_date_str,
+                    "daysLeft": days_left,
+                    "status": status,
+                    "invoiceNumber": str(warranty.get('invoiceNo', 'N/A')),
+                    "invoiceDate": warranty.get('invoiceDate').isoformat() if warranty.get('invoiceDate') and hasattr(warranty.get('invoiceDate'), 'isoformat') else None
+                }
+
+                warranties.append(warranty_data)
+                logger.info(f"[get_customer_warranties] ✅ Warranty {warranty['_id']}: {warranty_data['productName']} ({status})")
+
+            except Exception as w_err:
+                logger.warning(f"[get_customer_warranties] ⚠️ Error processing warranty {warranty.get('_id')}: {w_err}")
+                continue
+
+        response = jsonify({
+            "success": True,
+            "warranties": warranties,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "totalPages": (total + limit - 1) // limit
+            }
+        })
+        response.headers['X-Total-Count'] = str(total)
+
+        logger.info(f"[get_customer_warranties] ✅ Successfully returned {len(warranties)} warranties")
+        return response
+
+    except Exception as e:
+        logger.error(f"[get_customer_warranties] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch warranties",
+            "message": str(e),
+            "errorType": type(e).__name__
+        }), 500
+
+
+@customer_portal_bp.route('/warranties/<warranty_id>', methods=['GET'])
+@authenticate_token
+def get_warranty_details(warranty_id):
+    """Get detailed information about a specific warranty"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        db = get_db()
+
+        # Find warranty with ownership verification
+        try:
+            warranty = db.warranties.find_one({
+                "_id": ObjectId(warranty_id),
+                **get_customer_match_query(customer)
+            })
+        except:
+            warranty = None
+
+        if not warranty:
+            logger.warning(f"[get_warranty_details] ❌ Warranty not found: {warranty_id}")
+            return jsonify({"error": "Warranty not found"}), 404
+
+        # Format dates
+        start_date_str = warranty.get('startDate').isoformat() if warranty.get('startDate') and hasattr(warranty.get('startDate'), 'isoformat') else None
+        expiry_date_str = warranty.get('expiryDate').isoformat() if warranty.get('expiryDate') and hasattr(warranty.get('expiryDate'), 'isoformat') else None
+
+        expiry_date = warranty.get('expiryDate')
+        days_left = 0
+        status = 'expired'
+
+        if expiry_date:
+            days_diff = (expiry_date - utc_now()).days
+            days_left = max(0, days_diff)
+
+            if days_diff > 0:
+                status = 'active'
+                if days_diff <= 30:
+                    status = 'expiring_soon'
+
+        response_data = {
+            "success": True,
+            "warranty": {
+                "id": str(warranty['_id']),
+                "productName": str(warranty.get('productName', 'Unknown')),
+                "productSku": str(warranty.get('productSku', 'N/A')),
+                "hsnCode": str(warranty.get('hsnCode', 'N/A')),
+                "warrantyType": str(warranty.get('warrantyType', 'Standard')),
+                "description": str(warranty.get('description', '')),
+                "startDate": start_date_str,
+                "expiryDate": expiry_date_str,
+                "daysLeft": days_left,
+                "status": status,
+                "invoiceNumber": str(warranty.get('invoiceNo', 'N/A')),
+                "customerName": str(warranty.get('customerName', 'N/A')),
+                "customerPhone": str(warranty.get('customerPhone', 'N/A'))
+            }
+        }
+
+        logger.info(f"[get_warranty_details] ✅ Warranty returned: {response_data['warranty']['productName']}")
+        return jsonify(response_data)
+
+    except Exception as e:
+        logger.error(f"[get_warranty_details] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch warranty details",
+            "message": str(e),
+            "errorType": type(e).__name__
+        }), 500
+
+
+@customer_portal_bp.route('/warranties/<warranty_id>/renew', methods=['POST'])
+@authenticate_token
+def renew_warranty(warranty_id):
+    """Renew a warranty by extending expiry date"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        db = get_db()
+
+        # Find warranty with ownership verification
+        try:
+            warranty = db.warranties.find_one({
+                "_id": ObjectId(warranty_id),
+                **get_customer_match_query(customer)
+            })
+        except:
+            warranty = None
+
+        if not warranty:
+            logger.warning(f"[renew_warranty] ❌ Warranty not found: {warranty_id}")
+            return jsonify({"error": "Warranty not found"}), 404
+
+        # Get renewal duration in years
+        data = request.get_json() or {}
+        years = int(data.get('years', 1))
+
+        if years <= 0 or years > 10:
+            return jsonify({"error": "Invalid renewal period (1-10 years only)"}), 400
+
+        # Calculate new expiry
+        current_expiry = warranty.get('expiryDate', utc_now())
+        new_expiry = current_expiry + timedelta(days=365 * years)
+        renewal_date = utc_now()
+
+        # Update warranty
+        db.warranties.update_one(
+            {"_id": ObjectId(warranty_id)},
+            {
+                "$set": {
+                    "expiryDate": new_expiry,
+                    "renewalDate": renewal_date,
+                    "status": "active"
+                }
+            }
+        )
+
+        logger.info(f"[renew_warranty] ✅ Warranty renewed: {warranty_id}, new expiry: {new_expiry}")
+
+        return jsonify({
+            "success": True,
+            "message": "Warranty renewed successfully",
+            "warranty": {
+                "id": str(warranty['_id']),
+                "productName": warranty.get('productName'),
+                "oldExpiryDate": warranty.get('expiryDate').isoformat() if warranty.get('expiryDate') and hasattr(warranty.get('expiryDate'), 'isoformat') else None,
+                "newExpiryDate": new_expiry.isoformat(),
+                "renewalDate": renewal_date.isoformat(),
+                "yearsAdded": years
+            }
+        })
+
+    except ValueError:
+        return jsonify({"error": "Invalid years parameter"}), 400
+    except Exception as e:
+        logger.error(f"[renew_warranty] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to renew warranty",
+            "message": str(e),
+            "errorType": type(e).__name__
+        }), 500
+
+
+# ==================== EMI PLANS ====================
+
+@customer_portal_bp.route('/emi', methods=['GET'])
+@authenticate_token
+def get_customer_emi_plans():
+    """Get all EMI plans for current customer with pagination"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            logger.warning(f"[get_customer_emi_plans] ❌ Customer not found")
+            return jsonify({"error": "Customer not found"}), 404
+
+        customer_id = customer['_id']
+        match_query = get_customer_match_query(customer)
+
+        # Pagination
+        page = max(1, int(request.args.get('page', 1)))
+        limit = min(int(request.args.get('limit', 20)), 100)
+        skip = (page - 1) * limit
+
+        db = get_db()
+
+        # Count total and fetch paginated EMI plans
+        total = db.emi_plans.count_documents(match_query)
+        emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
+
+        logger.info(f"[get_customer_emi_plans] 🔎 Found {total} total EMI plans, returning {min(limit, total - skip)} on page {page}")
+
+        emi_plans = []
+        for emi in emi_cursor:
+            try:
+                installments = emi.get('installments', [])
+
+                # Calculate totals
+                total_paid = sum(inst.get('paidAmount', 0) for inst in installments if inst.get('paidAmount'))
+                total_pending = emi.get('totalAmount', 0) - total_paid
+
+                # Count installment statuses
+                paid_count = len([i for i in installments if i.get('status') == 'paid'])
+                partial_count = len([i for i in installments if i.get('status') == 'partial'])
+                pending_count = len([i for i in installments if i.get('status') == 'pending'])
+
+                # Safe date formatting
+                start_date_str = emi.get('startDate').isoformat() if emi.get('startDate') and hasattr(emi.get('startDate'), 'isoformat') else None
+                end_date_str = emi.get('endDate').isoformat() if emi.get('endDate') and hasattr(emi.get('endDate'), 'isoformat') else None
+
+                emi_data = {
+                    "id": str(emi['_id']),
+                    "billNumber": str(emi.get('billNumber', 'N/A')),
+                    "principalAmount": float(emi.get('principalAmount', 0)),
+                    "tenure": int(emi.get('tenure', 0)) if emi.get('tenure') else 0,
+                    "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+                    "totalAmount": float(emi.get('totalAmount', 0)),
+                    "totalPaid": float(total_paid),
+                    "totalPending": float(total_pending),
+                    "startDate": start_date_str,
+                    "endDate": end_date_str,
+                    "status": str(emi.get('status', 'active')),
+                    "installmentStats": {
+                        "total": len(installments),
+                        "paid": paid_count,
+                        "partial": partial_count,
+                        "pending": pending_count
+                    }
+                }
+
+                emi_plans.append(emi_data)
+                logger.info(f"[get_customer_emi_plans] ✅ EMI {emi['_id']}: {emi_data['totalAmount']:.2f} ({pending_count} pending)")
+
+            except Exception as emi_err:
+                logger.warning(f"[get_customer_emi_plans] ⚠️ Error processing EMI {emi.get('_id')}: {emi_err}")
+                continue
+
+        response = jsonify({
+            "success": True,
+            "emiPlans": emi_plans,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "totalPages": (total + limit - 1) // limit
+            }
+        })
+        response.headers['X-Total-Count'] = str(total)
+
+        logger.info(f"[get_customer_emi_plans] ✅ Successfully returned {len(emi_plans)} EMI plans")
+        return response
+
+    except Exception as e:
+        logger.error(f"[get_customer_emi_plans] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch EMI plans",
+            "message": str(e),
+            "errorType": type(e).__name__
+        }), 500
+
+
+@customer_portal_bp.route('/emi/<emi_id>', methods=['GET'])
+@authenticate_token
+def get_emi_details(emi_id):
+    """Get detailed information about a specific EMI plan including full installment schedule"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        db = get_db()
+        customer_id = customer['_id']
+
+        # Find EMI with ownership verification
+        try:
+            emi = db.emi_plans.find_one({
+                "_id": ObjectId(emi_id),
+                **get_customer_match_query(customer)
+            })
+        except:
+            emi = None
+
+        if not emi:
+            logger.warning(f"[get_emi_details] ❌ EMI plan not found: {emi_id}")
+            return jsonify({"error": "EMI plan not found"}), 404
+
+        installments = emi.get('installments', [])
+
+        # Calculate totals
+        total_paid = sum(inst.get('paidAmount', 0) for inst in installments if inst.get('paidAmount'))
+        total_pending = emi.get('totalAmount', 0) - total_paid
+
+        # Count installment statuses
+        paid_count = len([i for i in installments if i.get('status') == 'paid'])
+        partial_count = len([i for i in installments if i.get('status') == 'partial'])
+        pending_count = len([i for i in installments if i.get('status') == 'pending'])
+
+        # Safe date formatting
+        start_date_str = emi.get('startDate').isoformat() if emi.get('startDate') and hasattr(emi.get('startDate'), 'isoformat') else None
+        end_date_str = emi.get('endDate').isoformat() if emi.get('endDate') and hasattr(emi.get('endDate'), 'isoformat') else None
+
+        # Format installments with safe date handling
+        formatted_installments = []
+        for inst in installments:
+            try:
+                due_date_str = inst.get('dueDate').isoformat() if inst.get('dueDate') and hasattr(inst.get('dueDate'), 'isoformat') else None
+                paid_date_str = inst.get('paidDate').isoformat() if inst.get('paidDate') and hasattr(inst.get('paidDate'), 'isoformat') else None
+
+                formatted_installments.append({
+                    "installmentNo": int(inst.get('installmentNo', 0)) if inst.get('installmentNo') else 0,
+                    "dueDate": due_date_str,
+                    "amount": float(inst.get('amount', 0)),
+                    "paidAmount": float(inst.get('paidAmount', 0)) if inst.get('paidAmount') else 0,
+                    "status": str(inst.get('status', 'pending')),
+                    "paidDate": paid_date_str,
+                    "paymentMethod": str(inst.get('paymentMethod', '')) if inst.get('paymentMethod') else None,
+                    "notes": str(inst.get('notes', '')) if inst.get('notes') else None
+                })
+            except Exception as inst_err:
+                logger.warning(f"[get_emi_details] ⚠️ Error processing installment {inst.get('installmentNo')}: {inst_err}")
+                continue
+
+        response_data = {
+            "success": True,
+            "emi": {
+                "id": str(emi['_id']),
+                "billNumber": str(emi.get('billNumber', 'N/A')),
+                "principalAmount": float(emi.get('principalAmount', 0)),
+                "downPayment": float(emi.get('downPayment', 0)) if emi.get('downPayment') else 0,
+                "tenure": int(emi.get('tenure', 0)) if emi.get('tenure') else 0,
+                "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+                "totalAmount": float(emi.get('totalAmount', 0)),
+                "totalPaid": float(total_paid),
+                "totalPending": float(total_pending),
+                "startDate": start_date_str,
+                "endDate": end_date_str,
+                "status": str(emi.get('status', 'active')),
+                "interestRate": float(emi.get('interestRate', 0)) if emi.get('interestRate') else 0,
+                "notes": str(emi.get('notes', '')) if emi.get('notes') else None,
+                "installmentStats": {
+                    "total": len(installments),
+                    "paid": paid_count,
+                    "partial": partial_count,
+                    "pending": pending_count
+                },
+                "installments": formatted_installments
+            }
+        }
+
+        logger.info(f"[get_emi_details] ✅ EMI returned: {len(formatted_installments)} installments ({pending_count} pending)")
+        return jsonify(response_data)
+
+    except Exception as e:
+        logger.error(f"[get_emi_details] ❌ Error: {str(e)}", exc_info=True)
+        return jsonify({
+            "success": False,
+            "error": "Failed to fetch EMI details",
+            "message": str(e),
+            "errorType": type(e).__name__
+        }), 500
+
 # ==================== PROFILE ====================
 
 @customer_portal_bp.route('/profile', methods=['GET'])
