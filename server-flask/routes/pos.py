@@ -326,11 +326,12 @@ def get_invoices():
             "emiDetails": b.get("emiDetails"),
             "items": [{
                 "productId": str(i.get("productId")) if i.get("productId") else None,
-                "name": i.get("productName", "Unknown"),
-                "hsnCode": i.get("hsnCode", "9999"),
-                "quantity": i.get("quantity", 0),
-                "price": i.get("unitPrice", 0),
-                "lineSubtotal": i.get("lineSubtotal", 0)
+                "name": str(i.get("productName", "Unknown")),
+                "hsnCode": str(i.get("hsnCode", "9999")),
+                "quantity": float(i.get("quantity", 0)),
+                "price": float(i.get("unitPrice", 0)),
+                "lineSubtotal": float(i.get("lineSubtotal", 0)),
+                "lineGstAmount": float(i.get("lineGstAmount", 0))
             } for i in b.get("items", [])],
             "date": b.get("billDate", utc_now()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),

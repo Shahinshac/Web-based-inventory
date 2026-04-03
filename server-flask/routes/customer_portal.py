@@ -146,18 +146,34 @@ def get_customer_invoices():
 
         invoices = []
         for inv in invoices_cursor:
-            invoices.append({
-                "id": str(inv['_id']),
-                "invoiceNo": inv.get('billNumber'),
-                "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
-                "total": float(inv.get('grandTotal', 0)),
-                "paymentMethod": inv.get('paymentMode', 'cash'),
-                "emiEnabled": bool(inv.get('emiEnabled', False)),
-                "emiTenure": int(inv.get('emiTenure', 0) or 0),
-                "emiMonthlyAmount": float(inv.get('emiMonthlyAmount', 0) or 0),
-                "items": inv.get('items', []),
-                "itemCount": len(inv.get('items', []))
-            })
+            try:
+                # Safely serialize items array
+                items = []
+                for item in inv.get('items', []):
+                    items.append({
+                        "productId": str(item.get('productId')) if item.get('productId') else None,
+                        "productName": str(item.get('productName', 'Unknown')),
+                        "quantity": float(item.get('quantity', 0)),
+                        "unitPrice": float(item.get('unitPrice', 0)),
+                        "lineSubtotal": float(item.get('lineSubtotal', 0)),
+                        "lineGstAmount": float(item.get('lineGstAmount', 0))
+                    })
+
+                invoices.append({
+                    "id": str(inv['_id']),
+                    "invoiceNo": str(inv.get('billNumber', 'N/A')),
+                    "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
+                    "total": float(inv.get('grandTotal', 0)),
+                    "paymentMethod": str(inv.get('paymentMode', 'cash')),
+                    "emiEnabled": bool(inv.get('emiEnabled', False)),
+                    "emiTenure": int(inv.get('emiTenure', 0) or 0),
+                    "emiMonthlyAmount": float(inv.get('emiMonthlyAmount', 0) or 0),
+                    "items": items,
+                    "itemCount": len(items)
+                })
+            except Exception as item_err:
+                logger.warning(f"Error processing invoice {inv.get('_id')}: {item_err}")
+                continue
 
         response = jsonify({
             "invoices": invoices,
@@ -172,8 +188,12 @@ def get_customer_invoices():
         return response
 
     except Exception as e:
-        logger.error(f"Invoices error: {e}")
-        return jsonify({"error": "Failed to fetch invoices"}), 500
+        logger.error(f"[get_customer_invoices] ❌ Invoices error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch invoices",
+            "message": str(e),
+            "details": str(e)
+        }), 500
 
 @customer_portal_bp.route('/invoices/<invoice_id>/pdf', methods=['GET'])
 @authenticate_token
@@ -251,28 +271,42 @@ def get_customer_warranties():
 
         warranties = []
         for w in warranties_cursor:
-            expiry_date = w.get('expiryDate')
-            days_left = 0
-            status = 'expired'
+            try:
+                expiry_date = w.get('expiryDate')
+                start_date = w.get('startDate')
+                days_left = 0
+                status = 'expired'
 
-            if expiry_date:
-                days_left = (expiry_date - utc_now()).days
-                if days_left > 0:
-                    status = 'active'
-                    if days_left <= 30:
-                        status = 'expiring_soon'
+                if expiry_date:
+                    days_left = (expiry_date - utc_now()).days
+                    if days_left > 0:
+                        status = 'active'
+                        if days_left <= 30:
+                            status = 'expiring_soon'
 
-            warranties.append({
-                "id": str(w['_id']),
-                "productName": w.get('productName'),
-                "productSku": w.get('productSku'),
-                "warrantyType": w.get('warrantyType'),
-                "startDate": w.get('startDate').isoformat() if w.get('startDate') else None,
-                "expiryDate": expiry_date.isoformat() if expiry_date else None,
-                "status": status,
-                "daysLeft": max(0, days_left),
-                "invoiceNumber": w.get('invoiceNo')
-            })
+                # Safe date conversion
+                start_date_str = None
+                if start_date:
+                    start_date_str = start_date.isoformat() if hasattr(start_date, 'isoformat') else str(start_date)
+
+                expiry_date_str = None
+                if expiry_date:
+                    expiry_date_str = expiry_date.isoformat() if hasattr(expiry_date, 'isoformat') else str(expiry_date)
+
+                warranties.append({
+                    "id": str(w['_id']),
+                    "productName": str(w.get('productName', 'Unknown')),
+                    "productSku": str(w.get('productSku', 'N/A')),
+                    "warrantyType": str(w.get('warrantyType', 'Standard')),
+                    "startDate": start_date_str,
+                    "expiryDate": expiry_date_str,
+                    "status": status,
+                    "daysLeft": max(0, days_left),
+                    "invoiceNumber": str(w.get('invoiceNo', 'N/A'))
+                })
+            except Exception as warranty_err:
+                logger.warning(f"Error processing warranty {w.get('_id')}: {warranty_err}")
+                continue
 
         response = jsonify({
             "warranties": warranties,
@@ -287,8 +321,12 @@ def get_customer_warranties():
         return response
 
     except Exception as e:
-        logger.error(f"Warranties error: {e}")
-        return jsonify({"error": "Failed to fetch warranties"}), 500
+        logger.error(f"[get_customer_warranties] ❌ Warranties error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch warranties",
+            "message": str(e),
+            "details": str(e)
+        }), 500
 
 @customer_portal_bp.route('/warranties/<warranty_id>/renew', methods=['POST'])
 @authenticate_token
