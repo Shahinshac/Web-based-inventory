@@ -425,10 +425,10 @@ def get_customer_purchases(id):
 
                 bill_record = {
                     "id": str(bill['_id']),
-                    "billNumber": bill.get('billNumber', 'N/A'),
+                    "billNumber": str(bill.get('billNumber', 'N/A')),
                     "billDate": b_date_str,
                     "total": float(bill.get('grandTotal') or bill.get('total') or 0),
-                    "paymentMode": bill.get('paymentMode', 'cash'),
+                    "paymentMode": str(bill.get('paymentMode', 'cash')),
                     # EMI status: check emiDetails object (true source), fallback to root-level fields
                     "emiEnabled": bool(bill.get('emiDetails', {}).get('months', 0) > 0),
                     "emiTenure": int(bill.get('emiDetails', {}).get('months', 0) or 0),
@@ -521,12 +521,17 @@ def get_customer_purchases(id):
         logger.error(f"[get_customer_purchases] ❌ Unexpected error fetching purchases for {customer_name}: {str(e)}", exc_info=True)
         # Always include error details for this critical endpoint
         error_str = str(e)
-        logger.error(f"[get_customer_purchases] 📋 Exception details: type={type(e).__name__}, message={error_str}")
+        error_type = type(e).__name__
+        logger.error(f"[get_customer_purchases] 📋 Exception details: type={error_type}, message={error_str}")
+
+        # Return detailed error response
         return jsonify({
             "error": "Failed to fetch customer purchase history",
             "message": error_str,
             "details": error_str,
-            "errorType": type(e).__name__
+            "errorType": error_type,
+            "customerId": id,
+            "customerName": customer_name
         }), 500
 
 
