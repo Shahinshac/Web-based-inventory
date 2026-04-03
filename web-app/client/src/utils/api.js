@@ -47,20 +47,20 @@ export const API = (path) => {
  * Check if backend is healthy (handles Render sleep mode)
  * Returns true if backend is accessible, false otherwise
  */
-export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
+export const checkBackendHealth = async (retries = 5, delayMs = 2000) => {
   const baseUrl = getApiBaseUrl();
 
   for (let attempt = 1; attempt <= retries; attempt++) {
     try {
-      console.log(`[api] Health check attempt ${attempt}/${retries} to ${baseUrl}/health`);
+      console.log(`[api] 🏥 Health check attempt ${attempt}/${retries} to ${baseUrl}/health`);
 
       const response = await fetch(`${baseUrl}/health`, {
         method: 'GET',
-        signal: AbortSignal.timeout(5000) // 5 second timeout
+        signal: AbortSignal.timeout(15000) // 15 second timeout for health check
       });
 
       // Log response details for debugging
-      console.log(`[api] Health check response: ${response.status} ${response.statusText}`);
+      console.log(`[api] ✅ Health check response: ${response.status} ${response.statusText}`);
       console.log(`[api] Response headers:`, {
         'content-type': response.headers.get('content-type'),
         'access-control-allow-origin': response.headers.get('access-control-allow-origin')
@@ -69,10 +69,10 @@ export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
       if (response.ok) {
         // Verify it's JSON with expected structure
         const data = await response.json();
-        console.log(`[api] Backend health check PASSED on attempt ${attempt} ✅`, data);
+        console.log(`[api] ✅ Backend health check PASSED on attempt ${attempt}`, data);
         return true;
       } else {
-        console.warn(`[api] Health check returned non-ok status: ${response.status}`);
+        console.warn(`[api] ⚠️ Health check returned non-ok status: ${response.status}`);
       }
     } catch (error) {
       // Distinguish between CORS errors, network errors, and timeouts
@@ -80,11 +80,11 @@ export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
       if (error.message.includes('CORS') || error.message.includes('Failed to fetch')) {
         errorType = 'Network/CORS error';
       } else if (error.message.includes('AbortError') || error.message.includes('timeout')) {
-        errorType = 'Timeout - Render backend is sleeping';
+        errorType = 'Timeout - Render backend is sleeping or overloaded';
       }
 
       console.error(
-        `[api] Health check attempt ${attempt}/${retries} FAILED`,
+        `[api] ❌ Health check attempt ${attempt}/${retries} FAILED`,
         {
           errorType,
           message: error.message,
@@ -92,10 +92,11 @@ export const checkBackendHealth = async (retries = 3, delayMs = 1000) => {
         }
       );
 
-      // If not the last attempt, wait before retrying
+      // If not the last attempt, wait before retrying with exponential backoff
       if (attempt < retries) {
-        console.log(`[api] Retrying in ${delayMs * attempt}ms...`);
-        await new Promise(resolve => setTimeout(resolve, delayMs * attempt));
+        const waitMs = delayMs * Math.pow(1.5, attempt - 1);
+        console.log(`[api] ⏳ Retrying in ${waitMs}ms... (Render may be starting up)`);
+        await new Promise(resolve => setTimeout(resolve, waitMs));
       }
     }
   }
@@ -203,7 +204,14 @@ const retryFetch = async (
 
   // Login endpoints need longer timeout for Render startup (can take 30-50s)
   const isLoginEndpoint = url.includes('/login');
-  const timeoutMs = isLoginEndpoint ? 60000 : 10000; // 60s for login, 10s for others
+  const isSessionEndpoint = url.includes('/session');
+  const isDashboardEndpoint = url.includes('/dashboard') || url.includes('/analytics');
+  let timeoutMs = 15000;
+  if (isLoginEndpoint) {
+    timeoutMs = 60000;
+  } else if (isSessionEndpoint || isDashboardEndpoint) {
+    timeoutMs = 30000;
+  } // 60s for login, 10s for others
 
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
