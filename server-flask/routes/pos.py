@@ -540,9 +540,11 @@ def whatsapp_link(id):
 
     except Exception as e:
         logger.error(f"WhatsApp link error: {str(e)}", exc_info=True)
+        # Always expose error details for this critical endpoint
         return jsonify({
             "error": "Failed to generate WhatsApp link",
-            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred"
+            "message": str(e),
+            "details": str(e)
         }), 500
 
 

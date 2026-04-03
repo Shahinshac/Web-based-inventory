@@ -841,7 +841,20 @@ Esc: Close modals/dialogs`;
         });
         publicUrl = linkData.publicUrl || '';
       } catch (linkErr) {
-        console.warn('Could not generate public link:', linkErr);
+        console.error('[App] WhatsApp link generation failed:', {
+          invoiceId: invoice.id,
+          error: linkErr.message,
+          status: linkErr.status,
+          details: linkErr.details
+        });
+
+        // Show error notification to user
+        setNotification({
+          message: `Could not generate WhatsApp link: ${linkErr.message || 'Unknown error'}`,
+          type: 'error',
+          duration: 5
+        });
+        return; // Stop execution if link generation fails
       }
 
       const itemsList = (invoice.items || [])
