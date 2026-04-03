@@ -58,8 +58,10 @@ const CustomerEMI = () => {
   const getInstallmentBadge = (status) => {
     const badges = {
       paid: <span className="badge badge-success">Paid</span>,
+      completed: <span className="badge badge-success">Completed</span>,
       pending: <span className="badge badge-warning">Pending</span>,
-      partial: <span className="badge badge-info">Partial</span>
+      partial: <span className="badge badge-info">Partial</span>,
+      overdue: <span className="badge badge-danger">Overdue</span>
     };
     return badges[status] || badges.pending;
   };

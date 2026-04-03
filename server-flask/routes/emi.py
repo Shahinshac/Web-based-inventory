@@ -1,9 +1,9 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, g
 from database import get_db
-from utils.auth_middleware import authenticate_token, require_customer
+from utils.auth_middleware import authenticate_token, require_admin
 from services.audit_service import log_audit
 from utils.tzutils import utc_now, to_iso_string
 
@@ -15,6 +15,92 @@ emi_bp = Blueprint('emi', __name__)
 EMI_TENURES = [3, 6, 12, 24]  # months
 EMI_INTEREST_PERCENT = 0  # Zero interest EMI
 EMI_MIN_AMOUNT = 5000  # Minimum amount to offer EMI
+
+
+def _ensure_aware_datetime(value):
+    if value is None:
+        return None
+
+    if isinstance(value, str):
+        try:
+            value = datetime.fromisoformat(value.replace('Z', '+00:00'))
+        except ValueError:
+            return None
+
+    if value.tzinfo is None:
+        value = value.replace(tzinfo=timezone.utc)
+
+    return value
+
+
+def _sync_emi_plan_status(emi_plan, now=None):
+    now = now or utc_now()
+    changed = False
+    installments = emi_plan.get('installments', [])
+
+    for installment in installments:
+        due_date = _ensure_aware_datetime(installment.get('dueDate'))
+        if not due_date:
+            continue
+
+        due_amount = float(installment.get('amount', 0) or 0)
+        paid_amount = float(installment.get('paidAmount', 0) or 0)
+        current_status = installment.get('status', 'pending')
+
+        if paid_amount >= due_amount and current_status != 'completed':
+            installment['status'] = 'completed'
+            if not installment.get('paidDate'):
+                installment['paidDate'] = now
+            changed = True
+        elif due_date <= now and paid_amount < due_amount and current_status != 'overdue':
+            installment['status'] = 'overdue'
+            changed = True
+        elif paid_amount > 0 and paid_amount < due_amount and current_status != 'partial':
+            installment['status'] = 'partial'
+            changed = True
+
+    completed_count = len([inst for inst in installments if inst.get('status') == 'completed'])
+    overdue_count = len([inst for inst in installments if inst.get('status') == 'overdue'])
+
+    new_plan_status = emi_plan.get('status', 'active')
+    if installments and completed_count == len(installments):
+        new_plan_status = 'closed'
+    elif overdue_count > 0:
+        new_plan_status = 'defaulted'
+    else:
+        new_plan_status = 'active'
+
+    if emi_plan.get('status') != new_plan_status:
+        emi_plan['status'] = new_plan_status
+        changed = True
+
+    return changed
+
+
+def sync_all_emi_statuses(db=None):
+    db = db or get_db()
+    now = utc_now()
+    updated_plans = 0
+    updated_installments = 0
+
+    for emi_plan in db.emi_plans.find({}):
+        original_installments = len(emi_plan.get('installments', []))
+        if _sync_emi_plan_status(emi_plan, now=now):
+            db.emi_plans.update_one(
+                {"_id": emi_plan['_id']},
+                {"$set": {
+                    "installments": emi_plan.get('installments', []),
+                    "status": emi_plan.get('status', 'active'),
+                    "updatedAt": now
+                }}
+            )
+            updated_plans += 1
+            updated_installments += original_installments
+
+    return {
+        "updatedPlans": updated_plans,
+        "updatedInstallments": updated_installments
+    }
 
 @emi_bp.route('/', methods=['POST'])
 @authenticate_token
@@ -85,7 +171,7 @@ def create_emi():
             "dueDate": due_date,
             "amount": amount,
             "paidAmount": 0,
-            "status": "pending",  # pending, partial, paid
+            "status": "pending",  # pending, partial, completed, overdue
             "paidDate": None,
             "paymentMethod": None,
             "notes": None
@@ -172,6 +258,16 @@ def get_emi(emi_id):
     if not emi_plan:
         return jsonify({"error": "EMI plan not found"}), 404
 
+    if _sync_emi_plan_status(emi_plan):
+        db.emi_plans.update_one(
+            {"_id": emi_id_obj},
+            {"$set": {
+                "installments": emi_plan.get('installments', []),
+                "status": emi_plan.get('status', 'active'),
+                "updatedAt": utc_now()
+            }}
+        )
+
     emi_plan['_id'] = str(emi_plan['_id'])
     emi_plan['billId'] = str(emi_plan['billId'])
     emi_plan['customerId'] = str(emi_plan['customerId'])
@@ -218,6 +314,16 @@ def get_customer_emi_plans(customer_id):
 
     # Format response
     for plan in emi_plans:
+        if _sync_emi_plan_status(plan):
+            db.emi_plans.update_one(
+                {"_id": plan['_id']},
+                {"$set": {
+                    "installments": plan.get('installments', []),
+                    "status": plan.get('status', 'active'),
+                    "updatedAt": utc_now()
+                }}
+            )
+
         plan['_id'] = str(plan['_id'])
         plan['billId'] = str(plan['billId'])
         plan['customerId'] = str(plan['customerId'])
@@ -228,14 +334,14 @@ def get_customer_emi_plans(customer_id):
 
         # Calculate summary stats
         total_paid = sum(inst['paidAmount'] for inst in plan['installments'])
-        pending_installments = [inst for inst in plan['installments'] if inst['status'] in ['pending', 'partial']]
+        pending_installments = [inst for inst in plan['installments'] if inst['status'] in ['pending', 'partial', 'overdue']]
 
         plan['summary'] = {
             "totalPaid": total_paid,
             "totalPending": plan['principalAmount'] - total_paid,
             "nextDueDate": pending_installments[0]['dueDate'].isoformat() if pending_installments else None,
             "nextDueAmount": pending_installments[0]['amount'] if pending_installments else 0,
-            "completedInstallments": len([i for i in plan['installments'] if i['status'] == 'paid']),
+            "completedInstallments": len([i for i in plan['installments'] if i['status'] == 'completed']),
             "totalInstallments": len(plan['installments'])
         }
 
@@ -307,12 +413,12 @@ def record_emi_payment(emi_id):
     installment['notes'] = notes
 
     if installment['paidAmount'] >= due_amount:
-        installment['status'] = 'paid'
+        installment['status'] = 'completed'
     else:
         installment['status'] = 'partial'
 
     # Check if all installments are paid
-    all_paid = all(inst['status'] == 'paid' for inst in emi_plan['installments'])
+    all_paid = all(inst['status'] == 'completed' for inst in emi_plan['installments'])
     new_status = 'closed' if all_paid else 'active'
 
     # Update EMI plan
@@ -344,6 +450,24 @@ def record_emi_payment(emi_id):
         },
         "emiStatus": new_status
     }), 200
+
+
+@emi_bp.route('/cleanup/statuses', methods=['POST'])
+@authenticate_token
+@require_admin
+def cleanup_emi_statuses():
+    """Synchronize EMI installment statuses based on due dates and payment progress."""
+    try:
+        db = get_db()
+        result = sync_all_emi_statuses(db)
+        return jsonify({
+            "success": True,
+            "message": "EMI statuses synchronized successfully",
+            **result
+        })
+    except Exception as e:
+        logger.error(f"EMI status cleanup error: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Failed to sync EMI statuses"}), 500
 
 
 @emi_bp.route('/<emi_id>/status', methods=['PATCH'])

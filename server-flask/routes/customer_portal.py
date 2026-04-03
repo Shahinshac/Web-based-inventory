@@ -10,7 +10,7 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, current_app, g, send_file
 from database import get_db
 from utils.auth_middleware import authenticate_token, require_customer
-from utils.constants import COMPANY_NAME, COMPANY_PHONE
+from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
 from services.customer_service import build_vcard, build_pvc_card_pdf
 from utils.tzutils import utc_now, to_iso_string
 

@@ -20,10 +20,13 @@ from routes.exports import exports_bp
 from routes.employees import employees_bp
 from routes.salary import salary_bp
 from services.cloudinary_service import init_cloudinary
+from routes.emi import sync_all_emi_statuses
 import logging
 import os
 import re
 from datetime import datetime
+import threading
+import time
 
 from config import Config
 
@@ -56,10 +59,36 @@ CORS(app,
 )
 
 # Connect to Database globally
-connect_db(app)
+app.db = connect_db(app)
 
 # Initialize 3rd Party Wrappers
 init_cloudinary(app)
+
+
+def _start_emi_status_sync_worker():
+    if os.environ.get('EMI_AUTO_SYNC_ENABLED', 'true').lower() != 'true':
+        logger.info('[emi-sync] Automatic EMI sync disabled by environment flag')
+        return
+
+    interval_seconds = int(os.environ.get('EMI_AUTO_SYNC_INTERVAL_SECONDS', '3600'))
+
+    def _worker():
+        while True:
+            try:
+                with app.app_context():
+                    result = sync_all_emi_statuses(app.db)
+                    if result.get('updatedPlans', 0) > 0:
+                        logger.info(
+                            f"[emi-sync] Updated {result['updatedPlans']} EMI plans and {result['updatedInstallments']} installments"
+                        )
+            except Exception as sync_error:
+                logger.error(f"[emi-sync] Error syncing EMI statuses: {sync_error}", exc_info=True)
+
+            time.sleep(interval_seconds)
+
+    thread = threading.Thread(target=_worker, name='emi-status-sync', daemon=True)
+    thread.start()
+    logger.info(f'[emi-sync] Background EMI sync worker started (interval: {interval_seconds}s)')
 
 # Register Blueprints
 app.register_blueprint(auth_bp, url_prefix='/api/users')
@@ -84,6 +113,8 @@ app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
 app.register_blueprint(public_customer_card_bp, url_prefix='/public/customer-card')
 # Public unified blueprint (includes customer vCard)
 app.register_blueprint(public_bp, url_prefix='/public')
+
+_start_emi_status_sync_worker()
 
 # The Express routes were: 
 # app.use('/api/checkout', checkoutRoutes);

@@ -36,6 +36,10 @@ import { emiService } from './services/emiService';
 import './styles.css';
 
 export default function App() {
+  const enableVercelInsights =
+    import.meta.env.VITE_ENABLE_VERCEL_INSIGHTS === 'true' ||
+    (typeof window !== 'undefined' && window.location.hostname.endsWith('.vercel.app'));
+
   // State
   const [tab, setTab] = useState('dashboard');
   const [notification, setNotification] = useState(null);
@@ -1366,8 +1370,8 @@ Esc: Close modals/dialogs`;
           </div>
         </div>
       )}
-      <SpeedInsights />
-      <Analytics />
+      {enableVercelInsights && <SpeedInsights />}
+      {enableVercelInsights && <Analytics />}
     </div>
   );
 }
