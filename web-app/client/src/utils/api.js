@@ -201,11 +201,15 @@ const retryFetch = async (
 ) => {
   let lastError;
 
+  // Login endpoints need longer timeout for Render startup (can take 30-50s)
+  const isLoginEndpoint = url.includes('/login');
+  const timeoutMs = isLoginEndpoint ? 60000 : 10000; // 60s for login, 10s for others
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const response = await fetch(url, {
         ...options,
-        signal: AbortSignal.timeout(10000) // 10 second timeout per request
+        signal: AbortSignal.timeout(timeoutMs)
       });
 
       return response;
@@ -353,10 +357,18 @@ export const apiGet = (endpoint) => apiFetch(endpoint, { method: 'GET' })
 /**
  * POST request
  */
-export const apiPost = (endpoint, data) => apiFetch(endpoint, {
-  method: 'POST',
-  body: JSON.stringify(data)
-})
+export const apiPost = (endpoint, data, options = {}) => {
+  // Login endpoint needs longer timeout for Render startup (can take 30-50s)
+  const isLoginEndpoint = endpoint.includes('/login');
+  const retries = isLoginEndpoint ? 3 : (options.retries ?? 2); // More retries for login
+
+  return apiFetch(endpoint, {
+    method: 'POST',
+    body: JSON.stringify(data),
+    retries,
+    ...options
+  });
+}
 
 /**
  * PATCH request
