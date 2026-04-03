@@ -469,27 +469,38 @@ def get_customer_purchases(id):
 
         logger.info(f"[get_customer_purchases] ✅ Found {len(warranties)} warranties for customer {customer_name}")
 
+        # Calculate stats defensively (handle None/invalid values)
+        try:
+            total_spent = sum(float(b.get('total') or 0) for b in bills)
+            active_warranties_count = len([w for w in warranties if w.get('status') == 'active'])
+            logger.debug(f"[get_customer_purchases] 💰 Stats calculated: total_spent={total_spent}, active_warranties={active_warranties_count}")
+        except Exception as stats_err:
+            logger.warning(f"[get_customer_purchases] ⚠️  Error calculating stats: {stats_err}, using defaults")
+            total_spent = 0
+            active_warranties_count = 0
+
         response_data = {
             "customerId": id,
             "customerName": customer.get('name'),
             "bills": bills,
             "warranties": warranties,
             "stats": {
-                "totalSpent": sum(b['total'] for b in bills),
+                "totalSpent": total_spent,
                 "purchaseCount": len(bills),
-                "activeWarranties": len([w for w in warranties if w['status'] == 'active'])
+                "activeWarranties": active_warranties_count
             }
         }
 
-        logger.info(f"[get_customer_purchases] 📊 Returning response: {len(bills)} bills, {len(warranties)} warranties, Total spent: ₹{response_data['stats']['totalSpent']}")
+        logger.info(f"[get_customer_purchases] 📊 Returning response: {len(bills)} bills, {len(warranties)} warranties, Total spent: ₹{total_spent}")
 
         return jsonify(response_data)
     except Exception as e:
         logger.error(f"[get_customer_purchases] ❌ Unexpected error fetching purchases for {customer_name}: {str(e)}", exc_info=True)
+        # Always include error details for this critical endpoint (not just DEBUG mode)
         return jsonify({
             "error": "Failed to fetch customer purchase history",
-            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred while fetching purchase history",
-            "details": str(e) if current_app.config.get('DEBUG') else None
+            "message": str(e),
+            "details": str(e)
         }), 500
 
 
