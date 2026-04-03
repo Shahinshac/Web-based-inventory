@@ -69,26 +69,23 @@ export const getEMIDetails = async (emiId) => {
  */
 export const downloadInvoicePDF = async (invoiceId) => {
   try {
-    const response = await fetch(API(`/api/customer/invoices/${invoiceId}/pdf`), {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
+    console.log('[downloadInvoicePDF] 📥 Fetching invoice data...');
+    const response = await apiGet(`/api/customer/invoices/${invoiceId}/pdf`);
 
-    if (!response.ok) {
-      throw new Error('Failed to download invoice');
+    if (!response || !response.billNumber) {
+      throw new Error('Invalid invoice data received');
     }
 
-    const blob = await response.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `invoice-${invoiceId}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    console.log('[downloadInvoicePDF] 📄 Got invoice data, generating PDF...');
+
+    // Import and use the PDF generator
+    const { generateInvoicePDF } = await import('../utils/invoicePdfGenerator');
+    generateInvoicePDF(response, `invoice-${response.billNumber}`);
+
+    console.log('[downloadInvoicePDF] ✅ Invoice downloaded successfully');
+    return true;
   } catch (error) {
-    console.error('Error downloading invoice:', error);
+    console.error('[downloadInvoicePDF] ❌ Error downloading invoice:', error);
     throw error;
   }
 };
