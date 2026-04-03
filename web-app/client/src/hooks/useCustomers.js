@@ -111,15 +111,44 @@ export function useCustomers(isOnline, isAuthenticated, activeTab) {
 
   const getCustomerPurchases = useCallback(async (customerId) => {
     try {
-      const res = await fetch(API(`/api/customers/${customerId}/purchases`), { headers: getAuthHeaders() });
-      if (res.ok) {
-        const data = await res.json();
-        return { success: true, purchases: data };
-      } else {
-        throw new Error('Failed to fetch customer purchases');
+      // Validate customer ID
+      if (!customerId) {
+        throw new Error('Customer ID is required');
       }
+
+      console.log(`[useCustomers] Fetching purchases for customer: ${customerId}`);
+
+      const res = await fetch(API(`/api/customers/${customerId}/purchases`), {
+        headers: getAuthHeaders(),
+        signal: AbortSignal.timeout(10000) // 10 second timeout
+      });
+
+      if (!res.ok) {
+        let errorMessage = `Failed to fetch customer purchases (HTTP ${res.status})`;
+        try {
+          const errorData = await res.json();
+          if (errorData.error) {
+            errorMessage = errorData.error;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        } catch (e) {
+          // Could not parse error response
+        }
+
+        // Log detailed error for debugging
+        console.error(`[useCustomers] Error response: ${res.status}`, errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const data = await res.json();
+      console.log(`[useCustomers] Successfully fetched purchases:`, data);
+
+      return { success: true, purchases: data };
     } catch (err) {
-      return { success: false, error: err.message, purchases: [] };
+      const errorMsg = err.message || 'Failed to fetch customer purchases';
+      console.error(`[useCustomers] Catch error: ${errorMsg}`, err);
+      return { success: false, error: errorMsg, purchases: [] };
     }
   }, []);
 

@@ -332,16 +332,22 @@ def get_pvc_card_pdf(id):
 def get_customer_purchases(id):
     """Fetch all purchase history and associated warranties for a customer."""
     db = get_db()
+    logger.info(f"[get_customer_purchases] Request for customer ID: {id}")
 
     # Validate and fetch customer
     try:
         customer = db.customers.find_one({"_id": ObjectId(id)})
     except Exception as e:
-        logger.warning(f"Invalid customer ID format: {e}")
-        return jsonify({"error": "Invalid customer ID"}), 400
+        logger.warning(f"[get_customer_purchases] Invalid ObjectId format: {id}, error: {e}")
+        return jsonify({"error": "Invalid customer ID format"}), 400
 
     if not customer:
+        logger.warning(f"[get_customer_purchases] Customer not found for ID: {id}")
         return jsonify({"error": "Customer not found"}), 404
+
+    customer_id = str(customer['_id'])
+    customer_name = customer.get('name', 'Unknown')
+    logger.info(f"[get_customer_purchases] Found customer: {customer_name} ({customer_id})")
 
     try:
         # Build aggressive matching conditions (ID, Phone, Email, Name)
@@ -352,6 +358,7 @@ def get_customer_purchases(id):
 
         customer_phone = str(customer.get('phone', '')).strip()
         if customer_phone:
+            logger.debug(f"[get_customer_purchases] Matching by phone: {customer_phone}")
             match_conditions.append({"customerPhone": customer_phone})
 
             normalized_phone = ''.join(ch for ch in customer_phone if ch.isdigit())
@@ -363,6 +370,7 @@ def get_customer_purchases(id):
 
         customer_email = str(customer.get('email', '')).strip()
         if customer_email:
+            logger.debug(f"[get_customer_purchases] Matching by email: {customer_email}")
             match_conditions.append({"customerEmail": customer_email})
 
             email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
@@ -370,16 +378,20 @@ def get_customer_purchases(id):
 
         customer_name = str(customer.get('name', '')).strip()
         if customer_name and customer_name.lower() != 'walk-in customer':
+            logger.debug(f"[get_customer_purchases] Matching by name: {customer_name}")
             name_regex = re.compile(f"^{re.escape(customer_name)}$", re.I)
             match_conditions.append({"customerName": customer_name})
             match_conditions.append({"customerName": name_regex})
 
         match_query = {"$or": match_conditions}
+        logger.debug(f"[get_customer_purchases] Match query with {len(match_conditions)} conditions")
 
         # Fetch Bills with safe datetime handling
         bills_cursor = db.bills.find(match_query).sort("billDate", -1)
         bills = []
+        bills_count = 0
         for bill in bills_cursor:
+            bills_count += 1
             try:
                 # Handle varied date formats and total fields
                 b_date = bill.get('billDate')
@@ -401,9 +413,11 @@ def get_customer_purchases(id):
                     "items": bill.get('items', [])
                 })
             except Exception as bill_err:
-                logger.warning(f"Error processing bill {bill.get('_id')}: {bill_err}")
+                logger.warning(f"[get_customer_purchases] Error processing bill {bill.get('_id')}: {bill_err}")
                 # Skip this bill and continue with next
                 continue
+
+        logger.info(f"[get_customer_purchases] Found {len(bills)} bills for customer {customer_name}")
 
         # Fetch Warranties with safe datetime handling
         warranties_cursor = db.warranties.find(match_query).sort("expiryDate", -1)
@@ -435,9 +449,11 @@ def get_customer_purchases(id):
                     "status": w.get('status', 'active')
                 })
             except Exception as warranty_err:
-                logger.warning(f"Error processing warranty {w.get('_id')}: {warranty_err}")
+                logger.warning(f"[get_customer_purchases] Error processing warranty {w.get('_id')}: {warranty_err}")
                 # Skip this warranty and continue with next
                 continue
+
+        logger.info(f"[get_customer_purchases] Found {len(warranties)} warranties for customer {customer_name}")
 
         return jsonify({
             "customerId": id,
@@ -451,10 +467,10 @@ def get_customer_purchases(id):
             }
         })
     except Exception as e:
-        logger.error(f"Error fetching customer purchases: {str(e)}", exc_info=True)
+        logger.error(f"[get_customer_purchases] Error fetching customer purchases for {customer_name}: {str(e)}", exc_info=True)
         return jsonify({
             "error": "Failed to fetch customer purchase history",
-            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred"
+            "message": str(e) if current_app.config.get('DEBUG') else "An error occurred while fetching purchase history"
         }), 500
 
 

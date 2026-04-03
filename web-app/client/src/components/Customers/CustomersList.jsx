@@ -70,20 +70,25 @@ export default function CustomersList({
     setIsHistoryLoading(true);
 
     try {
+      console.log(`[CustomersList] Fetching history for customer: ${customer.id} (${customer.name})`);
       const result = await onViewHistory(customer.id);
+
       if (result.success) {
+        console.log(`[CustomersList] Successfully loaded history:`, result.purchases);
         setHistoryData({
           bills: result.purchases.bills || [],
           warranties: result.purchases.warranties || [],
           stats: result.purchases.stats || {}
         });
       } else {
-        console.error('Failed to load history:', result.error);
-        setHistoryError(result.error || 'Failed to load customer history');
+        const errorMsg = result.error || 'Failed to load customer history';
+        console.error(`[CustomersList] API returned error: ${errorMsg}`);
+        setHistoryError(errorMsg);
       }
     } catch (err) {
-      console.error('History fetch error:', err);
-      setHistoryError(err.message || 'Failed to load customer history');
+      const errorMsg = err.message || 'Failed to load customer history';
+      console.error(`[CustomersList] Exception while fetching history:`, err);
+      setHistoryError(errorMsg);
     } finally {
       setIsHistoryLoading(false);
     }
