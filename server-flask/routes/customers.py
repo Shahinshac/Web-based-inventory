@@ -494,14 +494,26 @@ def get_customer_purchases(id):
 
         logger.info(f"[get_customer_purchases] 📊 Returning response: {len(bills)} bills, {len(warranties)} warranties, Total spent: ₹{total_spent}")
 
-        return jsonify(response_data)
+        try:
+            return jsonify(response_data)
+        except Exception as json_err:
+            logger.error(f"[get_customer_purchases] ❌ Error serializing JSON response: {str(json_err)}", exc_info=True)
+            # Return a simplified response if JSON serialization fails
+            return jsonify({
+                "error": "Failed to fetch customer purchase history",
+                "message": f"Error serializing response: {str(json_err)}",
+                "details": str(json_err)
+            }), 500
     except Exception as e:
         logger.error(f"[get_customer_purchases] ❌ Unexpected error fetching purchases for {customer_name}: {str(e)}", exc_info=True)
-        # Always include error details for this critical endpoint (not just DEBUG mode)
+        # Always include error details for this critical endpoint
+        error_str = str(e)
+        logger.error(f"[get_customer_purchases] 📋 Exception details: type={type(e).__name__}, message={error_str}")
         return jsonify({
             "error": "Failed to fetch customer purchase history",
-            "message": str(e),
-            "details": str(e)
+            "message": error_str,
+            "details": error_str,
+            "errorType": type(e).__name__
         }), 500
 
 
