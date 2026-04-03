@@ -218,33 +218,80 @@ def download_invoice_pdf(invoice_id):
         })
 
         if not invoice:
+            logger.warning(f"[download_invoice_pdf] Invoice not found or access denied: {invoice_id}")
             return jsonify({"error": "Invoice not found or access denied"}), 404
 
         # Return the invoice data as JSON for the customer portal
         def safe_isoformat(dt):
             return dt.isoformat() if dt and hasattr(dt, 'isoformat') else str(dt)
 
+        def serialize_items(items):
+            """Serialize items array, converting all ObjectIds and ensuring JSON safety"""
+            serialized = []
+            for item in items:
+                try:
+                    serialized.append({
+                        "productId": str(item.get("productId")) if item.get("productId") else None,
+                        "productName": str(item.get("productName", "Unknown")),
+                        "hsnCode": str(item.get("hsnCode", "9999")),
+                        "quantity": float(item.get("quantity", 0)),
+                        "unitPrice": float(item.get("unitPrice", 0)),
+                        "gstPercent": float(item.get("gstPercent", 18)),
+                        "lineSubtotal": float(item.get("lineSubtotal", 0)),
+                        "lineGstAmount": float(item.get("lineGstAmount", 0))
+                    })
+                except Exception as item_err:
+                    logger.warning(f"[download_invoice_pdf] Error serializing item: {item_err}")
+                    continue
+            return serialized
+
+        # Safely serialize EMI details
+        emi_details = None
+        if invoice.get("emiDetails"):
+            try:
+                emi = invoice.get("emiDetails")
+                emi_details = {
+                    "totalAmount": float(emi.get("totalAmount", 0)),
+                    "downPayment": float(emi.get("downPayment", 0)),
+                    "months": int(emi.get("months", 0)),
+                    "emiAmount": float(emi.get("emiAmount", 0)),
+                    "interestRate": float(emi.get("interestRate", 0)),
+                    "startDate": safe_isoformat(emi.get("startDate")),
+                    "endDate": safe_isoformat(emi.get("endDate"))
+                }
+            except Exception as emi_err:
+                logger.warning(f"[download_invoice_pdf] Error serializing EMI details: {emi_err}")
+
         return jsonify({
             "id": str(invoice.get("_id")),
-            "billNumber": invoice.get("billNumber"),
-            "customerName": invoice.get("customerName"),
+            "billNumber": str(invoice.get("billNumber", "N/A")),
+            "customerName": str(invoice.get("customerName", "Customer")),
+            "customerPhone": str(invoice.get("customerPhone", "")),
+            "customerAddress": str(invoice.get("customerAddress", "")),
+            "customerPlace": str(invoice.get("customerPlace", "")),
             "billDate": safe_isoformat(invoice.get("billDate")),
-            "items": invoice.get("items", []),
-            "subtotal": invoice.get("subtotal"),
-            "discountPercent": invoice.get("discountPercent", 0),
-            "discountAmount": invoice.get("discountAmount", 0),
-            "cgst": invoice.get("cgst", 0),
-            "sgst": invoice.get("sgst", 0),
-            "igst": invoice.get("igst", 0),
-            "gstAmount": invoice.get("gstAmount"),
-            "grandTotal": invoice.get("grandTotal"),
-            "paymentMode": invoice.get("paymentMode"),
-            "emiDetails": invoice.get("emiDetails")
+            "items": serialize_items(invoice.get("items", [])),
+            "subtotal": float(invoice.get("subtotal", 0)),
+            "discountPercent": float(invoice.get("discountPercent", 0)),
+            "discountAmount": float(invoice.get("discountAmount", 0)),
+            "afterDiscount": float(invoice.get("afterDiscount", 0)),
+            "cgst": float(invoice.get("cgst", 0)),
+            "sgst": float(invoice.get("sgst", 0)),
+            "igst": float(invoice.get("igst", 0)),
+            "gstAmount": float(invoice.get("gstAmount", 0)),
+            "grandTotal": float(invoice.get("grandTotal", 0)),
+            "paymentMode": str(invoice.get("paymentMode", "Cash")),
+            "emiDetails": emi_details,
+            "isSameState": bool(invoice.get("isSameState", True))
         })
 
     except Exception as e:
-        logger.error(f"PDF download error: {e}")
-        return jsonify({"error": "Failed to download invoice"}), 500
+        logger.error(f"[download_invoice_pdf] ❌ PDF download error: {str(e)}", exc_info=True)
+        return jsonify({
+            "error": "Failed to download invoice",
+            "message": str(e),
+            "details": str(e)
+        }), 500
 
 # ==================== WARRANTIES ====================
 
