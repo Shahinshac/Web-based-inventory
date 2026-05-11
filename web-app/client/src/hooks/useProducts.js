@@ -3,7 +3,7 @@
  * Manages products state and operations
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import {
   fetchProducts as fetchProductsAPI,
   addProduct as addProductAPI,
@@ -62,6 +62,7 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
       }
     } finally {
       setLoading(false)
+      isFetching.current = false
     }
   }
 

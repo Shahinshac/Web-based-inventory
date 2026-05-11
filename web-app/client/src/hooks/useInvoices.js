@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { API, getAuthHeaders } from '../utils/api';
 import { useAutoRefresh, useVisibilityRefresh } from './useAutoRefresh';
 
@@ -57,8 +57,11 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
   const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const isFetching = useRef(false);
 
   const fetchInvoices = useCallback(async (force = false) => {
+    if (isFetching.current && !force) return;
+    isFetching.current = true;
     try {
       setLoading(true);
       setError(null);
@@ -118,6 +121,7 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
       }
     } finally {
       setLoading(false);
+      isFetching.current = false;
     }
   }, [isOnline, activeTab]);
 

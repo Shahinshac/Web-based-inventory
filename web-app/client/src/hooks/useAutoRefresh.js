@@ -17,6 +17,12 @@ export const useAutoRefresh = (refreshFunction, interval = 30000, enabled = true
   const [lastRefreshTime, setLastRefreshTime] = useState(null);
   const intervalRef = useRef(null);
   const refreshTimeoutRef = useRef(null);
+  const latestRefreshFunction = useRef(refreshFunction);
+
+  // Keep the latest refresh function available without triggering useEffect
+  useEffect(() => {
+    latestRefreshFunction.current = refreshFunction;
+  }, [refreshFunction]);
 
   // Manual refresh function with debounce
   const refresh = async (force = false) => {
@@ -44,7 +50,9 @@ export const useAutoRefresh = (refreshFunction, interval = 30000, enabled = true
 
     // Set up new interval
     intervalRef.current = setInterval(() => {
-      refresh();
+      if (latestRefreshFunction.current) {
+        refresh();
+      }
     }, interval);
 
     // Cleanup on unmount or when dependencies change
