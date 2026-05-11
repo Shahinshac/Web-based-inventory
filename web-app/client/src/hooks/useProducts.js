@@ -64,7 +64,7 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
       setLoading(false)
       isFetching.current = false
     }
-  }
+  }, [isOnline])
 
   // Add product
   const addProduct = async (productData, userId = null, username = null) => {
