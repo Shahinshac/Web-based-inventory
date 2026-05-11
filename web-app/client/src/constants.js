@@ -39,6 +39,16 @@ export const fmt0 = (n) => {
 };
 
 /**
+ * Format number to 2 decimal places
+ * @param {number|string} num - Number to format
+ * @returns {string} Formatted number with 2 decimals
+ */
+export const fmt2 = (num) => {
+  if (num === null || num === undefined || isNaN(num)) return '0.00';
+  return parseFloat(num).toFixed(2);
+};
+
+/**
  * Format number as Indian Rupee currency with 1 decimal
  * @param {number|string} n - Amount to format
  * @returns {string} Formatted currency string

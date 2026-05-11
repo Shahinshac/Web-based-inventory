@@ -23,9 +23,12 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
   const [searchQuery, setSearchQuery] = useState('')
   const [productFilter, setProductFilter] = useState('all')
   const [sortBy, setSortBy] = useState('name')
+  const isFetching = useRef(false)
 
   // Fetch products
-  const fetchProducts = async () => {
+  const fetchProducts = useCallback(async () => {
+    if (isFetching.current) return
+    isFetching.current = true
     try {
       setLoading(true)
       setError(null)
