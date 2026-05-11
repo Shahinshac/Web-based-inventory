@@ -36,6 +36,7 @@ export default function Sidebar({
     { id: 'returns', label: 'Returns', icon: 'rotate-ccw', show: true },
     { id: 'expenses', label: 'Expenses', icon: 'dollar-sign', show: true },
     { id: 'users', label: 'Team', icon: 'users', show: isAdmin },
+    { id: 'support', label: 'Support Desk', icon: 'help-circle', show: true },
     { id: 'audit', label: 'Audit Logs', icon: 'activity', show: isAdmin },
     { id: 'exports', label: 'Exports', icon: 'download', show: isAdmin },
     { id: 'admin-settings', label: 'Admin Settings', icon: 'settings', show: isAdmin },

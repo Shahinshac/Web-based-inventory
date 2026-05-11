@@ -547,7 +547,12 @@ def public_invoice_view(token):
   </div>
 
   <script>
-    document.fonts.ready.then(function() {{}});
+    window.onload = function() {
+      // Auto trigger print for PDF experience
+      setTimeout(function() {
+        window.print();
+      }, 1000);
+    };
   </script>
 </body>
 </html>"""

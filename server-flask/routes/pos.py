@@ -333,7 +333,7 @@ def get_invoices():
                 "lineSubtotal": float(i.get("lineSubtotal", 0)),
                 "lineGstAmount": float(i.get("lineGstAmount", 0))
             } for i in b.get("items", [])],
-            "date": b.get("billDate", utc_now()).isoformat() if isinstance(b.get("billDate"), datetime) else str(b.get("billDate", "")),
+            "date": to_iso_string(b.get("billDate")),
             "createdByUsername": b.get("createdByUsername", "Unknown"),
             "companyPhone": COMPANY_PHONE
         })
@@ -527,38 +527,13 @@ def whatsapp_link(id):
             message += f"\n*CGST (9%):* ₹{cgst:.2f}"
             message += f"\n*SGST (9%):* ₹{sgst:.2f}"
         elif igst > 0:
-            message += f"\n*IGST (18%):* ₹{igst:.2f}"
-
-        # Add total and payment mode
-        message += f"\n*━━━━━━━━━━━━━━━━━━━━*"
-        message += f"\n*TOTAL: ₹{grand_total:.2f}*"
-        message += f"\n*Payment Mode:* {payment_mode}"
-
-        # Add EMI details if applicable
         emi_details = invoice.get('emiDetails')
-        if emi_details and emi_details.get('months'):
-            emi_months = emi_details.get('months', 0)
-            emi_amount = emi_details.get('emiAmount', 0)
-            down_payment = emi_details.get('downPayment', 0)
-            message += f"\n\n*EMI DETAILS:*"
-            if down_payment > 0:
-                message += f"\nDown Payment: ₹{float(down_payment):.2f}"
-            message += f"\nMonths: {emi_months}"
-            message += f"\nEMI Amount: ₹{float(emi_amount):.2f}/month"
-
-        # Add portal link
-        message += f"""
-
-🎁 *View Full Invoice:*
-https://26-07inventory.vercel.app
-
-*Customer Portal:*
-Login to view invoices, warranties & purchase history"""
+        emi_enabled = bool(emi_details and emi_details.get('months'))
 
         # Create public link
+        token = secrets.token_hex(16)
         try:
-            token = secrets.token_hex(16)
-            expires = utc_now() + timedelta(days=1)
+            expires = utc_now() + timedelta(days=7)
             db.public_invoice_links.insert_one({
                 "token": token,
                 "invoiceId": str(invoice["_id"]),
@@ -578,12 +553,29 @@ Login to view invoices, warranties & purchase history"""
             logger.error(f"[whatsapp_link] ❌ Failed to create public invoice link: {e}", exc_info=True)
             return jsonify({
                 "error": "Failed to create public link",
-                "message": str(e),
-                "details": str(e)
+                "message": str(e)
             }), 500
 
-        # Build public URL
         public_url = f"{request.host_url.rstrip('/')}/public/invoice/{token}"
+
+        # Build message
+        message = f"*INVOICE: {bill_number}*\n"
+        message += f"Date: {format_ist_date(invoice.get('billDate'))}\n"
+        message += f"Customer: {customer_name}\n"
+        message += f"Total: *₹{grand_total:,.2f}*\n"
+        
+        if emi_enabled and emi_details:
+            emi_months = emi_details.get('months', 0)
+            emi_amount = emi_details.get('emiAmount', 0)
+            down_payment = emi_details.get('downPayment', 0)
+            message += f"\n*EMI DETAILS:*"
+            if down_payment > 0:
+                message += f"\nDown Pmt: ₹{float(down_payment):.2f}"
+            message += f"\nTenure: {emi_months} months"
+            message += f"\nEMI: ₹{float(emi_amount):.2f}/mo"
+
+        message += f"\n\n🎁 *VIEW FULL INVOICE (PDF):*\n{public_url}"
+        message += f"\n\n*CUSTOMER PORTAL:*\nhttps://26-07inventory.vercel.app\n(View History & Warranties)"
 
         # Generate WhatsApp URL if phone exists
         whatsapp_url = None

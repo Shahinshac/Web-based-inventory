@@ -19,6 +19,7 @@ import Expenses from './components/Expenses/Expenses';
 import ExportData from './components/ExportData/ExportData';
 import Dashboard from './components/Dashboard/Dashboard';
 import Toast from './components/Common/Toast';
+import AdminTickets from './components/Support/AdminTickets';
 import { useAuth } from './hooks/useAuth';
 import { formatTimestampIST } from './utils/dateFormatter';
 
@@ -1311,6 +1312,9 @@ Esc: Close modals/dialogs`;
             onDeleteUserPhoto={handleDeleteUserPhoto}
           />
         );
+
+      case 'support':
+        return <AdminTickets />;
 
       case 'admin-settings':
         if (!isAdmin) {

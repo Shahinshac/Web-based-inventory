@@ -101,7 +101,7 @@ def get_dashboard():
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
         return jsonify({
-            "memberSince": customer.get('createdAt').isoformat() if customer.get('createdAt') and hasattr(customer.get('createdAt'), 'isoformat') else None,
+            "memberSince": to_iso_string(customer.get('createdAt')),
             "stats": {
                 "totalPurchases": total_purchases,
                 "totalSpent": round(total_spent, 2),
@@ -112,7 +112,7 @@ def get_dashboard():
                 {
                     "id": str(inv['_id']),
                     "invoiceNo": inv.get('billNumber'),
-                    "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
+                    "date": to_iso_string(inv.get('billDate')),
                     "total": float(inv.get('grandTotal', 0)),
                     "itemCount": len(inv.get('items', []))
                 }
@@ -165,12 +165,12 @@ def get_customer_invoices():
                 invoices.append({
                     "id": str(inv['_id']),
                     "invoiceNo": str(inv.get('billNumber', 'N/A')),
-                    "date": inv.get('billDate').isoformat() if inv.get('billDate') and hasattr(inv.get('billDate'), 'isoformat') else None,
+                    "date": to_iso_string(inv.get('billDate')),
                     "total": float(inv.get('grandTotal', 0)),
                     "paymentMethod": str(inv.get('paymentMode', 'cash')),
-                    "emiEnabled": bool(inv.get('emiEnabled', False)),
-                    "emiTenure": int(inv.get('emiTenure', 0) or 0),
-                    "emiMonthlyAmount": float(inv.get('emiMonthlyAmount', 0) or 0),
+                    "emiEnabled": bool(inv.get('emiDetails')),
+                    "emiTenure": int(inv.get('emiDetails', {}).get('months', 0)) if inv.get('emiDetails') else 0,
+                    "emiMonthlyAmount": float(inv.get('emiDetails', {}).get('emiAmount', 0)) if inv.get('emiDetails') else 0,
                     "items": items,
                     "itemCount": len(items)
                 })
@@ -796,8 +796,8 @@ def get_customer_warranties():
                             status = 'expiring_soon'
 
                 # Safe date formatting
-                start_date_str = start_date.isoformat() if start_date and hasattr(start_date, 'isoformat') else None
-                expiry_date_str = expiry_date.isoformat() if expiry_date and hasattr(expiry_date, 'isoformat') else None
+                start_date_str = to_iso_string(start_date)
+                expiry_date_str = to_iso_string(expiry_date)
 
                 warranty_data = {
                     "id": str(warranty['_id']),
@@ -810,7 +810,7 @@ def get_customer_warranties():
                     "daysLeft": days_left,
                     "status": status,
                     "invoiceNumber": str(warranty.get('invoiceNo', 'N/A')),
-                    "invoiceDate": warranty.get('invoiceDate').isoformat() if warranty.get('invoiceDate') and hasattr(warranty.get('invoiceDate'), 'isoformat') else None
+                    "invoiceDate": to_iso_string(warranty.get('invoiceDate'))
                 }
 
                 warranties.append(warranty_data)

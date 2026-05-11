@@ -1,12 +1,12 @@
 /**
  * @file CustomerInvoices.jsx
- * @description Customer invoices list with search, filter, and PDF download
+ * @description Ultra-Premium Customer invoices list with high-octane technical styling
  */
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchCustomerInvoices, downloadInvoicePDF } from '../../services/customerPortalService';
-import { formatDateOnlyIST } from '../../utils/dateFormatter';
+import { formatTimestampIST, formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerInvoices = ({ currentUser }) => {
   const [invoices, setInvoices] = useState([]);
@@ -39,7 +39,7 @@ const CustomerInvoices = ({ currentUser }) => {
       setDownloadingId(invoiceId);
       await downloadInvoicePDF(invoiceId);
     } catch (err) {
-      alert('Failed to download invoice: ' + err.message);
+      console.error('Download error:', err);
     } finally {
       setDownloadingId(null);
     }
@@ -50,15 +50,20 @@ const CustomerInvoices = ({ currentUser }) => {
     inv.date?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (value) => formatDateOnlyIST(value);
-
   const formatAmount = (value) => `₹${Number(value || 0).toLocaleString()}`;
 
-  const getPaymentLabel = (invoice) => {
-    if (invoice.emiEnabled || String(invoice.paymentMethod || '').toLowerCase() === 'emi') {
-      return 'EMI';
+  const getPaymentBadge = (invoice) => {
+    const method = String(invoice.paymentMethod || '').toLowerCase();
+    if (invoice.emiEnabled || method === 'emi') {
+      return <span className="badge badge-emi"><Icon name="calendar" size={10} /> EMI Plan</span>;
     }
-    return invoice.paymentMethod || 'cash';
+    if (method === 'upi') {
+      return <span className="badge badge-upi"><Icon name="smartphone" size={10} /> UPI</span>;
+    }
+    if (method === 'card') {
+      return <span className="badge badge-card"><Icon name="credit-card" size={10} /> Card</span>;
+    }
+    return <span className="badge badge-cash"><Icon name="dollar-sign" size={10} /> Cash</span>;
   };
 
   if (loading && invoices.length === 0) {
@@ -71,24 +76,21 @@ const CustomerInvoices = ({ currentUser }) => {
 
   return (
     <div className="customer-invoices">
-      <div className="portal-card">
+      {/* Header & Controls */}
+      <div className="portal-card glass-header">
         <div className="portal-card-header">
           <h2 className="portal-card-title">
-            <Icon name="layers" size={24} />
-            My Invoices
+            <Icon name="file-text" size={24} />
+            Invoice History
           </h2>
-          <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+          <div className="search-wrapper">
+            <Icon name="search" size={16} className="search-icon" />
             <input
               type="text"
-              placeholder="Search invoices..."
+              placeholder="Search by ID or Date..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                padding: '0.5rem 1rem',
-                borderRadius: '8px',
-                border: '1px solid #e2e8f0',
-                fontSize: '0.875rem'
-              }}
+              className="premium-search"
             />
           </div>
         </div>
@@ -102,129 +104,304 @@ const CustomerInvoices = ({ currentUser }) => {
 
         {filteredInvoices.length === 0 ? (
           <div className="empty-state">
-            <div className="empty-state-icon">📄</div>
-            <p>{searchTerm ? 'No invoices found matching your search' : 'No invoices yet'}</p>
+            <Icon name="file-minus" size={60} />
+            <p>{searchTerm ? 'No matches found' : 'No invoices on record'}</p>
           </div>
         ) : (
-          <>
+          <div className="invoices-content">
             <div className="portal-table-wrap">
-            <table className="portal-table">
-              <thead>
-                <tr>
-                  <th>Invoice No</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Payment</th>
-                  <th>Total</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td><strong>{invoice.invoiceNo}</strong></td>
-                    <td>{formatDate(invoice.date)}</td>
-                    <td>{invoice.itemCount || 0} items</td>
-                    <td>
-                      <span className="badge badge-info">
-                        {getPaymentLabel(invoice)}
-                      </span>
-                      {invoice.emiEnabled && invoice.emiTenure > 0 && (
-                        <div style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>
-                          {invoice.emiTenure} months • {formatAmount(invoice.emiMonthlyAmount)}/mo
-                        </div>
-                      )}
-                    </td>
-                    <td><strong>{formatAmount(invoice.total)}</strong></td>
-                    <td>
-                      <button
-                        className="btn-secondary"
-                        onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
-                        disabled={downloadingId === invoice.id}
-                        style={{ 
-                          padding: '0.5rem 1rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.5rem'
-                        }}
-                      >
-                        {downloadingId === invoice.id ? (
-                          <>
-                            <div className="spinner" style={{ width: '16px', height: '16px', borderWidth: '2px' }}></div>
-                            <span>Downloading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Icon name="download" size={16} />
-                            <span>PDF</span>
-                          </>
-                        )}
-                      </button>
-                    </td>
+              <table className="portal-table premium-table">
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Date & Time</th>
+                    <th>Items</th>
+                    <th>Payment</th>
+                    <th>Total Amount</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((invoice) => (
+                    <tr key={invoice.id} className="invoice-row">
+                      <td>
+                        <div className="id-cell">
+                          <span className="id-prefix">INV</span>
+                          <span className="id-number">{invoice.invoiceNo}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <div className="date-time-stack">
+                          <span className="main-date">{formatDateOnlyIST(invoice.date)}</span>
+                          <span className="sub-time">{formatTimestampIST(invoice.date).split(',')[1]}</span>
+                        </div>
+                      </td>
+                      <td>
+                        <span className="item-pill">{invoice.itemCount || 0} Products</span>
+                      </td>
+                      <td>
+                        <div className="payment-cell">
+                          {getPaymentBadge(invoice)}
+                          {invoice.emiEnabled && (
+                            <div className="emi-mini-details">
+                              {invoice.emiTenure} Months Plan
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="amount-cell">
+                          <span className="currency">₹</span>
+                          <span className="value">{Number(invoice.total).toLocaleString()}</span>
+                        </div>
+                      </td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          className={`download-btn ${downloadingId === invoice.id ? 'loading' : ''}`}
+                          onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
+                          disabled={downloadingId === invoice.id}
+                        >
+                          {downloadingId === invoice.id ? (
+                            <div className="spinner-mini"></div>
+                          ) : (
+                            <>
+                              <Icon name="download" size={16} />
+                              <span>PDF</span>
+                            </>
+                          )}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
 
-            <div className="portal-mobile-list">
-              {filteredInvoices.map((invoice) => (
-                <article key={`mobile-${invoice.id}`} className="portal-mobile-card">
-                  <div className="portal-mobile-row"><span>Invoice</span><strong>{invoice.invoiceNo || 'N/A'}</strong></div>
-                  <div className="portal-mobile-row"><span>Date</span><strong>{formatDate(invoice.date)}</strong></div>
-                  <div className="portal-mobile-row"><span>Items</span><strong>{invoice.itemCount || 0}</strong></div>
-                  <div className="portal-mobile-row"><span>Payment</span><strong>{getPaymentLabel(invoice)}</strong></div>
-                  {invoice.emiEnabled && invoice.emiTenure > 0 && (
-                    <div className="portal-mobile-row"><span>EMI</span><strong>{invoice.emiTenure}m • {formatAmount(invoice.emiMonthlyAmount)}/mo</strong></div>
-                  )}
-                  <div className="portal-mobile-row"><span>Total</span><strong>{formatAmount(invoice.total)}</strong></div>
-                  <button
-                    className="btn-secondary"
-                    onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
-                    disabled={downloadingId === invoice.id}
-                    style={{ marginTop: '0.75rem', width: '100%', justifyContent: 'center', display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-                  >
-                    {downloadingId === invoice.id ? 'Downloading...' : 'Download PDF'}
-                  </button>
-                </article>
-              ))}
-            </div>
-
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {pagination.pages > 1 && (
-              <div style={{ 
-                display: 'flex', 
-                justifyContent: 'center', 
-                gap: '0.5rem', 
-                marginTop: '1.5rem' 
-              }}>
+              <div className="pagination-premium">
                 <button
-                  className="btn-secondary"
+                  className="page-btn"
                   onClick={() => loadInvoices(pagination.page - 1)}
                   disabled={pagination.page === 1 || loading}
                 >
-                  Previous
+                  <Icon name="chevron-left" size={18} />
                 </button>
-                <span style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  padding: '0 1rem',
-                  color: '#4a5568'
-                }}>
-                  Page {pagination.page} of {pagination.pages}
-                </span>
+                <div className="page-indicator">
+                  <span className="current">{pagination.page}</span>
+                  <span className="sep">/</span>
+                  <span className="total">{pagination.pages}</span>
+                </div>
                 <button
-                  className="btn-secondary"
+                  className="page-btn"
                   onClick={() => loadInvoices(pagination.page + 1)}
                   disabled={pagination.page >= pagination.pages || loading}
                 >
-                  Next
+                  <Icon name="chevron-right" size={18} />
                 </button>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
+
+      <style jsx>{`
+        .glass-header {
+          border-top: 4px solid var(--portal-accent);
+        }
+        
+        .search-wrapper {
+          position: relative;
+          width: 300px;
+        }
+        
+        .search-icon {
+          position: absolute;
+          left: 1rem;
+          top: 50%;
+          transform: translateY(-50%);
+          color: var(--portal-text-dim);
+        }
+        
+        .premium-search {
+          width: 100%;
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid var(--portal-border);
+          border-radius: 12px;
+          padding: 0.6rem 1rem 0.6rem 2.8rem;
+          color: white;
+          font-weight: 500;
+          transition: all 0.3s;
+        }
+        
+        .premium-search:focus {
+          background: rgba(255, 255, 255, 0.08);
+          border-color: var(--portal-accent);
+          outline: none;
+          box-shadow: 0 0 15px var(--portal-accent-glow);
+        }
+        
+        .premium-table th {
+          font-size: 0.75rem;
+          color: var(--portal-text-dim);
+          border-bottom: 2px solid var(--portal-border);
+        }
+        
+        .invoice-row:hover td {
+          background: rgba(99, 102, 241, 0.05) !important;
+        }
+        
+        .id-cell {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        
+        .id-prefix {
+          font-size: 0.7rem;
+          font-weight: 800;
+          color: var(--portal-text-dim);
+          background: var(--portal-glass);
+          padding: 0.2rem 0.4rem;
+          border-radius: 4px;
+        }
+        
+        .id-number {
+          font-weight: 700;
+          color: var(--portal-accent);
+          letter-spacing: 0.05em;
+        }
+        
+        .date-time-stack {
+          display: flex;
+          flex-direction: column;
+          gap: 0.2rem;
+        }
+        
+        .main-date {
+          font-weight: 600;
+          color: white;
+        }
+        
+        .sub-time {
+          font-size: 0.75rem;
+          color: var(--portal-text-dim);
+        }
+        
+        .item-pill {
+          background: var(--portal-glass);
+          padding: 0.3rem 0.8rem;
+          border-radius: 100px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--portal-text-dim);
+          border: 1px solid var(--portal-border);
+        }
+        
+        .payment-cell {
+          display: flex;
+          flex-direction: column;
+          gap: 0.4rem;
+        }
+        
+        .emi-mini-details {
+          font-size: 0.7rem;
+          color: var(--portal-secondary);
+          font-weight: 700;
+          text-transform: uppercase;
+        }
+        
+        .badge-emi { background: rgba(236, 72, 153, 0.1); color: #ec4899; border: 1px solid rgba(236, 72, 153, 0.2); }
+        .badge-upi { background: rgba(99, 102, 241, 0.1); color: #818cf8; border: 1px solid rgba(99, 102, 241, 0.2); }
+        .badge-card { background: rgba(245, 158, 11, 0.1); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.2); }
+        .badge-cash { background: rgba(16, 185, 129, 0.1); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.2); }
+        
+        .amount-cell {
+          display: flex;
+          align-items: baseline;
+          gap: 0.2rem;
+        }
+        
+        .amount-cell .currency { color: var(--portal-text-dim); font-size: 0.9rem; font-weight: 600; }
+        .amount-cell .value { color: white; font-size: 1.2rem; font-weight: 800; }
+        
+        .download-btn {
+          background: var(--portal-glass);
+          border: 1px solid var(--portal-border);
+          color: white;
+          padding: 0.5rem 1.2rem;
+          border-radius: 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 0.6rem;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .download-btn:hover:not(:disabled) {
+          background: var(--portal-accent);
+          border-color: var(--portal-accent);
+          box-shadow: 0 0 15px var(--portal-accent-glow);
+          transform: translateY(-2px);
+        }
+        
+        .pagination-premium {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 1.5rem;
+          margin-top: 3rem;
+          padding-top: 2rem;
+          border-top: 1px solid var(--portal-border);
+        }
+        
+        .page-btn {
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          background: var(--portal-glass);
+          border: 1px solid var(--portal-border);
+          color: white;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+        
+        .page-btn:hover:not(:disabled) {
+          background: var(--portal-accent);
+          border-color: var(--portal-accent);
+        }
+        
+        .page-btn:disabled {
+          opacity: 0.3;
+          cursor: not-allowed;
+        }
+        
+        .page-indicator {
+          display: flex;
+          align-items: center;
+          gap: 0.6rem;
+          font-weight: 800;
+          font-size: 1.1rem;
+        }
+        
+        .page-indicator .current { color: var(--portal-accent); }
+        .page-indicator .sep { color: var(--portal-text-dim); }
+        .page-indicator .total { color: var(--portal-text-dim); }
+
+        @media (max-width: 768px) {
+          .search-wrapper { width: 100%; }
+          .premium-table th:nth-child(3),
+          .premium-table td:nth-child(3),
+          .premium-table th:nth-child(4),
+          .premium-table td:nth-child(4) {
+            display: none;
+          }
+        }
+      `}</style>
     </div>
   );
 };
