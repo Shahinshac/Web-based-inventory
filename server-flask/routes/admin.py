@@ -523,12 +523,16 @@ def handle_payment_request(request_id):
                 from utils.tzutils import utc_from_iso, utc_now
                 current_expiry = warranty.get('expiryDate')
                 
-                # Handle different date formats in DB
-                if isinstance(current_expiry, str):
+                if current_expiry:
+                    # Ensure it's a datetime object and timezone aware
                     current_expiry = utc_from_iso(current_expiry)
+                    if current_expiry and current_expiry.tzinfo is None:
+                        from datetime import timezone
+                        current_expiry = current_expiry.replace(tzinfo=timezone.utc)
                 
+                now = utc_now()
                 # If current_expiry is None or in the past, start from now
-                start_point = current_expiry if current_expiry and current_expiry > utc_now() else utc_now()
+                start_point = current_expiry if current_expiry and current_expiry > now else now
                 new_expiry = start_point + timedelta(days=365 * years)
                 
                 logger.info(f"[handle_payment_request] 🔄 Renewing warranty {warranty_id} from {current_expiry} to {new_expiry}")

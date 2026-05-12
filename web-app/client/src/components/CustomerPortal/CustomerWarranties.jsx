@@ -24,6 +24,10 @@ const CustomerWarranties = () => {
   const [renewalData, setRenewalData] = useState({ years: 1, paymentMethod: 'UPI', details: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showQR, setShowQR] = useState(false);
+  
+  const [isClaiming, setIsClaiming] = useState(false);
+  const [claimWarranty, setClaimWarranty] = useState(null);
+  const [claimData, setClaimData] = useState({ description: '' });
 
   useEffect(() => {
     loadWarranties(1);
@@ -90,6 +94,37 @@ const CustomerWarranties = () => {
       alert('Renewal request submitted! Awaiting Admin approval.');
     } catch (err) {
       alert('Failed to submit renewal request.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleClaimClick = (warranty) => {
+    setClaimWarranty(warranty);
+    setIsClaiming(true);
+  };
+
+  const handleClaimSubmit = async (e) => {
+    e.preventDefault();
+    if (!claimWarranty) return;
+
+    try {
+      setIsSubmitting(true);
+      await submitPaymentRequest({
+        type: 'warranty_claim',
+        targetId: claimWarranty.id,
+        amount: 0,
+        paymentMethod: 'Other',
+        paymentDetails: { notes: claimData.description },
+        data: { issue: claimData.description }
+      });
+      setIsClaiming(false);
+      setClaimWarranty(null);
+      setClaimData({ description: '' });
+      await loadWarranties(pagination.page);
+      alert('Warranty claim submitted! Our team will review and contact you.');
+    } catch (err) {
+      alert('Failed to submit claim request.');
     } finally {
       setIsSubmitting(false);
     }
@@ -214,32 +249,48 @@ const CustomerWarranties = () => {
                       </div>
                     </td>
                     <td>{getStatusBadge(warranty.status)}</td>
-                    <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      {warranty.pendingRequests?.length > 0 ? (
-                        <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white', border: 'none' }}>
-                          <Icon name="clock" size={10} /> Awaiting Approval
-                        </span>
-                      ) : (
+                      <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                        {warranty.pendingRequests?.length > 0 ? (
+                          <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white', border: 'none' }}>
+                            <Icon name="clock" size={10} /> Awaiting Approval
+                          </span>
+                        ) : (
+                          <>
+                            <button 
+                              className="portal-btn claim-btn" 
+                              onClick={() => handleClaimClick(warranty)}
+                              style={{ 
+                                background: '#10b981',
+                                display: 'flex',
+                                fontSize: '0.75rem',
+                                padding: '6px 12px'
+                              }}
+                            >
+                              CLAIM
+                            </button>
+                            <button 
+                              className="portal-btn renew-btn" 
+                              onClick={() => handleRenewClick(warranty)}
+                              style={{ 
+                                background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                                opacity: 1,
+                                display: 'flex',
+                                fontSize: '0.75rem',
+                                padding: '6px 12px'
+                              }}
+                            >
+                              {warranty.status === 'expired' ? 'RENEW' : 'RENEW'}
+                            </button>
+                          </>
+                        )}
                         <button 
-                          className="portal-btn renew-btn" 
-                          onClick={() => handleRenewClick(warranty)}
-                          style={{ 
-                            background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                            opacity: 1,
-                            display: 'flex'
-                          }}
+                          className="portal-btn details-btn"
+                          style={{ display: 'flex', fontSize: '0.75rem', padding: '6px 12px' }}
+                          onClick={() => handleViewDetails(warranty.id)}
                         >
-                          {warranty.status === 'expired' ? 'RENEW EXPIRED' : 'RENEW EARLY'}
+                          DETAILS
                         </button>
-                      )}
-                      <button 
-                        className="portal-btn details-btn"
-                        style={{ display: 'flex' }}
-                        onClick={() => handleViewDetails(warranty.id)}
-                      >
-                        DETAILS
-                      </button>
-                    </td>
+                      </td>
                   </tr>
                 ))}
               </tbody>
@@ -402,6 +453,51 @@ const CustomerWarranties = () => {
           amount={999 * renewalData.years}
           description={`Warranty Renewal - ${renewalWarranty.productName} (${renewalData.years}y)`}
         />
+      )}
+
+      {/* Claim Request Modal */}
+      {isClaiming && claimWarranty && (
+        <div className="portal-modal-overlay" onClick={() => setIsClaiming(false)}>
+          <div className="portal-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="portal-modal-header">
+              <h3>Submit Warranty Claim</h3>
+              <button className="close-btn" onClick={() => setIsClaiming(false)}><Icon name="x" size={20} /></button>
+            </div>
+            <form onSubmit={handleClaimSubmit} className="portal-modal-content">
+              <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>
+                Submit a service request for <strong>{claimWarranty.productName}</strong>. 
+                Our technical team will review your claim and contact you.
+              </p>
+              
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Issue Description</label>
+                <textarea 
+                  placeholder="Describe the problem you're facing with the product..."
+                  value={claimData.description}
+                  onChange={e => setClaimData({...claimData, description: e.target.value})}
+                  style={{ 
+                    width: '100%', 
+                    padding: '0.75rem', 
+                    borderRadius: '8px', 
+                    border: '1px solid #e2e8f0',
+                    minHeight: '120px',
+                    fontFamily: 'inherit'
+                  }}
+                  required
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className="logout-btn" 
+                style={{ width: '100%', background: '#10b981', color: 'white', border: 'none', padding: '0.75rem', fontWeight: 700 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Claim Request'}
+              </button>
+            </form>
+          </div>
+        </div>
       )}
 
       <style jsx>{`
