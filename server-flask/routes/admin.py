@@ -257,6 +257,49 @@ def get_all_emi_plans():
     """Fetch all EMI plans for admin dashboard."""
     try:
         db = get_db()
+        
+        # Fallback Sync: Find bills with EMI that don't have a plan record yet
+        # (This helps populate the list with historical data)
+        emi_bills = db.bills.find({"paymentMode": "emi"})
+        for bill in emi_bills:
+            exists = db.emi_plans.find_one({"billId": bill["_id"]})
+            if not exists:
+                # Auto-create missing plan
+                emi_details = bill.get("emiDetails", {})
+                installments = []
+                months = int(emi_details.get('months', 0))
+                if months > 0:
+                    emi_amt = float(emi_details.get('emiAmount', 0))
+                    bill_date = bill.get('billDate', utc_now())
+                    for m in range(1, months + 1):
+                        due_date = bill_date + timedelta(days=30 * m)
+                        installments.append({
+                            "installmentNo": m,
+                            "dueDate": due_date,
+                            "amount": emi_amt,
+                            "status": "pending",
+                            "paidAmount": 0,
+                            "paidDate": None
+                        })
+                
+                db.emi_plans.insert_one({
+                    "billId": bill["_id"],
+                    "billNumber": bill.get("billNumber"),
+                    "customerId": bill.get("customerId"),
+                    "customerName": bill.get("customerName"),
+                    "customerPhone": bill.get("customerPhone"),
+                    "totalAmount": bill.get("grandTotal"),
+                    "downPayment": float(emi_details.get("downPayment", 0)),
+                    "principalAmount": float(emi_details.get("principalAmount", bill.get("grandTotal", 0) - float(emi_details.get("downPayment", 0)))),
+                    "monthlyEmi": float(emi_details.get("emiAmount", 0)),
+                    "tenure": months,
+                    "interestRate": float(emi_details.get("interestRate", 0)),
+                    "startDate": bill_date,
+                    "status": "active",
+                    "installments": installments,
+                    "createdAt": bill.get('createdAt', utc_now())
+                })
+
         # Fetch all plans, newest first
         plans_cursor = db.emi_plans.find().sort("createdAt", -1).limit(500)
         

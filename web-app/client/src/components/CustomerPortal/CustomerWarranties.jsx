@@ -75,14 +75,13 @@ const CustomerWarranties = () => {
 
     try {
       setIsLinking(true);
-      // We call the same load function but maybe we should have a specific link endpoint?
-      // For now, let's just refresh and hope it's linked via invoice number in the backend
+      const response = await apiPatch('/api/customer-portal/warranties/link', { invoiceNumber: linkInvoiceNo }, 'POST');
       await loadWarranties(1);
-      setLinkSuccess('Search complete! If the warranty exists for this invoice, it should appear in your list.');
+      setLinkSuccess(response.message || 'Warranty linked successfully!');
       setLinkInvoiceNo('');
       setTimeout(() => setLinkSuccess(''), 5000);
     } catch (err) {
-      setLinkError('Failed to search for warranty. Please check the invoice number.');
+      setLinkError(err.message || 'Failed to link warranty. Please check the invoice number.');
     } finally {
       setIsLinking(false);
     }

@@ -219,6 +219,44 @@ def checkout():
             bill["emiDetails"]["totalAmount"] = bill["grandTotal"]
 
         result = db.bills.insert_one(bill)
+        bill_id = result.inserted_id
+
+        # Create EMI Plan if applicable
+        if payment_mode == 'emi' and "emiDetails" in bill:
+            emi_details = bill["emiDetails"]
+            
+            # Generate installment schedule
+            installments = []
+            for m in range(1, int(emi_details['months']) + 1):
+                due_date = bill_date + timedelta(days=30 * m)
+                installments.append({
+                    "installmentNo": m,
+                    "dueDate": due_date,
+                    "amount": float(emi_details['emiAmount']),
+                    "status": "pending",
+                    "paidAmount": 0,
+                    "paidDate": None
+                })
+            
+            emi_plan = {
+                "billId": bill_id,
+                "billNumber": bill_number,
+                "customerId": ObjectId(customer_id) if customer_id else None,
+                "customerName": customer_name,
+                "customerPhone": customer_phone,
+                "totalAmount": bill["grandTotal"],
+                "downPayment": float(emi_details['downPayment']),
+                "principalAmount": float(emi_details.get('principalAmount', bill["grandTotal"] - float(emi_details['downPayment']))),
+                "monthlyEmi": float(emi_details['emiAmount']),
+                "tenure": int(emi_details['months']),
+                "interestRate": float(emi_details.get('interestRate', 0)),
+                "startDate": bill_date,
+                "endDate": emi_details.get('endDate') if isinstance(emi_details.get('endDate'), datetime) else (bill_date + timedelta(days=30 * int(emi_details['months']))),
+                "status": "active",
+                "installments": installments,
+                "createdAt": utc_now()
+            }
+            db.emi_plans.insert_one(emi_plan)
 
         # Auto-generate warranties for registered customers
         if customer_id:

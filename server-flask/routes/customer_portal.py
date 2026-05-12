@@ -769,62 +769,7 @@ def download_invoice_pdf(invoice_id):
 
 # ==================== EMI ====================
 
-@customer_portal_bp.route('/emi', methods=['GET'])
-@authenticate_token
-def get_customer_emi():
-    """Get all EMI plans for current customer with pagination"""
-    try:
-        customer = get_current_customer()
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
-
-        match_query = get_customer_match_query(customer)
-
-        page = max(1, int(request.args.get('page', 1)))
-        limit = min(int(request.args.get('limit', 20)), 100)
-        skip = (page - 1) * limit
-
-        db = get_db()
-        total = db.emi_plans.count_documents(match_query)
-        emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
-
-        emi_plans = []
-        for emi in emi_cursor:
-            try:
-                emi_data = {
-                    "id": str(emi['_id']),
-                    "billId": str(emi.get('billId')),
-                    "totalAmount": float(emi.get('totalAmount', 0)),
-                    "downPayment": float(emi.get('downPayment', 0)),
-                    "principalAmount": float(emi.get('principalAmount', 0)),
-                    "tenure": int(emi.get('tenure', 0)),
-                    "monthlyEmi": float(emi.get('monthlyEmi', 0)),
-                    "status": str(emi.get('status', 'active')),
-                    "startDate": to_iso_string(emi.get('startDate')),
-                    "endDate": to_iso_string(emi.get('endDate')),
-                    "installments": emi.get('installments', [])
-                }
-                emi_plans.append(emi_data)
-            except Exception as e:
-                continue
-
-        return jsonify({
-            "success": True,
-            "emiPlans": emi_plans,
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total": total,
-                "totalPages": (total + limit - 1) // limit
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"[get_customer_emi] Error: {e}", exc_info=True)
-        return jsonify({
-            "error": "Failed to fetch EMI plans",
-            "message": str(e)
-        }), 500
+# Removed shadowed EMI route (get_customer_emi)
 
 # ==================== PROFILE ====================
 
@@ -1082,6 +1027,55 @@ def renew_warranty(warranty_id):
             "message": str(e),
             "errorType": type(e).__name__
         }), 500
+
+@customer_portal_bp.route('/warranties/link', methods=['POST'])
+@authenticate_token
+def link_warranty():
+    """Manually link a warranty to customer account via invoice number"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        data = request.get_json()
+        invoice_no = data.get('invoiceNumber')
+        if not invoice_no:
+            return jsonify({"error": "Invoice number is required"}), 400
+
+        db = get_db()
+        # Find warranty with this invoice number
+        warranty = db.warranties.find_one({"invoiceNo": invoice_no})
+        if not warranty:
+            # Try searching bills
+            bill = db.bills.find_one({"billNumber": invoice_no})
+            if not bill:
+                return jsonify({"error": "No record found for this invoice number"}), 404
+            
+            # If bill exists but no warranty, we might need to trigger warranty creation
+            # For now, just say no warranty found
+            return jsonify({"error": "No warranty found for this invoice number. Please contact support."}), 404
+
+        # Update warranty to link to this customer
+        db.warranties.update_one(
+            {"_id": warranty["_id"]},
+            {
+                "$set": {
+                    "customerId": customer["_id"],
+                    "customerName": customer.get("name"),
+                    "customerPhone": customer.get("phone"),
+                    "customerEmail": customer.get("email")
+                }
+            }
+        )
+
+        return jsonify({
+            "success": True,
+            "message": "Warranty linked to your account successfully"
+        }), 200
+
+    except Exception as e:
+        logger.error(f"[link_warranty] Error: {e}")
+        return jsonify({"error": "Failed to link warranty", "message": str(e)}), 500
 
 
 # ==================== EMI PLANS ====================
