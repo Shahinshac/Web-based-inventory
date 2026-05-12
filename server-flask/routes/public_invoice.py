@@ -588,12 +588,12 @@ def public_invoice_view(token):
   </div>
 
   <script>
-    window.onload = function() {
+    window.onload = function() {{
       // Auto trigger print for PDF experience
-      setTimeout(function() {
+      setTimeout(function() {{
         window.print();
-      }, 1000);
-    };
+      }}, 1000);
+    }};
   </script>
 </body>
 </html>"""
