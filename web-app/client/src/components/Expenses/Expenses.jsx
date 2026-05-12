@@ -65,7 +65,7 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.description.trim() || !formData.amount) {
+    if (!String(formData.description || '').trim() || !formData.amount) {
       showNotification?.('Description and amount are required', 'error');
       return;
     }
@@ -144,7 +144,7 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
 
   const filteredExpenses = useMemo(() => {
     let result = expenses;
-    if (searchTerm.trim()) {
+    if (String(searchTerm || '').trim()) {
       const term = searchTerm.toLowerCase();
       result = result.filter(e =>
         e.description?.toLowerCase().includes(term) ||

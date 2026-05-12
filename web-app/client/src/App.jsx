@@ -837,8 +837,8 @@ Esc: Close modals/dialogs`;
       }, 1000);
     };
 
-    if (phone && phone.trim()) {
-      let cleanPhone = phone.replace(/\D/g, '');
+    if (phone && String(phone).trim()) {
+      let cleanPhone = String(phone).replace(/\D/g, '');
       if (cleanPhone.length === 10) cleanPhone = `91${cleanPhone}`;
 
       if (isMobile) {

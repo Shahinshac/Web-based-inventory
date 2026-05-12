@@ -90,7 +90,7 @@ const Login = ({ onLogin }) => {
   const handleCustomerLogin = useCallback(async (e) => {
     if (e) e.preventDefault();
     setCustomerError('');
-    const trimmedEmail = customerEmail.trim();
+    const trimmedEmail = String(customerEmail || '').trim();
     if (!trimmedEmail || !customerPassword) {
       setCustomerError('Please enter both email and password');
       return;
@@ -147,7 +147,7 @@ const Login = ({ onLogin }) => {
     setRegisterError('');
     setRegisterSuccess('');
 
-    const trimmedEmail = registerEmail.trim();
+    const trimmedEmail = String(registerEmail || '').trim();
 
     if (!trimmedEmail || !registerPassword || !registerConfirmPassword) {
       setRegisterError('Please fill in all fields');

@@ -45,11 +45,11 @@ export default function CustomerForm({ customer, onSubmit, onClose, quickAdd = f
   const validate = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) {
+    if (!String(formData.name || '').trim()) {
       newErrors.name = 'Customer name is required';
     }
 
-    if (!formData.phone.trim()) {
+    if (!String(formData.phone || '').trim()) {
       newErrors.phone = 'Phone number is required';
     } else if (!/^\d{10}$/.test(formData.phone.replace(/\s/g, ''))) {
       newErrors.phone = 'Phone number must be 10 digits';

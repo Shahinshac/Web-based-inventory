@@ -62,7 +62,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
   };
 
   const lookupInvoice = async () => {
-    if (!billNumber.trim()) {
+    if (!String(billNumber || '').trim()) {
       setLookupError('Please enter an invoice number');
       return;
     }
@@ -71,7 +71,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
       setLookupError('');
       setInvoiceData(null);
       setSelectedItems({});
-      const res = await fetch(API(`/api/returns/lookup-invoice/${encodeURIComponent(billNumber.trim())}`), { 
+      const res = await fetch(API(`/api/returns/lookup-invoice/${encodeURIComponent(String(billNumber || '').trim())}`), { 
         headers: getAuthHeaders() 
       });
       if (res.ok) {
@@ -118,7 +118,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
       showNotification?.('Please select at least one item to return', 'error');
       return;
     }
-    if (!reason.trim()) {
+    if (!String(reason || '').trim()) {
       showNotification?.('Please provide a return reason', 'error');
       return;
     }
@@ -210,7 +210,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
   };
 
   const filteredReturns = useMemo(() => {
-    if (!searchTerm.trim()) return returns;
+    if (!String(searchTerm || '').trim()) return returns;
     const term = searchTerm.toLowerCase();
     return returns.filter(r =>
       r.billNumber?.toLowerCase().includes(term) ||
