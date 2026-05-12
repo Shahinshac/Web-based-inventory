@@ -1437,6 +1437,10 @@ def download_pvc_card():
             as_attachment=True,
             download_name=f"card_{safe_name}.pdf"
         )
+    except Exception as e:
+        logger.error(f"PVC card error: {e}")
+        return jsonify({"error": "Failed to generate identity card"}), 500
+
 # ==================== PAYMENT REQUESTS ====================
 
 @customer_portal_bp.route('/payment-requests', methods=['POST'])
