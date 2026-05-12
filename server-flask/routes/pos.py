@@ -629,9 +629,9 @@ def whatsapp_link(id):
             message += f"\nTenure: {emi_months} months"
             message += f"\nEMI: ₹{float(emi_amount):.2f}/mo"
 
-        message += f"\n\n📥 *DOWNLOAD PDF INVOICE:*\n{public_url}/pdf"
-        message += f"\n\n🔗 *VIEW ONLINE:*\n{public_url}"
-        message += f"\n\n🏢 *CUSTOMER PORTAL:*\nhttps://26-07inventory.vercel.app\n(View History & Warranties)"
+        message += f"\n\n🌐 *CUSTOMER PORTAL:*"
+        message += f"\nAccess your invoices, warranties, and EMI plans anytime."
+        message += f"\n🔗 https://26-07inventory.vercel.app"
 
         # Generate WhatsApp URL if phone exists
         whatsapp_url = None

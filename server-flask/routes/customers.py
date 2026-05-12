@@ -256,13 +256,13 @@ def customer_whatsapp_share(id):
         public_url = f"{request.host_url.rstrip('/')}/public/customer-card/{token}"
 
         # Build WhatsApp message
-        portal_message = (
-            f"\n\n🎁 *Customer Portal:*"
-            f"\nRegister & login to view your invoices, warranties and purchase history."
+        message = (
+            f"Hi {customer_name}, welcome to *{COMPANY_NAME}*!"
+            f"\n\n🌐 *CUSTOMER PORTAL:*"
+            f"\nAccess your invoices, warranties, and EMI plans anytime."
             f"\n🔗 https://26-07inventory.vercel.app"
-            f"\n(Use the email you provided during billing)"
+            f"\n\n(Use the email/phone you provided during billing to login)"
         )
-        message = f"Hi {customer_name}, here's your customer identity card from {COMPANY_NAME}.\n\n🆔 View Card: {public_url}{portal_message}"
 
         # Generate WhatsApp URL if phone exists
         whatsapp_url = None

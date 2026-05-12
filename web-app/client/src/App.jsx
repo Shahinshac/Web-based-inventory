@@ -924,23 +924,19 @@ Esc: Close modals/dialogs`;
 
       const payMode = (invoice.paymentMode || 'cash').charAt(0).toUpperCase() + (invoice.paymentMode || 'cash').slice(1);
 
-      const message = [
-        `📄 *TAX INVOICE #${billNumber}*`,
-        `🏢 *${companyInfo.name}*`,
-        companyInfo.phone ? `📞 ${companyInfo.phone}` : '',
-        '',
-        `📅 Date: ${formattedDate}`,
-        `👤 Customer: *${customerName}*`,
-        '',
-        `📦 *Items:*`,
-        itemsList,
-        '',
-        `💵 *Grand Total: ₹${grandTotal.toFixed(0)}*`,
-        `💳 Payment: ${payMode} ✓`,
-        '',
-        publicUrl ? `🔗 *View Online:* ${publicUrl}` : '',
-        `— ${companyInfo.name}`,
-      ].filter(Boolean).join('\n');
+        const message = [
+          `📄 *TAX INVOICE #${billNumber}*`,
+          `🏢 *${companyInfo.name}*`,
+          '',
+          `📅 Date: ${formattedDate}`,
+          `💵 Total: *₹${grandTotal.toFixed(0)}*`,
+          '',
+          `🌐 *CUSTOMER PORTAL:*`,
+          `Access your invoices, warranties, and EMI plans anytime.`,
+          `🔗 https://26-07inventory.vercel.app`,
+          '',
+          `— Shared from *${companyInfo.name}*`,
+        ].filter(Boolean).join('\n');
 
       // 2. Try DIRECT PDF SHARING (navigator.share)
       let sharedSuccessfully = false;
@@ -1022,18 +1018,12 @@ Esc: Close modals/dialogs`;
       const name = customer.name || 'Customer';
       const lines = [
         `👤 *${name}*`,
-        customer.position ? `💼 ${customer.position}` : '',
-        customer.company ? `🏢 ${customer.company}` : '',
         '',
-        customer.phone ? `📞 ${customer.phone}` : '',
-        customer.email ? `✉️ ${customer.email}` : '',
-        customer.place ? `📍 ${customer.place}${customer.pincode ? ` - ${customer.pincode}` : ''}` : '',
-        customer.address ? `🏠 ${customer.address}` : '',
-        customer.website ? `🌐 ${customer.website}` : '',
-        customer.gstin ? `📋 GST: ${customer.gstin}` : '',
+        `🌐 *CUSTOMER PORTAL:*`,
+        `Access your invoices, warranties, and EMI plans anytime.`,
+        `🔗 https://26-07inventory.vercel.app`,
         '',
         `— Shared from *${companyInfo.name}*`,
-        companyInfo.phone ? `📞 ${companyInfo.phone}` : ''
       ].filter(Boolean).join('\n');
 
       openWhatsApp(customer.phone || '', lines);
