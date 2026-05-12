@@ -47,8 +47,9 @@ const WarrantyTracker = () => {
     if (searchTerm) {
       filtered = filtered.filter(w =>
         w.productName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        w.serialNumber?.includes(searchTerm) ||
-        w.customerName?.toLowerCase().includes(searchTerm.toLowerCase())
+        w.serialNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.customerName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        w.invoiceNumber?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
 
