@@ -98,7 +98,7 @@ const CustomerEMI = () => {
     );
   }
 
-  // Detail Vie  return (
+  return (
     <div className="customer-emi-portal">
       {selectedPlan ? (
         <div className="emi-details-view">
