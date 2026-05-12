@@ -188,7 +188,7 @@ def renew_warranty(id):
             "customerPhone": warranty.get('customerPhone'),
             "items": [{
                 "productId": str(product_id),
-                "productName": f"Warranty Renewal: {product.get('name')}",
+                "productName": f"Warranty Renewal: {product.get('name') if product else warranty.get('productName', 'Product')}",
                 "quantity": 1,
                 "price": renewal_price,
                 "lineSubtotal": renewal_price,
