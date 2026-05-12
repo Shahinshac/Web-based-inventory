@@ -515,29 +515,43 @@ def handle_payment_request(request_id):
                 
                 # Fetch warranty
                 warranty = db.warranties.find_one({"_id": warranty_id})
-                if warranty:
-                    from utils.tzutils import utc_from_iso
-                    current_expiry = utc_from_iso(warranty.get('expiryDate')) or utc_now()
-                    new_expiry = current_expiry + timedelta(days=365 * years)
-                    
-                    db.warranties.update_one(
-                        {"_id": warranty_id},
-                        {
-                            "$set": {
-                                "expiryDate": new_expiry,
-                                "status": "active",
-                                "lastRenewalDate": utc_now()
-                            },
-                            "$push": {
-                                "history": {
-                                    "action": "renewal",
-                                    "date": utc_now(),
-                                    "years": years,
-                                    "requestId": str(req['_id'])
-                                }
+                if not warranty:
+                    logger.error(f"[handle_payment_request] ❌ Warranty not found for renewal: {warranty_id}")
+                    return jsonify({"error": "Target warranty record not found in database. Cannot renew."}), 404
+                
+                # Robust expiry calculation
+                from utils.tzutils import utc_from_iso, utc_now
+                current_expiry = warranty.get('expiryDate')
+                
+                # Handle different date formats in DB
+                if isinstance(current_expiry, str):
+                    current_expiry = utc_from_iso(current_expiry)
+                
+                # If current_expiry is None or in the past, start from now
+                start_point = current_expiry if current_expiry and current_expiry > utc_now() else utc_now()
+                new_expiry = start_point + timedelta(days=365 * years)
+                
+                logger.info(f"[handle_payment_request] 🔄 Renewing warranty {warranty_id} from {current_expiry} to {new_expiry}")
+                
+                db.warranties.update_one(
+                    {"_id": warranty_id},
+                    {
+                        "$set": {
+                            "expiryDate": new_expiry,
+                            "status": "active",
+                            "lastRenewalDate": utc_now()
+                        },
+                        "$push": {
+                            "history": {
+                                "action": "renewal",
+                                "date": utc_now(),
+                                "years": years,
+                                "requestId": str(req['_id']),
+                                "adminId": str(g.user.get('userId'))
                             }
                         }
-                    )
+                    }
+                )
             
             elif req['type'] == 'emi_payment':
                 # Logic to record EMI payment
@@ -546,26 +560,35 @@ def handle_payment_request(request_id):
                 paid_amount = float(req['amount'])
                 
                 emi_plan = db.emi_plans.find_one({"_id": emi_id})
-                if emi_plan:
-                    installments = emi_plan.get('installments', [])
-                    for inst in installments:
-                        if inst['installmentNo'] == inst_no:
-                            inst['paidAmount'] = min(inst.get('paidAmount', 0) + paid_amount, inst['amount'])
-                            inst['paidDate'] = utc_now()
-                            inst['status'] = 'completed' if inst['paidAmount'] >= inst['amount'] else 'partial'
-                            break
+                if not emi_plan:
+                    logger.error(f"[handle_payment_request] ❌ EMI Plan not found: {emi_id}")
+                    return jsonify({"error": "Target EMI plan not found in database."}), 404
                     
-                    all_paid = all(i['status'] == 'completed' for i in installments)
-                    db.emi_plans.update_one(
-                        {"_id": emi_id},
-                        {
-                            "$set": {
-                                "installments": installments,
-                                "status": "closed" if all_paid else "active",
-                                "updatedAt": utc_now()
-                            }
+                installments = emi_plan.get('installments', [])
+                found_inst = False
+                for inst in installments:
+                    if int(inst.get('installmentNo', 0)) == inst_no:
+                        inst['paidAmount'] = min(float(inst.get('paidAmount', 0)) + paid_amount, float(inst['amount']))
+                        inst['paidDate'] = utc_now()
+                        # Use 'paid' status to match customer portal and other parts of system
+                        inst['status'] = 'paid' if inst['paidAmount'] >= inst['amount'] else 'partial'
+                        found_inst = True
+                        break
+                
+                if not found_inst:
+                    logger.warning(f"[handle_payment_request] ⚠️ Installment #{inst_no} not found in EMI Plan {emi_id}")
+                
+                all_paid = all(str(i.get('status')).lower() == 'paid' for i in installments)
+                db.emi_plans.update_one(
+                    {"_id": emi_id},
+                    {
+                        "$set": {
+                            "installments": installments,
+                            "status": "closed" if all_paid else "active",
+                            "updatedAt": utc_now()
                         }
-                    )
+                    }
+                )
 
         # Update request status
         db.payment_requests.update_one(

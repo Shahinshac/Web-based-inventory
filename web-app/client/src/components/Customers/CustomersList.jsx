@@ -83,6 +83,8 @@ export default function CustomersList({
     if (result.success) {
       setDeleteConfirmOpen(false);
       setCustomerToDelete(null);
+    } else {
+      alert(result.error || 'Failed to delete customer. Please check the admin password.');
     }
   };
 

@@ -173,10 +173,53 @@ const EMITracker = () => {
   return (
     <div className="emi-tracker-container">
       <div className="emi-header">
-        <div>
-          <h2 className="section-title">💳 EMI Plan Tracker</h2>
-          <p className="section-subtitle">Monitor customer installment plans and repayment status</p>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <button 
+            onClick={() => window.location.hash = '#dashboard'} 
+            className="header-back-btn"
+            style={{ 
+              background: 'white', 
+              border: '1px solid #e2e8f0', 
+              padding: '10px', 
+              borderRadius: '12px', 
+              cursor: 'pointer', 
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+            }}
+            title="Back to Dashboard"
+          >
+            <Icon name="arrow-left" size={20} />
+          </button>
+          <div>
+            <h2 className="section-title">💳 EMI Plan Tracker</h2>
+            <p className="section-subtitle">Monitor customer installment plans and repayment status</p>
+          </div>
         </div>
+        <button 
+          className={`refresh-btn-premium ${loading ? 'spinning' : ''}`} 
+          onClick={fetchEMIPlans}
+          disabled={loading}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            padding: '10px 20px',
+            background: 'white',
+            border: '1px solid #e2e8f0',
+            borderRadius: '12px',
+            fontWeight: '700',
+            fontSize: '13px',
+            color: '#4f46e5',
+            cursor: 'pointer',
+            boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+          }}
+        >
+          <Icon name="refresh-cw" size={18} />
+          <span>{loading ? 'REFRESHING...' : 'REFRESH'}</span>
+        </button>
       </div>
 
       {/* Stats Cards */}

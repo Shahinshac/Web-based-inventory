@@ -235,6 +235,8 @@ export default function UserCard({
           const result = await onDelete(user.id || user._id, password);
           if (result?.success) {
             setShowDeleteConfirm(false);
+          } else {
+            alert(result?.error || 'Failed to delete user. Please check the admin password.');
           }
         }}
         title="Delete User"

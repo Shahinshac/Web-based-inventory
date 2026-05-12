@@ -332,7 +332,7 @@ export default function ProductCard({
               <Button
                 variant="danger"
                 size="small"
-                onClick={() => setShowDeleteConfirm(true)}
+                onClick={() => onDelete(product)}
                 icon="trash-2"
               >
                 Delete
@@ -459,19 +459,9 @@ export default function ProductCard({
           )}
         </div>
       </div>
-
-      <ConfirmDialog 
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          onDelete(product.id);
-          setShowDeleteConfirm(false);
-        }}
-        title="Delete Product"
-        message={`Are you sure you want to delete "${product.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-      />
+    </>
+  );
+}
 
       {/* Barcode Preview Modal */}
       {showBarcodeModal && (

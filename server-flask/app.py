@@ -56,7 +56,7 @@ _cors_origins = [
 # Enable CORS (Allows the React frontend to communicate with Flask)
 CORS(app,
      origins=_cors_origins,
-     allow_headers=["Content-Type", "Authorization"],
+     allow_headers=["Content-Type", "Authorization", "X-Admin-Password"],
      supports_credentials=True
 )
 

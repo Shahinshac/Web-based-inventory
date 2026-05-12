@@ -1443,49 +1443,7 @@ def download_pvc_card():
 
 # ==================== WARRANTIES ====================
 
-@customer_portal_bp.route('/warranties/<id>', methods=['GET'])
-@authenticate_token
-def get_customer_warranty_details(id):
-    """Get detailed info for a specific warranty"""
-    try:
-        customer = get_current_customer()
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
-
-        db = get_db()
-        warranty = db.warranties.find_one({
-            "_id": ObjectId(id),
-            "customerId": customer['_id']
-        })
-
-        if not warranty:
-            return jsonify({"error": "Warranty not found"}), 404
-
-        # Normalize for frontend
-        warranty['_id'] = str(warranty['_id'])
-        warranty['customerId'] = str(warranty['customerId'])
-        if warranty.get('productId'):
-            warranty['productId'] = str(warranty['productId'])
-        
-        # Calculate days left
-        from utils.tzutils import days_until
-        warranty['daysLeft'] = days_until(warranty.get('expiryDate'))
-        
-        # Include pending requests for this warranty
-        pending_requests = list(db.payment_requests.find({
-            "targetId": ObjectId(id),
-            "status": "pending"
-        }))
-        for pr in pending_requests:
-            pr['_id'] = str(pr['_id'])
-        
-        warranty['pendingRequests'] = pending_requests
-
-        return jsonify(warranty)
-
-    except Exception as e:
-        logger.error(f"Warranty details error: {e}")
-        return jsonify({"error": "Failed to fetch warranty details"}), 500
+# Removed duplicate brittle get_customer_warranty_details function
 
 # ==================== PAYMENT REQUESTS ====================
 

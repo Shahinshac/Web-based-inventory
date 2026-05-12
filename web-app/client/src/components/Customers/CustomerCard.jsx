@@ -126,7 +126,7 @@ export default function CustomerCard({
             <Button
               variant="danger"
               size="small"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={onDelete}
               icon="trash-2"
               style={{ background: '#ef4444', color: 'white', border: 'none', fontWeight: 600 }}
             >
@@ -135,19 +135,6 @@ export default function CustomerCard({
           )}
         </div>
       </div>
-
-      <ConfirmDialog 
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          onDelete(customer.id);
-          setShowDeleteConfirm(false);
-        }}
-        title="Delete Customer"
-        message={`Are you sure you want to delete "${customer.name}"? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-      />
     </>
   );
 }

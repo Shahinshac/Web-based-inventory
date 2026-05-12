@@ -31,10 +31,14 @@ const AdminApprovals = () => {
 
     try {
       setProcessingId(id);
-      await apiPatch(`/api/admin/payment-requests/${id}`, { status, notes });
-      await fetchRequests();
+      const res = await apiPatch(`/api/admin/payment-requests/${id}`, { status, notes });
+      if (res.success) {
+        await fetchRequests();
+      } else {
+        alert(res.error || `Failed to ${status} request`);
+      }
     } catch (error) {
-      alert('Failed to process request');
+      alert(`Failed to ${status} request: ${error.message}`);
     } finally {
       setProcessingId(null);
     }
@@ -43,24 +47,79 @@ const AdminApprovals = () => {
   return (
     <div className="admin-approvals">
       <div className="page-header-premium">
-        <div className="header-title-section">
-          <h1><Icon name="check-circle" size={28} stroke="#6366f1" /> Payment Requests</h1>
-          <p>Review and process warranty renewals and EMI installments</p>
+        <div className="header-main-top">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button 
+              onClick={() => window.location.hash = '#dashboard'} 
+              className="header-back-btn"
+              style={{ 
+                background: 'white', 
+                border: '1px solid #e2e8f0', 
+                padding: '10px', 
+                borderRadius: '12px', 
+                cursor: 'pointer', 
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+              title="Back to Dashboard"
+            >
+              <Icon name="arrow-left" size={20} />
+            </button>
+            <div className="header-title-section">
+              <h1><Icon name="check-circle" size={28} stroke="#6366f1" /> Payment Requests</h1>
+              <p>Review and process warranty renewals and EMI installments</p>
+            </div>
+          </div>
+          
+          <div className="header-actions-premium">
+            <button 
+              className={`refresh-btn-premium ${loading ? 'spinning' : ''}`} 
+              onClick={fetchRequests}
+              disabled={loading}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                padding: '10px 20px',
+                background: 'white',
+                border: '1px solid #e2e8f0',
+                borderRadius: '12px',
+                fontWeight: '700',
+                fontSize: '13px',
+                color: '#6366f1',
+                cursor: 'pointer',
+                boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+              }}
+            >
+              <Icon name="refresh-cw" size={18} />
+              <span>{loading ? 'SYNCING...' : 'REFRESH'}</span>
+            </button>
+          </div>
         </div>
         
-        <div className="approval-tabs">
-          {['pending', 'approved', 'rejected', 'all'].map((status) => (
-            <button
-              key={status}
-              className={`tab-btn ${filter === status ? 'active' : ''}`}
-              onClick={() => setFilter(status)}
-            >
-              {status.charAt(0).toUpperCase() + status.slice(1)}
-              {status === 'pending' && requests.length > 0 && filter === 'pending' && (
-                <span className="count-badge">{requests.length}</span>
-              )}
-            </button>
-          ))}
+        <div className="filter-section-premium">
+          <div className="filter-label">
+            <Icon name="filter" size={16} />
+            <span>Filter by Status:</span>
+          </div>
+          <div className="approval-tabs">
+            {['pending', 'approved', 'rejected', 'all'].map((status) => (
+              <button
+                key={status}
+                className={`tab-btn ${filter === status ? 'active' : ''} ${status}`}
+                onClick={() => setFilter(status)}
+              >
+                <span className="status-indicator"></span>
+                {status.charAt(0).toUpperCase() + status.slice(1)}
+                {status === 'pending' && requests.length > 0 && filter === 'pending' && (
+                  <span className="count-badge pulse">{requests.length}</span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -185,45 +244,99 @@ const AdminApprovals = () => {
         
         .header-title-section p { color: #64748b; margin: 0; }
 
-        .approval-tabs {
+        .filter-section-premium {
           display: flex;
+          align-items: center;
+          gap: 1.5rem;
           background: white;
-          padding: 6px;
-          border-radius: 12px;
-          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-          width: fit-content;
+          padding: 1rem 1.5rem;
+          border-radius: 16px;
           border: 1px solid #e2e8f0;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
         }
 
-        .tab-btn {
-          padding: 0.625rem 1.25rem;
-          border-radius: 8px;
-          border: none;
-          background: transparent;
-          color: #64748b;
-          font-weight: 600;
-          cursor: pointer;
-          transition: all 0.2s;
+        .filter-label {
           display: flex;
           align-items: center;
           gap: 0.5rem;
+          font-weight: 700;
+          color: #475569;
+          font-size: 0.9rem;
+          text-transform: uppercase;
+          letter-spacing: 0.025em;
         }
 
-        .tab-btn:hover { color: #1e293b; background: #f1f5f9; }
+        .approval-tabs {
+          display: flex;
+          background: #f1f5f9;
+          padding: 4px;
+          border-radius: 12px;
+          gap: 4px;
+        }
+
+        .tab-btn {
+          padding: 0.5rem 1.25rem;
+          border-radius: 10px;
+          border: none;
+          background: transparent;
+          color: #64748b;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          align-items: center;
+          gap: 0.75rem;
+          font-size: 0.9rem;
+        }
+
+        .tab-btn:hover { color: #1e293b; background: rgba(255, 255, 255, 0.5); }
         
         .tab-btn.active {
-          background: #6366f1;
-          color: white;
-          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+          background: white;
+          color: #1e293b;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .tab-btn.active.pending { color: #d97706; }
+        .tab-btn.active.approved { color: #059669; }
+        .tab-btn.active.rejected { color: #dc2626; }
+        .tab-btn.active.all { color: #6366f1; }
+
+        .status-indicator {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: #cbd5e1;
+          transition: all 0.2s;
+        }
+
+        .pending .status-indicator { background: #f59e0b; }
+        .approved .status-indicator { background: #10b981; }
+        .rejected .status-indicator { background: #ef4444; }
+        .all .status-indicator { background: #6366f1; }
+
+        .tab-btn.active .status-indicator {
+          transform: scale(1.2);
+          box-shadow: 0 0 8px currentColor;
         }
 
         .count-badge {
-          background: rgba(255, 255, 255, 0.2);
+          background: #ef4444;
           color: white;
           font-size: 0.7rem;
-          padding: 2px 6px;
-          border-radius: 10px;
-          font-weight: 700;
+          padding: 2px 8px;
+          border-radius: 20px;
+          font-weight: 800;
+        }
+
+        .pulse {
+          animation: pulse-animation 2s infinite;
+        }
+
+        @keyframes pulse-animation {
+          0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+          70% { transform: scale(1.05); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+          100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
         }
 
         .loading-container, .empty-approvals {

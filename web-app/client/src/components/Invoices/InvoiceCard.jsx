@@ -91,7 +91,7 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
             <Button
               variant="danger"
               size="small"
-              onClick={() => setShowDeleteConfirm(true)}
+              onClick={onDelete}
               icon="trash-2"
             >
               Delete
@@ -99,19 +99,6 @@ export default function InvoiceCard({ invoice, onView, onDelete, onExport, onSha
           )}
         </div>
       </div>
-
-      <ConfirmDialog 
-        isOpen={showDeleteConfirm}
-        onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          onDelete(invoice.id);
-          setShowDeleteConfirm(false);
-        }}
-        title="Delete Invoice"
-        message={`Are you sure you want to delete invoice #${billNumber}? This action cannot be undone.`}
-        confirmText="Delete"
-        variant="danger"
-      />
     </>
   );
 }

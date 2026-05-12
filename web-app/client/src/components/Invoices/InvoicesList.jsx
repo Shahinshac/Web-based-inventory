@@ -100,6 +100,8 @@ export default function InvoicesList({
     if (result.success) {
       setDeleteConfirmOpen(false);
       setInvoiceToDelete(null);
+    } else {
+      alert(result.error || 'Failed to delete invoice. Please check the admin password.');
     }
   };
 

@@ -191,10 +191,10 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
         fetchStats();
       } else {
         const err = await res.json();
-        showNotification?.(err.error || 'Failed to delete return', 'error');
+        alert(err.error || 'Failed to delete return. Please check the admin password.');
       }
     } catch {
-      showNotification?.('Failed to delete return', 'error');
+      alert('Failed to delete return. Network error.');
     } finally {
       setDeleting(false);
     }

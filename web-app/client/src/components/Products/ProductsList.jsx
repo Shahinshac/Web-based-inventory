@@ -113,6 +113,8 @@ export default function ProductsList({
     if (result.success) {
       setDeleteConfirmOpen(false);
       setProductToDelete(null);
+    } else {
+      alert(result.error || 'Failed to delete product. Please check the admin password.');
     }
   };
 
