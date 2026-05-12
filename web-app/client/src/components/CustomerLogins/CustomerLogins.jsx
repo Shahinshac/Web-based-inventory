@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import SearchBar from '../Common/SearchBar';
-import { apiPost, getAuthHeaders, API } from '../../utils/api';
+import { apiGet, apiPost, API, getErrorMessage } from '../../utils/api';
 import { formatTimestampIST } from '../../utils/dateFormatter';
 
 export default function CustomerLogins({ showNotification }) {
@@ -14,18 +14,11 @@ export default function CustomerLogins({ showNotification }) {
   const fetchCustomers = async () => {
     try {
       setIsRefreshing(true);
-      const res = await fetch(API('/api/customer-auth/admin/list'), {
-        headers: getAuthHeaders()
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setCustomers(data);
-      } else {
-        showNotification('Failed to fetch customer accounts', 'error');
-      }
+      const data = await apiGet('/api/customer-auth/admin/list');
+      setCustomers(data);
     } catch (error) {
       console.error('Error fetching customers:', error);
-      showNotification('Error connecting to server', 'error');
+      showNotification(getErrorMessage(error), 'error');
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -45,21 +38,11 @@ export default function CustomerLogins({ showNotification }) {
     }
 
     try {
-      const res = await fetch(API('/api/customer-auth/admin/reset-password'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ customerId, newPassword })
-      });
-
-      if (res.ok) {
-        showNotification(`✅ Password reset successfully for ${customerName}`, 'success');
-        fetchCustomers();
-      } else {
-        const err = await res.json();
-        showNotification(err.error || 'Failed to reset password', 'error');
-      }
+      await apiPost('/api/customer-auth/admin/reset-password', { customerId, newPassword });
+      showNotification(`✅ Password reset successfully for ${customerName}`, 'success');
+      fetchCustomers();
     } catch (error) {
-      showNotification('Error resetting password', 'error');
+      showNotification(getErrorMessage(error), 'error');
     }
   };
 
@@ -69,20 +52,11 @@ export default function CustomerLogins({ showNotification }) {
     }
 
     try {
-      const res = await fetch(API('/api/customer-auth/admin/delete-account'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', ...getAuthHeaders() },
-        body: JSON.stringify({ customerId })
-      });
-
-      if (res.ok) {
-        showNotification(`✅ Login access removed for ${customerName}`, 'success');
-        fetchCustomers();
-      } else {
-        showNotification('Failed to remove login access', 'error');
-      }
+      await apiPost('/api/customer-auth/admin/delete-account', { customerId });
+      showNotification(`✅ Login access removed for ${customerName}`, 'success');
+      fetchCustomers();
     } catch (error) {
-      showNotification('Error removing login access', 'error');
+      showNotification(getErrorMessage(error), 'error');
     }
   };
 
