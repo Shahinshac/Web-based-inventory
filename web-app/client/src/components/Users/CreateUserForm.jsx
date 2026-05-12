@@ -7,6 +7,8 @@ export default function CreateUserForm({ onCreateUser, onClose }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState('cashier');
+  const [salaryAmount, setSalaryAmount] = useState('');
+  const [salaryDay, setSalaryDay] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
@@ -32,13 +34,15 @@ export default function CreateUserForm({ onCreateUser, onClose }) {
 
     setLoading(true);
     try {
-      const result = await onCreateUser({ username, email, password, role });
+      const result = await onCreateUser({ username, email, password, role, salaryAmount: salaryAmount ? parseFloat(salaryAmount) : null, salaryDay: parseInt(salaryDay) });
       if (result?.success) {
         // Reset form
         setUsername('');
         setEmail('');
         setPassword('');
         setRole('cashier');
+        setSalaryAmount('');
+        setSalaryDay(1);
         if (onClose) onClose();
       } else {
         setError(result?.error || 'Failed to create user');
@@ -142,6 +146,43 @@ export default function CreateUserForm({ onCreateUser, onClose }) {
               <option value="manager">👔 Manager - View profit, edit</option>
               <option value="admin">👑 Admin - Full access</option>
             </select>
+          </div>
+
+          <div className="create-user-field">
+            <label htmlFor="new-salary">
+              <Icon name="dollar-sign" size={14} />
+              Monthly Salary (₹)
+            </label>
+            <input
+              id="new-salary"
+              type="number"
+              value={salaryAmount}
+              onChange={(e) => setSalaryAmount(e.target.value)}
+              placeholder="e.g. 15000"
+              min="0"
+              step="100"
+            />
+          </div>
+
+          <div className="create-user-field">
+            <label htmlFor="new-salary-day">
+              <Icon name="calendar" size={14} />
+              Salary Payment Day
+            </label>
+            <input
+              id="new-salary-day"
+              type="number"
+              value={salaryDay}
+              onChange={(e) => {
+                let day = parseInt(e.target.value);
+                if (day < 1) day = 1;
+                if (day > 31) day = 31;
+                setSalaryDay(day);
+              }}
+              placeholder="Day of month (1-31)"
+              min="1"
+              max="31"
+            />
           </div>
         </div>
 

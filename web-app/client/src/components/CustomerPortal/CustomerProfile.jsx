@@ -58,14 +58,6 @@ const CustomerProfile = ({ currentUser }) => {
     }
   };
 
-  const handleCancel = () => {
-    setFormData({
-      name: profile?.name || '',
-      phone: profile?.phone || ''
-    });
-    setEditing(false);
-  };
-
   if (loading) {
     return (
       <div className="loading-spinner">
@@ -77,133 +69,111 @@ const CustomerProfile = ({ currentUser }) => {
   return (
     <div className="customer-profile-view">
       <div className="profile-layout-grid">
-        {/* Identity Card Section */}
-        <div className="portal-card identity-card-premium">
+        <div className="portal-card">
           <div className="portal-card-header">
             <h2 className="portal-card-title">
-              <Icon name="user" size={24} />
-              Personal Identity
+              <Icon name="user" size={20} />
+              Account Information
             </h2>
             {!editing && (
-              <button className="edit-btn" onClick={() => setEditing(true)}>
-                <Icon name="edit-3" size={16} />
-                <span>Modify</span>
+              <button className="logout-btn" style={{ background: '#f8fafc', color: '#6366f1', border: '1px solid #e2e8f0', padding: '0.4rem 1rem' }} onClick={() => setEditing(true)}>
+                <Icon name="edit-3" size={14} />
+                Edit Profile
               </button>
             )}
           </div>
 
-          <div className="profile-avatar-section">
-            <div className="avatar-large">
-              {profile?.name?.charAt(0) || 'U'}
-              <div className="avatar-glow"></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', marginBottom: '2.5rem', padding: '1.5rem', background: '#f8fafc', borderRadius: '16px' }}>
+            <div style={{ width: '64px', height: '64px', background: '#6366f1', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.5rem', fontWeight: 800 }}>
+              <span style={{ margin: 'auto' }}>{profile?.name?.charAt(0) || 'U'}</span>
             </div>
-            <div className="avatar-meta">
-              <h3>{profile?.name || 'User'}</h3>
-              <span className="role-badge">{profile?.role || 'Premium Customer'}</span>
+            <div>
+              <h3 style={{ fontSize: '1.25rem', marginBottom: '0.25rem' }}>{profile?.name || 'User'}</h3>
+              <span style={{ fontSize: '0.85rem', color: '#64748b', fontWeight: 600 }}>{profile?.role || 'Premium Member'}</span>
             </div>
           </div>
 
           {editing ? (
-            <form onSubmit={handleSubmit} className="premium-form">
+            <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
               <div className="form-group">
-                <label>Display Name</label>
-                <div className="input-wrap">
-                  <Icon name="user" size={16} />
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    required
-                  />
-                </div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Full Name</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#ffffff' }}
+                  required
+                />
               </div>
-
               <div className="form-group">
-                <label>Contact Number</label>
-                <div className="input-wrap">
-                  <Icon name="phone" size={16} />
-                  <input
-                    type="tel"
-                    value={formData.phone}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    required
-                    pattern="[0-9]{10}"
-                    maxLength="10"
-                  />
-                </div>
+                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Phone Number</label>
+                <input
+                  type="tel"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#ffffff' }}
+                  required
+                />
               </div>
-
-              <div className="form-actions">
-                <button type="submit" className="btn-primary" disabled={saving}>
-                  {saving ? 'Syncing...' : 'Save Changes'}
+              <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+                <button type="submit" className="logout-btn" style={{ background: '#6366f1', color: 'white', border: 'none' }} disabled={saving}>
+                  {saving ? 'Saving...' : 'Save Changes'}
                 </button>
-                <button type="button" className="btn-secondary" onClick={handleCancel} disabled={saving}>
+                <button type="button" className="logout-btn" onClick={() => setEditing(false)} disabled={saving}>
                   Cancel
                 </button>
               </div>
             </form>
           ) : (
-            <div className="profile-details-list">
-              <div className="detail-item">
-                <div className="d-icon"><Icon name="mail" size={18} /></div>
-                <div className="d-content">
-                  <span className="d-label">Email Identifier</span>
-                  <span className="d-value">{profile?.email || 'N/A'}</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', background: '#eff6ff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#3b82f6' }}>
+                  <Icon name="mail" size={18} />
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Email Address</div>
+                  <div style={{ fontWeight: 600 }}>{profile?.email || 'N/A'}</div>
                 </div>
               </div>
-              <div className="detail-item">
-                <div className="d-icon"><Icon name="phone" size={18} /></div>
-                <div className="d-content">
-                  <span className="d-label">Phone Reference</span>
-                  <span className="d-value">{profile?.phone || 'N/A'}</span>
+              <div style={{ display: 'flex', gap: '1rem' }}>
+                <div style={{ width: '40px', height: '40px', background: '#f0fdf4', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e' }}>
+                  <Icon name="phone" size={18} />
                 </div>
-              </div>
-              <div className="detail-item">
-                <div className="d-icon"><Icon name="calendar" size={18} /></div>
-                <div className="d-content">
-                  <span className="d-label">Account Created</span>
-                  <span className="d-value">Verified System User</span>
+                <div>
+                  <div style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Phone Number</div>
+                  <div style={{ fontWeight: 600 }}>{profile?.phone || 'N/A'}</div>
                 </div>
               </div>
             </div>
           )}
         </div>
 
-        {/* Side Actions Section */}
-        <div className="side-column">
-          <div className="portal-card digital-assets-card">
-            <h3 className="section-subtitle">Digital Assets</h3>
-            <div className="asset-buttons">
-              <button className="asset-btn" onClick={downloadVCard}>
-                <div className="asset-icon pink"><Icon name="credit-card" size={20} /></div>
-                <div className="asset-info">
-                  <span className="a-title">vCard Contact</span>
-                  <span className="a-sub">Add to Phonebook</span>
+        <div className="side-column" style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+          <div className="portal-card">
+            <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '1.5rem' }}>Downloads</h3>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <button className="logout-btn" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={downloadVCard}>
+                <Icon name="credit-card" size={20} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: 700 }}>Save to Contacts</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Download vCard</div>
                 </div>
-                <Icon name="download" size={16} className="dl-icon" />
               </button>
-              
-              <button className="asset-btn" onClick={downloadPVCCard}>
-                <div className="asset-icon blue"><Icon name="id-card" size={20} /></div>
-                <div className="asset-info">
-                  <span className="a-title">Identity Card</span>
-                  <span className="a-sub">PDF Membership</span>
+              <button className="logout-btn" style={{ justifyContent: 'flex-start', padding: '1rem' }} onClick={downloadPVCCard}>
+                <Icon name="id-card" size={20} />
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontWeight: 700 }}>Membership Card</div>
+                  <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Download ID PDF</div>
                 </div>
-                <Icon name="download" size={16} className="dl-icon" />
               </button>
             </div>
           </div>
-
-          <div className="portal-card security-card">
-            <div className="security-header">
-              <Icon name="shield-lock" size={24} color="#10b981" />
-              <h4>Security Protocol</h4>
+          <div className="portal-card" style={{ background: '#f0fdf4', border: '1px solid #dcfce7' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: '#166534', marginBottom: '0.5rem' }}>
+              <Icon name="shield" size={18} />
+              <span style={{ fontWeight: 700 }}>Secure Account</span>
             </div>
-            <p>Your account is protected with end-to-end encryption. Primary email identifiers are fixed for system integrity.</p>
-            <div className="security-status">
-              <div className="s-dot"></div>
-              <span>System Status: Optimal</span>
-            </div>
+            <p style={{ fontSize: '0.85rem', color: '#166534', opacity: 0.8 }}>Your data is encrypted and protected. Primary email identifiers are verified and secure.</p>
           </div>
         </div>
       </div>

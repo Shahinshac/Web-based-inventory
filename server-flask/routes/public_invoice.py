@@ -1,7 +1,8 @@
 import logging
 from datetime import datetime
 from bson import ObjectId
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
+from services.pdf_service import generate_invoice_pdf
 
 from database import get_db
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
@@ -9,6 +10,45 @@ from utils.tzutils import utc_now, to_iso_string, format_ist_date, format_ist_ti
 
 public_invoice_bp = Blueprint('public_invoice', __name__)
 logger = logging.getLogger(__name__)
+
+# Public Invoice PDF Download Route
+@public_invoice_bp.route('/<token>/pdf', methods=['GET'])
+def public_invoice_pdf(token):
+    """Download public invoice as PDF by token"""
+    db = get_db()
+    public_link = db.public_invoice_links.find_one({"token": token})
+
+    if not public_link:
+        return jsonify({"error": "Invoice link not found"}), 404
+
+    if utc_now() > public_link.get('expiresAt'):
+        return jsonify({"error": "Invoice link expired"}), 410
+
+    try:
+        invoice = db.bills.find_one({"_id": ObjectId(public_link.get('invoiceId'))})
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
+
+        company_info = public_link.get('companySnapshot', {
+            "name": COMPANY_NAME,
+            "phone": COMPANY_PHONE,
+            "address": COMPANY_ADDRESS,
+            "email": COMPANY_EMAIL,
+            "gstin": COMPANY_GSTIN
+        })
+
+        pdf_buffer = generate_invoice_pdf(invoice, company_info)
+        bill_number = invoice.get('billNumber', 'invoice')
+        
+        return send_file(
+            pdf_buffer,
+            mimetype='application/pdf',
+            as_attachment=True,
+            download_name=f"Invoice_{bill_number}.pdf"
+        )
+    except Exception as e:
+        logger.error(f"Error generating public PDF: {e}")
+        return jsonify({"error": "Failed to generate PDF"}), 500
 
 # Public Invoice View Route (No Authentication Required)
 @public_invoice_bp.route('/<token>', methods=['GET'])
@@ -470,8 +510,9 @@ def public_invoice_view(token):
 <body>
   <div class="print-bar no-print">
     <span>&#128196; Invoice {bill_number}</span>
-    <button onclick="window.print()">&#128424; Print / Save PDF</button>
-    <button onclick="window.close()" style="background:#f1f5f9;color:#475569;">&#10005; Close</button>
+    <button onclick="window.print()">🖨️ Print View</button>
+    <button onclick="window.location.href += '/pdf'" style="background:#10b981;color:white;">📥 Download PDF</button>
+    <button onclick="window.close()" style="background:#f1f5f9;color:#475569;">✕ Close</button>
   </div>
 
   <div class="invoice-page" style="margin-top:70px;">

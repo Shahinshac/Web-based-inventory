@@ -31,6 +31,8 @@ def create_user():
     if not email:
         email = None
     role = data.get('role', 'cashier')
+    salary_amount = data.get('salaryAmount')
+    salary_day = data.get('salaryDay', 1)
 
     if not username or not password:
         return jsonify({"error": "Username and password are required"}), 400
@@ -62,10 +64,32 @@ def create_user():
 
     result = db.users.insert_one(user)
 
+    # Automatically create an employee record if salary is provided
+    if salary_amount is not None:
+        try:
+            salary_val = float(salary_amount)
+            if salary_val > 0:
+                employee = {
+                    "name": username,
+                    "role": assigned_role,
+                    "salary_amount": salary_val,
+                    "salary_day": int(salary_day) if salary_day else 1,
+                    "user_id": result.inserted_id,
+                    "is_active": True,
+                    "created_at": utc_now(),
+                    "created_by": g.user.get('userId'),
+                    "created_by_username": g.user.get('username')
+                }
+                db.employees.insert_one(employee)
+                logger.info(f"Created employee record for user {username} with salary {salary_val}")
+        except Exception as e:
+            logger.error(f"Failed to create employee record for user {username}: {e}")
+
     log_audit(db, "USER_CREATED_BY_ADMIN", g.user.get('userId'), g.user.get('username'), {
         "newUserId": str(result.inserted_id),
         "newUsername": username,
-        "role": assigned_role
+        "role": assigned_role,
+        "hasSalary": salary_amount is not None
     })
 
     return jsonify({

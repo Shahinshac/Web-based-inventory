@@ -37,34 +37,52 @@ def get_current_customer():
 
 def get_customer_match_query(customer):
     """Build a robust match query for a customer (ID, Name, Phone, Email)"""
-    customer_id = customer['_id']
-    or_conditions = [
-        {"customerId": customer_id},
-        {"customerId": str(customer_id)}
-    ]
+    if not customer:
+        return {}
 
+    customer_id = customer.get('_id')
+    or_conditions = []
+
+    # 1. Match by ID (as ObjectId and String)
+    if customer_id:
+        or_conditions.append({"customerId": customer_id})
+        or_conditions.append({"customerId": str(customer_id)})
+
+    # 2. Match by Name (Case-insensitive)
     if customer.get('name') and str(customer.get('name')).lower() != "walk-in customer":
         import re
         customer_name = str(customer.get('name')).strip()
         or_conditions.append({"customerName": customer_name})
         or_conditions.append({"customerName": re.compile(f"^{re.escape(customer_name)}$", re.I)})
 
-    if customer.get('phone') and str(customer.get('phone')).strip() != "":
+    # 3. Match by Phone (Normalized)
+    if customer.get('phone'):
         customer_phone = str(customer.get('phone')).strip()
-        or_conditions.append({"customerPhone": customer_phone})
+        if customer_phone:
+            or_conditions.append({"customerPhone": customer_phone})
+            
+            # Normalize: keep only digits
+            normalized_phone = ''.join(ch for ch in customer_phone if ch.isdigit())
+            if normalized_phone:
+                or_conditions.append({"customerPhone": normalized_phone})
+                # Match last 10 digits (common for Indian numbers with/without 91)
+                if len(normalized_phone) >= 10:
+                    or_conditions.append({"customerPhone": normalized_phone[-10:]})
+                    # Also try with +91
+                    or_conditions.append({"customerPhone": f"+91{normalized_phone[-10:]}"})
+                    or_conditions.append({"customerPhone": f"91{normalized_phone[-10:]}"})
 
-        normalized_phone = ''.join(ch for ch in customer_phone if ch.isdigit())
-        if normalized_phone:
-            or_conditions.append({"customerPhone": normalized_phone})
-            if normalized_phone.startswith('91') and len(normalized_phone) > 10:
-                or_conditions.append({"customerPhone": normalized_phone[-10:]})
-
-    if customer.get('email') and str(customer.get('email')).strip() != "":
-        import re
+    # 4. Match by Email
+    if customer.get('email'):
         customer_email = str(customer.get('email')).strip()
-        or_conditions.append({"customerEmail": customer_email})
-        email_regex = re.compile(f"^{re.escape(customer_email)}$", re.I)
-        or_conditions.append({"customerEmail": email_regex})
+        if customer_email:
+            import re
+            or_conditions.append({"customerEmail": customer_email})
+            or_conditions.append({"customerEmail": re.compile(f"^{re.escape(customer_email)}$", re.I)})
+
+    if not or_conditions:
+        logger.warning(f"[get_customer_match_query] ⚠️ No match conditions found for customer: {customer_id}")
+        return {"_id": None} # Return something that matches nothing
 
     match_query = {"$or": or_conditions}
     logger.info(f"[get_customer_match_query] 🔍 Match query for {customer.get('name')} ({customer_id}): {match_query}")
@@ -747,8 +765,66 @@ def download_invoice_pdf(invoice_id):
             "errorType": type(e).__name__
         }), 500
 
+# ==================== EMI ====================
 
-# ==================== WARRANTIES ====================
+@customer_portal_bp.route('/emi', methods=['GET'])
+@authenticate_token
+def get_customer_emi():
+    """Get all EMI plans for current customer with pagination"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        match_query = get_customer_match_query(customer)
+
+        page = max(1, int(request.args.get('page', 1)))
+        limit = min(int(request.args.get('limit', 20)), 100)
+        skip = (page - 1) * limit
+
+        db = get_db()
+        total = db.emi_plans.count_documents(match_query)
+        emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
+
+        emi_plans = []
+        for emi in emi_cursor:
+            try:
+                emi_data = {
+                    "id": str(emi['_id']),
+                    "billId": str(emi.get('billId')),
+                    "totalAmount": float(emi.get('totalAmount', 0)),
+                    "downPayment": float(emi.get('downPayment', 0)),
+                    "principalAmount": float(emi.get('principalAmount', 0)),
+                    "tenure": int(emi.get('tenure', 0)),
+                    "monthlyEmi": float(emi.get('monthlyEmi', 0)),
+                    "status": str(emi.get('status', 'active')),
+                    "startDate": to_iso_string(emi.get('startDate')),
+                    "endDate": to_iso_string(emi.get('endDate')),
+                    "installments": emi.get('installments', [])
+                }
+                emi_plans.append(emi_data)
+            except Exception as e:
+                continue
+
+        return jsonify({
+            "success": True,
+            "emiPlans": emi_plans,
+            "pagination": {
+                "page": page,
+                "limit": limit,
+                "total": total,
+                "totalPages": (total + limit - 1) // limit
+            }
+        })
+
+    except Exception as e:
+        logger.error(f"[get_customer_emi] Error: {e}", exc_info=True)
+        return jsonify({
+            "error": "Failed to fetch EMI plans",
+            "message": str(e)
+        }), 500
+
+# ==================== PROFILE ====================
 
 @customer_portal_bp.route('/warranties', methods=['GET'])
 @authenticate_token
