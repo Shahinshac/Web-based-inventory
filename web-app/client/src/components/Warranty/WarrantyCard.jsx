@@ -74,13 +74,14 @@ const WarrantyCard = ({ warranty, onStatusUpdate }) => {
         )}
       </div>
 
-      <div className="warranty-card-actions">
-        {warranty.status === 'active' && (
+      <div className="warranty-card-actions" style={{ display: 'flex', gap: '8px', marginTop: '16px' }}>
+        {(warranty.status === 'active' || warranty.status === 'claimed' || warranty.status === 'expired' || warranty.status === 'expiring-soon') && (
           <button
             className="action-btn renew"
             onClick={() => onStatusUpdate(warranty._id, 'renewal-in-progress')}
+            style={{ background: '#6366f1', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 700, flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            <Icon name="refresh" size={14} />
+            <Icon name="refresh-cw" size={14} />
             Renew
           </button>
         )}
@@ -88,8 +89,9 @@ const WarrantyCard = ({ warranty, onStatusUpdate }) => {
           <button
             className="action-btn claim"
             onClick={() => onStatusUpdate(warranty._id, 'claimed')}
+            style={{ background: '#10b981', color: 'white', border: 'none', padding: '8px 16px', borderRadius: '6px', fontWeight: 700, flex: 1, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
           >
-            <Icon name="check" size={14} />
+            <Icon name="check-circle" size={14} />
             Claim
           </button>
         )}

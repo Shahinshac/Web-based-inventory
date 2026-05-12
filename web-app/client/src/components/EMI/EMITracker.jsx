@@ -191,8 +191,8 @@ const EMITracker = () => {
                     </span>
                   </td>
                   <td>
-                    <button className="action-btn" title="View Details">
-                      <Icon name="external-link" size={16} />
+                    <button className="action-btn" title="View Details" style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                      <Icon name="external-link" size={14} />
                       <span>Details</span>
                     </button>
                   </td>

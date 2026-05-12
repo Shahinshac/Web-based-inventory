@@ -77,9 +77,9 @@ const CustomerEMI = () => {
               <Icon name="credit-card" size={20} />
               EMI Plan: #{planIdLabel(selectedPlan)}
             </h2>
-            <button className="logout-btn" style={{ background: '#f8fafc', color: '#64748b', border: '1px solid #e2e8f0' }} onClick={() => setSelectedPlan(null)}>
+            <button className="logout-btn" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => setSelectedPlan(null)}>
               <Icon name="arrow-left" size={14} />
-              Back to Plans
+              <span>Back to Plans</span>
             </button>
           </div>
 
@@ -166,7 +166,7 @@ const CustomerEMI = () => {
         ) : (
           <div className="stats-grid">
             {emiPlans.map((emi) => (
-              <div key={emi.id} className="stat-card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }} onClick={() => handleViewDetails(emi.id)}>
+              <div key={emi.id} className="stat-card" style={{ cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', border: '1px solid #e2e8f0' }} onClick={() => handleViewDetails(emi.id)}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', width: '100%', marginBottom: '1rem' }}>
                   <span style={{ fontSize: '0.75rem', fontWeight: 700, color: '#64748b' }}>#{planIdLabel(emi)}</span>
                   {getStatusBadge(emi.status)}
@@ -175,9 +175,13 @@ const CustomerEMI = () => {
                 <div style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>
                   {emi.tenure} Months @ {formatAmount(emi.monthlyEmi)}/mo
                 </div>
-                <div style={{ width: '100%', height: '4px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '4px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden', marginBottom: '1rem' }}>
                   <div style={{ height: '100%', background: '#6366f1', width: `${(emi.totalPaid / emi.totalAmount) * 100}%` }}></div>
                 </div>
+                <button className="portal-btn details-btn" style={{ width: '100%', justifyContent: 'center' }}>
+                  <Icon name="info" size={14} />
+                  <span>View Details</span>
+                </button>
               </div>
             ))}
           </div>

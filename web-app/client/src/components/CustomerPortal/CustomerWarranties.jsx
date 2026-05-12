@@ -6,6 +6,7 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
 import { fetchCustomerWarranties, renewWarranty } from '../../services/customerPortalService';
+import { apiPost } from '../../utils/api';
 import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerWarranties = () => {
@@ -175,11 +176,11 @@ const CustomerWarranties = () => {
                     <td>{getStatusBadge(warranty.status)}</td>
                     <td style={{ textAlign: 'right' }}>
                       {warranty.status === 'expired' ? (
-                        <button className="logout-btn" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #dbeafe', fontSize: '0.8rem' }} onClick={() => handleRenew(warranty.id)}>
+                        <button className="logout-btn" style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleRenew(warranty.id)}>
                           Renew Plan
                         </button>
                       ) : (
-                        <button className="logout-btn" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
+                        <button className="logout-btn" style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
                           View Details
                         </button>
                       )}

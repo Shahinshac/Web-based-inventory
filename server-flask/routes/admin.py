@@ -2,7 +2,7 @@ import logging
 import bcrypt
 import os
 import shutil
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 from flask import Blueprint, request, jsonify, g, current_app
 
@@ -259,8 +259,10 @@ def get_all_emi_plans():
         db = get_db()
         
         # Fallback Sync: Find bills with EMI that don't have a plan record yet
-        # (Using case-insensitive regex to match 'EMI', 'emi', etc.)
-        emi_bills = db.bills.find({"paymentMode": {"$regex": "^emi$", "$options": "i"}})
+        # Using a more permissive regex to catch all case variations and potential spaces
+        emi_bills = db.bills.find({"paymentMode": {"$regex": "emi", "$options": "i"}})
+        logger.info(f"[get_all_emi_plans] 🔍 Syncing EMI plans from bills. Found {db.bills.count_documents({'paymentMode': {'$regex': 'emi', '$options': 'i'}})} EMI bills.")
+        
         for bill in emi_bills:
             exists = db.emi_plans.find_one({"billId": bill["_id"]})
             if not exists:

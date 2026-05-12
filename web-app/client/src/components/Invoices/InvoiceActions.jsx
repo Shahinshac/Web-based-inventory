@@ -14,25 +14,15 @@ export default function InvoiceActions({ invoice, onExport, onShare }) {
     }
   };
 
-  return (
-    <div className="invoice-actions">
+    <div className="invoice-actions" style={{ display: 'flex', gap: '8px' }}>
       <Button
-        variant="secondary"
+        variant="primary"
         size="small"
         onClick={handleExport}
         icon="download"
+        style={{ background: '#3b82f6', color: 'white', border: 'none' }}
       >
         PDF
       </Button>
-
-      <Button
-        variant="success"
-        size="small"
-        onClick={handleShare}
-        icon="share-2"
-      >
-        WhatsApp
-      </Button>
     </div>
-  );
 }

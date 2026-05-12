@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon.jsx';
-import { apiGet, apiPatch } from '../../utils/api';
+import { apiGet, apiPatch, apiPost } from '../../utils/api';
 import WarrantyCard from './WarrantyCard';
 import './warranty.css';
 

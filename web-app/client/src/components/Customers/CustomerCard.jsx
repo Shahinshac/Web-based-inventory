@@ -86,24 +86,25 @@ export default function CustomerCard({
           )}
         </div>
 
-        <div className="customer-card-actions">
+        <div className="customer-card-actions" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '12px' }}>
           <Button
             variant="success"
             size="small"
             onClick={handleWhatsAppShare}
             disabled={isSharing}
             icon="share-2"
-            title="Share customer card via WhatsApp"
+            style={{ background: '#10b981', color: 'white', border: 'none', fontWeight: 600 }}
           >
             {isSharing ? 'Sharing...' : 'Share'}
           </Button>
 
           {onViewHistory && (
             <Button
-              variant="ghost"
+              variant="primary"
               size="small"
               onClick={() => onViewHistory(customer)}
               icon="file-text"
+              style={{ background: '#3b82f6', color: 'white', border: 'none', fontWeight: 600 }}
             >
               History
             </Button>
@@ -115,6 +116,7 @@ export default function CustomerCard({
               size="small"
               onClick={() => onEdit(customer)}
               icon="edit"
+              style={{ background: '#64748b', color: 'white', border: 'none', fontWeight: 600 }}
             >
               Edit
             </Button>
@@ -126,6 +128,7 @@ export default function CustomerCard({
               size="small"
               onClick={() => setShowDeleteConfirm(true)}
               icon="trash-2"
+              style={{ background: '#ef4444', color: 'white', border: 'none', fontWeight: 600 }}
             >
               Delete
             </Button>
