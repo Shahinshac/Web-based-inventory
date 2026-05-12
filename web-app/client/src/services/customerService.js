@@ -37,8 +37,8 @@ export const updateCustomer = async (customerId, updates, userId, username) => {
 /**
  * Delete customer
  */
-export const deleteCustomer = async (customerId, userId, username) => {
-  return await apiDelete(`/api/customers/${customerId}?userId=${userId}&username=${username}`)
+export const deleteCustomer = async (customerId, userId, username, adminPassword) => {
+  return await apiDelete(`/api/customers/${customerId}?userId=${userId}&username=${username}`, adminPassword)
 }
 
 /**

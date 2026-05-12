@@ -121,7 +121,7 @@ export default function App() {
   // Permission helpers
   const canViewProfit = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
   const canEdit = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
-  const canDelete = () => userRole === 'admin' || userRole === 'manager' || isAdmin;
+  const canDelete = () => userRole === 'admin' || isAdmin;
   const canReturn = () => true; // all authenticated roles can process returns
 
   // Keyboard shortcuts

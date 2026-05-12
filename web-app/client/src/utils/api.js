@@ -397,7 +397,13 @@ export const apiPut = (endpoint, data) => apiFetch(endpoint, {
 /**
  * DELETE request
  */
-export const apiDelete = (endpoint) => apiFetch(endpoint, { method: 'DELETE' })
+export const apiDelete = (endpoint, adminPassword = null) => {
+  const options = { method: 'DELETE' };
+  if (adminPassword) {
+    options.headers = { 'X-Admin-Password': adminPassword };
+  }
+  return apiFetch(endpoint, options);
+}
 
 /**
  * Get auth headers for manual fetch calls

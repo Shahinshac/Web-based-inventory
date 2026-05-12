@@ -7,10 +7,10 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, g, url_for, current_app
 
 from database import get_db
-from utils.auth_middleware import authenticate_token
+from utils.auth_middleware import authenticate_token, require_admin_password
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE, COMPANY_ADDRESS, COMPANY_EMAIL, COMPANY_GSTIN
-from utils.tzutils import utc_now, to_iso_string, format_ist_datetime, utc_to_ist
+from utils.tzutils import utc_now, to_iso_string, format_ist_datetime, utc_to_ist, format_ist_date
 
 logger = logging.getLogger(__name__)
 
@@ -633,7 +633,6 @@ def whatsapp_link(id):
         message += f"\nAccess your invoices, warranties, and EMI plans anytime."
         message += f"\n🔗 https://26-07inventory.vercel.app"
 
-        # Generate WhatsApp URL if phone exists
         whatsapp_url = None
         if customer_phone:
             try:
@@ -677,3 +676,61 @@ def whatsapp_link(id):
         }), 500
 
 
+@pos_bp.route('/<id>', methods=['DELETE'])
+@authenticate_token
+@require_admin_password
+def delete_invoice(id):
+    """
+    Deletes an invoice and restores product stock.
+    Requires admin password verification.
+    """
+    try:
+        user_id = g.user.get('userId')
+        username = g.user.get('username', 'Unknown')
+        db = get_db()
+
+        # 1. Find the invoice
+        invoice = db.bills.find_one({"_id": ObjectId(id)})
+        if not invoice:
+            return jsonify({"error": "Invoice not found"}), 404
+
+        bill_number = invoice.get('billNumber')
+
+        # 2. Restore inventory for all items in the invoice
+        items = invoice.get('items', [])
+        restored_count = 0
+        for item in items:
+            product_id = item.get('productId')
+            quantity = float(item.get('quantity', 0))
+            if product_id and quantity > 0:
+                db.products.update_one(
+                    {"_id": ObjectId(product_id)},
+                    {"$inc": {"quantity": quantity}}
+                )
+                restored_count += 1
+
+        # 3. Delete linked warranties
+        db.warranties.delete_many({"invoiceNo": bill_number})
+
+        # 4. Delete linked EMI plans
+        db.emi_plans.delete_many({"billNumber": bill_number})
+
+        # 5. Delete the invoice itself
+        db.bills.delete_one({"_id": ObjectId(id)})
+
+        # 6. Log the action
+        log_audit(db, "INVOICE_DELETED", user_id, username, {
+            "invoiceId": id,
+            "billNumber": bill_number,
+            "itemsRestored": restored_count,
+            "totalRestored": len(items)
+        })
+
+        return jsonify({
+            "success": True, 
+            "message": f"Invoice {bill_number} deleted and {restored_count} products restocked."
+        })
+
+    except Exception as e:
+        logger.error(f"Invoice deletion error: {str(e)}", exc_info=True)
+        return jsonify({"error": "Failed to delete invoice", "message": str(e)}), 500

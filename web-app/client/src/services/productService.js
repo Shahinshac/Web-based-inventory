@@ -56,8 +56,8 @@ export const updateProductStock = async (productId, quantity, userId, username) 
 /**
  * Delete product
  */
-export const deleteProduct = async (productId, userId, username) => {
-  return await apiDelete(`/api/products/${productId}?userId=${userId}&username=${username}`)
+export const deleteProduct = async (productId, userId, username, adminPassword) => {
+  return await apiDelete(`/api/products/${productId}?userId=${userId}&username=${username}`, adminPassword)
 }
 
 /**

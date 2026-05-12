@@ -191,9 +191,27 @@ const EMITracker = () => {
                     </span>
                   </td>
                   <td>
-                    <button className="action-btn" title="View Details" style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                      <Icon name="external-link" size={14} />
-                      <span>Details</span>
+                    <button 
+                      className="action-btn" 
+                      onClick={() => window.alert('Redirecting to EMI details...')}
+                      style={{ 
+                        background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 
+                        color: 'white', 
+                        border: 'none', 
+                        padding: '8px 16px', 
+                        borderRadius: '8px', 
+                        fontWeight: 700, 
+                        display: 'flex', 
+                        alignItems: 'center', 
+                        gap: '8px', 
+                        cursor: 'pointer',
+                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.3)',
+                        transition: 'transform 0.2s',
+                        fontSize: '12px'
+                      }}
+                    >
+                      <Icon name="external-link" size={16} />
+                      <span>VIEW DETAILS</span>
                     </button>
                   </td>
                 </tr>

@@ -121,13 +121,17 @@ const CustomerInvoices = ({ currentUser }) => {
                     <td style={{ fontWeight: 700 }}>{formatAmount(invoice.total)}</td>
                     <td style={{ textAlign: 'right' }}>
                       <button
-                        className="logout-btn"
-                        style={{ background: '#f8fafc', color: '#6366f1', border: '1px solid #e2e8f0', padding: '0.4rem 0.8rem' }}
+                        className="portal-btn details-btn"
+                        style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none' }}
                         onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
                         disabled={downloadingId === invoice.id}
                       >
-                        {downloadingId === invoice.id ? '...' : <Icon name="download" size={14} />}
-                        PDF
+                        {downloadingId === invoice.id ? (
+                          <div className="spinner-mini"></div>
+                        ) : (
+                          <Icon name="download" size={14} />
+                        )}
+                        <span>DOWNLOAD PDF</span>
                       </button>
                     </td>
                   </tr>

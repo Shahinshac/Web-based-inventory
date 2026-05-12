@@ -208,3 +208,15 @@ export const downloadPVCCard = async () => {
   }
 };
 
+/**
+ * Link an existing invoice to customer account for warranty
+ */
+export const linkWarrantyByInvoice = async (invoiceNumber) => {
+  try {
+    return await apiPost('/api/customer-portal/warranties/link', { invoiceNumber });
+  } catch (error) {
+    console.error('[linkWarrantyByInvoice] Error:', error);
+    throw error;
+  }
+};
+

@@ -159,11 +159,14 @@ export function useInvoices(isOnline, isAuthenticated, activeTab) {
     }
   }, [isOnline, fetchInvoices]);
 
-  const deleteInvoice = useCallback(async (id) => {
+  const deleteInvoice = useCallback(async (id, adminPassword) => {
     try {
       const res = await fetch(API(`/api/invoices/${id}`), {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'X-Admin-Password': adminPassword
+        }
       });
       
       if (res.ok) {

@@ -40,6 +40,39 @@ def require_admin(f):
     return decorated
 
 
+def require_admin_password(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        # 1. Check if user is admin
+        if not hasattr(g, 'user') or g.user.get('role') != 'admin':
+            return jsonify({'error': 'Admin privileges required for this action'}), 403
+
+        # 2. Check for admin password in headers
+        admin_password = request.headers.get('X-Admin-Password')
+        if not admin_password:
+            # Fallback to body if not in headers
+            try:
+                data = request.get_json(silent=True) or {}
+                admin_password = data.get('adminPassword')
+            except:
+                pass
+
+        if not admin_password:
+            return jsonify({'error': 'Admin password required', 'passwordRequired': True}), 401
+
+        # 3. Verify password against database
+        from database import get_db
+        import bcrypt
+        db = get_db()
+        user = db.users.find_one({"username": g.user.get('username')})
+        
+        if not user or not bcrypt.checkpw(admin_password.encode('utf-8'), user['password'].encode('utf-8')):
+            return jsonify({'error': 'Invalid admin password'}), 401
+
+        return f(*args, **kwargs)
+    return decorated
+
+
 def require_customer(f):
     @wraps(f)
     def decorated(*args, **kwargs):

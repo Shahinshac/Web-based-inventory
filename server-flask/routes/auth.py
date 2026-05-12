@@ -7,7 +7,7 @@ from bson.errors import InvalidId
 from flask import Blueprint, request, jsonify, current_app, g
 
 from database import get_db
-from utils.auth_middleware import authenticate_token, require_admin
+from utils.auth_middleware import authenticate_token, require_admin, require_admin_password
 from services.audit_service import log_audit
 from utils.tzutils import utc_now, to_iso_string
 
@@ -342,7 +342,7 @@ def change_role(id):
 
 @auth_bp.route('/<id>', methods=['DELETE'])
 @authenticate_token
-@require_admin
+@require_admin_password
 def delete_user(id):
     db = get_db()
     user = db.users.find_one({"_id": ObjectId(id)})

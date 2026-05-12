@@ -3,6 +3,7 @@ import InvoiceCard from './InvoiceCard';
 import InvoiceDetails from './InvoiceDetails';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
 
@@ -20,8 +21,14 @@ export default function InvoicesList({
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
+  
+  // Delete state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [invoiceToDelete, setInvoiceToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredInvoices = useMemo(() => {
+    // ... existing filter logic ...
     let result = invoices.filter(invoice => {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -77,6 +84,24 @@ export default function InvoicesList({
     const today = new Date();
     return d.toDateString() === today.toDateString();
   }).length;
+
+  const handleDeleteClick = (invoice) => {
+    setInvoiceToDelete(invoice);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async (password) => {
+    if (!invoiceToDelete) return;
+    
+    setIsDeleting(true);
+    const result = await onDeleteInvoice(invoiceToDelete.id, password);
+    setIsDeleting(false);
+    
+    if (result.success) {
+      setDeleteConfirmOpen(false);
+      setInvoiceToDelete(null);
+    }
+  };
 
   return (
     <div className="invoices-list">
@@ -155,7 +180,7 @@ export default function InvoicesList({
               key={invoice.id}
               invoice={invoice}
               onView={() => setSelectedInvoice(invoice)}
-              onDelete={canDelete ? onDeleteInvoice : null}
+              onDelete={canDelete() ? () => handleDeleteClick(invoice) : null}
               onExport={onExportPDF}
               onShare={onShareWhatsApp}
             />
@@ -177,6 +202,16 @@ export default function InvoicesList({
           onShare={onShareWhatsApp}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <AdminConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        title="Confirm Invoice Deletion"
+        message={`Are you sure you want to delete invoice ${invoiceToDelete?.billNumber}? This will also restock the items and delete associated warranties/EMI plans.`}
+      />
     </div>
   );
 }

@@ -8,7 +8,7 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, g, send_file, current_app
 
 from database import get_db
-from utils.auth_middleware import authenticate_token
+from utils.auth_middleware import authenticate_token, require_admin_password
 from services.audit_service import log_audit
 from utils.constants import COMPANY_NAME, COMPANY_PHONE
 from services.customer_service import build_vcard, build_pvc_card_pdf
@@ -188,6 +188,7 @@ def update_customer(id):
 
 @customers_bp.route('/<id>', methods=['DELETE'])
 @authenticate_token
+@require_admin_password
 def delete_customer(id):
     user_id = g.user.get('userId')
     username = g.user.get('username', 'Unknown')

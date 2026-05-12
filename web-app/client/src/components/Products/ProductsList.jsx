@@ -4,6 +4,7 @@ import ProductForm from './ProductForm';
 import LowStockAlert from './LowStockAlert';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import Icon from '../../Icon';
 import { formatCurrency0 } from '../../constants';
 
@@ -26,6 +27,11 @@ export default function ProductsList({
   const [searchQuery, setSearchQuery] = useState('');
   const [filter, setFilter] = useState('all'); // 'all', 'low-stock', 'out-of-stock'
   const [sortBy, setSortBy] = useState('name'); // 'name', 'stock', 'price', 'profit'
+  
+  // Delete state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = products.filter(product => {
@@ -90,6 +96,24 @@ export default function ProductsList({
       await onAddProduct(productData);
     }
     handleFormClose();
+  };
+
+  const handleDeleteClick = (product) => {
+    setProductToDelete(product);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async (password) => {
+    if (!productToDelete) return;
+    
+    setIsDeleting(true);
+    const result = await onDeleteProduct(productToDelete.id, password);
+    setIsDeleting(false);
+    
+    if (result.success) {
+      setDeleteConfirmOpen(false);
+      setProductToDelete(null);
+    }
   };
 
   return (
@@ -218,7 +242,7 @@ export default function ProductsList({
               key={product.id}
               product={product}
               onEdit={canEdit ? handleEdit : null}
-              onDelete={canDelete ? onDeleteProduct : null}
+              onDelete={canDelete ? () => handleDeleteClick(product) : null}
               onUploadPhoto={canEdit ? onUploadPhoto : null}
               onDeletePhoto={canEdit ? onDeletePhoto : null}
               canViewProfit={canViewProfit}
@@ -248,6 +272,16 @@ export default function ProductsList({
           onClose={handleFormClose}
         />
       )}
+
+      {/* Delete Confirmation */}
+      <AdminConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        title="Confirm Product Deletion"
+        message={`Are you sure you want to delete ${productToDelete?.name}? This action cannot be undone.`}
+      />
     </div>
   );
 }

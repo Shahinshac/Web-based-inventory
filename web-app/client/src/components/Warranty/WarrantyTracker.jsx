@@ -220,23 +220,45 @@ const WarrantyTracker = () => {
                     </span>
                   </td>
                   <td>
-                    <div className="action-group">
+                    <div className="action-group" style={{ display: 'flex', gap: '8px' }}>
                       <button 
                         className={`action-btn-mini claim-btn ${w.status === 'claimed' ? 'disabled' : ''}`} 
                         onClick={() => handleStatusUpdate(w._id, 'claimed')}
                         disabled={w.status === 'claimed'}
-                        title={w.status === 'claimed' ? "Already Claimed" : "Claim Warranty"}
+                        style={{ 
+                          background: w.status === 'claimed' ? '#e2e8f0' : '#10b981', 
+                          color: w.status === 'claimed' ? '#94a3b8' : 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          cursor: w.status === 'claimed' ? 'not-allowed' : 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
                       >
                         <Icon name="check" size={14} />
-                        <span>Claim</span>
+                        <span>CLAIM</span>
                       </button>
                       <button 
                         className="action-btn-mini renew-btn" 
                         onClick={() => handleRenew(w)}
-                        title="Renew Warranty"
+                        style={{ 
+                          background: '#f59e0b', 
+                          color: 'white',
+                          border: 'none',
+                          padding: '6px 12px',
+                          borderRadius: '6px',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '6px'
+                        }}
                       >
                         <Icon name="refresh-cw" size={14} />
-                        <span>Renew</span>
+                        <span>RENEW</span>
                       </button>
                     </div>
                   </td>

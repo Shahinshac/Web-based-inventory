@@ -14,6 +14,7 @@ export default function InvoiceActions({ invoice, onExport, onShare }) {
     }
   };
 
+  return (
     <div className="invoice-actions" style={{ display: 'flex', gap: '8px' }}>
       <Button
         variant="primary"
@@ -25,4 +26,5 @@ export default function InvoiceActions({ invoice, onExport, onShare }) {
         PDF
       </Button>
     </div>
+  );
 }

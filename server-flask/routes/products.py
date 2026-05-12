@@ -5,7 +5,7 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, redirect, g
 
 from database import get_db
-from utils.auth_middleware import authenticate_token, require_admin
+from utils.auth_middleware import authenticate_token, require_admin, require_admin_password
 from services.audit_service import log_audit
 from services.barcode_service import generate_product_barcode, generate_barcode_image, generate_qr_code
 from services.cloudinary_service import upload_product_photo, delete_cloudinary_asset, is_configured
@@ -243,7 +243,7 @@ def full_update_product(id):
 
 @products_bp.route('/<id>', methods=['DELETE'])
 @authenticate_token
-@require_admin
+@require_admin_password
 def delete_product(id):
     user_id = g.user.get('userId')
     username = g.user.get('username')

@@ -5,7 +5,7 @@ from bson import ObjectId
 from flask import Blueprint, request, jsonify, g
 
 from database import get_db
-from utils.auth_middleware import authenticate_token
+from utils.auth_middleware import authenticate_token, require_admin_password
 from services.audit_service import log_audit
 from utils.tzutils import utc_now, to_iso_string
 
@@ -169,13 +169,10 @@ def process_return():
 
 @returns_bp.route('/<id>', methods=['DELETE'])
 @authenticate_token
+@require_admin_password
 def delete_return(id):
-    role = g.user.get('role')
     user_id = g.user.get('userId')
     username = g.user.get('username', 'Unknown')
-    
-    if role not in ['admin', 'manager', 'superadmin']:
-        return jsonify({"error": "Only admins and managers can delete return records"}), 403
         
     db = get_db()
     try:

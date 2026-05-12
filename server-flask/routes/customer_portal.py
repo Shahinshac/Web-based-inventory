@@ -905,12 +905,26 @@ def get_customer_warranties():
         bill_numbers = [b.get('billNumber') for b in customer_bills if b.get('billNumber')]
         
         # Build expanded warranty match query
-        warranty_match = match_query.copy()
+        # We search by customerId OR customerPhone OR customerEmail OR invoiceNo
+        warranty_match = {
+            "$or": [
+                {"customerId": customer_id},
+                {"customerId": str(customer_id)}
+            ]
+        }
+        
+        if customer.get('phone'):
+            phone = str(customer.get('phone')).strip()
+            if phone:
+                warranty_match["$or"].append({"customerPhone": phone})
+                # Match normalized last 10 digits
+                norm = ''.join(c for c in phone if c.isdigit())
+                if len(norm) >= 10:
+                    warranty_match["$or"].append({"customerPhone": norm[-10:]})
+                    warranty_match["$or"].append({"customerPhone": f"+91{norm[-10:]}"})
+
         if bill_numbers:
-            if "$or" in warranty_match:
-                warranty_match["$or"].append({"invoiceNo": {"$in": bill_numbers}})
-            else:
-                warranty_match = {"$or": [warranty_match, {"invoiceNo": {"$in": bill_numbers}}]}
+            warranty_match["$or"].append({"invoiceNo": {"$in": bill_numbers}})
 
         # Count total and fetch paginated warranties
         total = db.warranties.count_documents(warranty_match)

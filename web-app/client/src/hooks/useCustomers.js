@@ -90,11 +90,14 @@ export function useCustomers(isOnline, isAuthenticated, activeTab) {
     }
   }, [fetchCustomers]);
 
-  const deleteCustomer = useCallback(async (id) => {
+  const deleteCustomer = useCallback(async (id, adminPassword) => {
     try {
       const res = await fetch(API(`/api/customers/${id}`), {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'X-Admin-Password': adminPassword
+        }
       });
       
       if (res.ok) {

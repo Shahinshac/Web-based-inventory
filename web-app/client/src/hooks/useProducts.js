@@ -106,12 +106,12 @@ export const useProducts = (isOnline, isAuthenticated, currentUser, isAdmin) => 
   }
 
   // Delete product
-  const deleteProduct = async (productId) => {
+  const deleteProduct = async (productId, adminPassword) => {
     try {
       const userId = currentUser?.id || null
       const username = isAdmin ? 'admin' : currentUser?.username
       
-      await deleteProductAPI(productId, userId, username)
+      await deleteProductAPI(productId, userId, username, adminPassword)
       await fetchProducts()
       return { success: true }
     } catch (err) {

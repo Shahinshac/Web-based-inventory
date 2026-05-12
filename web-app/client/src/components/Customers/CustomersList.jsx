@@ -4,6 +4,7 @@ import VisitingCard from './VisitingCard';
 import CustomerForm from './CustomerForm';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import Icon from '../../Icon';
 import CustomerHistoryModal from './CustomerHistoryModal';
 import './VisitingCard.css';
@@ -25,6 +26,11 @@ export default function CustomersList({
   const [editingCustomer, setEditingCustomer] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [viewMode, setViewMode] = useState('cards'); // 'cards' | 'visiting'
+
+  // Delete state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [customerToDelete, setCustomerToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // History Modal State
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
@@ -60,6 +66,24 @@ export default function CustomersList({
       await onAddCustomer(customerData);
     }
     handleFormClose();
+  };
+
+  const handleDeleteClick = (customer) => {
+    setCustomerToDelete(customer);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async (password) => {
+    if (!customerToDelete) return;
+    
+    setIsDeleting(true);
+    const result = await onDeleteCustomer(customerToDelete.id, password);
+    setIsDeleting(false);
+    
+    if (result.success) {
+      setDeleteConfirmOpen(false);
+      setCustomerToDelete(null);
+    }
   };
 
   const handleViewHistory = async (customer) => {
@@ -165,7 +189,7 @@ export default function CustomersList({
                 key={customer.id}
                 customer={customer}
                 onEdit={canEdit ? handleEdit : null}
-                onDelete={canDelete ? onDeleteCustomer : null}
+                onDelete={canDelete ? () => handleDeleteClick(customer) : null}
                 onViewHistory={handleViewHistory}
                 onShareWhatsApp={onShareWhatsApp}
               />
@@ -174,7 +198,7 @@ export default function CustomersList({
                 key={customer.id}
                 customer={customer}
                 onEdit={canEdit ? handleEdit : null}
-                onDelete={canDelete ? onDeleteCustomer : null}
+                onDelete={canDelete ? () => handleDeleteClick(customer) : null}
                 onViewHistory={handleViewHistory}
                 onShareWhatsApp={onShareWhatsApp}
               />
@@ -215,6 +239,16 @@ export default function CustomersList({
         data={historyData}
         isLoading={isHistoryLoading}
         error={historyError}
+      />
+
+      {/* Delete Confirmation */}
+      <AdminConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        title="Confirm Customer Deletion"
+        message={`Are you sure you want to delete ${customerToDelete?.name}? This will permanently remove their records from the database.`}
       />
     </div>
   );

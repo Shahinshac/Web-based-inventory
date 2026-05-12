@@ -5,8 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
-import { fetchCustomerWarranties, renewWarranty } from '../../services/customerPortalService';
-import { apiPost } from '../../utils/api';
+import { fetchCustomerWarranties, renewWarranty, linkWarrantyByInvoice } from '../../services/customerPortalService';
 import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
 const CustomerWarranties = () => {
@@ -76,7 +75,7 @@ const CustomerWarranties = () => {
 
     try {
       setIsLinking(true);
-      const response = await apiPost('/api/customer-portal/warranties/link', { invoiceNumber: linkInvoiceNo });
+      const response = await linkWarrantyByInvoice(linkInvoiceNo);
       await loadWarranties(1);
       setLinkSuccess(response.message || 'Warranty linked successfully!');
       setLinkInvoiceNo('');
@@ -176,12 +175,17 @@ const CustomerWarranties = () => {
                     <td>{getStatusBadge(warranty.status)}</td>
                     <td style={{ textAlign: 'right' }}>
                       {warranty.status === 'expired' ? (
-                        <button className="logout-btn" style={{ background: '#6366f1', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }} onClick={() => handleRenew(warranty.id)}>
-                          Renew Plan
+                        <button 
+                          className="portal-btn renew-btn" 
+                          onClick={() => handleRenew(warranty.id)}
+                        >
+                          RENEW PLAN
                         </button>
                       ) : (
-                        <button className="logout-btn" style={{ background: '#10b981', color: 'white', border: 'none', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer' }}>
-                          View Details
+                        <button 
+                          className="portal-btn details-btn"
+                        >
+                          VIEW DETAILS
                         </button>
                       )}
                     </td>

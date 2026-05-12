@@ -77,9 +77,24 @@ const CustomerEMI = () => {
               <Icon name="credit-card" size={20} />
               EMI Plan: #{planIdLabel(selectedPlan)}
             </h2>
-            <button className="logout-btn" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: '6px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }} onClick={() => setSelectedPlan(null)}>
-              <Icon name="arrow-left" size={14} />
-              <span>Back to Plans</span>
+            <button 
+              className="portal-btn details-btn" 
+              style={{ 
+                background: '#f1f5f9', 
+                color: '#475569', 
+                border: '1px solid #e2e8f0', 
+                padding: '8px 16px', 
+                borderRadius: '8px', 
+                fontWeight: 700, 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '8px', 
+                cursor: 'pointer' 
+              }} 
+              onClick={() => setSelectedPlan(null)}
+            >
+              <Icon name="arrow-left" size={16} />
+              <span>BACK TO PLANS</span>
             </button>
           </div>
 
@@ -178,9 +193,24 @@ const CustomerEMI = () => {
                 <div style={{ width: '100%', height: '4px', background: '#f1f5f9', borderRadius: '2px', overflow: 'hidden', marginBottom: '1rem' }}>
                   <div style={{ height: '100%', background: '#6366f1', width: `${(emi.totalPaid / emi.totalAmount) * 100}%` }}></div>
                 </div>
-                <button className="portal-btn details-btn" style={{ width: '100%', justifyContent: 'center' }}>
+                <button 
+                  className="portal-btn details-btn" 
+                  style={{ 
+                    width: '100%', 
+                    justifyContent: 'center',
+                    background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                    color: 'white',
+                    border: 'none',
+                    padding: '8px',
+                    borderRadius: '6px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
                   <Icon name="info" size={14} />
-                  <span>View Details</span>
+                  <span>VIEW DETAILS</span>
                 </button>
               </div>
             ))}

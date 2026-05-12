@@ -3,6 +3,7 @@ import Icon from '../../Icon';
 import Modal from '../Common/Modal';
 import Button from '../Common/Button';
 import SearchBar from '../Common/SearchBar';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import { API, getAuthHeaders } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 
@@ -12,7 +13,10 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [deleteConfirmId, setDeleteConfirmId] = useState(null);
+  
+  // Delete state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [returnToDeleteId, setReturnToDeleteId] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
   // Invoice lookup state
@@ -163,17 +167,27 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
 
   const isAdminOrManager = isAdmin || userRole === 'manager' || userRole === 'superadmin' || currentUser?.role === 'admin' || currentUser?.role === 'manager';
 
-  const handleDeleteReturn = async () => {
-    if (!deleteConfirmId) return;
+  const handleDeleteClick = (id) => {
+    setReturnToDeleteId(id);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async (password) => {
+    if (!returnToDeleteId) return;
     try {
       setDeleting(true);
-      const res = await fetch(API(`/api/returns/${deleteConfirmId}`), {
+      const res = await fetch(API(`/api/returns/${returnToDeleteId}`), {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: {
+          ...getAuthHeaders(),
+          'X-Admin-Password': password
+        }
       });
       if (res.ok) {
         showNotification?.('Return record deleted successfully', 'success');
-        setReturns(prev => prev.filter(r => r.id !== deleteConfirmId));
+        setReturns(prev => prev.filter(r => r.id !== returnToDeleteId));
+        setDeleteConfirmOpen(false);
+        setReturnToDeleteId(null);
         fetchStats();
       } else {
         const err = await res.json();
@@ -183,7 +197,6 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
       showNotification?.('Failed to delete return', 'error');
     } finally {
       setDeleting(false);
-      setDeleteConfirmId(null);
     }
   };
 
@@ -316,7 +329,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
                       <button
                         className="icon-btn icon-btn-danger"
                         title="Delete return record"
-                        onClick={() => setDeleteConfirmId(ret.id)}
+                        onClick={() => handleDeleteClick(ret.id)}
                       >
                         <Icon name="trash-2" size={15} />
                       </button>
@@ -330,22 +343,14 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
       </div>
 
       {/* Delete Confirmation */}
-      {deleteConfirmId && (
-        <Modal isOpen={true} title="Delete Return Record" onClose={() => setDeleteConfirmId(null)} size="small">
-          <div style={{ padding: '8px 0' }}>
-            <p style={{ marginBottom: 16, color: 'var(--text-secondary)' }}>
-              Are you sure you want to delete this return record?<br />
-              <strong>This will reverse the stock restoration</strong> (items will be deducted again).
-            </p>
-            <div className="form-actions">
-              <Button variant="secondary" onClick={() => setDeleteConfirmId(null)} disabled={deleting}>Cancel</Button>
-              <Button variant="danger" icon="trash-2" onClick={handleDeleteReturn} disabled={deleting}>
-                {deleting ? 'Deleting...' : 'Delete Record'}
-              </Button>
-            </div>
-          </div>
-        </Modal>
-      )}
+      <AdminConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={deleting}
+        title="Delete Return Record"
+        message={`Are you sure you want to delete this return record? This will reverse the stock restoration (items will be deducted again).`}
+      />
 
       {/* New Return Modal */}
       {showForm && (

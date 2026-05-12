@@ -254,25 +254,47 @@ def wipe_data():
 @authenticate_token
 @require_admin
 def get_all_emi_plans():
-    """Fetch all EMI plans for admin dashboard."""
+    """Fetch all EMI plans for admin dashboard with safe data parsing."""
     try:
         db = get_db()
         
-        # Fallback Sync: Find bills with EMI that don't have a plan record yet
-        # Using a more permissive regex to catch all case variations and potential spaces
-        emi_bills = db.bills.find({"paymentMode": {"$regex": "emi", "$options": "i"}})
-        logger.info(f"[get_all_emi_plans] 🔍 Syncing EMI plans from bills. Found {db.bills.count_documents({'paymentMode': {'$regex': 'emi', '$options': 'i'}})} EMI bills.")
+        # 1. Sync check (only for truly missing plans)
+        # Instead of regex searching every request, we just look for 5 most recent EMI bills that might need plans
+        recent_emi_bills = db.bills.find(
+            {"paymentMode": {"$regex": "emi", "$options": "i"}},
+            sort=[("createdAt", -1)]
+        ).limit(10)
         
-        for bill in emi_bills:
+        from dateutil import parser
+        from routes.emi import _sync_emi_plan_status
+        
+        def safe_float(val, default=0.0):
+            try:
+                return float(val or default)
+            except (ValueError, TypeError):
+                return float(default)
+
+        for bill in recent_emi_bills:
             exists = db.emi_plans.find_one({"billId": bill["_id"]})
             if not exists:
-                # Auto-create missing plan
                 emi_details = bill.get("emiDetails", {})
-                installments = []
-                months = int(emi_details.get('months', 0))
+                try:
+                    months = int(emi_details.get('months', 0) or 0)
+                except (ValueError, TypeError):
+                    months = 0
+
                 if months > 0:
-                    emi_amt = float(emi_details.get('emiAmount', 0))
-                    bill_date = bill.get('billDate', utc_now())
+                    emi_amt = safe_float(emi_details.get('emiAmount', 0))
+                    bill_date = bill.get('billDate')
+                    if isinstance(bill_date, str):
+                        try:
+                            bill_date = parser.parse(bill_date)
+                        except:
+                            bill_date = utc_now()
+                    elif not bill_date:
+                        bill_date = utc_now()
+
+                    installments = []
                     for m in range(1, months + 1):
                         due_date = bill_date + timedelta(days=30 * m)
                         installments.append({
@@ -283,39 +305,44 @@ def get_all_emi_plans():
                             "paidAmount": 0,
                             "paidDate": None
                         })
-                
-                db.emi_plans.insert_one({
-                    "billId": bill["_id"],
-                    "billNumber": bill.get("billNumber"),
-                    "customerId": bill.get("customerId"),
-                    "customerName": bill.get("customerName"),
-                    "customerPhone": bill.get("customerPhone"),
-                    "totalAmount": bill.get("grandTotal"),
-                    "downPayment": float(emi_details.get("downPayment", 0)),
-                    "principalAmount": float(emi_details.get("principalAmount", bill.get("grandTotal", 0) - float(emi_details.get("downPayment", 0)))),
-                    "monthlyEmi": float(emi_details.get("emiAmount", 0)),
-                    "tenure": months,
-                    "interestRate": float(emi_details.get("interestRate", 0)),
-                    "startDate": bill_date,
-                    "status": "active",
-                    "installments": installments,
-                    "createdAt": bill.get('createdAt', utc_now())
-                })
+                    
+                    down_payment = safe_float(emi_details.get("downPayment", 0))
+                    grand_total = safe_float(bill.get("grandTotal", 0))
+                    
+                    db.emi_plans.insert_one({
+                        "billId": bill["_id"],
+                        "billNumber": bill.get("billNumber"),
+                        "customerId": bill.get("customerId"),
+                        "customerName": bill.get("customerName"),
+                        "customerPhone": bill.get("customerPhone"),
+                        "totalAmount": grand_total,
+                        "downPayment": down_payment,
+                        "principalAmount": safe_float(emi_details.get("principalAmount"), grand_total - down_payment),
+                        "monthlyEmi": safe_float(emi_details.get("emiAmount"), 0),
+                        "tenure": months,
+                        "interestRate": safe_float(emi_details.get("interestRate"), 0),
+                        "startDate": bill_date,
+                        "status": "active",
+                        "installments": installments,
+                        "createdAt": bill.get('createdAt', utc_now())
+                    })
 
-        # Fetch all plans, newest first
+        # 2. Fetch plans
         plans_cursor = db.emi_plans.find().sort("createdAt", -1).limit(500)
-        
         plans_list = []
+        now = utc_now()
+        
         for p in plans_cursor:
-            # Calculate basic stats for each plan
+            # Sync status on the fly to ensure accuracy
+            _sync_emi_plan_status(p, now=now)
+            
             installments = p.get('installments', [])
-            total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
+            total_paid = sum(safe_float(inst.get('paidAmount', 0)) for inst in installments)
             
             plans_list.append({
                 "id": str(p['_id']),
-                "_id": str(p['_id']),
-                "billNumber": p.get('billNumber') or "N/A", # Will need to lookup from bills if missing, but emi_plans usually has it
-                "customerId": str(p.get('customerId')),
+                "billNumber": p.get('billNumber') or "N/A",
+                "customerId": str(p.get('customerId')) if p.get('customerId') else None,
                 "customerName": p.get('customerName', 'N/A'),
                 "customerPhone": p.get('customerPhone', 'N/A'),
                 "totalAmount": p.get('totalAmount', 0),
@@ -328,10 +355,7 @@ def get_all_emi_plans():
                 "createdAt": to_iso_string(p.get('createdAt'))
             })
             
-        return jsonify({
-            "success": True,
-            "emiPlans": plans_list
-        }), 200
+        return jsonify({"success": True, "emiPlans": plans_list}), 200
     except Exception as e:
         logger.error(f"Error fetching EMI plans: {str(e)}", exc_info=True)
         return jsonify({"error": "Failed to fetch EMI plans", "message": str(e)}), 500

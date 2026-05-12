@@ -3,7 +3,7 @@ import Icon from '../../Icon';
 import Modal from '../Common/Modal';
 import Button from '../Common/Button';
 import SearchBar from '../Common/SearchBar';
-import ConfirmDialog from '../Common/ConfirmDialog';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import { API, getAuthHeaders } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 
@@ -30,7 +30,11 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
   const [searchTerm, setSearchTerm] = useState('');
   const [filterCategory, setFilterCategory] = useState('');
   const [filterSource, setFilterSource] = useState('');
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
+  
+  // Delete state
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [expenseToDelete, setExpenseToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -92,20 +96,41 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
     }
   };
 
-  const handleDelete = async (expense) => {
+  const handleDeleteClick = (expense) => {
+    setExpenseToDelete(expense);
+    setDeleteConfirmOpen(true);
+  };
+
+  const handleConfirmDelete = async (password) => {
+    if (!expenseToDelete) return;
+    
+    setIsDeleting(true);
     try {
       const res = await fetch(
-        API(`/api/expenses/${expense.id}?userId=${currentUser?.id || currentUser?._id}&username=${currentUser?.username}`),
-        { method: 'DELETE', headers: getAuthHeaders() }
+        API(`/api/expenses/${expenseToDelete.id}?userId=${currentUser?.id || currentUser?._id}&username=${currentUser?.username}`),
+        { 
+          method: 'DELETE', 
+          headers: {
+            ...getAuthHeaders(),
+            'X-Admin-Password': password
+          } 
+        }
       );
+      
       if (res.ok) {
         showNotification?.('Expense deleted', 'success');
+        setDeleteConfirmOpen(false);
+        setExpenseToDelete(null);
         fetchExpenses();
+      } else {
+        const err = await res.json();
+        showNotification?.(err.error || 'Failed to delete expense', 'error');
       }
     } catch (error) {
       showNotification?.('Failed to delete expense', 'error');
+    } finally {
+      setIsDeleting(false);
     }
-    setDeleteConfirm(null);
   };
 
   const resetForm = () => {
@@ -327,7 +352,7 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
                   <td>{exp.createdByUsername || 'N/A'}</td>
                   {canDelete && (
                     <td>
-                      <button className="table-action-btn danger" onClick={() => setDeleteConfirm(exp)} title="Delete">
+                      <button className="table-action-btn danger" onClick={() => handleDeleteClick(exp)} title="Delete">
                         <Icon name="trash-2" size={16} />
                       </button>
                     </td>
@@ -407,15 +432,15 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
         </Modal>
       )}
 
-      {/* Delete Confirm */}
-      {deleteConfirm && (
-        <ConfirmDialog
-          title="Delete Expense"
-          message={`Delete "${deleteConfirm.description}" (${formatCurrency0(deleteConfirm.amount)})?`}
-          onConfirm={() => handleDelete(deleteConfirm)}
-          onCancel={() => setDeleteConfirm(null)}
-        />
-      )}
+      {/* Delete Confirmation */}
+      <AdminConfirmDialog
+        isOpen={deleteConfirmOpen}
+        onClose={() => setDeleteConfirmOpen(false)}
+        onConfirm={handleConfirmDelete}
+        isDeleting={isDeleting}
+        title="Confirm Expense Deletion"
+        message={`Delete "${expenseToDelete?.description}" (${formatCurrency0(expenseToDelete?.amount)})? This action cannot be undone.`}
+      />
     </div>
   );
 }

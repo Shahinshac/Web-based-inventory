@@ -83,9 +83,27 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
                 </div>
                 <span className="user-name" style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--portal-text)' }}>{currentUser?.name || 'User'}</span>
               </div>
-              <button className="logout-btn" onClick={onLogout} style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', background: '#fef2f2', color: '#ef4444', border: '1px solid #fee2e2', padding: '0.75rem', borderRadius: '8px', fontWeight: '600', cursor: 'pointer' }}>
+              <button 
+                className="portal-btn" 
+                onClick={onLogout} 
+                style={{ 
+                  width: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '0.5rem', 
+                  background: 'rgba(239, 68, 68, 0.08)', 
+                  color: '#ef4444', 
+                  border: '1px solid rgba(239, 68, 68, 0.2)', 
+                  padding: '0.75rem', 
+                  borderRadius: '10px', 
+                  fontWeight: '700', 
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease'
+                }}
+              >
                 <Icon name="power" size={16} />
-                <span>Logout</span>
+                <span>SIGN OUT</span>
               </button>
             </div>
           </aside>

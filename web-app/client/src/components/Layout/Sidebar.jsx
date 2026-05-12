@@ -45,25 +45,27 @@ export default function Sidebar({
     return () => clearInterval(id);
   }, []);
 
-  const isManagerOrAdmin = userRole === 'manager' || userRole === 'admin' || isAdmin;
+  const isManager = userRole === 'manager';
+  const isAdminRole = userRole === 'admin' || isAdmin;
+  const isManagerOrAdmin = isManager || isAdminRole;
 
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'grid', show: isManagerOrAdmin },
-    { id: 'pos', label: 'Point of Sale', icon: 'shopping-cart', show: true },
+    { id: 'dashboard', label: 'Overview', icon: 'grid', show: isManagerOrAdmin },
+    { id: 'pos', label: 'New Sale', icon: 'shopping-cart', show: true },
     { id: 'products', label: 'Inventory', icon: 'package', show: isManagerOrAdmin },
     { id: 'warranty', label: 'Warranties', icon: 'shield', show: isManagerOrAdmin },
-    { id: 'emi', label: 'EMI Plans', icon: 'credit-card', show: isManagerOrAdmin },
-    { id: 'customers', label: 'Customers', icon: 'users', show: true },
-    { id: 'invoices', label: 'Invoices', icon: 'file-text', show: true },
-    { id: 'reports', label: 'Reports', icon: 'bar-chart-2', show: isManagerOrAdmin },
-    { id: 'returns', label: 'Returns', icon: 'rotate-ccw', show: true },
-    { id: 'expenses', label: 'Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
-    { id: 'users', label: 'Team', icon: 'users', show: isAdmin },
+    { id: 'emi', label: 'EMI Dashboard', icon: 'credit-card', show: isManagerOrAdmin },
+    { id: 'customers', label: 'CRM / Customers', icon: 'users', show: true },
+    { id: 'invoices', label: 'Billing History', icon: 'file-text', show: true },
+    { id: 'reports', label: 'Analytics', icon: 'bar-chart-2', show: isManagerOrAdmin },
+    { id: 'returns', label: 'Sales Returns', icon: 'rotate-ccw', show: true },
+    { id: 'expenses', label: 'OpEx / Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
+    { id: 'users', label: 'Staff Management', icon: 'users', show: isAdminRole },
     { id: 'support', label: 'Support Desk', icon: 'help-circle', show: true },
-    { id: 'audit', label: 'Audit Logs', icon: 'activity', show: isAdmin },
-    { id: 'exports', label: 'Exports', icon: 'download', show: isAdmin },
-    { id: 'admin-settings', label: 'Admin Settings', icon: 'settings', show: isAdmin },
-    { id: 'customer-logins', label: 'Customer Logins', icon: 'key', show: isAdmin },
+    { id: 'audit', label: 'System Logs', icon: 'activity', show: isAdminRole },
+    { id: 'exports', label: 'Data Exports', icon: 'download', show: isAdminRole },
+    { id: 'admin-settings', label: 'Admin Panel', icon: 'settings', show: isAdminRole },
+    { id: 'customer-logins', label: 'Portal Access', icon: 'key', show: isAdminRole },
   ];
 
   return (

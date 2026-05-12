@@ -122,12 +122,20 @@ def renew_warranty(id):
             return jsonify({"error": "Warranty not found"}), 404
             
         product_id = warranty.get('productId')
-        if not product_id:
-            return jsonify({"error": "No product associated with this warranty. Cannot auto-calculate renewal price."}), 400
+        product = None
+        
+        if product_id:
+            try:
+                product = db.products.find_one({"_id": ObjectId(product_id)})
+            except:
+                product = None
             
-        product = db.products.find_one({"_id": ObjectId(product_id)})
+        if not product and warranty.get('productName'):
+            # Fallback: Find by exact name if productId is missing or invalid
+            product = db.products.find_one({"name": warranty.get('productName')})
+            
         if not product:
-            return jsonify({"error": "Associated product not found"}), 404
+            return jsonify({"error": "Associated product not found. Cannot auto-calculate renewal price."}), 404
             
         renewal_price = float(product.get('warrantyRenewalPrice', 0))
         renewal_months = int(product.get('warrantyMonths', 12))
