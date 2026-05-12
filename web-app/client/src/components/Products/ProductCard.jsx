@@ -459,9 +459,6 @@ export default function ProductCard({
           )}
         </div>
       </div>
-    </>
-  );
-}
 
       {/* Barcode Preview Modal */}
       {showBarcodeModal && (
