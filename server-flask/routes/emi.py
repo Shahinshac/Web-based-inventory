@@ -180,6 +180,7 @@ def create_emi():
     # Create EMI plan document
     emi_plan = {
         "billId": bill_id,
+        "billNumber": bill.get('billNumber'),
         "customerId": customer_id,
         "customerName": customer.get('name'),
         "customerPhone": customer.get('phone'),

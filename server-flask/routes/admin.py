@@ -250,6 +250,48 @@ def wipe_data():
         }), 500
 
 
+@admin_bp.route('/emi-plans', methods=['GET'])
+@authenticate_token
+@require_admin
+def get_all_emi_plans():
+    """Fetch all EMI plans for admin dashboard."""
+    try:
+        db = get_db()
+        # Fetch all plans, newest first
+        plans_cursor = db.emi_plans.find().sort("createdAt", -1).limit(500)
+        
+        plans_list = []
+        for p in plans_cursor:
+            # Calculate basic stats for each plan
+            installments = p.get('installments', [])
+            total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
+            
+            plans_list.append({
+                "id": str(p['_id']),
+                "_id": str(p['_id']),
+                "billNumber": p.get('billNumber') or "N/A", # Will need to lookup from bills if missing, but emi_plans usually has it
+                "customerId": str(p.get('customerId')),
+                "customerName": p.get('customerName', 'N/A'),
+                "customerPhone": p.get('customerPhone', 'N/A'),
+                "totalAmount": p.get('totalAmount', 0),
+                "principalAmount": p.get('principalAmount', 0),
+                "downPayment": p.get('downPayment', 0),
+                "tenure": p.get('tenure', 0),
+                "monthlyEmi": p.get('monthlyEmi', 0),
+                "totalPaid": total_paid,
+                "status": p.get('status', 'active'),
+                "createdAt": to_iso_string(p.get('createdAt'))
+            })
+            
+        return jsonify({
+            "success": True,
+            "emiPlans": plans_list
+        }), 200
+    except Exception as e:
+        logger.error(f"Error fetching EMI plans: {str(e)}", exc_info=True)
+        return jsonify({"error": "Failed to fetch EMI plans", "message": str(e)}), 500
+
+
 @admin_bp.route('/database-stats', methods=['GET'])
 @authenticate_token
 def database_stats():

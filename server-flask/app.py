@@ -20,6 +20,7 @@ from routes.exports import exports_bp
 from routes.employees import employees_bp
 from routes.salary import salary_bp
 from routes.tickets import tickets_bp
+from routes.warranties import warranties_bp
 from services.cloudinary_service import init_cloudinary
 from routes.emi import sync_all_emi_statuses
 import logging
@@ -109,6 +110,7 @@ app.register_blueprint(exports_bp, url_prefix='/api/exports')
 app.register_blueprint(employees_bp, url_prefix='/api/employees')
 app.register_blueprint(salary_bp, url_prefix='/api/salary')
 app.register_blueprint(tickets_bp, url_prefix='/api/tickets')
+app.register_blueprint(warranties_bp, url_prefix='/api/warranties')
 # Public invoice viewing (no authentication required)
 app.register_blueprint(public_invoice_bp, url_prefix='/public/invoice')
 # Public customer card viewing (no authentication required)
