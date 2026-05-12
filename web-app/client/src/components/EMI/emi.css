@@ -210,18 +210,27 @@
 .status-defaulted { background: #fee2e2; color: #991b1b; }
 
 .action-btn {
-  width: 38px !important;
-  height: 38px !important;
+  padding: 8px 16px !important;
+  width: auto !important;
+  height: auto !important;
   border-radius: 10px !important;
   border: none !important;
   background: #4f46e5 !important; /* Bold Indigo */
   color: white !important;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 8px;
   cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
   transition: all 0.2s ease;
   box-shadow: 0 2px 4px rgba(79, 70, 229, 0.3);
+}
+
+.action-btn span {
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-size: 11px;
 }
 
 .action-btn:hover {

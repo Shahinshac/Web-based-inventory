@@ -180,25 +180,52 @@
 .status-expired { background: #fee2e2; color: #991b1b; }
 .status-expiring-soon { background: #fef3c7; color: #92400e; }
 
+.action-group {
+  display: flex;
+  gap: 8px;
+}
+
 .action-btn-mini {
-  width: 36px !important;
-  height: 36px !important;
-  border-radius: 10px !important;
+  padding: 6px 12px !important;
+  width: auto !important;
+  height: auto !important;
+  border-radius: 8px !important;
   border: none !important;
-  background: #2563eb !important; /* Vivid Blue */
   color: white !important;
   cursor: pointer;
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 700;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-.action-btn-mini:hover {
+.action-btn-mini span {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.claim-btn {
+  background: #2563eb !important; /* Blue */
+}
+
+.claim-btn:hover {
   background: #1d4ed8 !important;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(37, 99, 235, 0.3);
+}
+
+.renew-btn {
+  background: #10b981 !important; /* Emerald */
+}
+
+.renew-btn:hover {
+  background: #059669 !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
 }
 
 .action-btn-mini svg {

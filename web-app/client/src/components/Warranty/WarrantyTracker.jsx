@@ -203,8 +203,19 @@ const WarrantyTracker = () => {
                   </td>
                   <td>
                     <div className="action-group">
-                      <button className="action-btn-mini" title="Claim" onClick={() => handleStatusUpdate(w._id, 'claimed')}>
+                      <button 
+                        className="action-btn-mini claim-btn" 
+                        onClick={() => handleStatusUpdate(w._id, 'claimed')}
+                      >
                         <Icon name="check" size={14} />
+                        <span>Claim</span>
+                      </button>
+                      <button 
+                        className="action-btn-mini renew-btn" 
+                        onClick={() => handleStatusUpdate(w._id, 'active')}
+                      >
+                        <Icon name="refresh-cw" size={14} />
+                        <span>Renew</span>
                       </button>
                     </div>
                   </td>

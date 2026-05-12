@@ -193,6 +193,7 @@ const EMITracker = () => {
                   <td>
                     <button className="action-btn" title="View Details">
                       <Icon name="external-link" size={16} />
+                      <span>Details</span>
                     </button>
                   </td>
                 </tr>
