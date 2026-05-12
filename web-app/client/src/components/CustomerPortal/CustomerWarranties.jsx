@@ -244,8 +244,7 @@ const CustomerWarranties = () => {
             </table>
           </div>
         )}
-      </div>
-    </div>
+
 
       {/* Details Modal */}
       {selectedWarranty && (
@@ -404,7 +403,8 @@ const CustomerWarranties = () => {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
-  );
+  </div>
+);
 };
 
 export default CustomerWarranties;

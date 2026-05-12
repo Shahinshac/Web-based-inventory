@@ -180,7 +180,7 @@ export default function InvoicesList({
               key={invoice.id}
               invoice={invoice}
               onView={() => setSelectedInvoice(invoice)}
-              onDelete={canDelete() ? () => handleDeleteClick(invoice) : null}
+              onDelete={canDelete ? () => handleDeleteClick(invoice) : null}
               onExport={onExportPDF}
               onShare={onShareWhatsApp}
             />

@@ -271,8 +271,7 @@ const CustomerEMI = () => {
             ))}
           </div>
         )}
-      </div>
-    </div>
+
 
       {/* Payment Modal */}
       {payingInstallment && (
@@ -360,7 +359,8 @@ const CustomerEMI = () => {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
-  );
+  </div>
+);
 };
 
 export default CustomerEMI;
