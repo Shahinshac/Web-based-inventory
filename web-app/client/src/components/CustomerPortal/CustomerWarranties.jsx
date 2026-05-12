@@ -439,8 +439,7 @@ const CustomerWarranties = () => {
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
       `}</style>
     </div>
-  </div>
-);
+  );
 };
 
 export default CustomerWarranties;
