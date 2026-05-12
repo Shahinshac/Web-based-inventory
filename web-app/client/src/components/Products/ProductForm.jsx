@@ -217,8 +217,21 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 label={`Base Price (Excl. GST) (₹)`}
                 type="number"
                 value={basePrice > 0 ? basePrice.toFixed(2) : ''}
-                readOnly
+                onChange={(e) => {
+                  const newBase = parseFloat(e.target.value) || 0;
+                  const currentGstRate = (formData.gstPercent || 0) / 100;
+                  const cp = parseFloat(formData.costPrice) || 0;
+                  const newFinal = newBase * (1 + currentGstRate);
+                  const newProfit = newBase - cp;
+                  
+                  setFormData(prev => ({
+                    ...prev,
+                    price: Math.round(newFinal * 100) / 100,
+                    companyProfit: Math.round(newProfit * 100) / 100
+                  }));
+                }}
                 placeholder="0.00"
+                step="0.01"
                 helperText="CP + Profit (Excl. GST)"
               />
             </div>
