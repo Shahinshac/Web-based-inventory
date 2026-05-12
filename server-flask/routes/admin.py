@@ -259,8 +259,8 @@ def get_all_emi_plans():
         db = get_db()
         
         # Fallback Sync: Find bills with EMI that don't have a plan record yet
-        # (This helps populate the list with historical data)
-        emi_bills = db.bills.find({"paymentMode": "emi"})
+        # (Using case-insensitive regex to match 'EMI', 'emi', etc.)
+        emi_bills = db.bills.find({"paymentMode": {"$regex": "^emi$", "$options": "i"}})
         for bill in emi_bills:
             exists = db.emi_plans.find_one({"billId": bill["_id"]})
             if not exists:

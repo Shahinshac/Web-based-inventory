@@ -42,6 +42,17 @@ def get_all_warranties():
             renewal_price = 0
             if prod_id_str in product_map:
                 renewal_price = product_map[prod_id_str].get('warrantyRenewalPrice', 0)
+            elif w.get('productName'):
+                # Fallback: Find by name if productId is missing (for old records)
+                prod_name = w.get('productName')
+                # Find first product with this name in our map
+                for p in product_map.values():
+                    if p.get('name') == prod_name:
+                        renewal_price = p.get('warrantyRenewalPrice', 0)
+                        break
+            # Final Fallback: If still 0, check w.get('renewalPrice')
+            if renewal_price == 0:
+                renewal_price = w.get('renewalPrice', 0)
             
             warranties_list.append({
                 "_id": str(w['_id']),

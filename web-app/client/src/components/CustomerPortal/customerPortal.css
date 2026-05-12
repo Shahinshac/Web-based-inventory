@@ -448,3 +448,45 @@
   from { opacity: 0; }
   to { opacity: 1; }
 }
+
+/* Action Buttons */
+.portal-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+}
+
+.portal-btn span {
+  white-space: nowrap;
+}
+
+.portal-btn.renew-btn {
+  background: #6366f1 !important;
+  color: white !important;
+  box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
+}
+
+.portal-btn.renew-btn:hover {
+  background: #4f46e5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+}
+
+.portal-btn.details-btn {
+  background: #f1f5f9 !important;
+  color: #475569 !important;
+  border: 1px solid #e2e8f0 !important;
+}
+
+.portal-btn.details-btn:hover {
+  background: #e2e8f0 !important;
+  color: #1e293b !important;
+  transform: translateY(-2px);
+}

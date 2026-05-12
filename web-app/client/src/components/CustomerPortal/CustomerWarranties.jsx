@@ -75,7 +75,7 @@ const CustomerWarranties = () => {
 
     try {
       setIsLinking(true);
-      const response = await apiPatch('/api/customer-portal/warranties/link', { invoiceNumber: linkInvoiceNo }, 'POST');
+      const response = await apiPost('/api/customer-portal/warranties/link', { invoiceNumber: linkInvoiceNo });
       await loadWarranties(1);
       setLinkSuccess(response.message || 'Warranty linked successfully!');
       setLinkInvoiceNo('');

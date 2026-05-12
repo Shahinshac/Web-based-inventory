@@ -74,7 +74,7 @@ const WarrantyTracker = () => {
     
     if (window.confirm(confirmMsg)) {
       try {
-        const response = await apiPatch(`/api/warranties/${warranty._id}/renew`, { paymentMethod: 'Cash' }, 'POST');
+        const response = await apiPost(`/api/warranties/${warranty._id}/renew`, { paymentMethod: 'Cash' });
         alert(response.message || 'Warranty renewed successfully');
         fetchWarranties(); // Refresh list to see new expiry
       } catch (err) {

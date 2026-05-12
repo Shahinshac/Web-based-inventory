@@ -180,6 +180,30 @@
 .status-expired { background: #fee2e2; color: #991b1b; }
 .status-expiring-soon { background: #fef3c7; color: #92400e; }
 
+.claim-btn {
+  background: #10b981 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.renew-btn {
+  background: #6366f1 !important;
+  color: white !important;
+  border: none !important;
+}
+
+.claim-btn:hover {
+  background: #059669 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+}
+
+.renew-btn:hover {
+  background: #4f46e5 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(99, 102, 241, 0.3);
+}
+
 .action-group {
   display: flex;
   gap: 8px;
