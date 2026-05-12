@@ -42,92 +42,118 @@ const AdminApprovals = () => {
 
   return (
     <div className="admin-approvals">
-      <header className="page-header">
-        <h1><Icon name="check-circle" size={24} /> Payment Approvals</h1>
-        <div className="header-actions">
-          <select value={filter} onChange={(e) => setFilter(e.target.value)} className="status-select">
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-            <option value="all">All</option>
-          </select>
+      <div className="page-header-premium">
+        <div className="header-title-section">
+          <h1><Icon name="check-circle" size={28} stroke="#6366f1" /> Payment Requests</h1>
+          <p>Review and process warranty renewals and EMI installments</p>
         </div>
-      </header>
+        
+        <div className="approval-tabs">
+          {['pending', 'approved', 'rejected', 'all'].map((status) => (
+            <button
+              key={status}
+              className={`tab-btn ${filter === status ? 'active' : ''}`}
+              onClick={() => setFilter(status)}
+            >
+              {status.charAt(0).toUpperCase() + status.slice(1)}
+              {status === 'pending' && requests.length > 0 && filter === 'pending' && (
+                <span className="count-badge">{requests.length}</span>
+              )}
+            </button>
+          ))}
+        </div>
+      </div>
 
       <div className="approvals-content">
         {loading ? (
-          <div className="loading-state">Loading requests...</div>
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Fetching requests...</p>
+          </div>
         ) : requests.length === 0 ? (
-          <div className="empty-state">No requests found</div>
+          <div className="empty-approvals">
+            <Icon name="inbox" size={64} stroke="#cbd5e1" />
+            <h3>No {filter} requests</h3>
+            <p>All caught up! No payment requests are waiting for your action.</p>
+          </div>
         ) : (
           <div className="approvals-grid">
             {requests.map(req => (
-              <div key={req._id} className={`approval-card ${req.status}`}>
-                <div className="card-header">
-                  <span className={`type-badge ${req.type}`}>
-                    {req.type === 'warranty_renewal' ? 'Warranty Renewal' : 'EMI Payment'}
+              <div key={req._id} className={`approval-card-premium ${req.status}`}>
+                <div className="card-status-bar"></div>
+                <div className="card-top">
+                  <div className={`type-tag ${req.type}`}>
+                    <Icon name={req.type === 'warranty_renewal' ? 'shield' : 'credit-card'} size={14} />
+                    {req.type === 'warranty_renewal' ? 'Warranty' : 'EMI'}
+                  </div>
+                  <span className={`status-text ${req.status}`}>
+                    {req.status.toUpperCase()}
                   </span>
-                  <span className={`status-badge ${req.status}`}>{req.status}</span>
                 </div>
                 
-                <div className="card-body">
-                  <div className="info-row">
-                    <label>Customer:</label>
-                    <span>{req.customerName} ({req.customerPhone})</span>
+                <div className="card-main">
+                  <div className="customer-info">
+                    <h3>{req.customerName}</h3>
+                    <p><Icon name="phone" size={14} /> {req.customerPhone}</p>
                   </div>
-                  <div className="info-row">
-                    <label>Amount:</label>
-                    <span className="amount">₹{req.amount}</span>
+                  
+                  <div className="amount-display">
+                    <span className="label">REQUESTED AMOUNT</span>
+                    <span className="value">₹{Number(req.amount).toLocaleString()}</span>
                   </div>
-                  <div className="info-row">
-                    <label>Method:</label>
-                    <span>{req.paymentMethod}</span>
-                  </div>
-                  {req.paymentDetails?.transactionId && (
-                    <div className="info-row">
-                      <label>Txn ID:</label>
-                      <code>{req.paymentDetails.transactionId}</code>
+
+                  <div className="details-box">
+                    <div className="detail-item">
+                      <span className="label">Method</span>
+                      <span className="val">{req.paymentMethod}</span>
                     </div>
-                  )}
-                  <div className="info-row">
-                    <label>Date:</label>
-                    <span>{formatDateOnlyIST(req.createdAt)}</span>
+                    {req.paymentDetails?.transactionId && (
+                      <div className="detail-item">
+                        <span className="label">Ref ID</span>
+                        <span className="val truncate">{req.paymentDetails.transactionId}</span>
+                      </div>
+                    )}
+                    <div className="detail-item">
+                      <span className="label">Submitted</span>
+                      <span className="val">{formatDateOnlyIST(req.createdAt)}</span>
+                    </div>
+                    {req.type === 'warranty_renewal' && (
+                      <div className="detail-item">
+                        <span className="label">Extension</span>
+                        <span className="val">{req.data?.years} Year(s)</span>
+                      </div>
+                    )}
+                    {req.type === 'emi_payment' && (
+                      <div className="detail-item">
+                        <span className="label">Inst. No</span>
+                        <span className="val">#{req.data?.installmentNo}</span>
+                      </div>
+                    )}
                   </div>
-                  {req.type === 'warranty_renewal' && (
-                    <div className="info-row">
-                      <label>Period:</label>
-                      <span>{req.data?.years} Year(s)</span>
-                    </div>
-                  )}
-                  {req.type === 'emi_payment' && (
-                    <div className="info-row">
-                      <label>Installment:</label>
-                      <span>#{req.data?.installmentNo}</span>
-                    </div>
-                  )}
                 </div>
 
                 {req.status === 'pending' && (
-                  <div className="card-actions">
+                  <div className="card-footer-actions">
                     <button 
-                      className="approve-btn" 
-                      onClick={() => handleAction(req._id, 'approved')}
-                      disabled={processingId === req._id}
-                    >
-                      {processingId === req._id ? '...' : 'Approve'}
-                    </button>
-                    <button 
-                      className="reject-btn" 
+                      className="btn-reject" 
                       onClick={() => handleAction(req._id, 'rejected')}
                       disabled={processingId === req._id}
                     >
                       Reject
                     </button>
+                    <button 
+                      className="btn-approve" 
+                      onClick={() => handleAction(req._id, 'approved')}
+                      disabled={processingId === req._id}
+                    >
+                      {processingId === req._id ? 'Processing...' : 'Approve Payment'}
+                    </button>
                   </div>
                 )}
+
                 {req.adminNotes && (
-                  <div className="admin-notes">
-                    <label>Admin Notes:</label>
+                  <div className="admin-notes-section">
+                    <span className="label">Admin Feedback</span>
                     <p>{req.adminNotes}</p>
                   </div>
                 )}
@@ -138,30 +164,229 @@ const AdminApprovals = () => {
       </div>
 
       <style jsx>{`
-        .admin-approvals { padding: 2rem; }
-        .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-        .status-select { padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid #e2e8f0; }
-        .approvals-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)); gap: 1.5rem; }
-        .approval-card { background: white; border-radius: 12px; border: 1px solid #e2e8f0; padding: 1.5rem; transition: all 0.2s; }
-        .approval-card:hover { transform: translateY(-4px); box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-        .type-badge { font-size: 0.75rem; font-weight: 700; padding: 4px 8px; border-radius: 4px; text-transform: uppercase; }
-        .type-badge.warranty_renewal { background: #e0e7ff; color: #4338ca; }
-        .type-badge.emi_payment { background: #fef3c7; color: #92400e; }
-        .status-badge { font-size: 0.7rem; font-weight: 700; text-transform: uppercase; }
-        .status-badge.pending { color: #f59e0b; }
-        .status-badge.approved { color: #10b981; }
-        .status-badge.rejected { color: #ef4444; }
-        .info-row { display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.85rem; }
-        .info-row label { color: #64748b; }
-        .amount { font-weight: 800; color: #1e293b; font-size: 1rem; }
-        .card-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-top: 1.5rem; }
-        .approve-btn { background: #10b981; color: white; border: none; padding: 0.75rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .reject-btn { background: #f1f5f9; color: #ef4444; border: 1px solid #fee2e2; padding: 0.75rem; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .admin-notes { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed #e2e8f0; }
-        .admin-notes label { font-size: 0.7rem; font-weight: 700; color: #94a3b8; text-transform: uppercase; }
-        .admin-notes p { margin: 4px 0 0; font-size: 0.8rem; color: #475569; }
+        .admin-approvals { padding: 2rem; background: #f8fafc; min-height: 100vh; }
+        
+        .page-header-premium { 
+          margin-bottom: 2.5rem; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 1.5rem;
+        }
+        
+        .header-title-section h1 { 
+          font-size: 1.875rem; 
+          font-weight: 800; 
+          color: #1e293b; 
+          display: flex; 
+          align-items: center; 
+          gap: 0.75rem;
+          margin: 0 0 0.5rem 0;
+        }
+        
+        .header-title-section p { color: #64748b; margin: 0; }
+
+        .approval-tabs {
+          display: flex;
+          background: white;
+          padding: 6px;
+          border-radius: 12px;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+          width: fit-content;
+          border: 1px solid #e2e8f0;
+        }
+
+        .tab-btn {
+          padding: 0.625rem 1.25rem;
+          border-radius: 8px;
+          border: none;
+          background: transparent;
+          color: #64748b;
+          font-weight: 600;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+
+        .tab-btn:hover { color: #1e293b; background: #f1f5f9; }
+        
+        .tab-btn.active {
+          background: #6366f1;
+          color: white;
+          box-shadow: 0 4px 6px -1px rgba(99, 102, 241, 0.2);
+        }
+
+        .count-badge {
+          background: rgba(255, 255, 255, 0.2);
+          color: white;
+          font-size: 0.7rem;
+          padding: 2px 6px;
+          border-radius: 10px;
+          font-weight: 700;
+        }
+
+        .loading-container, .empty-approvals {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          padding: 5rem 0;
+          text-align: center;
+        }
+
+        .empty-approvals h3 { margin: 1rem 0 0.5rem 0; color: #1e293b; }
+        .empty-approvals p { color: #64748b; }
+
+        .approvals-grid { 
+          display: grid; 
+          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); 
+          gap: 1.5rem; 
+        }
+
+        .approval-card-premium {
+          background: white;
+          border-radius: 16px;
+          border: 1px solid #e2e8f0;
+          overflow: hidden;
+          position: relative;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+        }
+
+        .approval-card-premium:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .card-status-bar { height: 4px; width: 100%; background: #e2e8f0; }
+        .pending .card-status-bar { background: #f59e0b; }
+        .approved .card-status-bar { background: #10b981; }
+        .rejected .card-status-bar { background: #ef4444; }
+
+        .card-top { 
+          padding: 1.25rem 1.25rem 0.75rem; 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+        }
+
+        .type-tag {
+          padding: 4px 10px;
+          border-radius: 20px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          text-transform: uppercase;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .type-tag.warranty_renewal { background: #e0e7ff; color: #4338ca; }
+        .type-tag.emi_payment { background: #fef3c7; color: #92400e; }
+
+        .status-text { font-size: 0.65rem; font-weight: 800; letter-spacing: 0.05em; }
+        .status-text.pending { color: #f59e0b; }
+        .status-text.approved { color: #10b981; }
+        .status-text.rejected { color: #ef4444; }
+
+        .card-main { padding: 0 1.25rem 1.25rem; flex: 1; }
+        
+        .customer-info h3 { margin: 0 0 4px 0; font-size: 1.1rem; color: #1e293b; }
+        .customer-info p { 
+          margin: 0; 
+          color: #64748b; 
+          font-size: 0.85rem; 
+          display: flex; 
+          align-items: center; 
+          gap: 4px; 
+        }
+
+        .amount-display { margin-top: 1.25rem; }
+        .amount-display .label { display: block; font-size: 0.65rem; font-weight: 700; color: #94a3b8; letter-spacing: 0.05em; }
+        .amount-display .value { font-size: 1.5rem; font-weight: 800; color: #1e293b; }
+
+        .details-box {
+          margin-top: 1.25rem;
+          background: #f8fafc;
+          border-radius: 12px;
+          padding: 1rem;
+          display: flex;
+          flex-direction: column;
+          gap: 0.75rem;
+        }
+
+        .detail-item { display: flex; justify-content: space-between; font-size: 0.8rem; }
+        .detail-item .label { color: #94a3b8; }
+        .detail-item .val { font-weight: 600; color: #475569; }
+        .truncate { max-width: 120px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .card-footer-actions {
+          padding: 1rem 1.25rem 1.25rem;
+          display: grid;
+          grid-template-columns: 1fr 2fr;
+          gap: 0.75rem;
+          background: #fcfcfd;
+          border-top: 1px solid #f1f5f9;
+        }
+
+        .btn-approve {
+          background: #6366f1;
+          color: white;
+          border: none;
+          padding: 0.75rem;
+          border-radius: 10px;
+          font-weight: 700;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .btn-approve:hover { background: #4f46e5; transform: scale(1.02); }
+        .btn-approve:active { transform: scale(0.98); }
+
+        .btn-reject {
+          background: white;
+          color: #ef4444;
+          border: 1px solid #fee2e2;
+          padding: 0.75rem;
+          border-radius: 10px;
+          font-weight: 700;
+          cursor: pointer;
+        }
+        
+        .btn-reject:hover { background: #fef2f2; }
+
+        .admin-notes-section {
+          padding: 1rem 1.25rem;
+          background: #fffbeb;
+          border-top: 1px solid #fef3c7;
+        }
+
+        .admin-notes-section .label { 
+          display: block; 
+          font-size: 0.65rem; 
+          font-weight: 700; 
+          color: #d97706; 
+          text-transform: uppercase;
+          margin-bottom: 4px;
+        }
+
+        .admin-notes-section p { margin: 0; font-size: 0.8rem; color: #92400e; font-style: italic; }
+
+        .spinner {
+          width: 40px;
+          height: 40px;
+          border: 4px solid #f1f5f9;
+          border-top: 4px solid #6366f1;
+          border-radius: 50%;
+          animation: spin 1s linear infinite;
+          margin: 0 auto 1rem;
+        }
+
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
       `}</style>
+    </div>
     </div>
   );
 };

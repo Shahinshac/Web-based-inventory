@@ -17,6 +17,8 @@ const EMITracker = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
 
+  const [selectedPlan, setSelectedPlan] = useState(null);
+
   useEffect(() => {
     fetchEMIPlans();
   }, []);
@@ -24,8 +26,6 @@ const EMITracker = () => {
   const fetchEMIPlans = async () => {
     try {
       setLoading(true);
-      // Re-using the admin-side audit logs or a dedicated EMI endpoint if exists
-      // If no dedicated admin EMI endpoint, we might need to create one or use existing ones
       const response = await apiGet('/api/admin/emi-plans'); 
       setEmiPlans(response.emiPlans || []);
       setFilteredPlans(response.emiPlans || []);
@@ -35,6 +35,14 @@ const EMITracker = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleViewDetails = (plan) => {
+    setSelectedPlan(plan);
+  };
+
+  const handleBackToList = () => {
+    setSelectedPlan(null);
   };
 
   useEffect(() => {
@@ -72,6 +80,95 @@ const EMITracker = () => {
     closed: emiPlans.filter(p => p.status === 'closed').length,
     defaulted: emiPlans.filter(p => p.status === 'defaulted').length
   };
+
+  if (selectedPlan) {
+    const progress = (selectedPlan.totalPaid / (selectedPlan.totalAmount || 1)) * 100;
+    
+    return (
+      <div className="emi-tracker-container">
+        <div className="emi-header" style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            <button onClick={handleBackToList} className="back-btn" style={{ background: '#f1f5f9', border: 'none', padding: '10px', borderRadius: '12px', cursor: 'pointer', color: '#64748b' }}>
+              <Icon name="arrow-left" size={20} />
+            </button>
+            <div>
+              <h2 className="section-title">EMI Details: #{selectedPlan.billNumber}</h2>
+              <p className="section-subtitle">Repayment schedule and payment history for {selectedPlan.customerName}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="emi-stats-grid">
+          <div className="emi-stat-card">
+            <div className="emi-stat-icon" style={{ background: '#e0e7ff', color: '#4f46e5' }}><Icon name="user" size={20} /></div>
+            <div className="emi-stat-info">
+              <span className="emi-stat-label">Customer</span>
+              <span className="emi-stat-value" style={{ fontSize: '1.1rem' }}>{selectedPlan.customerName}</span>
+              <span className="emi-stat-label">{selectedPlan.customerPhone}</span>
+            </div>
+          </div>
+          <div className="emi-stat-card">
+            <div className="emi-stat-icon" style={{ background: '#dcfce7', color: '#10b981' }}><Icon name="rupee" size={20} /></div>
+            <div className="emi-stat-info">
+              <span className="emi-stat-label">Total Amount</span>
+              <span className="emi-stat-value">{formatCurrency0(selectedPlan.totalAmount)}</span>
+              <span className="emi-stat-label">Paid: {formatCurrency0(selectedPlan.totalPaid)}</span>
+            </div>
+          </div>
+          <div className="emi-stat-card">
+            <div className="emi-stat-icon" style={{ background: '#fef3c7', color: '#d97706' }}><Icon name="calendar" size={20} /></div>
+            <div className="emi-stat-info">
+              <span className="emi-stat-label">Tenure</span>
+              <span className="emi-stat-value">{selectedPlan.tenure} Months</span>
+              <span className="emi-stat-label">EMI: {formatCurrency0(selectedPlan.monthlyEmi)}</span>
+            </div>
+          </div>
+          <div className="emi-stat-card">
+            <div className="emi-stat-icon" style={{ background: '#fee2e2', color: '#ef4444' }}><Icon name="activity" size={20} /></div>
+            <div className="emi-stat-info">
+              <span className="emi-stat-label">Progress</span>
+              <span className="emi-stat-value">{Math.round(progress)}%</span>
+              <div className="progress-bar-mini" style={{ width: '100%', marginTop: '8px' }}>
+                <div className="progress-fill" style={{ width: `${progress}%`, height: '6px' }}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="emi-table-container" style={{ marginTop: '24px' }}>
+          <h3 style={{ padding: '20px', borderBottom: '1px solid #f1f5f9', margin: 0 }}>Repayment Schedule</h3>
+          <table className="emi-table">
+            <thead>
+              <tr>
+                <th>Inst #</th>
+                <th>Due Date</th>
+                <th>Amount</th>
+                <th>Paid Amount</th>
+                <th>Paid Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {(selectedPlan.installments || []).map(inst => (
+                <tr key={inst.installmentNo}>
+                  <td>{inst.installmentNo}</td>
+                  <td>{new Date(inst.dueDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</td>
+                  <td className="font-bold">{formatCurrency0(inst.amount)}</td>
+                  <td>{formatCurrency0(inst.paidAmount || 0)}</td>
+                  <td>{inst.paidDate ? new Date(inst.paidDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
+                  <td>
+                    <span className={`status-badge status-${inst.status?.toLowerCase()}`}>
+                      {inst.status}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="emi-tracker-container">
@@ -193,7 +290,7 @@ const EMITracker = () => {
                   <td>
                     <button 
                       className="action-btn" 
-                      onClick={() => window.alert('Redirecting to EMI details...')}
+                      onClick={() => handleViewDetails(plan)}
                       style={{ 
                         background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', 
                         color: 'white', 
