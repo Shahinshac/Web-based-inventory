@@ -188,9 +188,3 @@ const CustomerEMI = () => {
 };
 
 export default CustomerEMI;
->
-    </div>
-  );
-};
-
-export default CustomerEMI;
