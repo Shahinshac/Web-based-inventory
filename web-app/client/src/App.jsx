@@ -20,6 +20,7 @@ import ExportData from './components/ExportData/ExportData';
 import Dashboard from './components/Dashboard/Dashboard';
 import Toast from './components/Common/Toast';
 import AdminTickets from './components/Support/AdminTickets';
+import CustomerLogins from './components/CustomerLogins/CustomerLogins';
 import { useAuth } from './hooks/useAuth';
 import { formatTimestampIST } from './utils/dateFormatter';
 
@@ -376,7 +377,7 @@ Esc: Close modals/dialogs`;
         day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata'
       });
       const formattedTime = date.toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
+        hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata'
       });
 
       const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';
@@ -1346,6 +1347,12 @@ Esc: Close modals/dialogs`;
           return <div className="error-message">Admin access required</div>;
         }
         return <AdminSettings />;
+
+      case 'customer-logins':
+        if (!isAdmin) {
+          return <div className="error-message">Admin access required</div>;
+        }
+        return <CustomerLogins showNotification={showNotification} />;
 
       default:
         return <div>Page not found</div>;

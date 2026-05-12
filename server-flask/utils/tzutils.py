@@ -120,7 +120,7 @@ def format_ist_time(dt):
         return 'N/A'
 
     ist_dt = utc_to_ist(dt)
-    return ist_dt.strftime('%I:%M %p')
+    return ist_dt.strftime('%I:%M:%S %p')
 
 
 def format_ist_datetime(dt):

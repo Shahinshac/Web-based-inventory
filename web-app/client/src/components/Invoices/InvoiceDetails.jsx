@@ -16,6 +16,7 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
   const formattedTime = date.toLocaleTimeString('en-IN', {
     hour: '2-digit',
     minute: '2-digit',
+    second: '2-digit',
     hour12: true,
     timeZone: 'Asia/Kolkata'
   });

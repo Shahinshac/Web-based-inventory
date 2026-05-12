@@ -14,10 +14,12 @@ import logging
 import jwt
 from datetime import datetime, timedelta
 from flask import Blueprint, request, jsonify, current_app
+from bson import ObjectId
 
 from database import get_db
 from services.audit_service import log_audit
 from utils.tzutils import utc_now, to_iso_string
+from utils.auth_middleware import authenticate_token, require_admin
 
 logger = logging.getLogger(__name__)
 
@@ -183,3 +185,91 @@ def customer_change_password():
     except Exception as e:
         logger.error(f"Error changing customer password: {e}", exc_info=True)
         return jsonify({"error": "Failed to change password"}), 500
+
+
+# ── ADMIN CUSTOMER MANAGEMENT ───────────────────────────────────────────────
+
+@customer_auth_v2_bp.route('/admin/list', methods=['GET'])
+@authenticate_token
+@require_admin
+def admin_list_customers():
+    """List all customers with their login status (Admin only)."""
+    try:
+        db = get_db()
+        # Find all customers that have an email
+        customers = list(db.customers.find({"email": {"$exists": True, "$ne": ""}}))
+        
+        result = []
+        for c in customers:
+            result.append({
+                "id": str(c['_id']),
+                "name": c.get('name', 'N/A'),
+                "email": c.get('email'),
+                "phone": c.get('phone', 'N/A'),
+                "hasAccount": bool(c.get('accountPassword')),
+                "lastLogin": to_iso_string(c.get('lastLogin'))
+            })
+            
+        return jsonify(result)
+    except Exception as e:
+        logger.error(f"Error listing customer accounts: {e}")
+        return jsonify({"error": "Failed to list customers"}), 500
+
+
+@customer_auth_v2_bp.route('/admin/reset-password', methods=['POST'])
+@authenticate_token
+@require_admin
+def admin_reset_customer_password():
+    """Force reset a customer's password (Admin only)."""
+    data = request.get_json() or {}
+    customer_id = data.get('customerId')
+    new_password = data.get('newPassword')
+
+    if not customer_id or not new_password:
+        return jsonify({"error": "Customer ID and new password are required"}), 400
+    if len(new_password) < 6:
+        return jsonify({"error": "Password must be at least 6 characters"}), 400
+
+    try:
+        db = get_db()
+        hashed = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+        
+        res = db.customers.update_one(
+            {"_id": ObjectId(customer_id)},
+            {"$set": {"accountPassword": hashed}, "$inc": {"sessionVersion": 1}}
+        )
+
+        if res.matched_count == 0:
+            return jsonify({"error": "Customer not found"}), 404
+
+        return jsonify({"success": True, "message": "Customer password reset successfully"})
+    except Exception as e:
+        logger.error(f"Error resetting customer password: {e}")
+        return jsonify({"error": "Failed to reset password"}), 500
+
+
+@customer_auth_v2_bp.route('/admin/delete-account', methods=['POST'])
+@authenticate_token
+@require_admin
+def admin_delete_customer_account():
+    """Remove login capability for a customer (Admin only)."""
+    data = request.get_json() or {}
+    customer_id = data.get('customerId')
+
+    if not customer_id:
+        return jsonify({"error": "Customer ID is required"}), 400
+
+    try:
+        db = get_db()
+        res = db.customers.update_one(
+            {"_id": ObjectId(customer_id)},
+            {"$unset": {"accountPassword": ""}, "$inc": {"sessionVersion": 1}}
+        )
+
+        if res.matched_count == 0:
+            return jsonify({"error": "Customer not found"}), 404
+
+        return jsonify({"success": True, "message": "Customer login access removed"})
+    except Exception as e:
+        logger.error(f"Error deleting customer account: {e}")
+        return jsonify({"error": "Failed to remove account"}), 500

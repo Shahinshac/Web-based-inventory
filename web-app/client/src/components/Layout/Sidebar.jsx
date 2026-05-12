@@ -61,6 +61,7 @@ export default function Sidebar({
     { id: 'audit', label: 'Audit Logs', icon: 'activity', show: isAdmin },
     { id: 'exports', label: 'Exports', icon: 'download', show: isAdmin },
     { id: 'admin-settings', label: 'Admin Settings', icon: 'settings', show: isAdmin },
+    { id: 'customer-logins', label: 'Customer Logins', icon: 'key', show: isAdmin },
   ];
 
   return (
