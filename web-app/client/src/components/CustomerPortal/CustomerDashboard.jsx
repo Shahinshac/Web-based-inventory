@@ -153,9 +153,3 @@ const CustomerDashboard = ({ currentUser }) => {
 };
 
 export default CustomerDashboard;
-le>
-    </div>
-  );
-};
-
-export default CustomerDashboard;
