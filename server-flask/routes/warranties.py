@@ -17,15 +17,26 @@ def get_all_warranties():
     try:
         db = get_db()
         # Fetch all warranties, sorted by purchase date (newest first)
-        warranties_cursor = db.warranties.find().sort("startDate", -1).limit(500)
+        warranties_cursor = db.warranties.find().sort("startDate", -1).limit(1000)
+        
+        # Pre-fetch all customers to avoid N+1 queries (optimized approach)
+        customers_cursor = db.customers.find({}, {"name": 1})
+        customer_map = {str(c['_id']): c.get('name') for c in customers_cursor}
         
         warranties_list = []
         for w in warranties_cursor:
+            cust_id_str = str(w.get('customerId')) if w.get('customerId') else None
+            
+            # Use stored name or look up from our map
+            name = w.get('customerName')
+            if not name and cust_id_str in customer_map:
+                name = customer_map[cust_id_str]
+            
             warranties_list.append({
                 "_id": str(w['_id']),
                 "id": str(w['_id']),
-                "customerId": str(w.get('customerId')) if w.get('customerId') else None,
-                "customerName": w.get('customerName', 'N/A'),
+                "customerId": cust_id_str,
+                "customerName": name or 'N/A',
                 "customerPhone": w.get('customerPhone', 'N/A'),
                 "productName": w.get('productName', 'N/A'),
                 "serialNumber": w.get('serialNumber') or w.get('productSku', 'N/A'),
