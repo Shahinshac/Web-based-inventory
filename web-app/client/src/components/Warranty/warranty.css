@@ -181,25 +181,29 @@
 .status-expiring-soon { background: #fef3c7; color: #92400e; }
 
 .action-btn-mini {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  border: 1px solid #dbeafe;
-  background: #eff6ff;
-  color: #2563eb;
+  width: 36px !important;
+  height: 36px !important;
+  border-radius: 10px !important;
+  border: none !important;
+  background: #2563eb !important; /* Vivid Blue */
+  color: white !important;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(37, 99, 235, 0.3);
 }
 
 .action-btn-mini:hover {
-  background: #2563eb;
-  color: white;
-  border-color: #2563eb;
-  transform: scale(1.1);
-  box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);
+  background: #1d4ed8 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(37, 99, 235, 0.4);
+}
+
+.action-btn-mini svg {
+  stroke: white !important;
+  fill: none;
 }
 
 .warranties-grid {
