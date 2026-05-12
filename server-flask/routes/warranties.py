@@ -148,7 +148,9 @@ def renew_warranty(id):
         
         # Calculate new expiry: extend from current date if expired, or from expiry date if still active
         now = utc_now()
-        current_expiry = warranty.get('expiryDate')
+        from utils.tzutils import utc_from_iso
+        current_expiry = utc_from_iso(warranty.get('expiryDate'))
+        
         if not current_expiry or current_expiry < now:
             new_expiry = now + timedelta(days=30 * renewal_months)
         else:

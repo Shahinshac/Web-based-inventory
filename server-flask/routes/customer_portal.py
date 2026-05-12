@@ -1009,7 +1009,8 @@ def renew_warranty(warranty_id):
             return jsonify({"error": "Invalid renewal period (1-10 years only)"}), 400
 
         # Calculate new expiry
-        current_expiry = warranty.get('expiryDate', utc_now())
+        from utils.tzutils import utc_from_iso
+        current_expiry = utc_from_iso(warranty.get('expiryDate')) or utc_now()
         new_expiry = current_expiry + timedelta(days=365 * years)
         renewal_date = utc_now()
 
