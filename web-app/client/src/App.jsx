@@ -1115,16 +1115,27 @@ Esc: Close modals/dialogs`;
     }
   };
 
-  const deleteUser = async (userId) => {
-    if (!confirm('Are you sure you want to delete this user?')) return;
+  const deleteUser = async (userId, adminPassword) => {
     try {
-      const res = await fetch(API(`/api/users/${userId}`), { method: 'DELETE', headers: getAuthHeaders() });
+      const res = await fetch(API(`/api/users/${userId}`), { 
+        method: 'DELETE', 
+        headers: {
+          ...getAuthHeaders(),
+          'X-Admin-Password': adminPassword
+        } 
+      });
       if (res.ok) {
         showNotification('✅ User deleted successfully!', 'success');
         await fetchUsers();
+        return { success: true };
+      } else {
+        const err = await res.json();
+        showNotification(err.error || 'Failed to delete user', 'error');
+        return { success: false, error: err.error };
       }
     } catch (error) {
       showNotification('Failed to delete user', 'error');
+      return { success: false, error: 'Failed to delete user' };
     }
   };
 

@@ -165,7 +165,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
     }
   };
 
-  const isAdminOrManager = isAdmin || userRole === 'manager' || userRole === 'superadmin' || currentUser?.role === 'admin' || currentUser?.role === 'manager';
+  const isAdminOnly = isAdmin || userRole === 'superadmin' || currentUser?.role === 'admin';
 
   const handleDeleteClick = (id) => {
     setReturnToDeleteId(id);
@@ -305,7 +305,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
                 <th>Reason</th>
                 <th>Date</th>
                 <th>Processed By</th>
-                {isAdminOrManager && <th style={{ width: 60 }}>Actions</th>}
+                {isAdminOnly && <th style={{ width: 60 }}>Actions</th>}
               </tr>
             </thead>
             <tbody>
@@ -324,7 +324,7 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
                   <td><span className="table-reason">{ret.reason}</span></td>
                   <td>{ret.createdAt ? new Date(ret.createdAt).toLocaleDateString() : 'N/A'}</td>
                   <td>{ret.processedByUsername || 'N/A'}</td>
-                  {isAdminOrManager && (
+                  {isAdminOnly && (
                     <td>
                       <button
                         className="icon-btn icon-btn-danger"

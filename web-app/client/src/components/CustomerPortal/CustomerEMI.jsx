@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import PaymentQRModal from '../Common/PaymentQRModal';
 import { fetchCustomerEMIPlans, getEMIDetails, submitPaymentRequest } from '../../services/customerPortalService';
 import { formatDateOnlyIST, formatTimestampIST } from '../../utils/dateFormatter';
 
@@ -19,6 +20,7 @@ const CustomerEMI = () => {
   const [payingInstallment, setPayingInstallment] = useState(null);
   const [paymentData, setPaymentData] = useState({ method: 'UPI', details: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     loadEMIPlans(1);
@@ -281,6 +283,31 @@ const CustomerEMI = () => {
                 <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#6366f1' }}>{formatAmount(payingInstallment.amount)}</div>
               </div>
 
+              {paymentData.method === 'UPI' && (
+                <button
+                  type="button"
+                  onClick={() => setShowQR(true)}
+                  style={{
+                    width: '100%',
+                    marginBottom: '1rem',
+                    background: '#f0f9ff',
+                    color: '#0369a1',
+                    border: '1px dashed #0ea5e9',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Icon name="camera" size={18} />
+                  Scan QR to Pay
+                </button>
+              )}
+
               <div className="form-group" style={{ marginBottom: '1rem' }}>
                 <label>Payment Method</label>
                 <select 
@@ -317,6 +344,15 @@ const CustomerEMI = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showQR && payingInstallment && (
+        <PaymentQRModal
+          isOpen={showQR}
+          onClose={() => setShowQR(false)}
+          amount={payingInstallment.amount}
+          description={`EMI Payment - Inst #${payingInstallment.installmentNo}`}
+        />
       )}
 
       <style jsx>{`

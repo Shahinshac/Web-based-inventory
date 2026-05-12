@@ -3,6 +3,7 @@ import RoleSelector from './RoleSelector';
 import Icon from '../../Icon';
 import Button from '../Common/Button';
 import ConfirmDialog from '../Common/ConfirmDialog';
+import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import { normalizePhotoUrl } from '../../utils/api';
 
 export default function UserCard({ 
@@ -227,17 +228,18 @@ export default function UserCard({
         )}
       </div>
 
-      <ConfirmDialog 
+      <AdminConfirmDialog 
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        onConfirm={() => {
-          onDelete(user.id || user._id);
-          setShowDeleteConfirm(false);
+        onConfirm={async (password) => {
+          const result = await onDelete(user.id || user._id, password);
+          if (result?.success) {
+            setShowDeleteConfirm(false);
+          }
         }}
         title="Delete User"
         message={`Are you sure you want to delete user "${user.username}"? They will be immediately logged out.`}
         confirmText="Delete"
-        variant="danger"
       />
 
       <ConfirmDialog 

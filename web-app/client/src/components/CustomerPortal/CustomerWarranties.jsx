@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
+import PaymentQRModal from '../Common/PaymentQRModal';
 import { fetchCustomerWarranties, getWarrantyDetails, submitPaymentRequest, linkWarrantyByInvoice } from '../../services/customerPortalService';
 import { formatDateOnlyIST, formatTimestampIST } from '../../utils/dateFormatter';
 
@@ -22,6 +23,7 @@ const CustomerWarranties = () => {
   const [renewalWarranty, setRenewalWarranty] = useState(null);
   const [renewalData, setRenewalData] = useState({ years: 1, paymentMethod: 'UPI', details: '' });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showQR, setShowQR] = useState(false);
 
   useEffect(() => {
     loadWarranties(1);
@@ -330,6 +332,31 @@ const CustomerWarranties = () => {
                 </select>
               </div>
 
+              {renewalData.paymentMethod === 'UPI' && (
+                <button
+                  type="button"
+                  onClick={() => setShowQR(true)}
+                  style={{
+                    width: '100%',
+                    marginBottom: '1rem',
+                    background: '#f0f9ff',
+                    color: '#0369a1',
+                    border: '1px dashed #0ea5e9',
+                    padding: '0.75rem',
+                    borderRadius: '8px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <Icon name="camera" size={18} />
+                  Scan QR to Pay
+                </button>
+              )}
+
               <div className="form-group" style={{ marginBottom: '1rem' }}>
                 <label>Payment Method</label>
                 <select 
@@ -366,6 +393,15 @@ const CustomerWarranties = () => {
             </form>
           </div>
         </div>
+      )}
+
+      {showQR && renewalWarranty && (
+        <PaymentQRModal
+          isOpen={showQR}
+          onClose={() => setShowQR(false)}
+          amount={999 * renewalData.years}
+          description={`Warranty Renewal - ${renewalWarranty.productName} (${renewalData.years}y)`}
+        />
       )}
 
       <style jsx>{`
