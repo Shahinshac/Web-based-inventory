@@ -17,12 +17,12 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
 
   const tabs = [
-    { id: 'dashboard', label: 'Overview', icon: 'grid' },
-    { id: 'invoices', label: 'Billing', icon: 'file-text' },
-    { id: 'warranties', label: 'Security', icon: 'shield' },
-    { id: 'emi', label: 'Payments', icon: 'credit-card' },
-    { id: 'support', label: 'Support', icon: 'help-circle' },
-    { id: 'profile', label: 'Account', icon: 'user' }
+    { id: 'dashboard', label: 'Home', icon: 'grid' },
+    { id: 'invoices', label: 'Invoices', icon: 'file-text' },
+    { id: 'warranties', label: 'Warranties', icon: 'shield' },
+    { id: 'emi', label: 'EMI Plans', icon: 'credit-card' },
+    { id: 'support', label: 'Support Desk', icon: 'help-circle' },
+    { id: 'profile', label: 'My Profile', icon: 'user' }
   ];
 
   return (

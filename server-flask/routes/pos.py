@@ -225,6 +225,9 @@ def checkout():
             for i in bill["items"]:
                 db.warranties.insert_one({
                     "customerId": ObjectId(customer_id),
+                    "customerName": customer_name,
+                    "customerEmail": customer_email,
+                    "customerPhone": customer_phone,
                     "productName": i["productName"],
                     "productSku": i.get("hsnCode", "N/A"),
                     "warrantyType": "1 Year Standard",

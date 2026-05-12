@@ -96,6 +96,13 @@ const Login = ({ onLogin }) => {
       return;
     }
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(customerEmail)) {
+      setCustomerError('Please enter a valid email address');
+      return;
+    }
+
     setCustomerLoading(true);
     try {
       // Call the correct customer auth endpoint
@@ -142,6 +149,13 @@ const Login = ({ onLogin }) => {
 
     if (!registerEmail || !registerPassword || !registerConfirmPassword) {
       setRegisterError('Please fill in all fields');
+      return;
+    }
+
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerEmail)) {
+      setRegisterError('Please enter a valid email address');
       return;
     }
 

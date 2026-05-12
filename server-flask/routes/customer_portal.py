@@ -113,8 +113,10 @@ def get_dashboard():
         # Get latest purchases
         recent_invoices = sorted(invoices, key=lambda x: x.get('billDate', utc_now()), reverse=True)[:5]
 
-        # Get warranties
-        warranties = list(db.warranties.find(match_query))
+        # Get warranties - Robust matching including via bill numbers
+        bill_numbers = [inv.get('billNumber') for inv in invoices if inv.get('billNumber')]
+        warranty_match = {"$or": [match_query.copy(), {"invoiceNo": {"$in": bill_numbers}}]}
+        warranties = list(db.warranties.find(warranty_match))
         active_warranties = len([w for w in warranties if w.get('status') == 'active'])
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
@@ -847,9 +849,22 @@ def get_customer_warranties():
 
         db = get_db()
 
+        # Get all bill numbers for this customer to ensure we find all linked warranties
+        # (Fall back to invoice number matching if customerId is missing in warranty record)
+        customer_bills = list(db.bills.find(match_query, {"billNumber": 1}))
+        bill_numbers = [b.get('billNumber') for b in customer_bills if b.get('billNumber')]
+        
+        # Build expanded warranty match query
+        warranty_match = match_query.copy()
+        if bill_numbers:
+            if "$or" in warranty_match:
+                warranty_match["$or"].append({"invoiceNo": {"$in": bill_numbers}})
+            else:
+                warranty_match = {"$or": [warranty_match, {"invoiceNo": {"$in": bill_numbers}}]}
+
         # Count total and fetch paginated warranties
-        total = db.warranties.count_documents(match_query)
-        warranties_cursor = db.warranties.find(match_query).sort("expiryDate", 1).skip(skip).limit(limit)
+        total = db.warranties.count_documents(warranty_match)
+        warranties_cursor = db.warranties.find(warranty_match).sort("expiryDate", 1).skip(skip).limit(limit)
 
         logger.info(f"[get_customer_warranties] 🔎 Found {total} total warranties, returning {min(limit, total - skip)} on page {page}")
 
