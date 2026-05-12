@@ -81,6 +81,7 @@ def get_products():
             "barcode": p.get('barcode'),
             "photo": p.get('photo'),
             "photos": p.get('photos', []),
+            "warrantyRenewalPrice": float(p.get('warrantyRenewalPrice', 0) or 0),
             "profit": profit,
             "profitPercent": profit_percent
         })
@@ -101,6 +102,7 @@ def add_product():
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
     warranty_months = int(data.get('warrantyMonths') or 12)
+    warranty_renewal_price = float(data.get('warrantyRenewalPrice') or 0)
 
     user_id = g.user.get('userId')
     username = g.user.get('username', 'Unknown')
@@ -119,6 +121,7 @@ def add_product():
         "hsnCode": hsn_code,
         "minStock": min_stock,
         "warrantyMonths": warranty_months,
+        "warrantyRenewalPrice": warranty_renewal_price,
         "barcode": None,
         "photo": None,
         "photos": [],
@@ -151,6 +154,7 @@ def add_product():
         "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "warrantyMonths": warranty_months,
+        "warrantyRenewalPrice": warranty_renewal_price,
         "barcode": barcode_value
     })
 
@@ -204,6 +208,7 @@ def full_update_product(id):
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
     warranty_months = int(data.get('warrantyMonths') or 12)
+    warranty_renewal_price = float(data.get('warrantyRenewalPrice') or 0)
     barcode = data.get('barcode')
 
     user_id = g.user.get('userId')
@@ -223,6 +228,7 @@ def full_update_product(id):
         "hsnCode": hsn_code,
         "minStock": min_stock,
         "warrantyMonths": warranty_months,
+        "warrantyRenewalPrice": warranty_renewal_price,
         "lastModifiedBy": user_id,
         "lastModifiedByUsername": username,
         "lastModified": utc_now()

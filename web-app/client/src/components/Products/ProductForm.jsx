@@ -17,7 +17,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     minStock: 10,
     serialNo: '',
     barcode: '',
-    warrantyMonths: 12
+    warrantyMonths: 12,
+    warrantyRenewalPrice: 0
   });
 
   const [errors, setErrors] = useState({});
@@ -35,7 +36,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         minStock: product.minStock || 10,
         serialNo: product.serialNo || '',
         barcode: product.barcode || '',
-        warrantyMonths: product.warrantyMonths || 12
+        warrantyMonths: product.warrantyMonths || 12,
+        warrantyRenewalPrice: product.warrantyRenewalPrice || 0
       });
     }
   }, [product]);
@@ -382,7 +384,18 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                 onChange={(e) => handleChange('warrantyMonths', parseInt(e.target.value) || 12)}
                 min="0"
                 max="120"
-                helperText="Product warranty in months (e.g., 6, 12, 24)"
+                helperText="Product warranty in months"
+              />
+
+              <Input
+                label="Renewal Price (₹)"
+                type="number"
+                value={formData.warrantyRenewalPrice || ''}
+                onChange={(e) => handleChange('warrantyRenewalPrice', parseFloat(e.target.value) || 0)}
+                placeholder="0.00"
+                min="0"
+                step="0.01"
+                helperText="Price paid by customer ONLY during renewal"
               />
             </div>
           </div>

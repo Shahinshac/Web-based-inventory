@@ -235,6 +235,7 @@ def checkout():
                     warranty_type = f"{warranty_months // 12} Year{'s' if warranty_months > 12 else ''} Standard"
 
                 db.warranties.insert_one({
+                    "productId": ObjectId(i["productId"]) if i.get("productId") else None,
                     "customerId": ObjectId(customer_id),
                     "customerName": customer_name,
                     "customerEmail": customer_email,

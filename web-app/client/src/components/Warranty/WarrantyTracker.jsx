@@ -64,6 +64,23 @@ const WarrantyTracker = () => {
       ));
     } catch (err) {
       console.error('Failed to update warranty:', err);
+      alert('Failed to update warranty status');
+    }
+  };
+
+  const handleRenew = async (warranty) => {
+    const price = warranty.renewalPrice || 0;
+    const confirmMsg = `Renew warranty for "${warranty.productName}"?\n\nCustomer needs to pay: ₹${price}\n\nThis will extend the warranty and record the payment in reports.`;
+    
+    if (window.confirm(confirmMsg)) {
+      try {
+        const response = await apiPatch(`/api/warranties/${warranty._id}/renew`, { paymentMethod: 'Cash' }, 'POST');
+        alert(response.message || 'Warranty renewed successfully');
+        fetchWarranties(); // Refresh list to see new expiry
+      } catch (err) {
+        console.error('Failed to renew warranty:', err);
+        alert(err.message || 'Failed to renew warranty');
+      }
     }
   };
 
@@ -205,15 +222,18 @@ const WarrantyTracker = () => {
                   <td>
                     <div className="action-group">
                       <button 
-                        className="action-btn-mini claim-btn" 
+                        className={`action-btn-mini claim-btn ${w.status === 'claimed' ? 'disabled' : ''}`} 
                         onClick={() => handleStatusUpdate(w._id, 'claimed')}
+                        disabled={w.status === 'claimed'}
+                        title={w.status === 'claimed' ? "Already Claimed" : "Claim Warranty"}
                       >
                         <Icon name="check" size={14} />
                         <span>Claim</span>
                       </button>
                       <button 
                         className="action-btn-mini renew-btn" 
-                        onClick={() => handleStatusUpdate(w._id, 'active')}
+                        onClick={() => handleRenew(w)}
+                        title="Renew Warranty"
                       >
                         <Icon name="refresh-cw" size={14} />
                         <span>Renew</span>
