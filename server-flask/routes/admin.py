@@ -333,32 +333,40 @@ def get_all_emi_plans():
         now = utc_now()
         
         for p in plans_cursor:
-            # Sync status on the fly to ensure accuracy
-            _sync_emi_plan_status(p, now=now)
-            
-            installments = p.get('installments', [])
-            total_paid = sum(safe_float(inst.get('paidAmount', 0)) for inst in installments)
-            
-            plans_list.append({
-                "id": str(p['_id']),
-                "billNumber": p.get('billNumber') or "N/A",
-                "customerId": str(p.get('customerId')) if p.get('customerId') else None,
-                "customerName": p.get('customerName', 'N/A'),
-                "customerPhone": p.get('customerPhone', 'N/A'),
-                "totalAmount": p.get('totalAmount', 0),
-                "principalAmount": p.get('principalAmount', 0),
-                "downPayment": p.get('downPayment', 0),
-                "tenure": p.get('tenure', 0),
-                "monthlyEmi": p.get('monthlyEmi', 0),
-                "totalPaid": total_paid,
-                "status": p.get('status', 'active'),
-                "createdAt": to_iso_string(p.get('createdAt'))
-            })
+            try:
+                # Sync status on the fly to ensure accuracy
+                _sync_emi_plan_status(p, now=now)
+                
+                installments = p.get('installments', [])
+                total_paid = sum(safe_float(inst.get('paidAmount', 0)) for inst in installments)
+                
+                plans_list.append({
+                    "id": str(p['_id']),
+                    "billNumber": p.get('billNumber') or "N/A",
+                    "customerId": str(p.get('customerId')) if p.get('customerId') else None,
+                    "customerName": p.get('customerName', 'N/A'),
+                    "customerPhone": p.get('customerPhone', 'N/A'),
+                    "totalAmount": safe_float(p.get('totalAmount', 0)),
+                    "principalAmount": safe_float(p.get('principalAmount', 0)),
+                    "downPayment": safe_float(p.get('downPayment', 0)),
+                    "tenure": int(p.get('tenure', 0) or 0),
+                    "monthlyEmi": safe_float(p.get('monthlyEmi', 0)),
+                    "totalPaid": total_paid,
+                    "status": p.get('status', 'active'),
+                    "createdAt": to_iso_string(p.get('createdAt'))
+                })
+            except Exception as plan_err:
+                logger.warning(f"Error processing EMI plan {p.get('_id')}: {plan_err}")
+                continue
             
         return jsonify({"success": True, "emiPlans": plans_list}), 200
     except Exception as e:
         logger.error(f"Error fetching EMI plans: {str(e)}", exc_info=True)
-        return jsonify({"error": "Failed to fetch EMI plans", "message": str(e)}), 500
+        return jsonify({
+            "error": "Failed to fetch EMI plans", 
+            "message": str(e),
+            "emiPlans": []
+        }), 500
 
 
 @admin_bp.route('/database-stats', methods=['GET'])

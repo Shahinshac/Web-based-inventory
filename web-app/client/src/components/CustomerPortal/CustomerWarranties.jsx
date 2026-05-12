@@ -173,21 +173,25 @@ const CustomerWarranties = () => {
                       </div>
                     </td>
                     <td>{getStatusBadge(warranty.status)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      {warranty.status === 'expired' ? (
-                        <button 
-                          className="portal-btn renew-btn" 
-                          onClick={() => handleRenew(warranty.id)}
-                        >
-                          RENEW PLAN
-                        </button>
-                      ) : (
-                        <button 
-                          className="portal-btn details-btn"
-                        >
-                          VIEW DETAILS
-                        </button>
-                      )}
+                    <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                      <button 
+                        className="portal-btn renew-btn" 
+                        onClick={() => handleRenew(warranty.id)}
+                        style={{ 
+                          background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                          opacity: 1,
+                          display: 'flex'
+                        }}
+                      >
+                        {warranty.status === 'expired' ? 'RENEW EXPIRED' : 'RENEW EARLY'}
+                      </button>
+                      <button 
+                        className="portal-btn details-btn"
+                        style={{ display: 'flex' }}
+                        onClick={() => window.alert('Details view coming soon in the next update!')}
+                      >
+                        DETAILS
+                      </button>
                     </td>
                   </tr>
                 ))}

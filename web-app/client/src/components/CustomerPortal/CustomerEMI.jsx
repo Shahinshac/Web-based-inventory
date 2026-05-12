@@ -147,7 +147,7 @@ const CustomerEMI = () => {
                     <td>{formatDateOnlyIST(inst.dueDate)}</td>
                     <td style={{ fontWeight: 600 }}>{formatAmount(inst.amount)}</td>
                     <td>
-                      <span className={`badge ${inst.status === 'paid' ? 'badge-success' : 'badge-warning'}`}>
+                      <span className={`badge ${inst.status?.toLowerCase() === 'completed' || inst.status?.toLowerCase() === 'paid' ? 'badge-success' : inst.status?.toLowerCase() === 'overdue' ? 'badge-danger' : 'badge-warning'}`}>
                         {inst.status}
                       </span>
                     </td>

@@ -769,112 +769,17 @@ def download_invoice_pdf(invoice_id):
 
 # ==================== EMI ====================
 
+# Redirected to unified function below
 @customer_portal_bp.route('/emi-plans', methods=['GET'])
 @authenticate_token
-def get_customer_emi_plans():
-    """Get all EMI plans for current customer"""
-    try:
-        customer = get_current_customer()
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
-
-        match_query = get_customer_match_query(customer)
-        
-        # Also include plans linked by bill numbers belonging to this customer
-        db = get_db()
-        customer_bills = list(db.bills.find(match_query, {"billNumber": 1}))
-        bill_numbers = [b.get('billNumber') for b in customer_bills if b.get('billNumber')]
-        
-        emi_match = match_query.copy()
-        if bill_numbers:
-            if "$or" in emi_match:
-                emi_match["$or"].append({"billNumber": {"$in": bill_numbers}})
-            else:
-                emi_match = {"$or": [emi_match, {"billNumber": {"$in": bill_numbers}}]}
-
-        # Pagination
-        page = max(1, int(request.args.get('page', 1)))
-        limit = min(int(request.args.get('limit', 20)), 100)
-        skip = (page - 1) * limit
-
-        emi_plans_cursor = db.emi_plans.find(emi_match).sort("createdAt", -1).skip(skip).limit(limit)
-        total = db.emi_plans.count_documents(emi_match)
-
-        emi_plans = []
-        for plan in emi_plans_cursor:
-            installments = plan.get('installments', [])
-            total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
-            
-            emi_plans.append({
-                "id": str(plan['_id']),
-                "billNumber": plan.get('billNumber', 'N/A'),
-                "totalAmount": float(plan.get('totalAmount', 0)),
-                "principalAmount": float(plan.get('principalAmount', 0)),
-                "monthlyEmi": float(plan.get('monthlyEmi', 0)),
-                "tenure": int(plan.get('tenure', 0)),
-                "totalPaid": float(total_paid),
-                "status": plan.get('status', 'active'),
-                "createdAt": to_iso_string(plan.get('createdAt'))
-            })
-
-        return jsonify({
-            "emiPlans": emi_plans,
-            "pagination": {
-                "page": page,
-                "limit": limit,
-                "total": total,
-                "pages": (total + limit - 1) // limit
-            }
-        })
-
-    except Exception as e:
-        logger.error(f"Customer EMI fetch error: {e}")
-        return jsonify({"error": "Failed to fetch EMI plans"}), 500
+def get_customer_emi_plans_legacy():
+    return get_customer_emi_plans()
 
 @customer_portal_bp.route('/emi-plans/<emi_id>', methods=['GET'])
 @authenticate_token
-def get_customer_emi_details(emi_id):
-    """Get detailed installment schedule for an EMI plan"""
-    try:
-        customer = get_current_customer()
-        if not customer:
-            return jsonify({"error": "Customer not found"}), 404
+def get_customer_emi_details_legacy(emi_id):
+    return get_emi_details(emi_id)
 
-        db = get_db()
-        plan = db.emi_plans.find_one({"_id": ObjectId(emi_id)})
-        
-        if not plan:
-            return jsonify({"error": "EMI plan not found"}), 404
-
-        # Verify ownership (simplified check - you might want to use get_customer_match_query)
-        # But for details, we usually have a direct link
-        
-        installments = plan.get('installments', [])
-        total_paid = sum(inst.get('paidAmount', 0) for inst in installments)
-
-        return jsonify({
-            "id": str(plan['_id']),
-            "billNumber": plan.get('billNumber'),
-            "totalAmount": float(plan.get('totalAmount', 0)),
-            "principalAmount": float(plan.get('principalAmount', 0)),
-            "monthlyEmi": float(plan.get('monthlyEmi', 0)),
-            "tenure": int(plan.get('tenure', 0)),
-            "totalPaid": float(total_paid),
-            "status": plan.get('status', 'active'),
-            "installments": [
-                {
-                    "installmentNo": inst.get('installmentNo'),
-                    "dueDate": to_iso_string(inst.get('dueDate')),
-                    "amount": float(inst.get('amount', 0)),
-                    "status": inst.get('status', 'pending'),
-                    "paidDate": to_iso_string(inst.get('paidDate')) if inst.get('paidDate') else None
-                }
-                for inst in installments
-            ]
-        })
-    except Exception as e:
-        logger.error(f"Customer EMI details error: {e}")
-        return jsonify({"error": "Failed to fetch EMI details"}), 500
 
 # ==================== PROFILE ====================
 
@@ -1201,7 +1106,7 @@ def link_warranty():
 @customer_portal_bp.route('/emi', methods=['GET'])
 @authenticate_token
 def get_customer_emi_plans():
-    """Get all EMI plans for current customer with pagination"""
+    """Get all EMI plans for current customer with pagination (Unified)"""
     try:
         customer = get_current_customer()
         if not customer:
@@ -1211,16 +1116,26 @@ def get_customer_emi_plans():
         customer_id = customer['_id']
         match_query = get_customer_match_query(customer)
 
+        # Also include plans linked by bill numbers belonging to this customer
+        db = get_db()
+        customer_bills = list(db.bills.find(match_query, {"billNumber": 1}))
+        bill_numbers = [b.get('billNumber') for b in customer_bills if b.get('billNumber')]
+        
+        emi_match = match_query.copy()
+        if bill_numbers:
+            if "$or" in emi_match:
+                emi_match["$or"].append({"billNumber": {"$in": bill_numbers}})
+            else:
+                emi_match = {"$or": [emi_match, {"billNumber": {"$in": bill_numbers}}]}
+
         # Pagination
         page = max(1, int(request.args.get('page', 1)))
         limit = min(int(request.args.get('limit', 20)), 100)
         skip = (page - 1) * limit
 
-        db = get_db()
-
         # Count total and fetch paginated EMI plans
-        total = db.emi_plans.count_documents(match_query)
-        emi_cursor = db.emi_plans.find(match_query).sort("createdAt", -1).skip(skip).limit(limit)
+        total = db.emi_plans.count_documents(emi_match)
+        emi_cursor = db.emi_plans.find(emi_match).sort("createdAt", -1).skip(skip).limit(limit)
 
         logger.info(f"[get_customer_emi_plans] 🔎 Found {total} total EMI plans, returning {min(limit, total - skip)} on page {page}")
 

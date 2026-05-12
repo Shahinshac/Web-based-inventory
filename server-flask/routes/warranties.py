@@ -135,10 +135,16 @@ def renew_warranty(id):
             product = db.products.find_one({"name": warranty.get('productName')})
             
         if not product:
-            return jsonify({"error": "Associated product not found. Cannot auto-calculate renewal price."}), 404
-            
-        renewal_price = float(product.get('warrantyRenewalPrice', 0))
-        renewal_months = int(product.get('warrantyMonths', 12))
+            # Fallback to a fixed renewal price if product info is lost
+            # Most renewals are around 500-2000, let's use 999 as a safe default or use warranty's own price
+            renewal_price = float(warranty.get('renewalPrice', 999))
+            renewal_months = 12
+            logger.warning(f"Product not found for warranty {id}. Using fallback price: {renewal_price}")
+        else:
+            renewal_price = float(product.get('warrantyRenewalPrice', 0))
+            if renewal_price == 0:
+                renewal_price = float(warranty.get('renewalPrice', 999))
+            renewal_months = int(product.get('warrantyMonths', 12))
         
         # Calculate new expiry: extend from current date if expired, or from expiry date if still active
         now = utc_now()

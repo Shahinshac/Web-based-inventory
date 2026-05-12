@@ -213,7 +213,7 @@ export const downloadPVCCard = async () => {
  */
 export const linkWarrantyByInvoice = async (invoiceNumber) => {
   try {
-    return await apiPost('/api/customer-portal/warranties/link', { invoiceNumber });
+    return await apiPost('/api/customer/warranties/link', { invoiceNumber });
   } catch (error) {
     console.error('[linkWarrantyByInvoice] Error:', error);
     throw error;
