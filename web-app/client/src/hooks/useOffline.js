@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback } from 'react'
+import { getApiBaseUrl } from '../utils/api'
 
 export const useOffline = (isAuthenticated) => {
   const [isOnline, setIsOnline] = useState(true) // Default to online
@@ -15,7 +16,7 @@ export const useOffline = (isAuthenticated) => {
 
   const testConnection = useCallback(async () => {
     try {
-      const apiUrl = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/$/, '') + '/health'
+      const apiUrl = getApiBaseUrl() + '/health'
       
       const controller = new AbortController()
       const timeoutId = setTimeout(() => controller.abort(), 8000)

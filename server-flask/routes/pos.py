@@ -527,6 +527,8 @@ def whatsapp_link(id):
             message += f"\n*CGST (9%):* ₹{cgst:.2f}"
             message += f"\n*SGST (9%):* ₹{sgst:.2f}"
         elif igst > 0:
+            message += f"\n*IGST (18%):* ₹{igst:.2f}"
+
         emi_details = invoice.get('emiDetails')
         emi_enabled = bool(emi_details and emi_details.get('months'))
 
