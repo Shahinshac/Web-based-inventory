@@ -195,9 +195,5 @@ const CustomerWarranties = () => {
     </div>
   );
 };
-      </div>
-    </div>
-  );
-};
 
 export default CustomerWarranties;

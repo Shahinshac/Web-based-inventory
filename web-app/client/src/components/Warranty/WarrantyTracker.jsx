@@ -159,7 +159,7 @@ const WarrantyTracker = () => {
             <option value="active">Active Only</option>
             <option value="expiring-soon">Expiring Soon</option>
             <option value="expired">Expired</option>
-          </option>
+          </select>
         </div>
       </div>
 
@@ -224,6 +224,7 @@ const WarrantyTracker = () => {
           ))}
         </div>
       )}
+    </div>
   );
 };
 
