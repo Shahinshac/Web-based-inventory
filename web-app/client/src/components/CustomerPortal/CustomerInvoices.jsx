@@ -166,10 +166,3 @@ const CustomerInvoices = ({ currentUser }) => {
   );
 };
 
-export default CustomerInvoices;
-le>
-    </div>
-  );
-};
-
-export default CustomerInvoices;

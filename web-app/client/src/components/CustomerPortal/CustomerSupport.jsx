@@ -268,9 +268,3 @@ const CustomerSupport = () => {
   );
 };
 
-export default CustomerSupport;
-    </div>
-  );
-};
-
-export default CustomerSupport;
