@@ -198,6 +198,16 @@ Esc: Close modals/dialogs`;
     }
   }, [isAuthenticated, tab]);
 
+  // Default tab based on role when logging in
+  useEffect(() => {
+    if (isAuthenticated && userRole === 'cashier') {
+      setTab('pos');
+    } else if (isAuthenticated && tab === 'dashboard') {
+      // Keep it as dashboard for managers/admins if it's the initial state
+      setTab('dashboard');
+    }
+  }, [isAuthenticated, userRole]);
+
   // Track tab changes
   const handleTabChange = (newTab) => {
     setTab(newTab);
@@ -1148,6 +1158,9 @@ Esc: Close modals/dialogs`;
 
     switch (tab) {
       case 'dashboard':
+        if (!canEdit()) {
+          return <div className="error-message">Access restricted to Managers and Admins</div>;
+        }
         return (
           <Dashboard 
             stats={stats}
@@ -1185,6 +1198,9 @@ Esc: Close modals/dialogs`;
         );
 
       case 'products':
+        if (!canEdit()) {
+          return <div className="error-message">Access restricted to Managers and Admins</div>;
+        }
         return (
           <ProductsList
             products={products}
@@ -1203,6 +1219,9 @@ Esc: Close modals/dialogs`;
         );
 
       case 'inventory':
+        if (!canEdit()) {
+          return <div className="error-message">Access restricted to Managers and Admins</div>;
+        }
         return (
           <StockManagement 
             products={products}
@@ -1243,6 +1262,9 @@ Esc: Close modals/dialogs`;
         );
 
       case 'reports':
+        if (!canEdit()) {
+          return <div className="error-message">Access restricted to Managers and Admins</div>;
+        }
         return (
           <Reports 
             invoices={invoices}
@@ -1263,6 +1285,9 @@ Esc: Close modals/dialogs`;
         );
 
       case 'expenses':
+        if (!canEdit()) {
+          return <div className="error-message">Access restricted to Managers and Admins</div>;
+        }
         return (
           <Expenses
             currentUser={currentUser}

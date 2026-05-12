@@ -45,15 +45,17 @@ export default function Sidebar({
     return () => clearInterval(id);
   }, []);
 
+  const isManagerOrAdmin = userRole === 'manager' || userRole === 'admin' || isAdmin;
+
   const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: 'grid', show: true },
+    { id: 'dashboard', label: 'Dashboard', icon: 'grid', show: isManagerOrAdmin },
     { id: 'pos', label: 'Point of Sale', icon: 'shopping-cart', show: true },
-    { id: 'products', label: 'Inventory', icon: 'package', show: true },
+    { id: 'products', label: 'Inventory', icon: 'package', show: isManagerOrAdmin },
     { id: 'customers', label: 'Customers', icon: 'users', show: true },
     { id: 'invoices', label: 'Invoices', icon: 'file-text', show: true },
-    { id: 'reports', label: 'Reports', icon: 'bar-chart-2', show: true },
+    { id: 'reports', label: 'Reports', icon: 'bar-chart-2', show: isManagerOrAdmin },
     { id: 'returns', label: 'Returns', icon: 'rotate-ccw', show: true },
-    { id: 'expenses', label: 'Expenses', icon: 'dollar-sign', show: true },
+    { id: 'expenses', label: 'Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
     { id: 'users', label: 'Team', icon: 'users', show: isAdmin },
     { id: 'support', label: 'Support Desk', icon: 'help-circle', show: true },
     { id: 'audit', label: 'Audit Logs', icon: 'activity', show: isAdmin },
