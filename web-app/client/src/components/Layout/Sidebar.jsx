@@ -8,10 +8,29 @@ export default function Sidebar({
   currentUser, 
   isAdmin, 
   userRole,
-  onLogout 
+  onLogout,
+  onUpdatePhoto
 }) {
   const [collapsed, setCollapsed] = useState(false);
   const [liveTime, setLiveTime] = useState('');
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const fileInputRef = React.useRef(null);
+
+  const handlePhotoUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file || !onUpdatePhoto) return;
+
+    try {
+      setIsUploadingPhoto(true);
+      await onUpdatePhoto(file);
+    } catch (error) {
+      console.error('Failed to upload photo:', error);
+      alert('Failed to upload photo. Please try again.');
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
 
   // Live clock - update every second
   useEffect(() => {
@@ -89,12 +108,20 @@ export default function Sidebar({
 
       <div className="sidebar-footer">
         <div className="user-profile" title={collapsed ? currentUser?.username || 'Admin' : ''}>
-          <div className="avatar" style={{
+          <div className="avatar" 
+            onClick={() => fileInputRef.current?.click()}
+            title="Click to change profile photo"
+            style={{
             width: '32px', height: '32px', borderRadius: '50%',
             overflow: 'hidden', display: 'flex', alignItems: 'center',
             justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
-            flexShrink: 0
+            flexShrink: 0, cursor: 'pointer', position: 'relative'
           }}>
+            {isUploadingPhoto && (
+              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
+                <Icon name="loader" size={16} className="spin" style={{ color: 'white' }} />
+              </div>
+            )}
             {currentUser?.photo ? (
               <img
                 src={normalizePhotoUrl(currentUser.photo)}
@@ -104,9 +131,16 @@ export default function Sidebar({
               />
             ) : null}
             <span style={{ display: currentUser?.photo ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-              <Icon name="user" size={18} />
+              <Icon name="camera" size={16} />
             </span>
           </div>
+          <input 
+            type="file" 
+            ref={fileInputRef} 
+            onChange={handlePhotoUpload} 
+            accept="image/*" 
+            style={{ display: 'none' }} 
+          />
           {!collapsed && (
             <div className="user-details">
               <span className="name">{currentUser?.username || 'Admin'}</span>

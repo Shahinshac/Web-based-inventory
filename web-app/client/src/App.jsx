@@ -1336,6 +1336,7 @@ Esc: Close modals/dialogs`;
         isAdmin={isAdmin}
         userRole={userRole}
         onLogout={logout}
+        onUpdatePhoto={handleUpdateUserPhoto}
       />
 
       <div className="app-main">
