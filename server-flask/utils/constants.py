@@ -1,7 +1,7 @@
 COMPANY_NAME = "26:07 Electronics"
-COMPANY_PHONE = "+91 9999999999"
-COMPANY_ADDRESS = "Trivandrum, Kerala"
-COMPANY_EMAIL = "contact@2607electronics.com"
+COMPANY_PHONE = "7594012761"
+COMPANY_ADDRESS = "Malappuram, Kadungapuram"
+COMPANY_EMAIL = "shahinsha.c123@gmail.com"
 COMPANY_GSTIN = "32AAAAA0000A1Z5"
 
 # Security

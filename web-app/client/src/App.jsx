@@ -50,9 +50,9 @@ export default function App() {
   const [backendStatus, setBackendStatus] = useState('checking'); // 'checking', 'online', 'offline'
   const [companyInfo] = useState({
     name: '26:07 Electronics',
-    address: 'Electronics Plaza, Tech Street, City - 560001',
+    address: 'Malappuram, Kadungapuram',
     phone: '7594012761',
-    email: 'support@2607electronics.com',
+    email: 'shahinsha.c123@gmail.com',
     gstin: '29AABCU9603R1ZX',
     logo: '⚡'
   });
