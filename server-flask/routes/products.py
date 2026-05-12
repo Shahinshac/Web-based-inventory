@@ -100,6 +100,7 @@ def add_product():
     gst_percent = float(data.get('gstPercent') or 18)
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
+    warranty_months = int(data.get('warrantyMonths') or 12)
 
     user_id = g.user.get('userId')
     username = g.user.get('username', 'Unknown')
@@ -117,6 +118,7 @@ def add_product():
         "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "minStock": min_stock,
+        "warrantyMonths": warranty_months,
         "barcode": None,
         "photo": None,
         "photos": [],
@@ -148,6 +150,7 @@ def add_product():
         "costPrice": cost_price,
         "gstPercent": gst_percent,
         "hsnCode": hsn_code,
+        "warrantyMonths": warranty_months,
         "barcode": barcode_value
     })
 
@@ -200,6 +203,7 @@ def full_update_product(id):
     gst_percent = float(data.get('gstPercent') or 18)
     hsn_code = data.get('hsnCode', '9999')
     min_stock = int(data.get('minStock') or 10)
+    warranty_months = int(data.get('warrantyMonths') or 12)
     barcode = data.get('barcode')
 
     user_id = g.user.get('userId')
@@ -218,6 +222,7 @@ def full_update_product(id):
         "gstPercent": gst_percent,
         "hsnCode": hsn_code,
         "minStock": min_stock,
+        "warrantyMonths": warranty_months,
         "lastModifiedBy": user_id,
         "lastModifiedByUsername": username,
         "lastModified": utc_now()

@@ -16,7 +16,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
     hsnCode: '9999',
     minStock: 10,
     serialNo: '',
-    barcode: ''
+    barcode: '',
+    warrantyMonths: 12
   });
 
   const [errors, setErrors] = useState({});
@@ -33,7 +34,8 @@ export default function ProductForm({ product, onSubmit, onClose }) {
         hsnCode: product.hsnCode || '9999',
         minStock: product.minStock || 10,
         serialNo: product.serialNo || '',
-        barcode: product.barcode || ''
+        barcode: product.barcode || '',
+        warrantyMonths: product.warrantyMonths || 12
       });
     }
   }, [product]);
@@ -351,13 +353,25 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               />
             </div>
 
-            <Input
-              label="HSN Code"
-              value={formData.hsnCode}
-              onChange={(e) => handleChange('hsnCode', e.target.value)}
-              placeholder="9999"
-              helperText="Harmonized System of Nomenclature code for GST"
-            />
+            <div className="form-row">
+              <Input
+                label="HSN Code"
+                value={formData.hsnCode}
+                onChange={(e) => handleChange('hsnCode', e.target.value)}
+                placeholder="9999"
+                helperText="GST HSN Code"
+              />
+
+              <Input
+                label="Warranty (Months)"
+                type="number"
+                value={formData.warrantyMonths || 12}
+                onChange={(e) => handleChange('warrantyMonths', parseInt(e.target.value) || 12)}
+                min="0"
+                max="120"
+                helperText="Product warranty in months (e.g., 6, 12, 24)"
+              />
+            </div>
           </div>
 
           {/* Action Buttons */}

@@ -220,9 +220,20 @@ def checkout():
 
         result = db.bills.insert_one(bill)
 
-        # Auto-generate warranties for registered customers (1 year from invoice date)
+        # Auto-generate warranties for registered customers
         if customer_id:
             for i in bill["items"]:
+                # Fetch warranty period from item or look up in DB if missing
+                warranty_months = int(i.get("warrantyMonths") or 12)
+                
+                # Calculate expiry: 30 days per month
+                expiry_date = bill_date + timedelta(days=30 * warranty_months)
+                
+                # Determine user-friendly warranty type string
+                warranty_type = f"{warranty_months} Months Standard"
+                if warranty_months >= 12 and warranty_months % 12 == 0:
+                    warranty_type = f"{warranty_months // 12} Year{'s' if warranty_months > 12 else ''} Standard"
+
                 db.warranties.insert_one({
                     "customerId": ObjectId(customer_id),
                     "customerName": customer_name,
@@ -230,9 +241,9 @@ def checkout():
                     "customerPhone": customer_phone,
                     "productName": i["productName"],
                     "productSku": i.get("hsnCode", "N/A"),
-                    "warrantyType": "1 Year Standard",
+                    "warrantyType": warranty_type,
                     "startDate": bill_date,
-                    "expiryDate": bill_date + timedelta(days=365),
+                    "expiryDate": expiry_date,
                     "status": "active",
                     "invoiceNo": bill_number,
                     "createdAt": utc_now()

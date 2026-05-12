@@ -80,7 +80,8 @@ export const useCart = (products = []) => {
         price: Number(product.price) || 0,
         costPrice: Number(product.costPrice) || 0,
         quantity: desiredQty,
-        maxStock: maxStock
+        maxStock: maxStock,
+        warrantyMonths: product.warrantyMonths || 12
       }]
     })
 
