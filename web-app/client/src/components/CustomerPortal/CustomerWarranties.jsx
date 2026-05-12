@@ -246,7 +246,7 @@ const CustomerWarranties = () => {
             </table>
           </div>
         )}
-
+      </div>
 
       {/* Details Modal */}
       {selectedWarranty && (
