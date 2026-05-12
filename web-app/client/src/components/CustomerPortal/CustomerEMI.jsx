@@ -5,7 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
-import { fetchCustomerEMIPlans, getEMIDetails } from '../../services/customerPortalService';
+import { fetchCustomerEMIPlans, getEMIDetails, submitPaymentRequest } from '../../services/customerPortalService';
 import { formatDateOnlyIST, formatTimestampIST } from '../../utils/dateFormatter';
 
 const CustomerEMI = () => {
@@ -14,6 +14,11 @@ const CustomerEMI = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
+
+  // Payment modal state
+  const [payingInstallment, setPayingInstallment] = useState(null);
+  const [paymentData, setPaymentData] = useState({ method: 'UPI', details: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadEMIPlans(1);
@@ -36,12 +41,40 @@ const CustomerEMI = () => {
   const handleViewDetails = async (emiId) => {
     try {
       setLoading(true);
-      const details = await getEMIDetails(emiId);
-      setSelectedPlan(details);
+      const data = await getEMIDetails(emiId);
+      setSelectedPlan(data);
     } catch (err) {
       setError(err.message || 'Failed to load EMI details');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handlePayNow = (inst) => {
+    setPayingInstallment(inst);
+  };
+
+  const handlePaymentSubmit = async (e) => {
+    e.preventDefault();
+    if (!payingInstallment || !selectedPlan) return;
+
+    try {
+      setIsSubmitting(true);
+      await submitPaymentRequest({
+        type: 'emi_payment',
+        targetId: selectedPlan.id,
+        amount: payingInstallment.amount,
+        paymentMethod: paymentData.method,
+        paymentDetails: { transactionId: paymentData.details },
+        data: { installmentNo: payingInstallment.installmentNo }
+      });
+      setPayingInstallment(null);
+      await handleViewDetails(selectedPlan.id);
+      alert('Payment request submitted! Awaiting Admin approval.');
+    } catch (err) {
+      alert('Failed to submit payment request.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -134,26 +167,48 @@ const CustomerEMI = () => {
               <thead>
                 <tr>
                   <th>No.</th>
-                  <th>Due Date</th>
+                   <th>Due Date</th>
                   <th>Amount</th>
                   <th>Status</th>
                   <th>Paid Date</th>
+                  <th style={{ textAlign: 'right' }}>Action</th>
                 </tr>
               </thead>
               <tbody>
-                {(selectedPlan.installments || []).map((inst) => (
-                  <tr key={inst.installmentNo}>
-                    <td>{inst.installmentNo}</td>
-                    <td>{formatDateOnlyIST(inst.dueDate)}</td>
-                    <td style={{ fontWeight: 600 }}>{formatAmount(inst.amount)}</td>
-                    <td>
-                      <span className={`badge ${inst.status?.toLowerCase() === 'completed' || inst.status?.toLowerCase() === 'paid' ? 'badge-success' : inst.status?.toLowerCase() === 'overdue' ? 'badge-danger' : 'badge-warning'}`}>
-                        {inst.status}
-                      </span>
-                    </td>
-                    <td>{inst.paidDate ? formatTimestampIST(inst.paidDate) : '-'}</td>
-                  </tr>
-                ))}
+                {(selectedPlan.installments || []).map((inst) => {
+                  const isPendingApproval = selectedPlan.pendingRequests?.some(
+                    r => r.data?.installmentNo === inst.installmentNo
+                  );
+
+                  return (
+                    <tr key={inst.installmentNo}>
+                      <td>{inst.installmentNo}</td>
+                      <td>{formatDateOnlyIST(inst.dueDate)}</td>
+                      <td style={{ fontWeight: 600 }}>{formatAmount(inst.amount)}</td>
+                      <td>
+                        <span className={`badge ${inst.status?.toLowerCase() === 'completed' || inst.status?.toLowerCase() === 'paid' ? 'badge-success' : inst.status?.toLowerCase() === 'overdue' ? 'badge-danger' : 'badge-warning'}`}>
+                          {inst.status}
+                        </span>
+                      </td>
+                      <td>{inst.paidDate ? formatTimestampIST(inst.paidDate) : '-'}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        {inst.status?.toLowerCase() !== 'completed' && inst.status?.toLowerCase() !== 'paid' && (
+                          isPendingApproval ? (
+                            <span style={{ fontSize: '0.7rem', color: '#f59e0b', fontWeight: 600 }}>Awaiting Approval</span>
+                          ) : (
+                            <button 
+                              className="portal-btn renew-btn" 
+                              style={{ padding: '4px 12px', fontSize: '0.75rem' }}
+                              onClick={() => handlePayNow(inst)}
+                            >
+                              PAY NOW
+                            </button>
+                          )
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -217,6 +272,93 @@ const CustomerEMI = () => {
           </div>
         )}
       </div>
+    </div>
+
+      {/* Payment Modal */}
+      {payingInstallment && (
+        <div className="portal-modal-overlay" onClick={() => setPayingInstallment(null)}>
+          <div className="portal-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '400px' }}>
+            <div className="portal-modal-header">
+              <h3>Installment Payment</h3>
+              <button className="close-btn" onClick={() => setPayingInstallment(null)}><Icon name="x" size={20} /></button>
+            </div>
+            <form onSubmit={handlePaymentSubmit} className="portal-modal-content">
+              <div style={{ marginBottom: '1.5rem', textAlign: 'center', padding: '1rem', background: '#f8fafc', borderRadius: '12px' }}>
+                <div style={{ fontSize: '0.85rem', color: '#64748b' }}>Installment #{payingInstallment.installmentNo} Amount</div>
+                <div style={{ fontSize: '1.75rem', fontWeight: 800, color: '#6366f1' }}>{formatAmount(payingInstallment.amount)}</div>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label>Payment Method</label>
+                <select 
+                  value={paymentData.method} 
+                  onChange={e => setPaymentData({...paymentData, method: e.target.value})}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                >
+                  <option value="UPI">UPI / GPay / PhonePe</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash at Store</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Transaction ID / Ref</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter payment reference"
+                  value={paymentData.details}
+                  onChange={e => setPaymentData({...paymentData, details: e.target.value})}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  required={paymentData.method !== 'Cash'}
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className="logout-btn" 
+                style={{ width: '100%', background: '#6366f1', color: 'white', border: 'none', padding: '0.75rem', fontWeight: 700 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Confirm Payment'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .portal-modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          animation: fadeIn 0.2s ease-out;
+        }
+        .portal-modal {
+          background: white;
+          width: 90%;
+          border-radius: 16px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          overflow: hidden;
+        }
+        .portal-modal-header {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .portal-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; }
+        .close-btn { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; border-radius: 6px; }
+        .close-btn:hover { background: #f1f5f9; color: #1e293b; }
+        .portal-modal-content { padding: 1.5rem; }
+        .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
     </div>
   );
 };

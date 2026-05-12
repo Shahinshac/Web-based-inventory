@@ -5,8 +5,8 @@
 
 import React, { useState, useEffect } from 'react';
 import Icon from '../../Icon';
-import { fetchCustomerWarranties, renewWarranty, linkWarrantyByInvoice } from '../../services/customerPortalService';
-import { formatDateOnlyIST } from '../../utils/dateFormatter';
+import { fetchCustomerWarranties, getWarrantyDetails, submitPaymentRequest, linkWarrantyByInvoice } from '../../services/customerPortalService';
+import { formatDateOnlyIST, formatTimestampIST } from '../../utils/dateFormatter';
 
 const CustomerWarranties = () => {
   const [warranties, setWarranties] = useState([]);
@@ -15,6 +15,13 @@ const CustomerWarranties = () => {
   const [pagination, setPagination] = useState({ page: 1, limit: 20, total: 0, pages: 0 });
   const [filter, setFilter] = useState('all');
   const [now, setNow] = useState(() => new Date());
+
+  // Modal states
+  const [selectedWarranty, setSelectedWarranty] = useState(null);
+  const [isRenewing, setIsRenewing] = useState(false);
+  const [renewalWarranty, setRenewalWarranty] = useState(null);
+  const [renewalData, setRenewalData] = useState({ years: 1, paymentMethod: 'UPI', details: '' });
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     loadWarranties(1);
@@ -44,13 +51,45 @@ const CustomerWarranties = () => {
     }
   };
 
-  const handleRenew = async (warrantyId) => {
-    if (!window.confirm('Renew this warranty for 1 year?')) return;
+  const handleViewDetails = async (id) => {
     try {
-      await renewWarranty(warrantyId);
-      loadWarranties(pagination.page);
+      setLoading(true);
+      const data = await getWarrantyDetails(id);
+      setSelectedWarranty(data);
     } catch (err) {
-      console.error('Renewal error:', err);
+      setError('Failed to load warranty details');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRenewClick = (warranty) => {
+    setRenewalWarranty(warranty);
+    setIsRenewing(true);
+  };
+
+  const handleRenewalSubmit = async (e) => {
+    e.preventDefault();
+    if (!renewalWarranty) return;
+
+    try {
+      setIsSubmitting(true);
+      await submitPaymentRequest({
+        type: 'warranty_renewal',
+        targetId: renewalWarranty.id,
+        amount: 999 * renewalData.years, // Default fallback price for now
+        paymentMethod: renewalData.paymentMethod,
+        paymentDetails: { transactionId: renewalData.details },
+        data: { years: renewalData.years }
+      });
+      setIsRenewing(false);
+      setRenewalWarranty(null);
+      await loadWarranties(pagination.page);
+      alert('Renewal request submitted! Awaiting Admin approval.');
+    } catch (err) {
+      alert('Failed to submit renewal request.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -174,21 +213,27 @@ const CustomerWarranties = () => {
                     </td>
                     <td>{getStatusBadge(warranty.status)}</td>
                     <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                      <button 
-                        className="portal-btn renew-btn" 
-                        onClick={() => handleRenew(warranty.id)}
-                        style={{ 
-                          background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
-                          opacity: 1,
-                          display: 'flex'
-                        }}
-                      >
-                        {warranty.status === 'expired' ? 'RENEW EXPIRED' : 'RENEW EARLY'}
-                      </button>
+                      {warranty.pendingRequests?.length > 0 ? (
+                        <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white', border: 'none' }}>
+                          <Icon name="clock" size={10} /> Awaiting Approval
+                        </span>
+                      ) : (
+                        <button 
+                          className="portal-btn renew-btn" 
+                          onClick={() => handleRenewClick(warranty)}
+                          style={{ 
+                            background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            opacity: 1,
+                            display: 'flex'
+                          }}
+                        >
+                          {warranty.status === 'expired' ? 'RENEW EXPIRED' : 'RENEW EARLY'}
+                        </button>
+                      )}
                       <button 
                         className="portal-btn details-btn"
                         style={{ display: 'flex' }}
-                        onClick={() => window.alert('Details view coming soon in the next update!')}
+                        onClick={() => handleViewDetails(warranty.id)}
                       >
                         DETAILS
                       </button>
@@ -200,6 +245,164 @@ const CustomerWarranties = () => {
           </div>
         )}
       </div>
+    </div>
+
+      {/* Details Modal */}
+      {selectedWarranty && (
+        <div className="portal-modal-overlay" onClick={() => setSelectedWarranty(null)}>
+          <div className="portal-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px' }}>
+            <div className="portal-modal-header">
+              <h3>Warranty Details</h3>
+              <button className="close-btn" onClick={() => setSelectedWarranty(null)}><Icon name="x" size={20} /></button>
+            </div>
+            <div className="portal-modal-content">
+              <div className="details-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+                <div>
+                  <label>Product Name</label>
+                  <p style={{ fontWeight: 700 }}>{selectedWarranty.productName}</p>
+                </div>
+                <div>
+                  <label>Status</label>
+                  <div>{getStatusBadge(selectedWarranty.status)}</div>
+                </div>
+                <div>
+                  <label>Invoice Number</label>
+                  <p>#{selectedWarranty.invoiceNumber}</p>
+                </div>
+                <div>
+                  <label>SKU / Model</label>
+                  <p>{selectedWarranty.productSku || 'N/A'}</p>
+                </div>
+                <div>
+                  <label>Start Date</label>
+                  <p>{formatDateOnlyIST(selectedWarranty.startDate)}</p>
+                </div>
+                <div>
+                  <label>Expiry Date</label>
+                  <p style={{ fontWeight: 700, color: '#ef4444' }}>{formatDateOnlyIST(selectedWarranty.expiryDate)}</p>
+                </div>
+              </div>
+              
+              <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#f8fafc', borderRadius: '8px' }}>
+                <label style={{ fontSize: '0.75rem', color: '#64748b' }}>Description / Coverage</label>
+                <p style={{ fontSize: '0.85rem' }}>{selectedWarranty.description || 'Standard manufacturing warranty covering hardware defects.'}</p>
+              </div>
+
+              {selectedWarranty.pendingRequests?.length > 0 && (
+                <div style={{ marginTop: '1.5rem', padding: '1rem', background: '#fffbeb', border: '1px solid #fef3c7', borderRadius: '8px' }}>
+                  <h4 style={{ fontSize: '0.85rem', color: '#92400e', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <Icon name="clock" size={16} /> Pending Renewal Request
+                  </h4>
+                  {selectedWarranty.pendingRequests.map(req => (
+                    <div key={req._id} style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
+                      Requested: {formatDateOnlyIST(req.createdAt)} for {req.data?.years} year(s).
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Renewal Request Modal */}
+      {isRenewing && renewalWarranty && (
+        <div className="portal-modal-overlay" onClick={() => setIsRenewing(false)}>
+          <div className="portal-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '450px' }}>
+            <div className="portal-modal-header">
+              <h3>Request Renewal</h3>
+              <button className="close-btn" onClick={() => setIsRenewing(false)}><Icon name="x" size={20} /></button>
+            </div>
+            <form onSubmit={handleRenewalSubmit} className="portal-modal-content">
+              <p style={{ fontSize: '0.85rem', color: '#64748b', marginBottom: '1.5rem' }}>
+                Request to extend warranty for <strong>{renewalWarranty.productName}</strong>.
+              </p>
+              
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label>Renewal Period</label>
+                <select 
+                  value={renewalData.years} 
+                  onChange={e => setRenewalData({...renewalData, years: parseInt(e.target.value)})}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                >
+                  <option value={1}>1 Year (₹999)</option>
+                  <option value={2}>2 Years (₹1899)</option>
+                  <option value={3}>3 Years (₹2699)</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1rem' }}>
+                <label>Payment Method</label>
+                <select 
+                  value={renewalData.paymentMethod} 
+                  onChange={e => setRenewalData({...renewalData, paymentMethod: e.target.value})}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                >
+                  <option value="UPI">UPI / GPay / PhonePe</option>
+                  <option value="Bank Transfer">Bank Transfer</option>
+                  <option value="Cash">Cash at Store</option>
+                </select>
+              </div>
+
+              <div className="form-group" style={{ marginBottom: '1.5rem' }}>
+                <label>Transaction ID / Notes</label>
+                <input 
+                  type="text" 
+                  placeholder="Enter transaction ID or payment proof ref"
+                  value={renewalData.details}
+                  onChange={e => setRenewalData({...renewalData, details: e.target.value})}
+                  style={{ width: '100%', padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  required={renewalData.paymentMethod !== 'Cash'}
+                />
+              </div>
+
+              <button 
+                type="submit" 
+                className="logout-btn" 
+                style={{ width: '100%', background: '#6366f1', color: 'white', border: 'none', padding: '0.75rem', fontWeight: 700 }}
+                disabled={isSubmitting}
+              >
+                {isSubmitting ? 'Submitting...' : 'Submit Renewal Request'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <style jsx>{`
+        .portal-modal-overlay {
+          position: fixed;
+          top: 0; left: 0; right: 0; bottom: 0;
+          background: rgba(15, 23, 42, 0.75);
+          backdrop-filter: blur(4px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          animation: fadeIn 0.2s ease-out;
+        }
+        .portal-modal {
+          background: white;
+          width: 90%;
+          border-radius: 16px;
+          box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+          overflow: hidden;
+        }
+        .portal-modal-header {
+          padding: 1.25rem 1.5rem;
+          border-bottom: 1px solid #e2e8f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .portal-modal-header h3 { margin: 0; font-size: 1.1rem; font-weight: 700; color: #1e293b; }
+        .close-btn { background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; border-radius: 6px; }
+        .close-btn:hover { background: #f1f5f9; color: #1e293b; }
+        .portal-modal-content { padding: 1.5rem; }
+        .details-grid label, .form-group label { display: block; font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 0.25rem; }
+        .details-grid p { margin: 0; color: #1e293b; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+      `}</style>
     </div>
   );
 };

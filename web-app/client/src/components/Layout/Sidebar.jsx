@@ -58,6 +58,7 @@ export default function Sidebar({
     { id: 'customers', label: 'CRM / Customers', icon: 'users', show: true },
     { id: 'invoices', label: 'Billing History', icon: 'file-text', show: true },
     { id: 'reports', label: 'Analytics', icon: 'bar-chart-2', show: isManagerOrAdmin },
+    { id: 'approvals', label: 'Approvals', icon: 'check-circle', show: isManagerOrAdmin },
     { id: 'returns', label: 'Sales Returns', icon: 'rotate-ccw', show: true },
     { id: 'expenses', label: 'OpEx / Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
     { id: 'users', label: 'Staff Management', icon: 'users', show: isAdminRole },

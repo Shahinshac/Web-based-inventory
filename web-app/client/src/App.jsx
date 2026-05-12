@@ -21,6 +21,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Toast from './components/Common/Toast';
 import AdminTickets from './components/Support/AdminTickets';
 import CustomerLogins from './components/CustomerLogins/CustomerLogins';
+import AdminApprovals from './components/Approvals/AdminApprovals';
 import { useAuth } from './hooks/useAuth';
 import { formatTimestampIST } from './utils/dateFormatter';
 
@@ -1395,6 +1396,12 @@ Esc: Close modals/dialogs`;
 
       case 'emi':
         return <EMITracker />;
+
+      case 'approvals':
+        if (!isAdmin) {
+          return <div className="error-message">Admin access required</div>;
+        }
+        return <AdminApprovals />;
 
       case 'admin-settings':
         if (!isAdmin) {

@@ -452,3 +452,144 @@ def get_audit_logs():
         "pageSize": limit,
         "totalPages": (total + limit - 1) // limit
     })
+
+
+# ==================== PAYMENT REQUESTS (ADMIN) ====================
+
+@admin_bp.route('/payment-requests', methods=['GET'])
+@authenticate_token
+@require_admin
+def get_all_payment_requests():
+    """Get all payment requests for admin approval"""
+    try:
+        db = get_db()
+        status = request.args.get('status', 'pending')
+        query = {}
+        if status != 'all':
+            query['status'] = status
+
+        requests = list(db.payment_requests.find(query).sort("createdAt", -1))
+        
+        for req in requests:
+            req['_id'] = str(req['_id'])
+            req['customerId'] = str(req['customerId'])
+            req['targetId'] = str(req['targetId'])
+            req['createdAt'] = to_iso_string(req.get('createdAt'))
+            req['updatedAt'] = to_iso_string(req.get('updatedAt'))
+
+        return jsonify({
+            "success": True,
+            "requests": requests
+        })
+    except Exception as e:
+        logger.error(f"Fetch admin requests error: {e}")
+        return jsonify({"error": "Failed to fetch requests"}), 500
+
+@admin_bp.route('/payment-requests/<request_id>', methods=['PATCH'])
+@authenticate_token
+@require_admin
+def handle_payment_request(request_id):
+    """Approve or reject a payment request"""
+    try:
+        db = get_db()
+        data = request.get_json()
+        new_status = data.get('status') # 'approved' or 'rejected'
+        admin_notes = data.get('notes', '')
+
+        if new_status not in ['approved', 'rejected']:
+            return jsonify({"error": "Invalid status"}), 400
+
+        req = db.payment_requests.find_one({"_id": ObjectId(request_id)})
+        if not req:
+            return jsonify({"error": "Request not found"}), 404
+
+        if req['status'] != 'pending':
+            return jsonify({"error": "Request already processed"}), 400
+
+        # If approved, perform the actual action
+        if new_status == 'approved':
+            if req['type'] == 'warranty_renewal':
+                # Logic to renew warranty
+                years = int(req.get('data', {}).get('years', 1))
+                warranty_id = req['targetId']
+                
+                # Fetch warranty
+                warranty = db.warranties.find_one({"_id": warranty_id})
+                if warranty:
+                    from utils.tzutils import utc_from_iso
+                    current_expiry = utc_from_iso(warranty.get('expiryDate')) or utc_now()
+                    new_expiry = current_expiry + timedelta(days=365 * years)
+                    
+                    db.warranties.update_one(
+                        {"_id": warranty_id},
+                        {
+                            "$set": {
+                                "expiryDate": new_expiry,
+                                "status": "active",
+                                "lastRenewalDate": utc_now()
+                            },
+                            "$push": {
+                                "history": {
+                                    "action": "renewal",
+                                    "date": utc_now(),
+                                    "years": years,
+                                    "requestId": str(req['_id'])
+                                }
+                            }
+                        }
+                    )
+            
+            elif req['type'] == 'emi_payment':
+                # Logic to record EMI payment
+                emi_id = req['targetId']
+                inst_no = int(req.get('data', {}).get('installmentNo', 0))
+                paid_amount = float(req['amount'])
+                
+                emi_plan = db.emi_plans.find_one({"_id": emi_id})
+                if emi_plan:
+                    installments = emi_plan.get('installments', [])
+                    for inst in installments:
+                        if inst['installmentNo'] == inst_no:
+                            inst['paidAmount'] = min(inst.get('paidAmount', 0) + paid_amount, inst['amount'])
+                            inst['paidDate'] = utc_now()
+                            inst['status'] = 'completed' if inst['paidAmount'] >= inst['amount'] else 'partial'
+                            break
+                    
+                    all_paid = all(i['status'] == 'completed' for i in installments)
+                    db.emi_plans.update_one(
+                        {"_id": emi_id},
+                        {
+                            "$set": {
+                                "installments": installments,
+                                "status": "closed" if all_paid else "active",
+                                "updatedAt": utc_now()
+                            }
+                        }
+                    )
+
+        # Update request status
+        db.payment_requests.update_one(
+            {"_id": ObjectId(request_id)},
+            {
+                "$set": {
+                    "status": new_status,
+                    "adminNotes": admin_notes,
+                    "processedBy": g.user.get('userId'),
+                    "updatedAt": utc_now()
+                }
+            }
+        )
+
+        log_audit(db, f"PAYMENT_REQUEST_{new_status.upper()}", str(req['customerId']), g.user.get('username'), {
+            "requestId": request_id,
+            "type": req['type']
+        })
+
+        return jsonify({
+            "success": True,
+            "message": f"Request {new_status} successfully"
+        })
+
+    except Exception as e:
+        logger.error(f"Handle request error: {e}")
+        return jsonify({"error": "Failed to process request"}), 500

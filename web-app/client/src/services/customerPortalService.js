@@ -219,4 +219,26 @@ export const linkWarrantyByInvoice = async (invoiceNumber) => {
     throw error;
   }
 };
+/**
+ * Submit a payment request (Warranty Renewal or EMI Payment)
+ */
+export const submitPaymentRequest = async (requestData) => {
+  try {
+    return await apiPost('/api/customer/payment-requests', requestData);
+  } catch (error) {
+    console.error('[submitPaymentRequest] Error:', error);
+    throw error;
+  }
+};
 
+/**
+ * Fetch my payment requests
+ */
+export const fetchMyPaymentRequests = async () => {
+  try {
+    return await apiGet('/api/customer/payment-requests');
+  } catch (error) {
+    console.error('[fetchMyPaymentRequests] Error:', error);
+    throw error;
+  }
+};

@@ -945,6 +945,17 @@ def get_warranty_details(warranty_id):
                 if days_diff <= 30:
                     status = 'expiring_soon'
 
+        # Fetch any pending requests for this warranty
+        pending_requests = list(db.payment_requests.find({
+            "targetId": ObjectId(warranty_id),
+            "status": "pending"
+        }))
+        for pr in pending_requests:
+            pr['_id'] = str(pr['_id'])
+            pr['targetId'] = str(pr['targetId'])
+            pr['customerId'] = str(pr['customerId'])
+            pr['createdAt'] = to_iso_string(pr.get('createdAt'))
+
         response_data = {
             "success": True,
             "warranty": {
@@ -960,11 +971,12 @@ def get_warranty_details(warranty_id):
                 "status": status,
                 "invoiceNumber": str(warranty.get('invoiceNo', 'N/A')),
                 "customerName": str(warranty.get('customerName', 'N/A')),
-                "customerPhone": str(warranty.get('customerPhone', 'N/A'))
+                "customerPhone": str(warranty.get('customerPhone', 'N/A')),
+                "pendingRequests": pending_requests
             }
         }
 
-        logger.info(f"[get_warranty_details] ✅ Warranty returned: {response_data['warranty']['productName']}")
+        logger.info(f"[get_warranty_details] ✅ Warranty returned: {response_data['warranty']['productName']} ({len(pending_requests)} pending)")
         return jsonify(response_data)
 
     except Exception as e:
@@ -1271,6 +1283,17 @@ def get_emi_details(emi_id):
                 logger.warning(f"[get_emi_details] ⚠️ Error processing installment {inst.get('installmentNo')}: {inst_err}")
                 continue
 
+        # Fetch any pending requests for this EMI plan
+        pending_requests = list(db.payment_requests.find({
+            "targetId": ObjectId(emi_id),
+            "status": "pending"
+        }))
+        for pr in pending_requests:
+            pr['_id'] = str(pr['_id'])
+            pr['targetId'] = str(pr['targetId'])
+            pr['customerId'] = str(pr['customerId'])
+            pr['createdAt'] = to_iso_string(pr.get('createdAt'))
+
         response_data = {
             "success": True,
             "emi": {
@@ -1294,11 +1317,12 @@ def get_emi_details(emi_id):
                     "partial": partial_count,
                     "pending": pending_count
                 },
-                "installments": formatted_installments
+                "installments": formatted_installments,
+                "pendingRequests": pending_requests
             }
         }
 
-        logger.info(f"[get_emi_details] ✅ EMI returned: {len(formatted_installments)} installments ({pending_count} pending)")
+        logger.info(f"[get_emi_details] ✅ EMI returned: {len(formatted_installments)} installments ({pending_count} pending, {len(pending_requests)} requests)")
         return jsonify(response_data)
 
     except Exception as e:
@@ -1413,6 +1437,81 @@ def download_pvc_card():
             as_attachment=True,
             download_name=f"card_{safe_name}.pdf"
         )
+# ==================== PAYMENT REQUESTS ====================
+
+@customer_portal_bp.route('/payment-requests', methods=['POST'])
+@authenticate_token
+def create_payment_request():
+    """Create a new payment request for warranty or EMI"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        data = request.get_json()
+        req_type = data.get('type') # 'warranty_renewal' or 'emi_payment'
+        target_id = data.get('targetId')
+        amount = data.get('amount')
+        payment_method = data.get('paymentMethod', 'Other')
+        payment_details = data.get('paymentDetails', {})
+
+        if not req_type or not target_id or not amount:
+            return jsonify({"error": "Missing required fields"}), 400
+
+        db = get_db()
+        
+        # Create request
+        new_request = {
+            "customerId": customer['_id'],
+            "customerName": customer.get('name'),
+            "customerPhone": customer.get('phone'),
+            "type": req_type,
+            "targetId": ObjectId(target_id),
+            "amount": float(amount),
+            "paymentMethod": payment_method,
+            "paymentDetails": payment_details,
+            "status": "pending",
+            "createdAt": utc_now(),
+            "updatedAt": utc_now(),
+            "data": data.get('data', {}) # e.g. {years: 1} or {installmentNo: 1}
+        }
+
+        result = db.payment_requests.insert_one(new_request)
+        
+        return jsonify({
+            "success": True,
+            "message": "Payment request submitted for approval",
+            "requestId": str(result.inserted_id)
+        }), 201
+
     except Exception as e:
-        logger.error(f"PVC card error: {e}")
-        return jsonify({"error": "Failed to generate identity card"}), 500
+        logger.error(f"Payment request error: {e}")
+        return jsonify({"error": "Failed to submit request"}), 500
+
+@customer_portal_bp.route('/payment-requests', methods=['GET'])
+@authenticate_token
+def get_my_payment_requests():
+    """Get all payment requests for current customer"""
+    try:
+        customer = get_current_customer()
+        if not customer:
+            return jsonify({"error": "Customer not found"}), 404
+
+        db = get_db()
+        requests = list(db.payment_requests.find({"customerId": customer['_id']}).sort("createdAt", -1))
+        
+        for req in requests:
+            req['_id'] = str(req['_id'])
+            req['customerId'] = str(req['customerId'])
+            req['targetId'] = str(req['targetId'])
+            req['createdAt'] = to_iso_string(req.get('createdAt'))
+            req['updatedAt'] = to_iso_string(req.get('updatedAt'))
+
+        return jsonify({
+            "success": True,
+            "requests": requests
+        })
+
+    except Exception as e:
+        logger.error(f"Fetch requests error: {e}")
+        return jsonify({"error": "Failed to fetch requests"}), 500
