@@ -342,52 +342,109 @@
 }
 
 /* ==================== Mobile ==================== */
+.portal-mobile-header {
+  display: none;
+  height: 60px;
+  background: white;
+  border-bottom: 1px solid var(--portal-border);
+  padding: 0 1rem;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 1001;
+}
+
+.menu-toggle {
+  background: none;
+  border: none;
+  color: var(--portal-secondary);
+  cursor: pointer;
+  padding: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-avatar-small {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--portal-accent);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+.portal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
 @media (max-width: 768px) {
+  .portal-mobile-header {
+    display: flex;
+  }
+
+  .portal-overlay {
+    display: block;
+  }
+
+  .portal-shell {
+    height: 100vh;
+    overflow: auto;
+  }
+
   .portal-sidebar {
     position: fixed;
+    top: 0;
+    left: -280px;
     bottom: 0;
+    width: 280px;
+    z-index: 1002;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 10px 0 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .portal-sidebar.mobile-open {
     left: 0;
-    right: 0;
-    width: 100%;
-    height: auto;
-    border-right: none;
-    border-top: 1px solid var(--portal-border);
-    padding: 0.5rem;
-    flex-direction: row;
-    justify-content: space-around;
-    z-index: 1000;
   }
-  
-  .sidebar-nav {
-    flex-direction: row;
-    width: 100%;
-    justify-content: space-around;
-  }
-  
-  .sidebar-tab {
+
+  .portal-main-layout {
     flex-direction: column;
-    gap: 0.25rem;
-    padding: 0.5rem;
-    font-size: 0.65rem;
-    align-items: center;
-    width: 60px;
+    overflow: visible;
   }
-  
+
   .portal-content-view {
-    padding-bottom: 80px;
+    padding: 1.25rem;
+    overflow: visible;
   }
 }
 
 @media (max-width: 640px) {
-  .portal-header {
-    padding: 0 1rem;
-  }
-  
   .user-name {
     display: none;
   }
-  
-  .portal-content-view {
-    padding: 1rem;
+
+  .portal-card {
+    padding: 1.25rem;
+    border-radius: 12px;
   }
+
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }

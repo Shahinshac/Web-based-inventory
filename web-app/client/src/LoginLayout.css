@@ -464,9 +464,18 @@
   .ultra-brand-side { display: none; }
   .ultra-form-side {
     width: 100%; min-height: 100vh;
-    padding: 60px 24px 40px;
+    padding: 40px 20px;
     justify-content: flex-start;
     box-shadow: none;
   }
   .ultra-form-wrapper { max-width: 100%; }
+  .ultra-form-header h2 { font-size: 1.6rem; }
+  .ultra-brand-title { font-size: 2.8rem; }
+}
+
+@media (max-width: 480px) {
+  .ultra-form-side { padding: 30px 16px; }
+  .ultra-segment-btn { padding: 10px; font-size: 11px; }
+  .ultra-btn { padding: 14px; font-size: 14px; }
+  .ultra-form-header h2 { font-size: 1.4rem; }
 }

@@ -15,6 +15,7 @@ import './customerPortal.css';
 
 const CustomerPortal = ({ currentUser, onLogout }) => {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const tabs = [
     { id: 'dashboard', label: 'Home', icon: 'grid' },
@@ -25,12 +26,34 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
     { id: 'profile', label: 'My Profile', icon: 'user' }
   ];
 
+  const handleTabClick = (tabId) => {
+    setActiveTab(tabId);
+    setIsMobileMenuOpen(false);
+  };
+
   return (
     <div className="customer-portal">
       <div className="portal-shell">
+        {/* Mobile Header */}
+        <header className="portal-mobile-header">
+          <button className="menu-toggle" onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
+            <Icon name={isMobileMenuOpen ? 'x' : 'list'} size={24} />
+          </button>
+          <div className="portal-brand">
+            <Icon name="package" size={24} />
+            <span className="brand-name">PORTAL</span>
+          </div>
+          <div className="user-avatar-small">
+            {currentUser?.name?.charAt(0) || 'U'}
+          </div>
+        </header>
+
         <div className="portal-main-layout">
-          {/* Unified Sidebar */}
-          <aside className="portal-sidebar">
+          {/* Overlay for mobile menu */}
+          {isMobileMenuOpen && <div className="portal-overlay" onClick={() => setIsMobileMenuOpen(false)}></div>}
+
+          {/* Unified Sidebar / Drawer */}
+          <aside className={`portal-sidebar ${isMobileMenuOpen ? 'mobile-open' : ''}`}>
             <div className="sidebar-header" style={{ padding: '0 0.75rem', marginBottom: '2rem' }}>
               <div className="portal-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', color: 'var(--portal-accent)' }}>
                 <Icon name="package" size={24} />
@@ -43,7 +66,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
                 <button
                   key={tab.id}
                   className={`sidebar-tab ${activeTab === tab.id ? 'active' : ''}`}
-                  onClick={() => setActiveTab(tab.id)}
+                  onClick={() => handleTabClick(tab.id)}
                 >
                   <div className="tab-icon-wrap">
                     <Icon name={tab.icon} size={18} />

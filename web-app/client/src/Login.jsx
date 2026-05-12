@@ -88,17 +88,17 @@ const Login = ({ onLogin }) => {
 
   // Handle customer login - FIXED to use correct API
   const handleCustomerLogin = useCallback(async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setCustomerError('');
-
-    if (!customerEmail || !customerPassword) {
+    const trimmedEmail = customerEmail.trim();
+    if (!trimmedEmail || !customerPassword) {
       setCustomerError('Please enter both email and password');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(customerEmail)) {
+    if (!emailRegex.test(trimmedEmail)) {
       setCustomerError('Please enter a valid email address');
       return;
     }
@@ -112,7 +112,7 @@ const Login = ({ onLogin }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: customerEmail,
+          email: trimmedEmail,
           password: customerPassword
         })
       });
@@ -127,7 +127,7 @@ const Login = ({ onLogin }) => {
 
       if (data.success && data.token) {
         // Pass the token to onLogin for proper auth state management
-        const result = await onLogin(customerEmail, customerPassword, 'customer', data.token);
+        const result = await onLogin(trimmedEmail, customerPassword, 'customer', data.token);
         if (result && result.error) {
           setCustomerError(result.error);
         }
@@ -143,18 +143,20 @@ const Login = ({ onLogin }) => {
 
   // Handle customer registration
   const handleCustomerRegister = useCallback(async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     setRegisterError('');
     setRegisterSuccess('');
 
-    if (!registerEmail || !registerPassword || !registerConfirmPassword) {
+    const trimmedEmail = registerEmail.trim();
+
+    if (!trimmedEmail || !registerPassword || !registerConfirmPassword) {
       setRegisterError('Please fill in all fields');
       return;
     }
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(registerEmail)) {
+    if (!emailRegex.test(trimmedEmail)) {
       setRegisterError('Please enter a valid email address');
       return;
     }
@@ -177,7 +179,7 @@ const Login = ({ onLogin }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          email: registerEmail,
+          email: trimmedEmail,
           password: registerPassword
         })
       });

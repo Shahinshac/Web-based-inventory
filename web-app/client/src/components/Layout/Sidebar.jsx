@@ -51,6 +51,8 @@ export default function Sidebar({
     { id: 'dashboard', label: 'Dashboard', icon: 'grid', show: isManagerOrAdmin },
     { id: 'pos', label: 'Point of Sale', icon: 'shopping-cart', show: true },
     { id: 'products', label: 'Inventory', icon: 'package', show: isManagerOrAdmin },
+    { id: 'warranty', label: 'Warranties', icon: 'shield', show: isManagerOrAdmin },
+    { id: 'emi', label: 'EMI Plans', icon: 'credit-card', show: isManagerOrAdmin },
     { id: 'customers', label: 'Customers', icon: 'users', show: true },
     { id: 'invoices', label: 'Invoices', icon: 'file-text', show: true },
     { id: 'reports', label: 'Reports', icon: 'bar-chart-2', show: isManagerOrAdmin },

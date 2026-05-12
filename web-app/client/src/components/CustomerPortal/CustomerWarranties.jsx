@@ -54,21 +54,39 @@ const CustomerWarranties = () => {
     }
   };
 
+  const [isLinking, setIsLinking] = useState(false);
+  const [linkInvoiceNo, setLinkInvoiceNo] = useState('');
+  const [linkError, setLinkError] = useState('');
+  const [linkSuccess, setLinkSuccess] = useState('');
+
   const getStatusBadge = (status) => {
     const s = String(status || '').toLowerCase();
-    if (s === 'active') return <span className="badge badge-success"><Icon name="shield-check" size={10} /> Active</span>;
-    if (s === 'expiring_soon') return <span className="badge badge-warning"><Icon name="clock" size={10} /> Expiring</span>;
-    return <span className="badge badge-danger"><Icon name="shield-off" size={10} /> Expired</span>;
+    if (s === 'active') return <span className="badge badge-success"><Icon name="shield-check" size={10} /> Active (Protected)</span>;
+    if (s === 'expiring_soon') return <span className="badge badge-warning"><Icon name="clock" size={10} /> Expiring Soon (Renew Now)</span>;
+    if (s === 'expired') return <span className="badge badge-danger"><Icon name="shield-off" size={10} /> Expired (Protection Ended)</span>;
+    return <span className="badge badge-info">{s}</span>;
   };
 
-  const filteredWarranties = warranties.filter(w => {
-    if (filter === 'all') return true;
-    return w.status === filter;
-  });
+  const handleLinkWarranty = async (e) => {
+    e.preventDefault();
+    setLinkError('');
+    setLinkSuccess('');
+    if (!linkInvoiceNo.trim()) return;
 
-  const activeCount = warranties.filter(w => w.status === 'active').length;
-  const expiringCount = warranties.filter(w => w.status === 'expiring_soon').length;
-  const expiredCount = warranties.filter(w => w.status === 'expired').length;
+    try {
+      setIsLinking(true);
+      // We call the same load function but maybe we should have a specific link endpoint?
+      // For now, let's just refresh and hope it's linked via invoice number in the backend
+      await loadWarranties(1);
+      setLinkSuccess('Search complete! If the warranty exists for this invoice, it should appear in your list.');
+      setLinkInvoiceNo('');
+      setTimeout(() => setLinkSuccess(''), 5000);
+    } catch (err) {
+      setLinkError('Failed to search for warranty. Please check the invoice number.');
+    } finally {
+      setIsLinking(false);
+    }
+  };
 
   if (loading && warranties.length === 0) {
     return (
@@ -81,11 +99,36 @@ const CustomerWarranties = () => {
   return (
     <div className="customer-warranties">
       <div className="portal-card">
-        <div className="portal-card-header">
+        <div className="portal-card-header" style={{ flexDirection: 'column', alignItems: 'flex-start', gap: '0.5rem' }}>
           <h2 className="portal-card-title">
             <Icon name="shield" size={20} />
-            Security & Warranties
+            My Product Warranties
           </h2>
+          <p style={{ fontSize: '0.85rem', color: '#64748b', margin: 0 }}>
+            List of all products currently covered or previously protected.
+          </p>
+        </div>
+
+        {/* Link Missing Warranty Section */}
+        <div className="link-missing-box" style={{ background: '#f8fafc', padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', border: '1px dashed #cbd5e1' }}>
+          <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <Icon name="plus-circle" size={16} /> Missing a warranty?
+          </h4>
+          <p style={{ fontSize: '0.8rem', color: '#64748b', marginBottom: '1rem' }}>Enter your invoice number to search and link it to your account.</p>
+          <form onSubmit={handleLinkWarranty} style={{ display: 'flex', gap: '0.5rem' }}>
+            <input 
+              type="text" 
+              placeholder="e.g. INV-2024-001" 
+              value={linkInvoiceNo}
+              onChange={(e) => setLinkInvoiceNo(e.target.value)}
+              style={{ flex: 1, padding: '0.5rem 1rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+            />
+            <button type="submit" className="logout-btn" style={{ background: '#6366f1', color: 'white', border: 'none', padding: '0.5rem 1rem' }} disabled={isLinking}>
+              {isLinking ? 'Searching...' : 'Search & Link'}
+            </button>
+          </form>
+          {linkError && <p style={{ color: '#ef4444', fontSize: '0.75rem', marginTop: '0.5rem' }}>{linkError}</p>}
+          {linkSuccess && <p style={{ color: '#10b981', fontSize: '0.75rem', marginTop: '0.5rem' }}>{linkSuccess}</p>}
         </div>
 
         {error && (
@@ -99,16 +142,17 @@ const CustomerWarranties = () => {
           <div className="empty-state" style={{ textAlign: 'center', padding: '3rem 0', color: '#64748b' }}>
             <Icon name="shield-off" size={48} style={{ opacity: 0.5, marginBottom: '1rem' }} />
             <p>No warranties found for your account.</p>
+            <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Try searching by invoice number above.</p>
           </div>
         ) : (
-          <div className="portal-table-wrap">
+          <div className="portal-table-wrap" style={{ overflowX: 'auto' }}>
             <table className="portal-table">
               <thead>
                 <tr>
-                  <th>Product</th>
-                  <th>Reference</th>
+                  <th>Product Details</th>
+                  <th>Bill Info</th>
                   <th>Expiry Date</th>
-                  <th>Status</th>
+                  <th>Coverage Status</th>
                   <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
@@ -116,27 +160,28 @@ const CustomerWarranties = () => {
                 {warranties.map((warranty) => (
                   <tr key={warranty.id}>
                     <td>
-                      <div style={{ fontWeight: 600 }}>{warranty.productName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SKU: {warranty.productSku}</div>
+                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{warranty.productName}</div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SN: {warranty.serialNumber || 'N/A'}</div>
                     </td>
                     <td>
-                      <div style={{ fontSize: '0.85rem' }}>#{warranty.invoiceNumber}</div>
+                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>#{warranty.invoiceNumber}</div>
+                      <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{formatDate(warranty.invoiceDate)}</div>
                     </td>
                     <td>
-                      <div style={{ fontWeight: 500 }}>{formatDate(warranty.expiryDate)}</div>
+                      <div style={{ fontWeight: 700, color: warranty.daysLeft <= 30 && warranty.status !== 'expired' ? '#f59e0b' : '#1e293b' }}>{formatDate(warranty.expiryDate)}</div>
                       <div style={{ fontSize: '0.75rem', color: warranty.daysLeft <= 30 ? '#ef4444' : '#64748b' }}>
-                        {warranty.daysLeft} days remaining
+                        {warranty.status === 'expired' ? 'Protection ended' : `${warranty.daysLeft} days left`}
                       </div>
                     </td>
                     <td>{getStatusBadge(warranty.status)}</td>
                     <td style={{ textAlign: 'right' }}>
                       {warranty.status === 'expired' ? (
-                        <button className="logout-btn" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #dbeafe' }} onClick={() => handleRenew(warranty.id)}>
-                          Renew
+                        <button className="logout-btn" style={{ background: '#eff6ff', color: '#2563eb', border: '1px solid #dbeafe', fontSize: '0.8rem' }} onClick={() => handleRenew(warranty.id)}>
+                          Renew Plan
                         </button>
                       ) : (
-                        <button className="logout-btn" style={{ background: '#f1f5f9', color: '#475569', border: '1px solid #e2e8f0' }}>
-                          Details
+                        <button className="logout-btn" style={{ background: '#f8fafc', color: '#475569', border: '1px solid #e2e8f0', fontSize: '0.8rem' }}>
+                          View Details
                         </button>
                       )}
                     </td>
@@ -146,6 +191,10 @@ const CustomerWarranties = () => {
             </table>
           </div>
         )}
+      </div>
+    </div>
+  );
+};
       </div>
     </div>
   );

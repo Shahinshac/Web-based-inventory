@@ -147,6 +147,44 @@ export default function Dashboard({
           </div>
         </div>
 
+        {/* Active Warranties Bento */}
+        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(16, 185, 129, 0.15)' }}>
+          <div className="bento-title" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: '#10b981' }}><Icon name="shield" size={16} /></div>
+              Active Warranties
+            </div>
+            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNavigate('warranty')}>View All</button>
+          </div>
+          <div className="card-body" style={{ marginTop: '16px' }}>
+            {stats.activeWarranties > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981' }}>{stats.activeWarranties}</div>
+                <div style={{ color: '#64748b', fontSize: '13px' }}>Currently protecting products</div>
+              </div>
+            ) : (
+              <div style={{ color: '#94a3b8', fontSize: '13px' }}>No active warranties</div>
+            )}
+          </div>
+        </div>
+
+        {/* EMI Plans Bento */}
+        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(99, 102, 241, 0.15)' }}>
+          <div className="bento-title" style={{ justifyContent: 'space-between' }}>
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: '#6366f1' }}><Icon name="credit-card" size={16} /></div>
+              EMI Plans
+            </div>
+            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNavigate('emi')}>Manage</button>
+          </div>
+          <div className="card-body" style={{ marginTop: '16px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 800, color: '#6366f1' }}>{stats.activeEMIPlans || 0}</div>
+              <div style={{ color: '#64748b', fontSize: '13px' }}>Active installment plans</div>
+            </div>
+          </div>
+        </div>
+
         {/* Recent Activity Bento */}
         <div className="bento-card bento-col-2 bento-row-2" style={{ '--bento-glow': 'rgba(168, 85, 247, 0.15)' }}>
           <div className="bento-title">

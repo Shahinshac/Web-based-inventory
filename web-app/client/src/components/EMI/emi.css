@@ -1,9 +1,9 @@
-.warranty-container {
+.emi-tracker-container {
   padding: 10px;
   animation: fadeIn 0.4s ease-out;
 }
 
-.warranty-header {
+.emi-header {
   margin-bottom: 24px;
   display: flex;
   justify-content: space-between;
@@ -24,25 +24,25 @@
 }
 
 /* Stats Grid */
-.warranty-stats-grid {
+.emi-stats-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
   margin-bottom: 24px;
 }
 
-.w-stat-card {
+.emi-stat-card {
   background: white;
   padding: 20px;
   border-radius: 16px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   display: flex;
   align-items: center;
   gap: 16px;
   border: 1px solid #f1f5f9;
 }
 
-.w-stat-icon {
+.emi-stat-icon {
   width: 48px;
   height: 48px;
   border-radius: 12px;
@@ -51,54 +51,25 @@
   justify-content: center;
 }
 
-.w-stat-info {
+.emi-stat-info {
   display: flex;
   flex-direction: column;
 }
 
-.w-stat-label {
+.emi-stat-label {
   font-size: 13px;
   font-weight: 600;
   color: #64748b;
 }
 
-.w-stat-value {
+.emi-stat-value {
   font-size: 20px;
   font-weight: 800;
   color: #1e293b;
 }
 
-/* View Toggle */
-.view-toggle {
-  display: flex;
-  background: #f1f5f9;
-  padding: 4px;
-  border-radius: 12px;
-  gap: 4px;
-}
-
-.toggle-btn {
-  width: 36px;
-  height: 36px;
-  border: none;
-  background: transparent;
-  color: #64748b;
-  border-radius: 8px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: all 0.2s;
-}
-
-.toggle-btn.active {
-  background: white;
-  color: #6366f1;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-}
-
 /* Filters Bar */
-.warranty-filters-bar {
+.emi-filters-bar {
   display: flex;
   gap: 16px;
   margin-bottom: 20px;
@@ -126,6 +97,13 @@
   border: 1px solid #e2e8f0;
   background: white;
   font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input-wrap input:focus {
+  outline: none;
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .filter-select-wrap select {
@@ -135,72 +113,147 @@
   background: white;
   font-size: 14px;
   min-width: 160px;
+  cursor: pointer;
 }
 
 /* Table Styles */
-.warranty-table-container {
+.emi-table-container {
   background: white;
   border-radius: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   border: 1px solid #f1f5f9;
-  overflow-x: auto;
+  overflow: hidden;
 }
 
-.warranty-table {
+.emi-table {
   width: 100%;
   border-collapse: collapse;
   text-align: left;
-  min-width: 800px;
 }
 
-.warranty-table th {
+.emi-table th {
   padding: 16px;
   background: #f8fafc;
   color: #64748b;
   font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
+  letter-spacing: 0.5px;
   border-bottom: 1px solid #f1f5f9;
 }
 
-.warranty-table td {
+.emi-table td {
   padding: 16px;
   border-bottom: 1px solid #f1f5f9;
   font-size: 14px;
+  color: #334155;
 }
 
+.emi-table tr:last-child td {
+  border-bottom: none;
+}
+
+.emi-table tr:hover td {
+  background: #fdfdff;
+}
+
+.font-mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+.font-bold { font-weight: 700; }
+.text-primary { color: #6366f1; }
+
+.customer-cell {
+  display: flex;
+  flex-direction: column;
+}
+
+.customer-cell .name {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.customer-cell .phone {
+  font-size: 12px;
+  color: #64748b;
+}
+
+.progress-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.progress-bar-mini {
+  height: 6px;
+  background: #f1f5f9;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #6366f1, #a855f7);
+  border-radius: 3px;
+}
+
+/* Status Badges */
 .status-badge {
   padding: 4px 10px;
   border-radius: 9999px;
   font-size: 12px;
   font-weight: 600;
+  text-transform: capitalize;
 }
 
 .status-active { background: #dcfce7; color: #166534; }
-.status-expired { background: #fee2e2; color: #991b1b; }
-.status-expiring-soon { background: #fef3c7; color: #92400e; }
+.status-closed { background: #f1f5f9; color: #475569; }
+.status-defaulted { background: #fee2e2; color: #991b1b; }
 
-.action-btn-mini {
-  width: 28px;
-  height: 28px;
-  border-radius: 6px;
+.action-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
   border: 1px solid #e2e8f0;
   background: white;
-  color: #64748b;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
+  color: #64748b;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.warranties-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: 20px;
+.action-btn:hover {
+  background: #f1f5f9;
+  color: #6366f1;
+  border-color: #6366f1;
 }
 
-.font-bold { font-weight: 700; color: #1e293b; }
-.font-mono { font-family: monospace; color: #64748b; }
+.emi-loading, .emi-empty, .error-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 20px;
+  text-align: center;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f1f5f9;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-bottom: 16px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
 
 @keyframes fadeIn {
   from { opacity: 0; transform: translateY(10px); }

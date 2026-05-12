@@ -35,6 +35,8 @@ import { useKeyboardShortcuts } from './hooks/useKeyboardShortcuts';
 import { API, apiPost, apiPatch, getAuthHeaders, getApiBaseUrl, checkBackendHealth } from './utils/api';
 import { createPaymentLink } from './services/paymentLinkService';
 import { emiService } from './services/emiService';
+import WarrantyTracker from './components/Warranty/WarrantyTracker';
+import EMITracker from './components/EMI/EMITracker';
 import './styles.css';
 
 export default function App() {
@@ -56,6 +58,8 @@ export default function App() {
   });
 
   const [recentActivity, setRecentActivity] = useState([]);
+  const [warranties, setWarranties] = useState([]);
+  const [emiPlans, setEmiPlans] = useState([]);
 
   // Custom hooks
   const {
@@ -192,10 +196,13 @@ Esc: Close modals/dialogs`;
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch recent activity when authenticated or when tab changes to dashboard
   useEffect(() => {
     if (isAuthenticated && (tab === 'dashboard' || tab === 'pos')) {
       fetchRecentActivity();
+      if (tab === 'dashboard') {
+        fetchWarranties();
+        fetchEMIPlans();
+      }
     }
   }, [isAuthenticated, tab]);
 
@@ -978,10 +985,38 @@ Esc: Close modals/dialogs`;
       }
     } catch (e) {
       showNotification('❌ Failed to share: ' + (e.message || 'Unknown error'), 'error');
-      console.error(e);
+     } finally {
+      setLoading(false);
     }
   };
 
+  const fetchWarranties = async () => {
+    if (!isAuthenticated || isCustomer) return;
+    try {
+      const response = await fetch(API('/api/warranties'), { headers: getAuthHeaders() });
+      if (response.ok) {
+        const data = await response.json();
+        setWarranties(data.warranties || []);
+      }
+    } catch (err) {
+      console.warn('[App] Warranties fetch failed:', err.message);
+    }
+  };
+
+  const fetchEMIPlans = async () => {
+    if (!isAuthenticated || isCustomer) return;
+    try {
+      const response = await fetch(API('/api/admin/emi-plans'), { headers: getAuthHeaders() });
+      if (response.ok) {
+        const data = await response.json();
+        setEmiPlans(data.emiPlans || []);
+      }
+    } catch (err) {
+      console.warn('[App] EMI plans fetch failed:', err.message);
+    }
+  };
+
+  // Tab change handler
   const handleShareCustomerWhatsApp = (customer) => {
     try {
       const name = customer.name || 'Customer';
@@ -1171,7 +1206,9 @@ Esc: Close modals/dialogs`;
       totalProducts: products.length,
       totalCustomers: customers.length,
       totalSales: invoices.length,
-      lowStockCount: products.filter(p => p.quantity > 0 && p.quantity < p.minStock).length
+      lowStockCount: products.filter(p => p.quantity > 0 && p.quantity < p.minStock).length,
+      activeWarranties: warranties.filter(w => w.status === 'active').length,
+      activeEMIPlans: emiPlans.filter(p => p.status === 'active').length
     };
 
     const lowStockProducts = products.filter(p => p.quantity > 0 && p.quantity < p.minStock);
@@ -1186,6 +1223,8 @@ Esc: Close modals/dialogs`;
             stats={stats}
             recentActivity={recentActivity}
             lowStockProducts={lowStockProducts}
+            warranties={warranties}
+            emiPlans={emiPlans}
             onNavigate={handleTabChange}
             onAddProduct={() => handleTabChange('products')}
             onAddCustomer={() => handleTabChange('customers')}
@@ -1360,6 +1399,12 @@ Esc: Close modals/dialogs`;
 
       case 'support':
         return <AdminTickets />;
+
+      case 'warranty':
+        return <WarrantyTracker />;
+
+      case 'emi':
+        return <EMITracker />;
 
       case 'admin-settings':
         if (!isAdmin) {
