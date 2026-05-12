@@ -21,6 +21,7 @@
 
 .customer-portal {
   min-height: 100vh;
+  width: 100%;
   background: var(--portal-bg);
   color: var(--portal-text);
   font-family: var(--portal-font);
@@ -32,6 +33,7 @@
   display: flex;
   flex-direction: column;
   height: 100vh;
+  width: 100%;
   overflow: hidden;
 }
 
@@ -178,8 +180,9 @@
 .portal-content-view {
   flex: 1;
   overflow-y: auto;
-  padding: 2rem;
+  padding: 1.5rem;
   background: #f8fafc;
+  width: 100%;
 }
 
 /* ==================== Common Components ==================== */
@@ -339,8 +342,7 @@
 }
 
 /* ==================== Mobile ==================== */
-
-@media (max-width: 1024px) {
+@media (max-width: 768px) {
   .portal-sidebar {
     position: fixed;
     bottom: 0;

@@ -397,18 +397,35 @@ Esc: Close modals/dialogs`;
       const igst = Number(invoice.igst || 0);
       const grandTotal = Number(invoice.total || invoice.grandTotal || 0);
 
-      const items = (invoice.items || []).map((item, i) => `
+      const items = (invoice.items || []).map((item, i) => {
+        const gstPct = item.gstPercent !== undefined ? item.gstPercent : 18;
+        const unitPriceIncl = Number(item.price || item.unitPrice || 0);
+        const qty = Number(item.quantity || 0);
+        
+        // Extract base price for display
+        const baseUnitPrice = unitPriceIncl / (1 + (gstPct / 100));
+        const lineBaseSubtotal = baseUnitPrice * qty;
+        
+        // Use stored GST amount if available, otherwise calculate
+        const discountFactor = discountPct > 0 ? (1 - (discountPct / 100)) : 1;
+        const lineGst = item.lineGstAmount !== undefined 
+          ? Number(item.lineGstAmount) 
+          : (lineBaseSubtotal * discountFactor * (gstPct / 100));
+
+        return `
         <tr>
           <td style="text-align:center;color:#64748b;font-weight:500;">${i + 1}</td>
           <td>
             <div style="font-weight:600;color:#0f172a;">${item.name || item.productName}</div>
             ${item.hsnCode ? `<div style="font-size:11px;color:#94a3b8;margin-top:2px;">HSN: ${item.hsnCode}</div>` : ''}
           </td>
-          <td style="text-align:center;">${item.quantity}</td>
-          <td style="text-align:right;">₹${Number(item.price || item.unitPrice || 0).toFixed(2)}</td>
-          <td style="text-align:right;font-weight:600;">₹${(Number(item.price || item.unitPrice || 0) * Number(item.quantity || 0)).toFixed(2)}</td>
+          <td style="text-align:center;">${qty}</td>
+          <td style="text-align:right;">₹${baseUnitPrice.toFixed(2)}</td>
+          <td style="text-align:center;">${gstPct}%</td>
+          <td style="text-align:right;">₹${lineGst.toFixed(2)}</td>
+          <td style="text-align:right;font-weight:600;">₹${(lineBaseSubtotal + lineGst).toFixed(2)}</td>
         </tr>
-      `).join('');
+      `; }).join('');
 
       // Split payment info
       let splitInfo = '';
@@ -726,8 +743,10 @@ Esc: Close modals/dialogs`;
             <th>#</th>
             <th>Item Description</th>
             <th style="text-align:center;">Qty</th>
-            <th style="text-align:right;">Unit Price</th>
-            <th style="text-align:right;">Amount</th>
+            <th style="text-align:right;">Base Price</th>
+            <th style="text-align:center;">GST%</th>
+            <th style="text-align:right;">GST Amt</th>
+            <th style="text-align:right;">Total</th>
           </tr>
         </thead>
         <tbody>${items}</tbody>
@@ -735,7 +754,7 @@ Esc: Close modals/dialogs`;
       
       <div class="summary-section">
         <div class="summary-box">
-          <div class="sum-row"><span>Subtotal</span><span>₹${subtotal.toFixed(2)}</span></div>
+          <div class="sum-row"><span>Taxable Subtotal</span><span>₹${(grandTotal - gstAmount).toFixed(2)}</span></div>
           ${discountAmt > 0 ? `<div class="sum-row discount"><span>Discount${discountPct > 0 ? ` (${discountPct}%)` : ''}</span><span>-₹${discountAmt.toFixed(2)}</span></div>` : ''}
           ${cgst > 0 ? `<div class="sum-row"><span>CGST (9%)</span><span>₹${cgst.toFixed(2)}</span></div><div class="sum-row"><span>SGST (9%)</span><span>₹${sgst.toFixed(2)}</span></div>` : ''}
           ${igst > 0 ? `<div class="sum-row"><span>IGST (18%)</span><span>₹${igst.toFixed(2)}</span></div>` : ''}

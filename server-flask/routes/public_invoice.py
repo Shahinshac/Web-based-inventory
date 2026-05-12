@@ -207,11 +207,16 @@ def public_invoice_view(token):
     items_html = ""
     for idx, item in enumerate(invoice.get('items', []), 1):
         gst_pct = item.get('gstPercent', 18)
-        line_subtotal = item.get('lineSubtotal', 0) or 0
-        line_gst = item.get('lineGstAmount', 0) or 0
-        unit_price = item.get('unitPrice', 0) or 0
+        unit_price_incl = item.get('unitPrice', 0) or 0
         qty = item.get('quantity', 0) or 0
+        
+        # Extract base price for display
+        base_unit_price = unit_price_incl / (1 + (gst_pct / 100))
+        line_base_subtotal = base_unit_price * qty
+        
+        line_gst = item.get('lineGstAmount', 0) or 0
         hsn = item.get('hsnCode', 'N/A')
+        
         items_html += f"""
         <tr>
           <td style="text-align:center;color:#64748b;font-weight:500;">{idx}</td>
@@ -220,15 +225,16 @@ def public_invoice_view(token):
             {f'<div style="font-size:11px;color:#94a3b8;margin-top:2px;">HSN: {hsn}</div>' if hsn and hsn != 'N/A' else ''}
           </td>
           <td style="text-align:center;">{qty}</td>
-          <td style="text-align:right;">&#8377;{unit_price:.2f}</td>
+          <td style="text-align:right;">&#8377;{base_unit_price:.2f}</td>
           <td style="text-align:center;">{gst_pct}%</td>
           <td style="text-align:right;">&#8377;{line_gst:.2f}</td>
-          <td style="text-align:right;font-weight:600;">&#8377;{(line_subtotal + line_gst):.2f}</td>
+          <td style="text-align:right;font-weight:600;">&#8377;{(line_base_subtotal + line_gst):.2f}</td>
         </tr>
         """
 
     # GST summary rows
-    gst_rows = ''
+    taxable_subtotal = grand_total - gst_amount
+    gst_rows = f'<div class="sum-row"><span>Taxable Subtotal</span><span>&#8377;{taxable_subtotal:.2f}</span></div>'
     if cgst > 0:
         gst_rows += f'<div class="sum-row"><span>CGST (9%)</span><span>&#8377;{cgst:.2f}</span></div>'
         gst_rows += f'<div class="sum-row"><span>SGST (9%)</span><span>&#8377;{sgst:.2f}</span></div>'

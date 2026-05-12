@@ -52,8 +52,12 @@ export default function CheckoutForm({
     if (tenure <= 0) return 0;
     return Number((financedAmount / tenure).toFixed(2));
   }, [emiMonths, financedAmount]);
-  // Calculate backwards for inclusive GST display
-  const gstAmount = finalTotal - (finalTotal / (1 + (GST_PERCENT / 100)));
+  // Calculate inclusive GST components
+  const gstRate = GST_PERCENT / 100;
+  const taxableValue = finalTotal / (1 + gstRate);
+  const gstAmount = finalTotal - taxableValue;
+  const cgst = gstAmount / 2;
+  const sgst = gstAmount / 2;
 
   // Filter customers based on search
   const filteredCustomers = useMemo(() => {
@@ -485,8 +489,8 @@ export default function CheckoutForm({
 
         <div className="checkout-summary-modern">
           <div className="summary-row">
-            <span>Subtotal</span>
-            <span>{formatCurrency(subtotal)}</span>
+            <span>Subtotal (Excl. GST)</span>
+            <span>{formatCurrency(taxableValue)}</span>
           </div>
           {discount > 0 && (
             <div className="summary-row discount-row">
@@ -498,8 +502,12 @@ export default function CheckoutForm({
             </div>
           )}
           <div className="summary-row">
-            <span>GST ({GST_PERCENT}%)</span>
-            <span>{formatCurrency(gstAmount)}</span>
+            <span>CGST (9%)</span>
+            <span>{formatCurrency(cgst)}</span>
+          </div>
+          <div className="summary-row">
+            <span>SGST (9%)</span>
+            <span>{formatCurrency(sgst)}</span>
           </div>
           <div className="summary-divider"></div>
           <div className="summary-row total-row">

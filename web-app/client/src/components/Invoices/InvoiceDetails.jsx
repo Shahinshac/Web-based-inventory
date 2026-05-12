@@ -82,27 +82,31 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
             </thead>
             <tbody>
               {invoice.items?.map((item, index) => {
-                const unitPrice = item.price || item.unitPrice || 0;
-                const qty = item.quantity || 0;
                 const gstPct = item.gstPercent !== undefined ? item.gstPercent : GST_PERCENT;
-                const lineBase = unitPrice * qty;
-                // Apply discount factor when falling back (legacy bills without lineGstAmount)
-                const discountFactor = invoice.discountPercent > 0
-                  ? 1 - (invoice.discountPercent / 100)
-                  : 1;
-                const lineGst = item.lineGstAmount !== undefined
-                  ? item.lineGstAmount
-                  : lineBase * discountFactor * (gstPct / 100);
+                const unitPriceIncl = item.price || item.unitPrice || 0;
+                const qty = item.quantity || 0;
+                
+                // Extract base unit price
+                const baseUnitPrice = unitPriceIncl / (1 + (gstPct / 100));
+                const lineBaseSubtotal = baseUnitPrice * qty;
+                
+                // GST for this line
+                // Apply discount factor for accurate line GST if available
+                const discountFactor = invoice.discountPercent > 0 ? (1 - invoice.discountPercent / 100) : 1;
+                const lineGst = (item.lineGstAmount !== undefined) 
+                  ? item.lineGstAmount 
+                  : (lineBaseSubtotal * discountFactor * (gstPct / 100));
+
                 return (
                   <tr key={index}>
                     <td>{index + 1}</td>
                     <td>{item.name || item.productName}</td>
                     <td>{item.hsnCode || '9999'}</td>
                     <td>{qty}</td>
-                    <td>{formatCurrency(unitPrice)}</td>
+                    <td>{formatCurrency(baseUnitPrice)}</td>
                     <td>{gstPct}%</td>
                     <td>{formatCurrency(lineGst)}</td>
-                    <td>{formatCurrency(lineBase + lineGst)}</td>
+                    <td>{formatCurrency(lineBaseSubtotal + lineGst)}</td>
                   </tr>
                 );
               })}
@@ -171,8 +175,8 @@ export default function InvoiceDetails({ invoice, onClose, onExport, onShare }) 
               </div>
             )}
             <div className="summary-row">
-              <span>Taxable Amount:</span>
-              <span>{formatCurrency(invoice.afterDiscount || (invoice.subtotal - (invoice.discountAmount || 0)))}</span>
+              <span>Taxable Amount (Excl. GST):</span>
+              <span>{formatCurrency((invoice.grandTotal || invoice.total) - (invoice.gstAmount || 0))}</span>
             </div>
             {/* Show CGST + SGST for same-state, or IGST for different-state */}
             {invoice.isSameState !== false ? (

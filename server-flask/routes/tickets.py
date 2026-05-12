@@ -34,7 +34,11 @@ def get_customer_tickets():
     """Get all tickets for the logged-in customer"""
     try:
         db = get_db()
-        customer_id = ObjectId(g.user['id'])
+        user_id = g.user.get('userId') or g.user.get('id')
+        if not user_id:
+            return jsonify({"success": False, "error": "User ID not found in token"}), 401
+            
+        customer_id = ObjectId(user_id)
         
         # In this system, customers are users with role='customer'
         # We find tickets where customerId matches
@@ -59,9 +63,13 @@ def create_customer_ticket():
         data = request.get_json()
         db = get_db()
         
+        user_id = g.user.get('userId') or g.user.get('id')
+        if not user_id:
+            return jsonify({"success": False, "error": "User ID not found in token"}), 401
+
         new_ticket = {
             "ticketId": generate_ticket_id(),
-            "customerId": ObjectId(g.user['id']),
+            "customerId": ObjectId(user_id),
             "customerName": g.user.get('name', 'Customer'),
             "subject": data.get('subject', 'No Subject'),
             "description": data.get('description', ''),
@@ -101,13 +109,14 @@ def add_ticket_message(ticket_id):
         if not ticket:
             return jsonify({"success": False, "error": "Ticket not found"}), 404
             
+        user_id = g.user.get('userId') or g.user.get('id')
         # Role check: customer can only update their own tickets
-        if g.user['role'] == 'customer' and ticket['customerId'] != ObjectId(g.user['id']):
+        if g.user.get('role') == 'customer' and ticket['customerId'] != ObjectId(user_id):
             return jsonify({"success": False, "error": "Unauthorized"}), 403
             
         update = {
             "message": data.get('message'),
-            "sender": g.user['role'],
+            "sender": g.user.get('role', 'user'),
             "senderName": g.user.get('name', 'User'),
             "timestamp": utc_now()
         }
