@@ -426,6 +426,10 @@ export const isNetworkError = (error) => {
  */
 export const getErrorMessage = (error) => {
   if (!error) return 'An unknown error occurred.';
+  // For validation errors (400) or server crashes (500), show the specific detail if available
+  if (error.details && (error.status === 400 || error.status >= 500)) {
+    return error.details;
+  }
   return error.message || 'An unknown error occurred.';
 }
 

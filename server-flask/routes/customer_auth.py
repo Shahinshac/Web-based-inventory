@@ -201,19 +201,28 @@ def admin_list_customers():
         
         result = []
         for c in customers:
+            last_login = c.get('lastLogin')
+            # Ensure last_login is either datetime or string or None
+            last_login_str = None
+            if last_login:
+                try:
+                    last_login_str = to_iso_string(last_login)
+                except Exception:
+                    last_login_str = str(last_login)
+            
             result.append({
                 "id": str(c['_id']),
                 "name": c.get('name', 'N/A'),
                 "email": c.get('email'),
                 "phone": c.get('phone', 'N/A'),
                 "hasAccount": bool(c.get('accountPassword')),
-                "lastLogin": to_iso_string(c.get('lastLogin'))
+                "lastLogin": last_login_str
             })
             
         return jsonify(result)
     except Exception as e:
-        logger.error(f"Error listing customer accounts: {e}")
-        return jsonify({"error": "Failed to list customers"}), 500
+        logger.error(f"Error listing customer accounts: {str(e)}", exc_info=True)
+        return jsonify({"error": f"Failed to list customers: {str(e)}"}), 500
 
 
 @customer_auth_v2_bp.route('/admin/reset-password', methods=['POST'])
