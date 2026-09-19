@@ -11,9 +11,7 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
-import './styles.css';
-import './theme-modern.css';
-import './bento-theme.css';
+import './design-system.css';
 
 /**
  * Application configuration

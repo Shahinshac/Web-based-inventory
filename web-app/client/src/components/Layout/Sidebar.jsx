@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Icon from '../../Icon';
 import { normalizePhotoUrl } from '../../utils/api';
 
@@ -7,14 +7,13 @@ export default function Sidebar({
   onTabChange, 
   currentUser, 
   isAdmin, 
-  userRole,
-  onLogout,
-  onUpdatePhoto
+  userRole, 
+  onLogout, 
+  onUpdatePhoto 
 }) {
   const [collapsed, setCollapsed] = useState(false);
-  const [liveTime, setLiveTime] = useState('');
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
-  const fileInputRef = React.useRef(null);
+  const fileInputRef = useRef(null);
 
   const handlePhotoUpload = async (e) => {
     const file = e.target.files?.[0];
@@ -32,135 +31,164 @@ export default function Sidebar({
     }
   };
 
-  // Live clock - update every second
-  useEffect(() => {
-    const tick = () => {
-      setLiveTime(new Intl.DateTimeFormat('en-IN', {
-        hour: '2-digit', minute: '2-digit', second: '2-digit',
-        hour12: true, timeZone: 'Asia/Kolkata'
-      }).format(new Date()));
-    };
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-
   const isManager = userRole === 'manager';
   const isAdminRole = userRole === 'admin' || isAdmin;
   const isManagerOrAdmin = isManager || isAdminRole;
 
-  const navItems = [
-    { id: 'dashboard', label: 'Overview', icon: 'grid', show: isManagerOrAdmin },
-    { id: 'pos', label: 'New Sale', icon: 'shopping-cart', show: true },
-    { id: 'products', label: 'Inventory', icon: 'package', show: isManagerOrAdmin },
-    { id: 'warranty', label: 'Warranties', icon: 'shield', show: isManagerOrAdmin },
-    { id: 'emi', label: 'EMI Dashboard', icon: 'credit-card', show: isManagerOrAdmin },
-    { id: 'customers', label: 'CRM / Customers', icon: 'users', show: true },
-    { id: 'invoices', label: 'Billing History', icon: 'file-text', show: true },
-    { id: 'reports', label: 'Analytics', icon: 'bar-chart-2', show: isManagerOrAdmin },
-    { id: 'approvals', label: 'Approvals', icon: 'check-circle', show: isManagerOrAdmin },
-    { id: 'returns', label: 'Sales Returns', icon: 'rotate-ccw', show: true },
-    { id: 'expenses', label: 'OpEx / Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
-    { id: 'users', label: 'Staff Management', icon: 'users', show: isAdminRole },
-    { id: 'support', label: 'Support Desk', icon: 'help-circle', show: true },
-    { id: 'audit', label: 'System Logs', icon: 'activity', show: isAdminRole },
-    { id: 'exports', label: 'Data Exports', icon: 'download', show: isAdminRole },
-    { id: 'admin-settings', label: 'Admin Panel', icon: 'settings', show: isAdminRole },
-    { id: 'customer-logins', label: 'Portal Access', icon: 'key', show: isAdminRole },
+  // Grouped Navigation Sections
+  const navSections = [
+    {
+      title: 'Operations',
+      items: [
+        { id: 'dashboard', label: 'Overview', icon: 'grid', show: isManagerOrAdmin },
+        { id: 'pos', label: 'New Sale', icon: 'shopping-cart', show: true },
+        { id: 'returns', label: 'Sales Returns', icon: 'rotate-ccw', show: true },
+      ]
+    },
+    {
+      title: 'Catalog & Services',
+      items: [
+        { id: 'products', label: 'Inventory', icon: 'package', show: isManagerOrAdmin },
+        { id: 'warranty', label: 'Warranties', icon: 'shield', show: isManagerOrAdmin },
+      ]
+    },
+    {
+      title: 'Finance & Sales',
+      items: [
+        { id: 'invoices', label: 'Billing History', icon: 'file-text', show: true },
+        { id: 'emi', label: 'EMI Dashboard', icon: 'credit-card', show: isManagerOrAdmin },
+        { id: 'expenses', label: 'OpEx / Expenses', icon: 'dollar-sign', show: isManagerOrAdmin },
+        { id: 'reports', label: 'Analytics', icon: 'bar-chart-2', show: isManagerOrAdmin },
+      ]
+    },
+    {
+      title: 'Relationships',
+      items: [
+        { id: 'customers', label: 'CRM / Customers', icon: 'users', show: true },
+        { id: 'approvals', label: 'Approvals', icon: 'check-circle', show: isManagerOrAdmin },
+        { id: 'support', label: 'Support Desk', icon: 'help-circle', show: true },
+      ]
+    },
+    {
+      title: 'Administration',
+      items: [
+        { id: 'users', label: 'Staff Management', icon: 'users', show: isAdminRole },
+        { id: 'customer-logins', label: 'Portal Access', icon: 'key', show: isAdminRole },
+        { id: 'audit', label: 'System Logs', icon: 'activity', show: isAdminRole },
+        { id: 'exports', label: 'Data Exports', icon: 'download', show: isAdminRole },
+        { id: 'admin-settings', label: 'Admin Panel', icon: 'settings', show: isAdminRole },
+      ]
+    }
   ];
 
   return (
-    <aside className={`premium-sidebar ${collapsed ? 'collapsed' : ''}`}>
-      <div className="sidebar-header">
-        <div className="brand" onClick={() => setCollapsed(!collapsed)} style={{ cursor: 'pointer' }}>
-          <div className="logo-icon">
-            <Icon name="package" size={24} />
-          </div>
-          {!collapsed && (
-            <div className="brand-info">
-              <span className="brand-name">26-07 Inventory</span>
-              <span className="brand-phone">📞 7594012761</span>
-            </div>
-          )}
+    <aside className={`erp-sidebar premium-sidebar ${collapsed ? 'collapsed' : ''}`}>
+      {/* Brand Header */}
+      <div className="sidebar-brand" onClick={() => setCollapsed(!collapsed)} title="Click to collapse/expand">
+        <div className="sidebar-brand-icon">
+          <Icon name="package" size={16} />
         </div>
-        {/* Live Time in Sidebar */}
         {!collapsed && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '8px',
-            marginTop: '12px', padding: '6px 12px',
-            background: 'rgba(79, 70, 229, 0.12)',
-            border: '1px solid rgba(99, 102, 241, 0.2)',
-            borderRadius: '8px', fontSize: '12.5px', fontWeight: 600,
-            color: '#a5b4fc', fontVariantNumeric: 'tabular-nums'
-          }}>
-            <Icon name="clock" size={13} />
-            <span>{liveTime}</span>
-            <span style={{ color: '#64748b', fontSize: '10.5px', marginLeft: 'auto', fontWeight: 700 }}>IST</span>
+          <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+            <span className="sidebar-brand-name">26:07 Inventory</span>
+            <span className="sidebar-brand-sub">📞 7594012761</span>
           </div>
         )}
       </div>
-      
+
+      {/* Navigation list */}
       <nav className="sidebar-nav">
-        {navItems.filter(item => item.show).map(item => (
-          <button
-            key={item.id}
-            className={`nav-btn ${activeTab === item.id ? 'active' : ''}`}
-            onClick={() => onTabChange(item.id)}
-            title={collapsed ? item.label : ''}
-          >
-            <Icon name={item.icon} size={20} />
-            {!collapsed && <span>{item.label}</span>}
-            {activeTab === item.id && !collapsed && <div className="active-indicator" />}
-          </button>
-        ))}
+        {navSections.map(section => {
+          const visibleItems = section.items.filter(item => item.show);
+          if (visibleItems.length === 0) return null;
+
+          return (
+            <div key={section.title} className="sidebar-section">
+              {!collapsed && (
+                <div className="sidebar-section-label">
+                  {section.title}
+                </div>
+              )}
+              {visibleItems.map(item => {
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    className={`sidebar-item nav-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => onTabChange(item.id)}
+                    title={collapsed ? item.label : ''}
+                  >
+                    <span className="sidebar-item-icon">
+                      <Icon name={item.icon} size={18} />
+                    </span>
+                    {!collapsed && <span>{item.label}</span>}
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })}
       </nav>
 
+      {/* Sidebar Footer with user profile */}
       <div className="sidebar-footer">
-        <div className="user-profile" title={collapsed ? currentUser?.username || 'Admin' : ''}>
-          <div className="avatar" 
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+          <div 
+            className="sidebar-user" 
             onClick={() => fileInputRef.current?.click()}
-            title="Click to change profile photo"
-            style={{
-            width: '32px', height: '32px', borderRadius: '50%',
-            overflow: 'hidden', display: 'flex', alignItems: 'center',
-            justifyContent: 'center', backgroundColor: 'rgba(255,255,255,0.2)',
-            flexShrink: 0, cursor: 'pointer', position: 'relative'
-          }}>
-            {isUploadingPhoto && (
-              <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 10 }}>
-                <Icon name="loader" size={16} className="spin" style={{ color: 'white' }} />
+            title="Click avatar to update photo"
+            style={{ flex: 1, minWidth: 0 }}
+          >
+            <div className="sidebar-avatar" style={{ position: 'relative' }}>
+              {isUploadingPhoto && (
+                <div style={{ 
+                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.6)', 
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 
+                }}>
+                  <Icon name="loader" size={12} className="spin" />
+                </div>
+              )}
+              {currentUser?.photo ? (
+                <img
+                  src={normalizePhotoUrl(currentUser.photo)}
+                  alt={currentUser.username}
+                  onError={e => { e.currentTarget.style.display = 'none'; }}
+                />
+              ) : (
+                <span>{(currentUser?.username || 'A').charAt(0).toUpperCase()}</span>
+              )}
+            </div>
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handlePhotoUpload}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
+
+            {!collapsed && (
+              <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                <span className="sidebar-user-name">
+                  {currentUser?.username || 'Staff User'}
+                </span>
+                <span className="sidebar-user-role">
+                  {userRole || 'Admin'}
+                </span>
               </div>
             )}
-            {currentUser?.photo ? (
-              <img
-                src={normalizePhotoUrl(currentUser.photo)}
-                alt={currentUser.username}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex'; }}
-              />
-            ) : null}
-            <span style={{ display: currentUser?.photo ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%' }}>
-              <Icon name="camera" size={16} />
-            </span>
           </div>
-          <input 
-            type="file" 
-            ref={fileInputRef} 
-            onChange={handlePhotoUpload} 
-            accept="image/*" 
-            style={{ display: 'none' }} 
-          />
-          {!collapsed && (
-            <div className="user-details">
-              <span className="name">{currentUser?.username || 'Admin'}</span>
-              <span className="role">{userRole || 'Superadmin'}</span>
-            </div>
-          )}
+
+          <button 
+            className="sidebar-logout logout-btn" 
+            onClick={onLogout} 
+            title="Logout"
+            aria-label="Logout"
+          >
+            <Icon name="log-out" size={18} />
+            {!collapsed && <span style={{ fontSize: '11.5px', fontWeight: 600, marginLeft: '4px' }}>Logout</span>}
+          </button>
         </div>
-        <button className="logout-btn" onClick={onLogout} title={collapsed ? 'Logout' : ''}>
-          <Icon name="log-out" size={20} />
-          {!collapsed && <span>Logout</span>}
-        </button>
       </div>
     </aside>
   );

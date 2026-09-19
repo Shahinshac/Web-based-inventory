@@ -38,7 +38,7 @@ import { createPaymentLink } from './services/paymentLinkService';
 import { emiService } from './services/emiService';
 import WarrantyTracker from './components/Warranty/WarrantyTracker';
 import EMITracker from './components/EMI/EMITracker';
-import './styles.css';
+import TopBar from './components/Layout/TopBar';
 
 export default function App() {
   const enableVercelInsights =
@@ -1191,9 +1191,15 @@ Esc: Close modals/dialogs`;
     }
   };
 
+  // Determine mode from URL path
+  const isStaffRoute = typeof window !== 'undefined' && (
+    window.location.pathname.toLowerCase() === '/staff' ||
+    window.location.pathname.toLowerCase().startsWith('/staff/')
+  );
+
   // If not authenticated, show login page
   if (!isAuthenticated) {
-    return <Login onLogin={login} />;
+    return <Login onLogin={login} mode={isStaffRoute ? 'staff' : undefined} />;
   }
 
   // Customer Portal Route
@@ -1432,7 +1438,7 @@ Esc: Close modals/dialogs`;
   };
 
   return (
-    <div className="app">
+    <div className="erp-shell app">
       <Sidebar 
         activeTab={tab}
         onTabChange={handleTabChange}
@@ -1443,8 +1449,14 @@ Esc: Close modals/dialogs`;
         onUpdatePhoto={handleUpdateUserPhoto}
       />
 
-      <div className="app-main">
-        <main className="app-content">
+      <div className="erp-main app-main">
+        <TopBar
+          activeTab={tab}
+          currentUser={currentUser}
+          userRole={userRole}
+          isOnline={isOnline}
+        />
+        <main className="erp-content app-content">
           {renderActiveTab()}
         </main>
       </div>

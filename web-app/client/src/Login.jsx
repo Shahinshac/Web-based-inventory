@@ -10,10 +10,14 @@ import Icon from './Icon.jsx';
 import { API } from './utils/api.js';
 import './LoginLayout.css';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, mode }) => {
   // Navigation view: null (role selector) | 'staff' | 'customer'
   const [selectedRole, setSelectedRole] = useState(() => {
+    if (mode === 'staff') return 'staff';
+    if (mode === 'customer') return 'customer';
     if (typeof window !== 'undefined') {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/staff' || path.startsWith('/staff/')) return 'staff';
       const hash = window.location.hash.toLowerCase();
       if (hash === '#staff') return 'staff';
       if (hash === '#customer') return 'customer';
