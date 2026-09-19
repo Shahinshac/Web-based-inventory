@@ -220,35 +220,37 @@ const CustomerWarranties = () => {
             <p style={{ fontSize: '0.85rem', marginTop: '0.5rem' }}>Try searching by invoice number above.</p>
           </div>
         ) : (
-          <div className="portal-table-wrap" style={{ overflowX: 'auto' }}>
-            <table className="portal-table">
-              <thead>
-                <tr>
-                  <th>Product Details</th>
-                  <th>Bill Info</th>
-                  <th>Expiry Date</th>
-                  <th>Coverage Status</th>
-                  <th style={{ textAlign: 'right' }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {warranties.map((warranty) => (
-                  <tr key={warranty.id}>
-                    <td>
-                      <div style={{ fontWeight: 700, color: '#1e293b' }}>{warranty.productName}</div>
-                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SN: {warranty.serialNumber || 'N/A'}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>#{warranty.invoiceNumber}</div>
-                      <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{formatDate(warranty.invoiceDate)}</div>
-                    </td>
-                    <td>
-                      <div style={{ fontWeight: 700, color: warranty.daysLeft <= 30 && warranty.status !== 'expired' ? '#f59e0b' : '#1e293b' }}>{formatDate(warranty.expiryDate)}</div>
-                      <div style={{ fontSize: '0.75rem', color: warranty.daysLeft <= 30 ? '#ef4444' : '#64748b' }}>
-                        {warranty.status === 'expired' ? 'Protection ended' : `${warranty.daysLeft} days left`}
-                      </div>
-                    </td>
-                    <td>{getStatusBadge(warranty.status)}</td>
+          <>
+            {/* Desktop Table View */}
+            <div className="portal-desktop-table portal-table-wrap" style={{ overflowX: 'auto' }}>
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>Product Details</th>
+                    <th>Bill Info</th>
+                    <th>Expiry Date</th>
+                    <th>Coverage Status</th>
+                    <th style={{ textAlign: 'right' }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {warranties.map((warranty) => (
+                    <tr key={warranty.id}>
+                      <td>
+                        <div style={{ fontWeight: 700, color: '#1e293b' }}>{warranty.productName}</div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SN: {warranty.serialNumber || 'N/A'}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>#{warranty.invoiceNumber}</div>
+                        <div style={{ fontSize: '0.7rem', color: '#94a3b8' }}>{formatDate(warranty.invoiceDate)}</div>
+                      </td>
+                      <td>
+                        <div style={{ fontWeight: 700, color: warranty.daysLeft <= 30 && warranty.status !== 'expired' ? '#f59e0b' : '#1e293b' }}>{formatDate(warranty.expiryDate)}</div>
+                        <div style={{ fontSize: '0.75rem', color: warranty.daysLeft <= 30 ? '#ef4444' : '#64748b' }}>
+                          {warranty.status === 'expired' ? 'Protection ended' : `${warranty.daysLeft} days left`}
+                        </div>
+                      </td>
+                      <td>{getStatusBadge(warranty.status)}</td>
                       <td style={{ textAlign: 'right', display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                         {warranty.pendingRequests?.length > 0 ? (
                           <span className="badge badge-warning" style={{ background: '#f59e0b', color: 'white', border: 'none' }}>
@@ -259,12 +261,7 @@ const CustomerWarranties = () => {
                             <button 
                               className="portal-btn claim-btn" 
                               onClick={() => handleClaimClick(warranty)}
-                              style={{ 
-                                background: '#10b981',
-                                display: 'flex',
-                                fontSize: '0.75rem',
-                                padding: '6px 12px'
-                              }}
+                              style={{ background: '#10b981', display: 'flex', fontSize: '0.75rem', padding: '6px 12px' }}
                             >
                               CLAIM
                             </button>
@@ -279,7 +276,7 @@ const CustomerWarranties = () => {
                                 padding: '6px 12px'
                               }}
                             >
-                              {warranty.status === 'expired' ? 'RENEW' : 'RENEW'}
+                              RENEW
                             </button>
                           </>
                         )}
@@ -291,11 +288,72 @@ const CustomerWarranties = () => {
                           DETAILS
                         </button>
                       </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="portal-mobile-cards">
+              {warranties.map((warranty) => (
+                <div key={warranty.id} className="portal-mobile-card">
+                  <div className="card-top-row">
+                    <div>
+                      <span className="card-primary-tag">{warranty.productName}</span>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>SN: {warranty.serialNumber || 'N/A'}</div>
+                    </div>
+                    {getStatusBadge(warranty.status)}
+                  </div>
+                  <div className="card-body-row" style={{ marginTop: '0.5rem' }}>
+                    <div>
+                      <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Invoice #{warranty.invoiceNumber}</div>
+                      <div style={{ fontSize: '0.75rem', fontWeight: 600 }}>Expires: {formatDate(warranty.expiryDate)}</div>
+                    </div>
+                    <span className="card-sub-info" style={{ color: warranty.daysLeft <= 30 ? '#ef4444' : '#64748b' }}>
+                      {warranty.status === 'expired' ? 'Expired' : `${warranty.daysLeft}d left`}
+                    </span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+                    {warranty.pendingRequests?.length > 0 ? (
+                      <div style={{ flex: 1, textAlign: 'center', padding: '0.5rem', background: '#fffbeb', color: '#b45309', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 700 }}>
+                        Awaiting Approval
+                      </div>
+                    ) : (
+                      <>
+                        <button 
+                          className="portal-btn claim-btn" 
+                          onClick={() => handleClaimClick(warranty)}
+                          style={{ flex: 1, justifyContent: 'center', background: '#10b981', minHeight: '40px' }}
+                        >
+                          CLAIM
+                        </button>
+                        <button 
+                          className="portal-btn renew-btn" 
+                          onClick={() => handleRenewClick(warranty)}
+                          style={{ 
+                            flex: 1, 
+                            justifyContent: 'center',
+                            background: warranty.status === 'expired' ? '#ef4444' : 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                            minHeight: '40px'
+                          }}
+                        >
+                          RENEW
+                        </button>
+                      </>
+                    )}
+                    <button 
+                      className="portal-btn details-btn"
+                      style={{ flex: 1, justifyContent: 'center', minHeight: '40px' }}
+                      onClick={() => handleViewDetails(warranty.id)}
+                    >
+                      DETAILS
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         )}
       </div>
 

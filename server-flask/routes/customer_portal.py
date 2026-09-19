@@ -21,7 +21,7 @@ customer_portal_bp = Blueprint('customer_portal', __name__)
 # ==================== MIDDLEWARE ====================
 
 def get_current_customer():
-    """Get current customer from JWT token"""
+    """Get current customer from JWT token using userId or email"""
     try:
         token = request.headers.get('Authorization', '').replace('Bearer ', '')
         if not token:
@@ -29,7 +29,16 @@ def get_current_customer():
 
         payload = jwt.decode(token, current_app.config['SECRET_KEY'], algorithms=['HS256'])
         db = get_db()
-        customer = db.customers.find_one({"email": payload.get('email')})
+        customer = None
+        user_id = payload.get('userId')
+        if user_id:
+            try:
+                customer = db.customers.find_one({"_id": ObjectId(user_id)})
+            except Exception:
+                pass
+        if not customer and payload.get('email'):
+            import re
+            customer = db.customers.find_one({"email": {"$regex": f"^{re.escape(payload.get('email').strip())}$", "$options": "i"}})
         return customer
     except Exception as e:
         logger.error(f"Error getting customer: {e}")
@@ -120,11 +129,51 @@ def get_dashboard():
         active_warranties = len([w for w in warranties if w.get('status') == 'active'])
         expired_warranties = len([w for w in warranties if w.get('status') == 'expired'])
 
+        # Calculate EMI Outstanding & Active Plans
+        emi_match = match_query.copy()
+        if bill_numbers:
+            emi_match = {"$or": [match_query.copy(), {"billNumber": {"$in": bill_numbers}}]}
+        
+        emi_plans = list(db.emi_plans.find(emi_match))
+        total_outstanding = 0.0
+        active_emis = 0
+        next_due_date = None
+        next_due_amount = 0.0
+
+        for ep in emi_plans:
+            ep_status = str(ep.get('status', 'active')).lower()
+            if ep_status != 'closed':
+                active_emis += 1
+                down_pmt = float(ep.get('downPayment', 0) or 0)
+                insts = ep.get('installments', [])
+                insts_paid = sum(float(i.get('paidAmount', 0) or 0) for i in insts)
+                tot_paid = down_pmt + insts_paid
+                tot_amt = float(ep.get('totalAmount', 0) or 0)
+                total_outstanding += max(0.0, tot_amt - tot_paid)
+
+                for i in insts:
+                    if str(i.get('status', '')).lower() not in ['completed', 'paid']:
+                        d_date = i.get('dueDate')
+                        if d_date:
+                            if next_due_date is None or d_date < next_due_date:
+                                next_due_date = d_date
+                                next_due_amount = float(i.get('amount', 0)) - float(i.get('paidAmount', 0) or 0)
+
         return jsonify({
             "memberSince": to_iso_string(customer.get('createdAt')),
+            "customer": {
+                "id": str(customer['_id']),
+                "name": customer.get('name'),
+                "email": customer.get('email'),
+                "phone": customer.get('phone')
+            },
             "stats": {
                 "totalPurchases": total_purchases,
                 "totalSpent": round(total_spent, 2),
+                "outstandingBalance": round(total_outstanding, 2),
+                "activeEMIs": active_emis,
+                "nextDueDate": to_iso_string(next_due_date) if next_due_date else None,
+                "nextDueAmount": round(next_due_amount, 2),
                 "activeWarranties": active_warranties,
                 "expiredWarranties": expired_warranties
             },
@@ -1157,14 +1206,17 @@ def get_customer_emi_plans():
             try:
                 installments = emi.get('installments', [])
 
-                # Calculate totals
-                total_paid = sum(inst.get('paidAmount', 0) for inst in installments if inst.get('paidAmount'))
-                total_pending = emi.get('totalAmount', 0) - total_paid
+                # Calculate totals (including down payment)
+                down_payment = float(emi.get('downPayment', 0) or 0)
+                installments_paid = sum(float(inst.get('paidAmount', 0) or 0) for inst in installments)
+                total_paid = round(down_payment + installments_paid, 2)
+                total_amount = float(emi.get('totalAmount', 0) or 0)
+                total_pending = max(0.0, round(total_amount - total_paid, 2))
 
                 # Count installment statuses
-                paid_count = len([i for i in installments if i.get('status') == 'paid'])
-                partial_count = len([i for i in installments if i.get('status') == 'partial'])
-                pending_count = len([i for i in installments if i.get('status') == 'pending'])
+                paid_count = len([i for i in installments if str(i.get('status', '')).lower() in ['paid', 'completed']])
+                partial_count = len([i for i in installments if str(i.get('status', '')).lower() == 'partial'])
+                pending_count = len([i for i in installments if str(i.get('status', '')).lower() in ['pending', 'overdue']])
 
                 # Safe date formatting
                 start_date_str = emi.get('startDate').isoformat() if emi.get('startDate') and hasattr(emi.get('startDate'), 'isoformat') else None
@@ -1176,7 +1228,8 @@ def get_customer_emi_plans():
                     "principalAmount": float(emi.get('principalAmount', 0)),
                     "tenure": int(emi.get('tenure', 0)) if emi.get('tenure') else 0,
                     "monthlyEmi": float(emi.get('monthlyEmi', 0)),
-                    "totalAmount": float(emi.get('totalAmount', 0)),
+                    "totalAmount": total_amount,
+                    "downPayment": down_payment,
                     "totalPaid": float(total_paid),
                     "totalPending": float(total_pending),
                     "startDate": start_date_str,

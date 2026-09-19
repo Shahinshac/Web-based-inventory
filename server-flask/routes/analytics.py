@@ -33,13 +33,13 @@ def get_stats():
     product_count = db.products.count_documents({})
     customer_count = db.customers.count_documents({})
 
-    # Revenue should be afterDiscount (excluding GST, as GST is not company profit)
+    # Base Revenue excludes GST (as GST is collected for government and not company revenue)
     revenue_cursor = db.bills.aggregate([
         {"$match": {"paymentStatus": "Paid"}},
-        {"$group": {"_id": None, "total": {"$sum": "$afterDiscount"}}}
+        {"$group": {"_id": None, "total": {"$sum": {"$subtract": ["$afterDiscount", {"$ifNull": ["$gstAmount", 0]}]}}}}
     ])
     revenue_list = list(revenue_cursor)
-    total_revenue = revenue_list[0]['total'] if revenue_list else 0
+    total_revenue = round(revenue_list[0]['total'], 2) if revenue_list else 0
 
     invoice_count = db.bills.count_documents({})
     low_stock_count = db.products.count_documents({"quantity": {"$lt": 20}})
@@ -52,13 +52,13 @@ def get_stats():
         }},
         {"$group": {
             "_id": None,
-            "total": {"$sum": "$afterDiscount"},  # Revenue excludes GST
+            "total": {"$sum": {"$subtract": ["$afterDiscount", {"$ifNull": ["$gstAmount", 0]}]}},  # Revenue excludes GST
             "profit": {"$sum": "$totalProfit"}
         }}
     ])
     today_sales_list = list(today_sales_cursor)
-    today_sales = today_sales_list[0]['total'] if today_sales_list else 0
-    today_profit = today_sales_list[0]['profit'] if today_sales_list else 0
+    today_sales = round(today_sales_list[0]['total'], 2) if today_sales_list else 0
+    today_profit = round(today_sales_list[0]['profit'], 2) if today_sales_list else 0
 
     return jsonify({
         "totalProducts": product_count,
@@ -136,8 +136,8 @@ def get_revenue():
     
     bills = list(db.bills.find({"billDate": {"$gte": start_date}}))
 
-    # Revenue excludes GST (GST is not company profit, it's collected for government)
-    total_rev = sum(b.get("afterDiscount", 0) for b in bills)
+    # Base Revenue excludes GST (GST is not company revenue, it's collected for government)
+    total_rev = sum((b.get("afterDiscount", 0) - b.get("gstAmount", 0)) for b in bills)
     total_prof = sum(b.get("totalProfit", 0) for b in bills)
     total_cost = sum(b.get("totalCost", 0) for b in bills)
     total_bills = len(bills)
@@ -177,8 +177,8 @@ def get_profit_trend():
         if date_str not in daily_profit:
             daily_profit[date_str] = {"revenue": 0, "profit": 0, "count": 0}
 
-        # Revenue excludes GST
-        daily_profit[date_str]["revenue"] += bill.get("afterDiscount", 0)
+        # Base Revenue excludes GST
+        daily_profit[date_str]["revenue"] += (bill.get("afterDiscount", 0) - bill.get("gstAmount", 0))
         daily_profit[date_str]["profit"] += bill.get("totalProfit", 0)
         daily_profit[date_str]["count"] += 1
 
@@ -230,8 +230,8 @@ def sales_trend():
         if date_str not in daily_sales:
             daily_sales[date_str] = {"revenue": 0, "profit": 0, "count": 0}
 
-        # Revenue excludes GST
-        daily_sales[date_str]["revenue"] += bill.get("afterDiscount", 0)
+        # Base Revenue excludes GST
+        daily_sales[date_str]["revenue"] += (bill.get("afterDiscount", 0) - bill.get("gstAmount", 0))
         daily_sales[date_str]["profit"] += bill.get("totalProfit", 0)
         daily_sales[date_str]["count"] += 1
 

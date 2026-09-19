@@ -221,6 +221,24 @@ def checkout():
         result = db.bills.insert_one(bill)
         bill_id = result.inserted_id
 
+        # Update customer purchase statistics
+        if customer_id:
+            try:
+                db.customers.update_one(
+                    {"_id": ObjectId(customer_id)},
+                    {
+                        "$inc": {
+                            "purchasesCount": 1,
+                            "totalPurchases": float(bill["grandTotal"])
+                        },
+                        "$set": {
+                            "lastPurchaseDate": bill_date
+                        }
+                    }
+                )
+            except Exception as cust_err:
+                logger.warning(f"[checkout] ⚠️ Error updating customer statistics: {cust_err}")
+
         # Create EMI Plan if applicable
         if payment_mode == 'emi' and "emiDetails" in bill:
             emi_details = bill["emiDetails"]
@@ -715,7 +733,22 @@ def delete_invoice(id):
         # 4. Delete linked EMI plans
         db.emi_plans.delete_many({"billNumber": bill_number})
 
-        # 5. Delete the invoice itself
+        # 5. Decrement customer purchase statistics if linked
+        if invoice.get('customerId'):
+            try:
+                db.customers.update_one(
+                    {"_id": ObjectId(invoice['customerId'])},
+                    {
+                        "$inc": {
+                            "purchasesCount": -1,
+                            "totalPurchases": -float(invoice.get('grandTotal', 0))
+                        }
+                    }
+                )
+            except Exception as cust_err:
+                logger.warning(f"[delete_invoice] ⚠️ Error decrementing customer stats: {cust_err}")
+
+        # 6. Delete the invoice itself
         db.bills.delete_one({"_id": ObjectId(id)})
 
         # 6. Log the action

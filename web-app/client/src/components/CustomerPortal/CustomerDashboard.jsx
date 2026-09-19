@@ -66,6 +66,21 @@ const CustomerDashboard = ({ currentUser }) => {
 
       {/* Stats Grid */}
       <div className="stats-grid">
+        <div className="stat-card" style={stats?.stats?.outstandingBalance > 0 ? { borderLeft: '4px solid #f59e0b', background: '#fffbeb' } : {}}>
+          <div className="stat-icon" style={{ background: stats?.stats?.outstandingBalance > 0 ? '#fef3c7' : '#ecfdf5', color: stats?.stats?.outstandingBalance > 0 ? '#b45309' : '#059669' }}>
+            <Icon name="alert-circle" size={24} />
+          </div>
+          <div className="stat-info">
+            <span className="stat-label">Outstanding Balance</span>
+            <span className="stat-value" style={{ color: stats?.stats?.outstandingBalance > 0 ? '#b45309' : '#0f172a' }}>
+              ₹{Number(stats?.stats?.outstandingBalance || 0).toLocaleString()}
+            </span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              {stats?.stats?.activeEMIs ? `${stats.stats.activeEMIs} Active EMI Plans` : 'No Pending Balance'}
+            </span>
+          </div>
+        </div>
+
         <div className="stat-card">
           <div className="stat-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>
             <Icon name="shopping-bag" size={24} />
@@ -73,6 +88,7 @@ const CustomerDashboard = ({ currentUser }) => {
           <div className="stat-info">
             <span className="stat-label">Total Purchases</span>
             <span className="stat-value">{stats?.stats?.totalPurchases || 0}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Verified Orders</span>
           </div>
         </div>
 
@@ -82,7 +98,8 @@ const CustomerDashboard = ({ currentUser }) => {
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Spent</span>
-            <span className="stat-value">₹{stats?.stats?.totalSpent?.toLocaleString() || 0}</span>
+            <span className="stat-value">₹{Number(stats?.stats?.totalSpent || 0).toLocaleString()}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Lifetime Value</span>
           </div>
         </div>
 
@@ -93,16 +110,9 @@ const CustomerDashboard = ({ currentUser }) => {
           <div className="stat-info">
             <span className="stat-label">Active Warranties</span>
             <span className="stat-value">{stats?.stats?.activeWarranties || 0}</span>
-          </div>
-        </div>
-
-        <div className="stat-card">
-          <div className="stat-icon" style={{ background: '#fffbeb', color: '#f59e0b' }}>
-            <Icon name="clock" size={24} />
-          </div>
-          <div className="stat-info">
-            <span className="stat-label">Expiring Soon</span>
-            <span className="stat-value">{stats?.stats?.expiredWarranties || 0}</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
+              {stats?.stats?.expiredWarranties ? `${stats.stats.expiredWarranties} Expired` : 'All Protected'}
+            </span>
           </div>
         </div>
       </div>
@@ -117,30 +127,49 @@ const CustomerDashboard = ({ currentUser }) => {
         </div>
         
         {stats?.recentPurchases && stats.recentPurchases.length > 0 ? (
-          <div className="portal-table-wrap">
-            <table className="portal-table">
-              <thead>
-                <tr>
-                  <th>Invoice</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th style={{ textAlign: 'right' }}>Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {stats.recentPurchases.map((purchase) => (
-                  <tr key={purchase.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#6366f1' }}>#{purchase.invoiceNo}</span>
-                    </td>
-                    <td>{formatTimestampIST(purchase.date)}</td>
-                    <td>{purchase.itemCount} Items</td>
-                    <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{purchase.total.toLocaleString()}</td>
+          <>
+            {/* Desktop Table View */}
+            <div className="portal-desktop-table portal-table-wrap">
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>Invoice</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th style={{ textAlign: 'right' }}>Amount</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {stats.recentPurchases.map((purchase) => (
+                    <tr key={purchase.id}>
+                      <td>
+                        <span style={{ fontWeight: 700, color: '#6366f1' }}>#{purchase.invoiceNo}</span>
+                      </td>
+                      <td>{formatTimestampIST(purchase.date)}</td>
+                      <td>{purchase.itemCount} Items</td>
+                      <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{purchase.total.toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Cards View */}
+            <div className="portal-mobile-cards">
+              {stats.recentPurchases.map((purchase) => (
+                <div key={purchase.id} className="portal-mobile-card">
+                  <div className="card-top-row">
+                    <span className="card-primary-tag">#{purchase.invoiceNo}</span>
+                    <span className="card-date-badge">{formatTimestampIST(purchase.date)}</span>
+                  </div>
+                  <div className="card-body-row">
+                    <span className="card-sub-info">{purchase.itemCount} Items</span>
+                    <span className="card-amount-tag">₹{purchase.total.toLocaleString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </>
         ) : (
           <div style={{ textAlign: 'center', padding: '3rem 0', color: '#64748b' }}>
             <Icon name="shopping-cart" size={48} style={{ opacity: 0.2, marginBottom: '1rem' }} />

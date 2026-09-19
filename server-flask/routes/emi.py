@@ -78,7 +78,8 @@ def _sync_emi_plan_status(emi_plan, now=None):
 
 
 def sync_all_emi_statuses(db=None):
-    db = db or get_db()
+    if db is None:
+        db = get_db()
     now = utc_now()
     updated_plans = 0
     updated_installments = 0
@@ -218,12 +219,14 @@ def create_emi():
         }}
     )
 
-    # Log audit
+    user_id = g.user.get('userId') if hasattr(g, 'user') and g.user else 'system'
+    username = g.user.get('username') if hasattr(g, 'user') and g.user else 'system'
     log_audit(
-        action="create_emi",
-        entity="EMI Plan",
-        entity_id=str(result.inserted_id),
-        details=f"Created EMI plan for bill {bill.get('billNumber')} - {tenure} months, Down payment: ₹{down_payment}"
+        db,
+        "EMI_CREATED",
+        user_id,
+        username,
+        {"emiId": str(result.inserted_id), "billNumber": bill.get('billNumber'), "tenure": tenure, "downPayment": down_payment}
     )
 
     down_payment_msg = f" (Down payment: ₹{down_payment})" if down_payment > 0 else ""
@@ -401,26 +404,37 @@ def record_emi_payment(emi_id):
         return jsonify({"error": "Installment not found"}), 404
 
     installment = emi_plan['installments'][installment_idx]
-    due_amount = installment['amount']
+    due_amount = float(installment.get('amount', 0))
+    current_paid = float(installment.get('paidAmount', 0) or 0)
+    remaining_due = round(due_amount - current_paid, 2)
 
     # Validate amount
-    if paid_amount > due_amount:
-        return jsonify({"error": f"Payment exceeds due amount (₹{due_amount})"}), 400
+    if paid_amount <= 0:
+        return jsonify({"error": "Payment amount must be greater than 0"}), 400
+    if paid_amount > remaining_due + 0.01:
+        return jsonify({"error": f"Payment exceeds remaining due amount (₹{remaining_due:.2f})"}), 400
 
     # Update installment
-    installment['paidAmount'] = min(installment['paidAmount'] + paid_amount, due_amount)
+    installment['paidAmount'] = min(round(current_paid + paid_amount, 2), due_amount)
     installment['paidDate'] = utc_now()
     installment['paymentMethod'] = payment_method
     installment['notes'] = notes
 
-    if installment['paidAmount'] >= due_amount:
+    if installment['paidAmount'] >= due_amount - 0.01:
         installment['status'] = 'completed'
     else:
         installment['status'] = 'partial'
 
     # Check if all installments are paid
-    all_paid = all(inst['status'] == 'completed' for inst in emi_plan['installments'])
+    all_paid = all(inst.get('status') == 'completed' for inst in emi_plan['installments'])
     new_status = 'closed' if all_paid else 'active'
+
+    # Calculate overall total paid (including down payment)
+    down_payment = float(emi_plan.get('downPayment', 0) or 0)
+    installments_paid = sum(float(inst.get('paidAmount', 0) or 0) for inst in emi_plan['installments'])
+    total_paid = round(down_payment + installments_paid, 2)
+    total_amount = float(emi_plan.get('totalAmount', 0) or 0)
+    total_pending = max(0.0, round(total_amount - total_paid, 2))
 
     # Update EMI plan
     db.emi_plans.update_one(
@@ -428,16 +442,20 @@ def record_emi_payment(emi_id):
         {"$set": {
             "installments": emi_plan['installments'],
             "status": new_status,
+            "totalPaid": total_paid,
+            "totalPending": total_pending,
             "updatedAt": utc_now()
         }}
     )
 
-    # Log audit
+    user_id = g.user.get('userId') if hasattr(g, 'user') and g.user else 'system'
+    username = g.user.get('username') if hasattr(g, 'user') and g.user else 'system'
     log_audit(
-        action="emi_payment",
-        entity="EMI Payment",
-        entity_id=str(emi_id_obj),
-        details=f"Installment {installment_no} payment: ₹{paid_amount}"
+        db,
+        "EMI_PAYMENT",
+        user_id,
+        username,
+        {"emiId": str(emi_id_obj), "installmentNo": installment_no, "amount": paid_amount}
     )
 
     return jsonify({
@@ -504,12 +522,14 @@ def update_emi_status(emi_id):
     if result.matched_count == 0:
         return jsonify({"error": "EMI plan not found"}), 404
 
-    # Log audit
+    user_id = g.user.get('userId') if hasattr(g, 'user') and g.user else 'system'
+    username = g.user.get('username') if hasattr(g, 'user') and g.user else 'system'
     log_audit(
-        action="update_emi_status",
-        entity="EMI Plan",
-        entity_id=str(emi_id_obj),
-        details=f"Status changed to: {new_status}"
+        db,
+        "EMI_STATUS_UPDATED",
+        user_id,
+        username,
+        {"emiId": str(emi_id_obj), "newStatus": new_status}
     )
 
     return jsonify({

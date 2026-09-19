@@ -99,46 +99,86 @@ const CustomerInvoices = ({ currentUser }) => {
             <p>{searchTerm ? 'No matches found' : 'No invoices yet.'}</p>
           </div>
         ) : (
-          <div className="portal-table-wrap">
-            <table className="portal-table">
-              <thead>
-                <tr>
-                  <th>Invoice ID</th>
-                  <th>Date</th>
-                  <th>Items</th>
-                  <th>Total Amount</th>
-                  <th style={{ textAlign: 'right' }}>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredInvoices.map((invoice) => (
-                  <tr key={invoice.id}>
-                    <td>
-                      <span style={{ fontWeight: 700, color: '#6366f1' }}>#{invoice.invoiceNo}</span>
-                    </td>
-                    <td>{formatDateOnlyIST(invoice.date)}</td>
-                    <td>{invoice.itemCount || 0} Products</td>
-                    <td style={{ fontWeight: 700 }}>{formatAmount(invoice.total)}</td>
-                    <td style={{ textAlign: 'right' }}>
-                      <button
-                        className="portal-btn details-btn"
-                        style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none' }}
-                        onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
-                        disabled={downloadingId === invoice.id}
-                      >
-                        {downloadingId === invoice.id ? (
-                          <div className="spinner-mini"></div>
-                        ) : (
-                          <Icon name="download" size={14} />
-                        )}
-                        <span>DOWNLOAD PDF</span>
-                      </button>
-                    </td>
+          <>
+            {/* Desktop Table */}
+            <div className="portal-desktop-table portal-table-wrap">
+              <table className="portal-table">
+                <thead>
+                  <tr>
+                    <th>Invoice ID</th>
+                    <th>Date</th>
+                    <th>Items</th>
+                    <th>Total Amount</th>
+                    <th style={{ textAlign: 'right' }}>Action</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredInvoices.map((invoice) => (
+                    <tr key={invoice.id}>
+                      <td>
+                        <span style={{ fontWeight: 700, color: '#6366f1' }}>#{invoice.invoiceNo}</span>
+                      </td>
+                      <td>{formatDateOnlyIST(invoice.date)}</td>
+                      <td>{invoice.itemCount || 0} Products</td>
+                      <td style={{ fontWeight: 700 }}>{formatAmount(invoice.total)}</td>
+                      <td style={{ textAlign: 'right' }}>
+                        <button
+                          className="portal-btn details-btn"
+                          style={{ padding: '8px 16px', fontSize: '0.8rem', background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)', color: 'white', border: 'none' }}
+                          onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
+                          disabled={downloadingId === invoice.id}
+                        >
+                          {downloadingId === invoice.id ? (
+                            <div className="spinner-mini"></div>
+                          ) : (
+                            <Icon name="download" size={14} />
+                          )}
+                          <span>DOWNLOAD PDF</span>
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile Card List */}
+            <div className="portal-mobile-cards">
+              {filteredInvoices.map((invoice) => (
+                <div key={invoice.id} className="portal-mobile-card">
+                  <div className="card-top-row">
+                    <span className="card-primary-tag">#{invoice.invoiceNo}</span>
+                    <span className="card-date-badge">{formatDateOnlyIST(invoice.date)}</span>
+                  </div>
+                  <div className="card-body-row">
+                    <span className="card-sub-info">{invoice.itemCount || 0} Products</span>
+                    <span className="card-amount-tag">{formatAmount(invoice.total)}</span>
+                  </div>
+                  <button
+                    className="portal-btn details-btn full-width-mobile"
+                    style={{
+                      width: '100%',
+                      marginTop: '0.75rem',
+                      justifyContent: 'center',
+                      background: 'linear-gradient(135deg, #6366f1 0%, #4f46e5 100%)',
+                      color: 'white',
+                      border: 'none',
+                      minHeight: '44px'
+                    }}
+                    onClick={() => handleDownloadPDF(invoice.id, invoice.invoiceNo)}
+                    disabled={downloadingId === invoice.id}
+                  >
+                    {downloadingId === invoice.id ? (
+                      <div className="spinner-mini"></div>
+                    ) : (
+                      <Icon name="download" size={16} />
+                    )}
+                    <span>DOWNLOAD INVOICE PDF</span>
+                  </button>
+                </div>
+              ))}
+            </div>
+          </>
         )}
 
         {/* Pagination */}

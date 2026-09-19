@@ -160,7 +160,8 @@ const CustomerEMI = () => {
               </div>
             </div>
 
-            <div className="portal-table-wrap">
+            {/* Desktop Table View */}
+            <div className="portal-desktop-table portal-table-wrap">
               <table className="portal-table">
                 <thead>
                   <tr>
@@ -209,6 +210,53 @@ const CustomerEMI = () => {
                   })}
                 </tbody>
               </table>
+            </div>
+
+            {/* Mobile Installment Cards */}
+            <div className="portal-mobile-cards">
+              {(selectedPlan.installments || []).map((inst) => {
+                const isPendingApproval = selectedPlan.pendingRequests?.some(
+                  r => r.data?.installmentNo === inst.installmentNo
+                );
+                const isPaid = inst.status?.toLowerCase() === 'completed' || inst.status?.toLowerCase() === 'paid';
+
+                return (
+                  <div key={inst.installmentNo} className="portal-mobile-card">
+                    <div className="card-top-row">
+                      <span className="card-primary-tag">Installment #{inst.installmentNo}</span>
+                      <span className={`badge ${isPaid ? 'badge-success' : inst.status?.toLowerCase() === 'overdue' ? 'badge-danger' : 'badge-warning'}`}>
+                        {inst.status}
+                      </span>
+                    </div>
+                    <div className="card-body-row">
+                      <div>
+                        <div style={{ fontSize: '0.75rem', color: '#64748b' }}>Due: {formatDateOnlyIST(inst.dueDate)}</div>
+                        {inst.paidDate && (
+                          <div style={{ fontSize: '0.7rem', color: '#16a34a' }}>Paid: {formatDateOnlyIST(inst.paidDate)}</div>
+                        )}
+                      </div>
+                      <span className="card-amount-tag">{formatAmount(inst.amount)}</span>
+                    </div>
+                    {!isPaid && (
+                      <div style={{ marginTop: '0.75rem' }}>
+                        {isPendingApproval ? (
+                          <div style={{ textAlign: 'center', padding: '0.5rem', background: '#fffbeb', color: '#b45309', borderRadius: '8px', fontSize: '0.8rem', fontWeight: 700 }}>
+                            Awaiting Approval
+                          </div>
+                        ) : (
+                          <button
+                            className="portal-btn renew-btn"
+                            style={{ width: '100%', minHeight: '44px', justifyContent: 'center' }}
+                            onClick={() => handlePayNow(inst)}
+                          >
+                            PAY INSTALLMENT NOW
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>

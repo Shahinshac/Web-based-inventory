@@ -95,8 +95,8 @@ const CustomerSupport = () => {
   }
 
   return (
-    <div className="customer-support-view">
-      <div className="support-layout">
+    <div className={`customer-support-view ${selectedTicket ? 'ticket-active' : ''}`}>
+      <div className={`support-layout ${selectedTicket ? 'mobile-show-ticket' : 'mobile-show-list'}`}>
         <aside className="support-sidebar portal-card">
           <div style={{ padding: '1rem', borderBottom: '1px solid #e2e8f0', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 700 }}>Tickets</h3>
@@ -137,7 +137,26 @@ const CustomerSupport = () => {
         <main className="support-main portal-card" style={{ display: 'flex', flexDirection: 'column' }}>
           {selectedTicket ? (
             <div style={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
-              <div style={{ padding: '1.5rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+              <div style={{ padding: '1rem 1.5rem', borderBottom: '1px solid #e2e8f0', background: '#f8fafc' }}>
+                <button 
+                  className="mobile-back-btn"
+                  onClick={() => setSelectedTicket(null)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    background: 'none',
+                    border: 'none',
+                    color: '#6366f1',
+                    fontWeight: 700,
+                    fontSize: '0.85rem',
+                    cursor: 'pointer',
+                    marginBottom: '0.5rem',
+                    padding: 0
+                  }}
+                >
+                  <Icon name="arrow-left" size={16} /> Back to All Tickets
+                </button>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <div>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '0.25rem' }}>{selectedTicket.subject}</h2>
@@ -150,106 +169,116 @@ const CustomerSupport = () => {
                 </div>
               </div>
 
-              <div style={{ flex: 1, overflowY: 'auto', padding: '2rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: '#ffffff' }}>
+              <div style={{ flex: 1, overflowY: 'auto', padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', background: '#ffffff' }}>
                 {selectedTicket.updates.map((msg, idx) => (
                   <div key={idx} style={{ 
-                    maxWidth: '80%', 
-                    padding: '1rem', 
-                    borderRadius: '12px', 
-                    alignSelf: msg.sender === 'customer' ? 'flex-end' : 'flex-start',
-                    background: msg.sender === 'customer' ? '#6366f1' : '#f1f5f9',
-                    color: msg.sender === 'customer' ? 'white' : '#1e293b',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.05)'
+                    alignSelf: msg.senderRole === 'customer' ? 'flex-end' : 'flex-start',
+                    maxWidth: '85%',
+                    background: msg.senderRole === 'customer' ? '#6366f1' : '#f1f5f9',
+                    color: msg.senderRole === 'customer' ? 'white' : '#1e293b',
+                    padding: '1rem',
+                    borderRadius: '12px'
                   }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: '2rem', marginBottom: '0.5rem', fontSize: '0.7rem', opacity: 0.8, fontWeight: 700 }}>
-                      <span>{msg.sender === 'customer' ? 'You' : 'Support'}</span>
-                      <span>{formatTimestampIST(msg.timestamp)}</span>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, opacity: 0.8, marginBottom: '0.25rem' }}>
+                      {msg.senderName} ({msg.senderRole})
                     </div>
-                    <div style={{ fontSize: '0.95rem', lineHeight: 1.5 }}>{msg.message}</div>
+                    <div style={{ fontSize: '0.9rem', lineHeight: '1.4' }}>{msg.message}</div>
+                    <div style={{ fontSize: '0.7rem', opacity: 0.6, textAlign: 'right', marginTop: '0.5rem' }}>
+                      {formatTimestampIST(msg.timestamp)}
+                    </div>
                   </div>
                 ))}
                 <div ref={chatEndRef} />
               </div>
 
-              {selectedTicket.status !== 'closed' && (
-                <form onSubmit={handleSendMessage} style={{ padding: '1.5rem', borderTop: '1px solid #e2e8f0', background: '#f8fafc', display: 'flex', gap: '1rem' }}>
-                  <textarea 
-                    placeholder="Type your reply..."
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    style={{ flex: 1, padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#ffffff', resize: 'none', height: '60px' }}
-                  />
-                  <button type="submit" className="logout-btn" style={{ background: '#6366f1', color: 'white', border: 'none', width: '50px', height: '50px', padding: 0 }} disabled={sending || !newMessage.trim()}>
-                    {sending ? '...' : <Icon name="send" size={20} />}
-                  </button>
-                </form>
-              )}
+              <form onSubmit={handleSendMessage} style={{ padding: '1rem', borderTop: '1px solid #e2e8f0', display: 'flex', gap: '0.75rem', background: '#ffffff' }}>
+                <input 
+                  type="text" 
+                  placeholder="Type your reply here..." 
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  style={{ flex: 1, padding: '0.75rem', borderRadius: '8px', border: '1px solid #e2e8f0' }}
+                  disabled={sending || selectedTicket.status === 'closed'}
+                />
+                <button 
+                  type="submit" 
+                  className="logout-btn" 
+                  style={{ background: '#6366f1', color: 'white', border: 'none', padding: '0 1.25rem' }}
+                  disabled={sending || !newMessage.trim() || selectedTicket.status === 'closed'}
+                >
+                  <Icon name="send" size={16} /> Send
+                </button>
+              </form>
             </div>
           ) : (
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#64748b', opacity: 0.5 }}>
-              <Icon name="message-square" size={64} />
-              <p style={{ marginTop: '1rem', fontWeight: 600 }}>Select a ticket to view conversation</p>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#64748b', flexDirection: 'column', gap: '1rem' }}>
+              <Icon name="message-square" size={48} style={{ opacity: 0.3 }} />
+              <p>Select a ticket from the left panel to view conversation</p>
             </div>
           )}
         </main>
       </div>
 
       {showNewTicketModal && (
-        <div className="portal-modal-overlay">
-          <div className="portal-modal" style={{ background: 'white', padding: '2.5rem', borderRadius: '24px', maxWidth: '500px', width: '90%' }}>
-            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, marginBottom: '1.5rem' }}>New Support Ticket</h2>
-            <form onSubmit={handleCreateTicket} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-              <div className="form-group">
+        <div className="portal-modal-overlay" onClick={() => setShowNewTicketModal(false)}>
+          <div className="portal-modal" onClick={e => e.stopPropagation()} style={{ maxWidth: '500px' }}>
+            <div className="portal-modal-header">
+              <h3>Create Support Ticket</h3>
+              <button className="close-btn" onClick={() => setShowNewTicketModal(false)}><Icon name="x" size={20} /></button>
+            </div>
+            <form onSubmit={handleCreateTicket} style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Subject</label>
                 <input 
                   type="text" 
-                  value={newTicketData.subject}
+                  value={newTicketData.subject} 
                   onChange={(e) => setNewTicketData({...newTicketData, subject: e.target.value})}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
                   required
                 />
               </div>
-              <div style={{ display: 'flex', gap: '1rem' }}>
-                <div className="form-group" style={{ flex: 1 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Category</label>
                   <select 
-                    value={newTicketData.category}
+                    value={newTicketData.category} 
                     onChange={(e) => setNewTicketData({...newTicketData, category: e.target.value})}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
                   >
                     <option>Product Issue</option>
+                    <option>Billing / Payment</option>
                     <option>Warranty Claim</option>
-                    <option>EMI Query</option>
-                    <option>Billing</option>
+                    <option>Other</option>
                   </select>
                 </div>
-                <div className="form-group" style={{ flex: 1 }}>
+                <div>
                   <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Priority</label>
                   <select 
-                    value={newTicketData.priority}
+                    value={newTicketData.priority} 
                     onChange={(e) => setNewTicketData({...newTicketData, priority: e.target.value})}
                     style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0' }}
                   >
                     <option>Low</option>
                     <option>Medium</option>
                     <option>High</option>
+                    <option>Critical</option>
                   </select>
                 </div>
               </div>
-              <div className="form-group">
+              <div>
                 <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 700, color: '#64748b', marginBottom: '0.5rem' }}>Description</label>
                 <textarea 
-                  value={newTicketData.description}
+                  value={newTicketData.description} 
                   onChange={(e) => setNewTicketData({...newTicketData, description: e.target.value})}
                   style={{ width: '100%', padding: '0.75rem', borderRadius: '10px', border: '1px solid #e2e8f0', height: '100px', resize: 'none' }}
                   required
                 />
               </div>
               <div style={{ display: 'flex', gap: '1rem' }}>
-                <button type="submit" className="logout-btn" style={{ flex: 1, background: '#6366f1', color: 'white', border: 'none' }} disabled={sending}>
+                <button type="submit" className="logout-btn" style={{ flex: 1, background: '#6366f1', color: 'white', border: 'none', minHeight: '44px' }} disabled={sending}>
                   {sending ? 'Submitting...' : 'Create Ticket'}
                 </button>
-                <button type="button" className="logout-btn" style={{ flex: 1 }} onClick={() => setShowNewTicketModal(false)}>
+                <button type="button" className="logout-btn" style={{ flex: 1, minHeight: '44px' }} onClick={() => setShowNewTicketModal(false)}>
                   Cancel
                 </button>
               </div>
@@ -257,16 +286,8 @@ const CustomerSupport = () => {
           </div>
         </div>
       )}
-
-      <style jsx>{`
-        .customer-support-view { height: calc(100vh - 180px); }
-        .support-layout { display: grid; grid-template-columns: 300px 1fr; gap: 1.5rem; height: 100%; }
-        .support-sidebar { display: flex; flex-direction: column; overflow: hidden; padding: 0 !important; }
-        .ticket-item-clean:hover { background: #f8fafc !important; }
-      `}</style>
     </div>
   );
 };
 
 export default CustomerSupport;
-

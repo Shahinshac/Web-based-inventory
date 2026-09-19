@@ -9,13 +9,14 @@ class Config:
     DEBUG = False  # Disable debug mode to avoid reloader issues
     PORT = int(os.environ.get('PORT', 5000))
 
-    # MongoDB Atlas Configuration (Cloud Database - REQUIRED)
-    # Must be set via environment variable
-    # NO localhost fallback - Atlas is mandatory
-    # Production: Uses MONGODB_URI from Render environment variables
+    # MongoDB Configuration
+    # Uses MONGODB_URI environment variable (Atlas for production)
+    # Falls back to local MongoDB in development if not provided
     MONGO_URI = os.environ.get('MONGODB_URI')
     if not MONGO_URI:
-        raise ValueError("MONGODB_URI environment variable is required. Please set your Atlas connection string.")
+        if os.environ.get('FLASK_ENV') == 'production' or os.environ.get('RENDER') == 'true':
+            raise ValueError("MONGODB_URI environment variable is required in production.")
+        MONGO_URI = 'mongodb://localhost:27017/inventorydb'
     DB_NAME = os.environ.get('DB_NAME', 'inventorydb')
 
     # Cloudinary Integration
