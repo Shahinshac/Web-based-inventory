@@ -275,16 +275,16 @@ def get_emi(emi_id):
     emi_plan['_id'] = str(emi_plan['_id'])
     emi_plan['billId'] = str(emi_plan['billId'])
     emi_plan['customerId'] = str(emi_plan['customerId'])
-    emi_plan['startDate'] = emi_plan['startDate'].isoformat()
-    emi_plan['endDate'] = emi_plan['endDate'].isoformat()
-    emi_plan['createdAt'] = emi_plan['createdAt'].isoformat()
-    emi_plan['updatedAt'] = emi_plan['updatedAt'].isoformat()
+    emi_plan['startDate'] = to_iso_string(emi_plan.get('startDate'))
+    emi_plan['endDate'] = to_iso_string(emi_plan.get('endDate'))
+    emi_plan['createdAt'] = to_iso_string(emi_plan.get('createdAt'))
+    emi_plan['updatedAt'] = to_iso_string(emi_plan.get('updatedAt'))
 
     # Format installments
-    for inst in emi_plan['installments']:
-        inst['dueDate'] = inst['dueDate'].isoformat()
-        if inst['paidDate']:
-            inst['paidDate'] = inst['paidDate'].isoformat()
+    for inst in emi_plan.get('installments', []):
+        inst['dueDate'] = to_iso_string(inst.get('dueDate'))
+        if inst.get('paidDate'):
+            inst['paidDate'] = to_iso_string(inst.get('paidDate'))
 
     return jsonify(emi_plan), 200
 
@@ -331,29 +331,29 @@ def get_customer_emi_plans(customer_id):
         plan['_id'] = str(plan['_id'])
         plan['billId'] = str(plan['billId'])
         plan['customerId'] = str(plan['customerId'])
-        plan['startDate'] = plan['startDate'].isoformat()
-        plan['endDate'] = plan['endDate'].isoformat()
-        plan['createdAt'] = plan['createdAt'].isoformat()
-        plan['updatedAt'] = plan['updatedAt'].isoformat()
+        plan['startDate'] = to_iso_string(plan.get('startDate'))
+        plan['endDate'] = to_iso_string(plan.get('endDate'))
+        plan['createdAt'] = to_iso_string(plan.get('createdAt'))
+        plan['updatedAt'] = to_iso_string(plan.get('updatedAt'))
 
         # Calculate summary stats
-        total_paid = sum(inst['paidAmount'] for inst in plan['installments'])
-        pending_installments = [inst for inst in plan['installments'] if inst['status'] in ['pending', 'partial', 'overdue']]
+        total_paid = sum(inst['paidAmount'] for inst in plan.get('installments', []))
+        pending_installments = [inst for inst in plan.get('installments', []) if inst['status'] in ['pending', 'partial', 'overdue']]
 
         plan['summary'] = {
             "totalPaid": total_paid,
             "totalPending": plan['principalAmount'] - total_paid,
-            "nextDueDate": pending_installments[0]['dueDate'].isoformat() if pending_installments else None,
+            "nextDueDate": to_iso_string(pending_installments[0]['dueDate']) if pending_installments else None,
             "nextDueAmount": pending_installments[0]['amount'] if pending_installments else 0,
-            "completedInstallments": len([i for i in plan['installments'] if i['status'] == 'completed']),
-            "totalInstallments": len(plan['installments'])
+            "completedInstallments": len([i for i in plan.get('installments', []) if i['status'] == 'completed']),
+            "totalInstallments": len(plan.get('installments', []))
         }
 
         # Format installments
-        for inst in plan['installments']:
-            inst['dueDate'] = inst['dueDate'].isoformat()
-            if inst['paidDate']:
-                inst['paidDate'] = inst['paidDate'].isoformat()
+        for inst in plan.get('installments', []):
+            inst['dueDate'] = to_iso_string(inst.get('dueDate'))
+            if inst.get('paidDate'):
+                inst['paidDate'] = to_iso_string(inst.get('paidDate'))
 
     return jsonify({
         "success": True,
@@ -465,7 +465,7 @@ def record_emi_payment(emi_id):
             "installmentNo": installment['installmentNo'],
             "status": installment['status'],
             "paidAmount": installment['paidAmount'],
-            "paidDate": installment['paidDate'].isoformat()
+            "paidDate": to_iso_string(installment.get('paidDate'))
         },
         "emiStatus": new_status
     }), 200

@@ -37,7 +37,16 @@ const EMITracker = () => {
     }
   };
 
-  const handleViewDetails = (plan) => {
+  const handleViewDetails = async (plan) => {
+    try {
+      if (plan?.id) {
+        const fullPlan = await apiGet(`/api/emi/${plan.id}`);
+        setSelectedPlan({ ...plan, ...fullPlan });
+        return;
+      }
+    } catch (err) {
+      console.warn('Failed to fetch full EMI plan, falling back to summary', err);
+    }
     setSelectedPlan(plan);
   };
 

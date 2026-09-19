@@ -59,4 +59,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
-
+# Playwright test artifacts
+test-results/
+test-report/
