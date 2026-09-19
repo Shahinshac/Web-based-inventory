@@ -147,9 +147,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="Cost Price (₹)"
                 type="number"
-                value={formData.costPrice || ''}
+                value={formData.costPrice ?? ''}
                 onChange={(e) => {
-                  const cp = parseFloat(e.target.value) || 0;
+                  const valStr = e.target.value;
+                  const cp = valStr === '' ? 0 : parseFloat(valStr) || 0;
                   // If CP changes, we keep current companyProfit and update the Final Price
                   const currentProfit = formData.companyProfit || 0;
                   const currentGstRate = (formData.gstPercent || 0) / 100;
@@ -158,7 +159,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
                   
                   setFormData(prev => ({
                     ...prev,
-                    costPrice: cp,
+                    costPrice: valStr === '' ? '' : cp,
                     price: Math.round(newFinal * 100) / 100
                   }));
                 }}
@@ -242,9 +243,10 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="Final Selling Price (Incl. GST) (₹)"
                 type="number"
-                value={formData.price || ''}
+                value={formData.price ?? ''}
                 onChange={(e) => {
-                  const newPrice = parseFloat(e.target.value) || 0;
+                  const valStr = e.target.value;
+                  const newPrice = valStr === '' ? 0 : parseFloat(valStr) || 0;
                   // If Price changes, we recalculate Profit
                   const currentGstRate = (formData.gstPercent || 0) / 100;
                   const currentCp = parseFloat(formData.costPrice) || 0;
@@ -253,7 +255,7 @@ export default function ProductForm({ product, onSubmit, onClose }) {
 
                   setFormData(prev => ({
                     ...prev,
-                    price: newPrice,
+                    price: valStr === '' ? '' : newPrice,
                     companyProfit: Math.round(newProfit * 100) / 100
                   }));
                 }}
@@ -308,8 +310,11 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="Current Quantity"
                 type="number"
-                value={formData.quantity}
-                onChange={(e) => handleChange('quantity', parseInt(e.target.value) || 0)}
+                value={formData.quantity ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('quantity', val === '' ? '' : parseInt(val, 10) || 0);
+                }}
                 placeholder="0"
                 min="0"
                 required
@@ -319,8 +324,11 @@ export default function ProductForm({ product, onSubmit, onClose }) {
               <Input
                 label="Min Stock Alert"
                 type="number"
-                value={formData.minStock}
-                onChange={(e) => handleChange('minStock', parseInt(e.target.value) || 0)}
+                value={formData.minStock ?? ''}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  handleChange('minStock', val === '' ? '' : parseInt(val, 10) || 0);
+                }}
                 placeholder="10"
                 min="0"
                 error={errors.minStock}

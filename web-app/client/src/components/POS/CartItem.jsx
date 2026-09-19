@@ -4,12 +4,17 @@ import { formatCurrency } from '../../constants';
 
 export default function CartItem({ item, onUpdateQuantity, onRemove }) {
   const [isRemoving, setIsRemoving] = useState(false);
+  const lastActionTime = React.useRef(0);
 
   const handleQuantityChange = (newQty) => {
-    if (newQty <= 0) {
+    const now = Date.now();
+    if (now - lastActionTime.current < 40) return;
+    lastActionTime.current = now;
+    const parsed = Math.floor(Number(newQty));
+    if (isNaN(parsed) || parsed <= 0) {
       handleRemove();
-    } else if (newQty <= item.maxStock) {
-      onUpdateQuantity(item.id, newQty);
+    } else if (parsed <= (item.maxStock ?? 999999)) {
+      onUpdateQuantity(item.id, parsed);
     }
   };
 

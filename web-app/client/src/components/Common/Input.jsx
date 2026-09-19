@@ -29,14 +29,20 @@ export default function Input({
     if (type === 'number') {
       let val = e.target.value;
       if (val !== '') {
-        // Strip unintentional leading zeros (e.g. "0005" -> "5", "05" -> "5"), but preserve "0" and decimals like "0.5"
+        // Strip unintentional leading zeros (e.g. "0005" -> "5", "05" -> "5"), but preserve "0" and "0.xxx"
         if (/^0[0-9]+/.test(val)) {
-          val = val.replace(/^0+/, '') || '0';
+          val = val.replace(/^0+(?=\d)/, '') || '0';
           e.target.value = val;
         }
         // If min is >= 0, prevent negative numbers
         if (min !== undefined && Number(min) >= 0 && val.startsWith('-')) {
           val = val.replace(/^-+/, '');
+          e.target.value = val;
+        }
+        // Prevent multiple decimal points
+        if ((val.match(/\./g) || []).length > 1) {
+          const parts = val.split('.');
+          val = parts[0] + '.' + parts.slice(1).join('');
           e.target.value = val;
         }
       }
@@ -48,8 +54,21 @@ export default function Input({
     if (type === 'number') {
       let val = e.target.value;
       if (val !== '' && !isNaN(val)) {
+        // Normalize any remaining leading zeroes while preserving decimals like "0.50"
         if (/^0[0-9]+/.test(val)) {
-          val = String(Number(val));
+          val = val.replace(/^0+(?=\d)/, '');
+          e.target.value = val;
+          if (onChange) onChange(e);
+        }
+        // Clamp to min if defined
+        if (min !== undefined && Number(val) < Number(min)) {
+          val = String(min);
+          e.target.value = val;
+          if (onChange) onChange(e);
+        }
+        // Clamp to max if defined
+        if (max !== undefined && Number(val) > Number(max)) {
+          val = String(max);
           e.target.value = val;
           if (onChange) onChange(e);
         }

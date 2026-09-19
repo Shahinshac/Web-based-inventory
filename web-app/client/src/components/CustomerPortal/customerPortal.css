@@ -1,22 +1,22 @@
 /* 
-  Modern Light Professional Design System
-  Theme: Apple-inspired / Clean / Technical
+  Customer Portal — Modern Commercial Design
+  Uses design tokens from theme-modern.css
 */
 
 :root {
-  --portal-bg: #f8fafc;
-  --portal-sidebar-bg: #ffffff;
-  --portal-accent: #6366f1;
-  --portal-accent-hover: #4f46e5;
-  --portal-accent-glow: rgba(99, 102, 241, 0.15);
-  --portal-secondary: #0f172a;
-  --portal-text: #0f172a;
-  --portal-text-dim: #64748b;
-  --portal-border: #e2e8f0;
-  --portal-card-bg: #ffffff;
-  --portal-font: 'Inter', -apple-system, sans-serif;
-  --portal-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  --portal-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --portal-bg: var(--canvas-bg, #f8fafc);
+  --portal-sidebar-bg: var(--surface, #ffffff);
+  --portal-accent: var(--primary, #4f46e5);
+  --portal-accent-hover: var(--primary-hover, #4338ca);
+  --portal-accent-glow: rgba(79, 70, 229, 0.12);
+  --portal-secondary: var(--text-primary, #0f172a);
+  --portal-text: var(--text-primary, #0f172a);
+  --portal-text-dim: var(--text-muted, #64748b);
+  --portal-border: var(--border, #e2e8f0);
+  --portal-card-bg: var(--surface, #ffffff);
+  --portal-font: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --portal-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.07));
+  --portal-shadow-lg: var(--shadow, 0 4px 6px -1px rgba(0,0,0,0.07));
 }
 
 .customer-portal {
@@ -40,10 +40,10 @@
 /* ==================== Header ==================== */
 
 .portal-header {
-  height: 70px;
-  background: #ffffff;
+  height: 60px;
+  background: var(--surface, #ffffff);
   border-bottom: 1px solid var(--portal-border);
-  padding: 0 2rem;
+  padding: 0 1.5rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -188,12 +188,13 @@
 /* ==================== Common Components ==================== */
 
 .portal-card {
-  background: white;
+  background: var(--surface, #ffffff);
   border: 1px solid var(--portal-border);
-  border-radius: 16px;
+  border-radius: var(--radius-md, 10px);
   padding: 1.5rem;
   margin-bottom: 1.5rem;
   box-shadow: var(--portal-shadow);
+  transition: border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .portal-card-header {
@@ -224,19 +225,20 @@
 }
 
 .stat-card {
-  background: white;
+  background: var(--surface, #ffffff);
   border: 1px solid var(--portal-border);
-  border-radius: 16px;
-  padding: 1.5rem;
+  border-radius: var(--radius-md, 10px);
+  padding: 1.25rem;
   display: flex;
   align-items: center;
-  gap: 1.25rem;
+  gap: 1rem;
   box-shadow: var(--portal-shadow);
-  transition: transform 0.2s;
+  transition: transform 150ms ease, border-color 150ms ease, box-shadow 150ms ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  border-color: var(--border-subtle, #cbd5e1);
 }
 
 .stat-icon {

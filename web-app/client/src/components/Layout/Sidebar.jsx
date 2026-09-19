@@ -87,14 +87,15 @@ export default function Sidebar({
         {!collapsed && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: '8px',
-            marginTop: '16px', padding: '8px 14px',
-            background: 'rgba(99, 102, 241, 0.08)',
-            borderRadius: '12px', fontSize: '13px', fontWeight: 600,
-            color: '#6366f1', fontVariantNumeric: 'tabular-nums'
+            marginTop: '12px', padding: '6px 12px',
+            background: 'rgba(79, 70, 229, 0.12)',
+            border: '1px solid rgba(99, 102, 241, 0.2)',
+            borderRadius: '8px', fontSize: '12.5px', fontWeight: 600,
+            color: '#a5b4fc', fontVariantNumeric: 'tabular-nums'
           }}>
-            <Icon name="clock" size={14} />
+            <Icon name="clock" size={13} />
             <span>{liveTime}</span>
-            <span style={{ color: '#94a3b8', fontSize: '11px', marginLeft: 'auto' }}>IST</span>
+            <span style={{ color: '#64748b', fontSize: '10.5px', marginLeft: 'auto', fontWeight: 700 }}>IST</span>
           </div>
         )}
       </div>

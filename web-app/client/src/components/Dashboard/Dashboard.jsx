@@ -61,22 +61,22 @@ export default function Dashboard({
   ];
 
   return (
-    <div className="modern-dashboard" style={{ padding: '0 16px' }}>
+    <div className="modern-dashboard" style={{ padding: '0' }}>
       {/* Welcome Section */}
-      <div className="dashboard-welcome" style={{ marginBottom: '32px' }}>
-        <div className="welcome-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+      <div className="dashboard-welcome" style={{ marginBottom: '24px' }}>
+        <div className="welcome-content" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
           <div className="welcome-text">
-            <h1 className="welcome-title" style={{ fontSize: '32px', fontWeight: 800, margin: 0, color: '#1e293b' }}>{greeting}! 👋</h1>
-            <p className="welcome-subtitle" style={{ fontSize: '16px', color: '#64748b', marginTop: '8px' }}>Here's what's happening today</p>
+            <h1 className="welcome-title" style={{ fontSize: '24px', fontWeight: 700, margin: 0, color: 'var(--text-primary, #0f172a)', letterSpacing: '-0.02em' }}>{greeting}! 👋</h1>
+            <p className="welcome-subtitle" style={{ fontSize: '13.5px', color: 'var(--text-muted, #64748b)', marginTop: '4px', margin: 0 }}>Here's an overview of your business operations today.</p>
           </div>
-          <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div className="welcome-date" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             {/* Live Clock */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'linear-gradient(135deg, #6366f1, #8b5cf6)', padding: '10px 16px', borderRadius: '12px', color: '#fff', fontWeight: 700, fontSize: '15px', fontVariantNumeric: 'tabular-nums', letterSpacing: '0.5px', boxShadow: '0 4px 12px rgba(99,102,241,0.3)' }}>
-              <Icon name="clock" size={18} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface, #ffffff)', border: '1px solid var(--border, #e2e8f0)', padding: '7px 12px', borderRadius: '8px', color: 'var(--primary, #4f46e5)', fontWeight: 600, fontSize: '13px', fontVariantNumeric: 'tabular-nums', boxShadow: 'var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05))' }}>
+              <Icon name="clock" size={14} />
               <span>{currentTime.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}</span>
             </div>
-            <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#f1f5f9', padding: '10px 16px', borderRadius: '12px', color: '#1e293b', fontWeight: 600 }}>
-              <Icon name="calendar" size={18} />
+            <div className="date-display" style={{ display: 'flex', alignItems: 'center', gap: '6px', background: 'var(--surface, #ffffff)', border: '1px solid var(--border, #e2e8f0)', padding: '7px 12px', borderRadius: '8px', color: 'var(--text-secondary, #334155)', fontWeight: 500, fontSize: '13px', boxShadow: 'var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05))' }}>
+              <Icon name="calendar" size={14} />
               <span>{currentTime.toLocaleDateString('en-IN', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', timeZone: 'Asia/Kolkata' })}</span>
             </div>
           </div>
@@ -85,160 +85,167 @@ export default function Dashboard({
 
       <div className="bento-dashboard">
         {/* Total Revenue Bento */}
-        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(99, 102, 241, 0.2)' }}>
+        <div className="bento-card bento-col-2">
           <div className="bento-title">
             <div className="bento-title-icon"><Icon name="trending-up" size={16} /></div>
             Total Revenue
           </div>
-          <div className="bento-number" style={{ background: 'linear-gradient(to right, #6366f1, #a855f7)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          <div className="bento-number">
             {formatCurrency0(stats.totalRevenue || 0)}
           </div>
-          <div className="bento-sparkline" style={{ marginTop: '24px', height: '40px', background: 'linear-gradient(90deg, rgba(99,102,241,0.1) 0%, rgba(168,85,247,0.3) 100%)', borderRadius: '8px' }}></div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '12px', fontSize: '12px', color: 'var(--success, #059669)', fontWeight: 600 }}>
+            <Icon name="arrow-up-right" size={14} />
+            <span>Cumulative Sales & Invoices</span>
+          </div>
         </div>
 
         {/* Sales Bento */}
-        <div className="bento-card" style={{ '--bento-glow': 'rgba(52, 211, 153, 0.2)' }}>
+        <div className="bento-card">
           <div className="bento-title">
             <div className="bento-title-icon"><Icon name="shopping-cart" size={16} /></div>
             Total Sales
           </div>
           <div className="bento-number">{stats.totalSales || 0}</div>
+          <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>All completed transactions</div>
         </div>
 
         {/* Customers Bento */}
-        <div className="bento-card" style={{ '--bento-glow': 'rgba(56, 189, 248, 0.2)' }}>
+        <div className="bento-card">
           <div className="bento-title">
             <div className="bento-title-icon"><Icon name="users" size={16} /></div>
             Customers
           </div>
           <div className="bento-number">{stats.totalCustomers || 0}</div>
+          <div style={{ marginTop: '12px', fontSize: '12px', color: 'var(--text-muted, #64748b)' }}>Active customer records</div>
         </div>
 
         {/* Low Stock Alerts Bento */}
-        <div className="bento-card bento-col-2 bento-row-2" style={{ '--bento-glow': 'rgba(244, 63, 94, 0.15)' }}>
+        <div className="bento-card bento-col-2 bento-row-2">
           <div className="bento-title" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div className="bento-title-icon" style={{ color: '#f43f5e' }}><Icon name="alert-triangle" size={16} /></div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: 'var(--danger, #dc2626)' }}><Icon name="alert-triangle" size={16} /></div>
               Low Stock Alerts
             </div>
-            <span style={{ background: '#f43f5e', color: 'white', padding: '4px 8px', borderRadius: '8px', fontSize: '12px' }}>{lowStockProducts?.length || 0} items</span>
+            <span style={{ background: 'var(--danger-subtle, #fef2f2)', color: 'var(--danger, #dc2626)', border: '1px solid var(--danger-border, #fecaca)', padding: '2px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 600 }}>{lowStockProducts?.length || 0} items</span>
           </div>
-          <div className="card-body" style={{ marginTop: '16px' }}>
+          <div className="card-body" style={{ marginTop: '14px' }}>
             {lowStockProducts && lowStockProducts.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
                 {lowStockProducts.slice(0, 5).map((product, index) => (
-                  <div key={product.id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px', background: '#f8fafc', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                      <div style={{ padding: '8px', background: '#e0e7ff', borderRadius: '8px', color: '#4f46e5' }}><Icon name="package" size={16} /></div>
+                  <div key={product.id || index} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 12px', background: 'var(--surface-subtle, #f8fafc)', borderRadius: '8px', border: '1px solid var(--border, #e2e8f0)' }}>
+                    <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                      <div style={{ padding: '6px', background: 'var(--surface, #ffffff)', border: '1px solid var(--border, #e2e8f0)', borderRadius: '6px', color: 'var(--primary, #4f46e5)' }}><Icon name="package" size={15} /></div>
                       <div>
-                        <div style={{ color: '#1e293b', fontWeight: 600, fontSize: '14px' }}>{product.name}</div>
-                        <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px' }}>Stock: {product.quantity} / Min: {product.minStock}</div>
+                        <div style={{ color: 'var(--text-primary, #0f172a)', fontWeight: 600, fontSize: '13px' }}>{product.name}</div>
+                        <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '11.5px', marginTop: '2px' }}>Stock: {product.quantity} / Min: {product.minStock}</div>
                       </div>
                     </div>
-                    <span style={{ color: product.quantity === 0 ? '#ef4444' : '#d97706', fontSize: '12px', fontWeight: 600, padding: '4px 8px', background: product.quantity === 0 ? '#fee2e2' : '#fef3c7', borderRadius: '6px' }}>
+                    <span style={{ color: product.quantity === 0 ? 'var(--danger, #dc2626)' : 'var(--warning, #d97706)', fontSize: '11px', fontWeight: 600, padding: '3px 8px', background: product.quantity === 0 ? 'var(--danger-subtle, #fef2f2)' : 'var(--warning-subtle, #fffbeb)', border: `1px solid ${product.quantity === 0 ? 'var(--danger-border, #fecaca)' : 'var(--warning-border, #fde68a)'}`, borderRadius: '6px' }}>
                       {product.quantity === 0 ? 'Out of Stock' : 'Low Stock'}
                     </span>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>All products are well stocked! 🎉</div>
+              <div style={{ textAlign: 'center', color: 'var(--text-muted, #64748b)', padding: '32px 0', fontSize: '13px' }}>All products are well stocked! 🎉</div>
             )}
           </div>
         </div>
 
         {/* Active Warranties Bento */}
-        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(16, 185, 129, 0.15)' }}>
+        <div className="bento-card bento-col-2">
           <div className="bento-title" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div className="bento-title-icon" style={{ color: '#10b981' }}><Icon name="shield" size={16} /></div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: 'var(--success, #059669)' }}><Icon name="shield" size={16} /></div>
               Active Warranties
             </div>
-            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNavigate('warranty')}>View All</button>
+            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: 'var(--primary, #4f46e5)' }} onClick={() => onNavigate('warranty')}>View All →</button>
           </div>
-          <div className="card-body" style={{ marginTop: '16px' }}>
+          <div className="card-body" style={{ marginTop: '12px' }}>
             {stats.activeWarranties > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981' }}>{stats.activeWarranties}</div>
-                <div style={{ color: '#64748b', fontSize: '13px' }}>Currently protecting products</div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--success, #059669)', fontVariantNumeric: 'tabular-nums' }}>{stats.activeWarranties}</div>
+                <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px' }}>Currently protecting products</div>
               </div>
             ) : (
-              <div style={{ color: '#94a3b8', fontSize: '13px' }}>No active warranties</div>
+              <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '12.5px' }}>No active warranties</div>
             )}
           </div>
         </div>
 
         {/* EMI Plans Bento */}
-        <div className="bento-card bento-col-2" style={{ '--bento-glow': 'rgba(99, 102, 241, 0.15)' }}>
+        <div className="bento-card bento-col-2">
           <div className="bento-title" style={{ justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              <div className="bento-title-icon" style={{ color: '#6366f1' }}><Icon name="credit-card" size={16} /></div>
+            <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+              <div className="bento-title-icon" style={{ color: 'var(--primary, #4f46e5)' }}><Icon name="credit-card" size={16} /></div>
               EMI Plans
             </div>
-            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer' }} onClick={() => onNavigate('emi')}>Manage</button>
+            <button className="text-primary" style={{ background: 'none', border: 'none', fontSize: '12px', fontWeight: 600, cursor: 'pointer', color: 'var(--primary, #4f46e5)' }} onClick={() => onNavigate('emi')}>Manage →</button>
           </div>
-          <div className="card-body" style={{ marginTop: '16px' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-              <div style={{ fontSize: '24px', fontWeight: 800, color: '#6366f1' }}>{stats.activeEMIPlans || 0}</div>
-              <div style={{ color: '#64748b', fontSize: '13px' }}>Active installment plans</div>
+          <div className="card-body" style={{ marginTop: '12px' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <div style={{ fontSize: '24px', fontWeight: 700, color: 'var(--primary, #4f46e5)', fontVariantNumeric: 'tabular-nums' }}>{stats.activeEMIPlans || 0}</div>
+              <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '12px' }}>Active installment schedules</div>
             </div>
           </div>
         </div>
 
         {/* Recent Activity Bento */}
-        <div className="bento-card bento-col-2 bento-row-2" style={{ '--bento-glow': 'rgba(168, 85, 247, 0.15)' }}>
+        <div className="bento-card bento-col-2 bento-row-2">
           <div className="bento-title">
             <div className="bento-title-icon"><Icon name="activity" size={16} /></div>
             Recent Activity
           </div>
-          <div className="card-body" style={{ marginTop: '16px' }}>
+          <div className="card-body" style={{ marginTop: '14px' }}>
             {recentActivity && recentActivity.length > 0 ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {recentActivity.slice(0, 6).map((activity, index) => (
-                  <div key={index} style={{ display: 'flex', gap: '16px', alignItems: 'flex-start' }}>
-                    <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#a855f7', marginTop: '6px', flexShrink: 0 }}></div>
+                  <div key={index} style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
+                    <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--primary, #4f46e5)', marginTop: '6px', flexShrink: 0 }}></div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ color: '#1e293b', fontSize: '14px', fontWeight: 500, lineHeight: '1.5' }}>{activity.text}</div>
-                      <div style={{ color: '#64748b', fontSize: '12px', marginTop: '4px', fontWeight: 400 }}>{activity.time}</div>
+                      <div style={{ color: 'var(--text-primary, #0f172a)', fontSize: '13px', fontWeight: 500, lineHeight: '1.4' }}>{activity.text}</div>
+                      <div style={{ color: 'var(--text-muted, #64748b)', fontSize: '11.5px', marginTop: '2px' }}>{activity.time}</div>
                     </div>
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ textAlign: 'center', color: '#94a3b8', padding: '40px 0' }}>No recent activity to display.</div>
+              <div style={{ textAlign: 'center', color: 'var(--text-muted, #64748b)', padding: '32px 0', fontSize: '13px' }}>No recent activity to display.</div>
             )}
           </div>
         </div>
 
         {/* Quick Actions Bento */}
         {canEdit && (
-          <div className="bento-card bento-col-4" style={{ '--bento-glow': 'rgba(255, 255, 255, 0.1)' }}>
+          <div className="bento-card bento-col-4">
             <div className="bento-title">
               <div className="bento-title-icon"><Icon name="zap" size={16} /></div>
               Quick Actions
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginTop: '16px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '12px', marginTop: '14px' }}>
               {[
-                { label: 'New Sale', icon: 'shopping-cart', onClick: () => onNavigate('pos'), color: '#6366f1' },
-                { label: 'Add Product', icon: 'plus', onClick: onAddProduct, color: '#ec4899' },
-                { label: 'Add Customer', icon: 'user-plus', onClick: onAddCustomer, color: '#0ea5e9' },
-                { label: 'View Products', icon: 'package', onClick: () => onNavigate('products'), color: '#10b981' }
+                { label: 'New Sale', icon: 'shopping-cart', onClick: () => onNavigate('pos'), color: '#4f46e5' },
+                { label: 'Add Product', icon: 'plus', onClick: onAddProduct, color: '#059669' },
+                { label: 'Add Customer', icon: 'user-plus', onClick: onAddCustomer, color: '#0284c7' },
+                { label: 'View Products', icon: 'package', onClick: () => onNavigate('products'), color: '#7c3aed' }
               ].map((action, i) => (
                 <button 
                   key={i} 
                   onClick={action.onClick}
                   style={{ 
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', 
-                    padding: '20px', background: '#f8fafc', border: '1px solid #e2e8f0', 
-                    borderRadius: '16px', cursor: 'pointer', transition: 'all 0.2s ease', color: '#1e293b', fontWeight: 600
+                    display: 'flex', alignItems: 'center', gap: '10px', 
+                    padding: '12px 16px', background: 'var(--surface, #ffffff)', border: '1px solid var(--border, #e2e8f0)', 
+                    borderRadius: '8px', cursor: 'pointer', transition: 'border-color 150ms ease, box-shadow 150ms ease', color: 'var(--text-primary, #0f172a)', fontWeight: 600,
+                    fontSize: '13px', textAlign: 'left',
+                    boxShadow: 'var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05))'
                   }}
-                  onMouseOver={(e) => { e.currentTarget.style.background = `rgba(${action.color.replace('#', '')}, 0.1)`; e.currentTarget.style.transform = 'translateY(-2px)' }}
-                  onMouseOut={(e) => { e.currentTarget.style.background = '#f8fafc'; e.currentTarget.style.transform = 'translateY(0)' }}
+                  onMouseOver={(e) => { e.currentTarget.style.borderColor = action.color; e.currentTarget.style.boxShadow = 'var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.08))' }}
+                  onMouseOut={(e) => { e.currentTarget.style.borderColor = 'var(--border, #e2e8f0)'; e.currentTarget.style.boxShadow = 'var(--shadow-xs, 0 1px 2px rgba(0,0,0,0.05))' }}
                 >
-                  <div style={{ background: action.color, color: 'white', padding: '12px', borderRadius: '12px', boxShadow: `0 4px 12px ${action.color}40` }}>
-                    <Icon name={action.icon} size={24} />
+                  <div style={{ background: action.color, color: 'white', width: '32px', height: '32px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <Icon name={action.icon} size={16} />
                   </div>
-                  {action.label}
+                  <span>{action.label}</span>
                 </button>
               ))}
             </div>

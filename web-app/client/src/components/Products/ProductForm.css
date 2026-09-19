@@ -47,11 +47,12 @@
 
 /* Form Sections */
 .form-section {
-  padding: 24px 20px;
-  border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  padding: 20px;
+  border-radius: var(--radius-md, 10px);
+  border: 1px solid var(--border, #e2e8f0);
   position: relative;
-  transition: all 0.2s ease;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+  background: var(--surface, #ffffff);
 }
 
 .form-section:hover {
@@ -60,88 +61,95 @@
 
 /* Section Color Variants */
 .form-section.basic {
-  background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  background: var(--surface, #ffffff);
+  border-color: #bfdbfe;
 }
 
 .form-section.basic .form-section-bar {
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  background: var(--primary, #4f46e5);
 }
 
 .form-section.basic .form-section-icon {
-  background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+  background: var(--primary, #4f46e5);
 }
 
 .form-section.pricing {
-  background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+  background: var(--surface, #ffffff);
+  border-color: #a7f3d0;
 }
 
 .form-section.pricing .form-section-bar {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  background: var(--success, #059669);
 }
 
 .form-section.pricing .form-section-icon {
-  background: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+  background: var(--success, #059669);
 }
 
 .form-section.inventory {
-  background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+  background: var(--surface, #ffffff);
+  border-color: #c4b5fd;
 }
 
 .form-section.inventory .form-section-bar {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  background: #7c3aed;
 }
 
 .form-section.inventory .form-section-icon {
-  background: linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%);
+  background: #7c3aed;
 }
 
 .form-section.tracking {
-  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  background: var(--surface, #ffffff);
+  border-color: #fdba74;
 }
 
 .form-section.tracking .form-section-bar {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: #ea580c;
 }
 
 .form-section.tracking .form-section-icon {
-  background: linear-gradient(135deg, #f97316 0%, #fb923c 100%);
+  background: #ea580c;
 }
 
 /* Customer Form Section Variants */
 .form-section.contact {
-  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+  background: var(--surface, #ffffff);
+  border-color: #fde68a;
 }
 
 .form-section.contact .form-section-bar {
-  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+  background: #d97706;
 }
 
 .form-section.contact .form-section-icon {
-  background: linear-gradient(135deg, #eab308 0%, #facc15 100%);
+  background: #d97706;
 }
 
 .form-section.address {
-  background: linear-gradient(135deg, #ecfeff 0%, #cffafe 100%);
+  background: var(--surface, #ffffff);
+  border-color: #a5f3fc;
 }
 
 .form-section.address .form-section-bar {
-  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+  background: #0891b2;
 }
 
 .form-section.address .form-section-icon {
-  background: linear-gradient(135deg, #0891b2 0%, #22d3ee 100%);
+  background: #0891b2;
 }
 
 .form-section.business {
-  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  background: var(--surface, #ffffff);
+  border-color: #f9a8d4;
 }
 
 .form-section.business .form-section-bar {
-  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+  background: #db2777;
 }
 
 .form-section.business .form-section-icon {
-  background: linear-gradient(135deg, #ec4899 0%, #f472b6 100%);
+  background: #db2777;
 }
 
 /* Section Bar (top accent line) */

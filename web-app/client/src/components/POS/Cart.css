@@ -1,20 +1,18 @@
 /* ============================================
    NEXT-GEN SHOPPING CART STYLES
-   Modern, sleek, feature-rich cart design
+   Modern, clean, professional cart design
    ============================================ */
 
 /* Main Cart Container */
 .cart-next-gen {
-  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
-  border-radius: 20px;
+  background: var(--surface, #ffffff);
+  border-radius: var(--radius-md, 10px);
   overflow: hidden;
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -2px rgba(0, 0, 0, 0.1),
-    0 0 0 1px rgba(0, 0, 0, 0.05);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.07));
+  border: 1px solid var(--border, #e2e8f0);
   display: flex;
   flex-direction: column;
-  transition: all 0.3s ease;
+  transition: border-color 150ms ease;
 }
 
 .cart-next-gen:hover {
@@ -30,13 +28,12 @@
 
 /* Header */
 .cart-ng-header {
-  padding: 18px 20px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 50%, #a855f7 100%);
+  padding: 16px 20px;
+  background: var(--primary, #4f46e5);
   display: flex;
   justify-content: space-between;
   align-items: center;
   position: relative;
-  overflow: hidden;
 }
 
 .cart-ng-header::before {
@@ -252,9 +249,8 @@
 }
 
 .cart-ng-item:hover {
-  border-color: #c7d2fe;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
-  transform: translateX(4px);
+  border-color: var(--border-subtle, #cbd5e1);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.07));
 }
 
 .cart-ng-item.removing {
@@ -498,11 +494,11 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px;
-  background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
-  border-radius: 14px;
+  padding: 14px 16px;
+  background: var(--primary, #4f46e5);
+  border-radius: var(--radius, 8px);
   color: white;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  box-shadow: var(--shadow-sm, 0 1px 3px rgba(0,0,0,0.1));
 }
 
 .cart-ng-total-label {
