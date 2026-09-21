@@ -1194,12 +1194,13 @@ Esc: Close modals/dialogs`;
   // Determine mode from URL path
   const isStaffRoute = typeof window !== 'undefined' && (
     window.location.pathname.toLowerCase() === '/staff' ||
-    window.location.pathname.toLowerCase().startsWith('/staff/')
+    window.location.pathname.toLowerCase().startsWith('/staff/') ||
+    window.location.hash.toLowerCase() === '#staff'
   );
 
   // If not authenticated, show login page
   if (!isAuthenticated) {
-    return <Login onLogin={login} mode={isStaffRoute ? 'staff' : undefined} />;
+    return <Login onLogin={login} mode={isStaffRoute ? 'staff' : 'customer'} />;
   }
 
   // Customer Portal Route

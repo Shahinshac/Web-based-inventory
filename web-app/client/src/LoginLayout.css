@@ -1,6 +1,7 @@
 /* ==========================================================================
-   ROLE-BASED LOGIN EXPERIENCE — 26:07 ELECTRONICS ERP
-   Modern Commercial SaaS / Fintech Design System (Slate & Indigo)
+   LOGIN & AUTHENTICATION STYLES — 26:07 ELECTRONICS ERP
+   Dedicated Commercial SaaS / Enterprise Design (Slate & Indigo)
+   Supports / (Customer Portal Login) and /staff (Staff ERP Login)
    ========================================================================== */
 
 /* Reset & Box Sizing */
@@ -24,479 +25,292 @@
   border-width: 0;
 }
 
-/* Main Outer Container */
+/* Base Container */
 .ultra-login-container {
   min-height: 100vh;
   width: 100vw;
   max-width: 100%;
-  background: #0f172a; /* Deep Slate */
-  background-image: 
-    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(79, 70, 229, 0.15) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 50% 120%, rgba(15, 23, 42, 0.8) 0%, transparent 70%);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 32px 20px;
+  padding: 24px 16px;
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  color: #0f172a;
   overflow-x: hidden;
   overflow-y: auto;
 }
 
 /* ==========================================================================
-   ROLE SELECTION VIEW (Default Entry)
+   THEME 1: STAFF LOGIN (/staff) — Enterprise Dark Slate
    ========================================================================== */
-
-.role-selection-wrapper {
-  width: 100%;
-  max-width: 860px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  animation: loginFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  margin: auto;
+.staff-login-theme {
+  background: #090d16;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.18) 0%, transparent 60%),
+    radial-gradient(circle at 80% 80%, rgba(14, 165, 233, 0.08) 0%, transparent 50%),
+    linear-gradient(180deg, #090d16 0%, #0d1527 100%);
+  color: #f1f5f9;
 }
 
-/* Header & Brand Badge */
-.role-selection-header {
-  text-align: center;
-  margin-bottom: 36px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+.staff-login-theme .auth-form-card-wrapper {
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255, 255, 255, 0.05);
+  color: #f8fafc;
 }
 
-.erp-brand-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  padding: 8px 18px 8px 12px;
-  border-radius: 9999px;
-  margin-bottom: 24px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-}
-
-.erp-brand-icon {
-  width: 38px;
-  height: 38px;
-  background: var(--primary, #4f46e5);
+.staff-login-theme .auth-card-header h2 {
   color: #ffffff;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 2px 8px rgba(79, 70, 229, 0.4);
 }
 
-.erp-brand-text {
-  display: flex;
-  flex-direction: column;
-  text-align: left;
-}
-
-.erp-brand-title {
-  color: #ffffff;
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-}
-
-.erp-brand-subtitle {
+.staff-login-theme .auth-card-header p {
   color: #94a3b8;
-  font-size: 11px;
-  font-weight: 500;
 }
 
-.role-welcome-heading {
-  font-size: 32px;
-  font-weight: 800;
+.staff-login-theme .ultra-input-group label {
+  color: #cbd5e1;
+}
+
+.staff-login-theme .ultra-input {
+  background: rgba(15, 23, 42, 0.7);
+  border-color: rgba(255, 255, 255, 0.12);
   color: #ffffff;
-  letter-spacing: -0.03em;
-  margin: 0 0 8px 0;
-  line-height: 1.2;
 }
 
-.role-welcome-sub {
-  font-size: 15px;
-  color: #94a3b8;
-  margin: 0;
-  font-weight: 400;
+.staff-login-theme .ultra-input:focus {
+  background: rgba(15, 23, 42, 0.9);
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.25);
 }
 
-/* Cards Grid */
-.role-cards-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 24px;
-  width: 100%;
-}
-
-/* Individual Role Card */
-.role-card {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 28px;
-  display: flex;
-  flex-direction: column;
-  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
-  cursor: pointer;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.03);
-  position: relative;
-  outline: none;
-}
-
-.role-card:hover,
-.role-card:focus-visible {
-  transform: translateY(-3px);
-  box-shadow: 0 16px 32px -6px rgba(0, 0, 0, 0.15), 0 4px 8px -2px rgba(0, 0, 0, 0.06);
-}
-
-.staff-role-card:hover,
-.staff-role-card:focus-visible {
-  border-color: #818cf8;
-}
-
-.customer-role-card:hover,
-.customer-role-card:focus-visible {
-  border-color: #6ee7b7;
-}
-
-/* Top Section in Card */
-.role-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 20px;
-}
-
-.role-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.staff-icon-box {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
-}
-
-.customer-icon-box {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
-}
-
-.role-card-badge {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  padding: 4px 10px;
-  border-radius: 9999px;
-  text-transform: uppercase;
-}
-
-.staff-badge {
-  background: #e0e7ff;
-  color: #3730a3;
-  border: 1px solid #c7d2fe;
-}
-
-.customer-badge {
-  background: #d1fae5;
-  color: #065f46;
-  border: 1px solid #a7f3d0;
-}
-
-/* Content */
-.role-card-content {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.role-card-title {
-  font-size: 20px;
-  font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 8px 0;
-  letter-spacing: -0.02em;
-}
-
-.role-card-description {
-  font-size: 13.5px;
+.staff-login-theme .ultra-input::placeholder {
   color: #64748b;
-  line-height: 1.55;
-  margin: 0 0 20px 0;
 }
 
-/* Feature List */
-.role-features-list {
-  list-style: none;
-  padding: 0;
-  margin: 0 0 24px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
+.staff-login-theme .ultra-remember span {
+  color: #94a3b8;
 }
 
-.role-features-list li {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 13px;
-  color: #334155;
-  font-weight: 500;
+.staff-login-theme .staff-pill {
+  background: rgba(99, 102, 241, 0.15);
+  color: #a5b4fc;
+  border: 1px solid rgba(99, 102, 241, 0.3);
 }
 
-.staff-role-card .role-features-list li svg {
-  color: #4f46e5;
-  flex-shrink: 0;
-}
-
-.customer-role-card .role-features-list li svg {
-  color: #059669;
-  flex-shrink: 0;
-}
-
-/* Action Button */
-.role-select-action-btn {
-  width: 100%;
-  padding: 13px 20px;
-  border-radius: 10px;
-  border: none;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  transition: background 150ms ease, transform 150ms ease, box-shadow 150ms ease;
-}
-
-.staff-action-btn {
-  background: #4f46e5;
+.staff-login-theme .staff-icon-bg {
+  background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
   color: #ffffff;
-  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.25);
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.4);
 }
 
-.staff-action-btn:hover {
-  background: #4338ca;
+.staff-login-theme .staff-submit-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: #ffffff;
   box-shadow: 0 4px 12px rgba(79, 70, 229, 0.35);
 }
 
-.customer-action-btn {
-  background: #059669;
-  color: #ffffff;
-  box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+.staff-login-theme .staff-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.45);
 }
 
-.customer-action-btn:hover {
-  background: #047857;
-  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.35);
-}
-
-/* Footer / Security Notice */
-.role-selection-footer {
-  margin-top: 36px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
-}
-
-.role-security-indicator {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  font-weight: 500;
-  color: #94a3b8;
-}
-
-.role-security-indicator svg {
-  color: #10b981;
-}
-
-.role-copyright {
-  font-size: 11.5px;
+.staff-login-theme .ultra-security-badge {
   color: #64748b;
-  margin: 0;
 }
 
 /* ==========================================================================
-   AUTHENTICATION FORM CARDS (Staff / Customer Login)
+   THEME 2: CUSTOMER PORTAL LOGIN (/) — Polished SaaS Client Style
    ========================================================================== */
-
-.auth-form-card-wrapper {
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-  border-radius: 16px;
-  padding: 36px;
-  width: 100%;
-  max-width: 440px;
-  box-shadow: 0 20px 40px -8px rgba(0, 0, 0, 0.25);
-  animation: loginFadeIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-  margin: auto;
+.customer-portal-theme {
+  background: #f8fafc;
+  background-image: 
+    radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.08) 0%, transparent 50%),
+    radial-gradient(circle at 100% 100%, rgba(2, 132, 199, 0.05) 0%, transparent 40%),
+    linear-gradient(180deg, #f8fafc 0%, #eef2f6 100%);
+  color: #0f172a;
 }
 
-/* Top Navigation Bar */
+.customer-portal-theme .auth-form-card-wrapper {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 20px 40px -12px rgba(0, 0, 0, 0.08), 0 1px 3px rgba(0, 0, 0, 0.04);
+  color: #0f172a;
+}
+
+.customer-portal-theme .auth-card-header h2 {
+  color: #0f172a;
+}
+
+.customer-portal-theme .auth-card-header p {
+  color: #64748b;
+}
+
+.customer-portal-theme .ultra-input-group label {
+  color: #334155;
+}
+
+.customer-portal-theme .ultra-input {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  color: #0f172a;
+}
+
+.customer-portal-theme .ultra-input:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.customer-portal-theme .ultra-input::placeholder {
+  color: #94a3b8;
+}
+
+.customer-portal-theme .customer-icon-bg {
+  background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.3);
+}
+
+.customer-portal-theme .customer-submit-btn {
+  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+  color: #ffffff;
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+.customer-portal-theme .customer-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+  box-shadow: 0 6px 16px rgba(79, 70, 229, 0.35);
+}
+
+/* ==========================================================================
+   SHARED CARD & FORM ARCHITECTURE
+   ========================================================================== */
+.auth-form-card-wrapper {
+  width: 100%;
+  max-width: 440px;
+  border-radius: 14px;
+  padding: 36px 32px;
+  margin: auto;
+  animation: loginFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+}
+
+@keyframes loginFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .auth-card-top-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.back-to-selection-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: transparent;
-  border: none;
-  color: #64748b;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 6px 0;
-  transition: color 150ms ease, transform 150ms ease;
-}
-
-.back-to-selection-btn:hover {
-  color: #0f172a;
-  transform: translateX(-2px);
 }
 
 .active-role-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11.5px;
+  gap: 6px;
+  font-size: 11px;
   font-weight: 700;
-  padding: 4px 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  padding: 4px 12px;
   border-radius: 9999px;
-  letter-spacing: 0.02em;
 }
 
-.staff-pill {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
-}
-
-.customer-pill {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
-}
-
-/* Form Header */
 .auth-card-header {
   text-align: center;
   margin-bottom: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .auth-card-icon {
   width: 52px;
   height: 52px;
-  border-radius: 14px;
-  display: inline-flex;
+  border-radius: 12px;
+  display: flex;
   align-items: center;
   justify-content: center;
-  margin-bottom: 14px;
-}
-
-.staff-icon-bg {
-  background: #eef2ff;
-  color: #4f46e5;
-  border: 1px solid #c7d2fe;
-}
-
-.customer-icon-bg {
-  background: #ecfdf5;
-  color: #059669;
-  border: 1px solid #a7f3d0;
+  margin-bottom: 16px;
 }
 
 .auth-card-header h2 {
   font-size: 22px;
   font-weight: 700;
-  color: #0f172a;
-  margin: 0 0 6px 0;
   letter-spacing: -0.02em;
+  margin-bottom: 6px;
 }
 
 .auth-card-header p {
   font-size: 13.5px;
-  color: #64748b;
-  margin: 0;
   line-height: 1.45;
+  margin: 0;
 }
 
-/* Sub-tabs (Login / Register) */
+/* Sub-tabs for Customer (Login / Register) */
 .ultra-sub-tabs {
   display: flex;
   background: #f1f5f9;
-  border-radius: 10px;
-  padding: 3px;
-  margin-bottom: 20px;
-  gap: 3px;
+  padding: 4px;
+  border-radius: 8px;
+  gap: 4px;
+  margin-bottom: 22px;
 }
 
 .ultra-sub-tab {
   flex: 1;
-  border: none;
-  background: transparent;
-  padding: 8px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  color: #64748b;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #64748b;
+  cursor: pointer;
   transition: all 150ms ease;
 }
 
 .ultra-sub-tab.active {
   background: #ffffff;
-  color: #0f172a;
+  color: #4f46e5;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-/* Inputs & Form Groups */
+.ultra-sub-tab:hover:not(.active) {
+  color: #1e293b;
+}
+
+/* Forms */
 .auth-form {
   display: flex;
   flex-direction: column;
+  gap: 16px;
 }
 
 .ultra-input-group {
-  margin-bottom: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .ultra-input-group label {
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 12.5px;
   font-weight: 600;
-  color: #475569;
-  margin-bottom: 6px;
-  text-transform: uppercase;
-  letter-spacing: 0.03em;
 }
 
 .ultra-input-wrapper {
@@ -507,25 +321,14 @@
 
 .ultra-input {
   width: 100%;
-  background: #ffffff;
-  border: 1px solid #cbd5e1;
-  padding: 11px 14px;
-  border-radius: 8px;
+  height: 42px;
+  padding: 0 14px;
   font-size: 14px;
-  font-weight: 500;
-  color: #0f172a;
+  border-radius: 8px;
+  border: 1px solid transparent;
   outline: none;
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition: all 150ms ease;
   font-family: inherit;
-}
-
-.ultra-input::placeholder {
-  color: #94a3b8;
-}
-
-.ultra-input:focus {
-  border-color: #4f46e5;
-  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12);
 }
 
 .ultra-eye-btn {
@@ -535,15 +338,15 @@
   border: none;
   color: #94a3b8;
   cursor: pointer;
-  padding: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: color 150ms ease;
+  padding: 4px;
+  border-radius: 4px;
 }
 
 .ultra-eye-btn:hover {
-  color: #475569;
+  color: #cbd5e1;
 }
 
 /* Remember me */
@@ -551,250 +354,142 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 18px;
   cursor: pointer;
+  user-select: none;
   font-size: 13px;
-  color: #475569;
-  font-weight: 500;
+  margin-top: -2px;
 }
 
-.ultra-remember input {
+.ultra-remember input[type="checkbox"] {
   width: 16px;
   height: 16px;
+  border-radius: 4px;
   accent-color: #4f46e5;
   cursor: pointer;
-  border-radius: 4px;
 }
 
-/* Primary Submit Button */
+/* Submit buttons */
 .ultra-btn {
   width: 100%;
-  border: none;
-  padding: 12px 20px;
+  height: 44px;
   border-radius: 8px;
-  font-size: 14.5px;
+  border: none;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: background 150ms ease, box-shadow 150ms ease;
-  color: #ffffff;
+  transition: all 150ms ease;
+  margin-top: 4px;
 }
 
 .ultra-btn:disabled {
-  opacity: 0.65;
-  cursor: wait;
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
-.staff-submit-btn {
-  background: #4f46e5;
-  box-shadow: 0 1px 3px rgba(79, 70, 229, 0.25);
+/* Error & Success Panes */
+.ultra-error-pane {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #ef4444;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
-.staff-submit-btn:hover:not(:disabled) {
-  background: #4338ca;
-  box-shadow: 0 4px 10px rgba(79, 70, 229, 0.35);
-}
-
-.customer-submit-btn {
-  background: #059669;
-  box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
-}
-
-.customer-submit-btn:hover:not(:disabled) {
-  background: #047857;
-  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35);
-}
-
-/* Role switch helper link */
-.auth-switch-link {
-  text-align: center;
-  margin-top: 18px;
+.ultra-error-title {
+  font-weight: 700;
+  display: block;
   font-size: 12.5px;
+}
+
+.ultra-error-text {
+  font-weight: 500;
+}
+
+.ultra-success-pane {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(16, 185, 129, 0.1);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  border-radius: 8px;
+  padding: 10px 14px;
+  color: #10b981;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.ultra-success-title {
+  font-weight: 700;
+  display: block;
+  font-size: 12.5px;
+}
+
+.ultra-success-text {
+  font-weight: 500;
+}
+
+/* Helper Notes */
+.ultra-info-note {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
   color: #64748b;
+  line-height: 1.35;
+  padding: 4px 2px;
 }
 
-.auth-switch-link button {
-  background: transparent;
-  border: none;
-  color: #4f46e5;
-  font-weight: 600;
-  font-size: 12.5px;
-  cursor: pointer;
-  padding: 0;
-  text-decoration: none;
-}
-
-.auth-switch-link button:hover {
-  text-decoration: underline;
-}
-
-/* Security Badge */
 .ultra-security-badge {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  margin-top: 20px;
   font-size: 11px;
-  color: #059669;
-  font-weight: 600;
-  background: #ecfdf5;
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid #a7f3d0;
+  text-align: center;
+  margin-top: 8px;
 }
 
-/* Feedback Panes */
-.ultra-error-pane {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  border-left: 3px solid #dc2626;
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  color: #991b1b;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.ultra-error-title {
-  font-weight: 700;
-  font-size: 12.5px;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.ultra-error-text {
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.ultra-success-pane {
-  background: #f0fdf4;
-  border: 1px solid #bbf7d0;
-  border-left: 3px solid #16a34a;
-  padding: 12px 14px;
-  border-radius: 8px;
-  margin-bottom: 16px;
-  color: #14532d;
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
-
-.ultra-success-title {
-  font-weight: 700;
-  font-size: 12.5px;
-  display: block;
-  margin-bottom: 2px;
-}
-
-.ultra-success-text {
-  font-size: 12px;
-  line-height: 1.4;
-}
-
-.ultra-info-note {
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-top: 14px;
-  font-size: 12px;
-  color: #64748b;
-  line-height: 1.45;
-}
-
-.ultra-info-note svg {
-  flex-shrink: 0;
-  margin-top: 1px;
-}
-
-/* Spin animation */
 .spin {
-  animation: spin 0.8s linear infinite;
+  animation: spin 1s linear infinite;
 }
 
 @keyframes spin {
+  from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
 
-@keyframes loginFadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-/* Respect Reduced Motion */
-@media (prefers-reduced-motion: reduce) {
-  .role-selection-wrapper,
-  .auth-form-card-wrapper,
-  .role-card,
-  .role-select-action-btn,
-  .ultra-btn,
-  .spin {
-    animation: none !important;
-    transition: none !important;
-    transform: none !important;
-  }
-}
-
 /* ==========================================================================
-   RESPONSIVE LAYOUTS (320px, 375px, 390px, 412px, 768px, 1024px, 1440px)
+   RESPONSIVE ADJUSTMENTS (320px - 768px)
    ========================================================================== */
-
-@media (max-width: 768px) {
-  .role-cards-grid {
-    grid-template-columns: 1fr;
-    max-width: 440px;
-    gap: 16px;
-  }
-
-  .role-welcome-heading {
-    font-size: 26px;
-  }
-
-  .role-selection-header {
-    margin-bottom: 24px;
-  }
-
-  .auth-form-card-wrapper {
-    padding: 24px 20px;
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.2);
-  }
-}
-
 @media (max-width: 480px) {
   .ultra-login-container {
-    padding: 20px 12px;
+    padding: 16px 12px;
+    align-items: flex-start;
   }
-
-  .role-card {
-    padding: 20px 18px;
-  }
-
-  .role-welcome-heading {
-    font-size: 24px;
-  }
-
-  .role-welcome-sub {
-    font-size: 13.5px;
-  }
-
+  
   .auth-form-card-wrapper {
-    padding: 20px 16px;
+    padding: 24px 18px;
     border-radius: 12px;
+  }
+
+  .auth-card-header h2 {
+    font-size: 20px;
+  }
+
+  .ultra-input {
+    height: 40px;
+  }
+
+  .ultra-btn {
+    height: 42px;
   }
 }

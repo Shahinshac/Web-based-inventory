@@ -6,6 +6,7 @@ import Button from '../Common/Button';
 import Icon from '../../Icon';
 import CustomerForm from '../Customers/CustomerForm';
 import { formatCurrency, formatCurrency0, GST_PERCENT, PAYMENT_MODES, validateSplitPayment } from '../../constants';
+import './CheckoutForm.css';
 
 export default function CheckoutForm({
   cart,

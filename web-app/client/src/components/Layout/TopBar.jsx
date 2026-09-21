@@ -58,7 +58,7 @@ export default function TopBar({
 
       <div className="topbar-right" style={{ marginLeft: 'auto' }}>
         {/* Live IST clock */}
-        <div className="topbar-status" title="Indian Standard Time (Asia/Kolkata)">
+        <div className="topbar-status topbar-clock desktop-only" title="Indian Standard Time (Asia/Kolkata)">
           <Icon name="clock" size={13} style={{ color: 'var(--primary)' }} />
           <span className="tabular">{currentTime} IST</span>
         </div>
@@ -72,11 +72,11 @@ export default function TopBar({
               boxShadow: isOnline ? '0 0 6px var(--success)' : 'none'
             }} 
           />
-          <span>{isOnline ? 'System Online' : 'Offline Mode'}</span>
+          <span>{isOnline ? 'Online' : 'Offline'}</span>
         </div>
 
         {/* User badge */}
-        <div className="topbar-status" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
+        <div className="topbar-status desktop-only" style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
           <span>{currentUser?.username || 'Admin'}</span>
           <span style={{ 
             fontSize: '10px', 

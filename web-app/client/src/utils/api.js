@@ -5,6 +5,14 @@
 
 // Get base API URL from environment
 export const getApiBaseUrl = () => {
+  // Intelligent resolution for local testing - always target local Flask on localhost
+  if (typeof window !== 'undefined') {
+    const hostname = window.location.hostname;
+    if (hostname === 'localhost' || hostname === '127.0.0.1') {
+      return 'http://localhost:5000';
+    }
+  }
+
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/$/, '');
   }
@@ -12,11 +20,6 @@ export const getApiBaseUrl = () => {
   // Intelligent resolution for local network testing (e.g. mobile phones)
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-
-    // If we're on localhost, use localhost:5000
-    if (hostname === 'localhost' || hostname === '127.0.0.1') {
-      return 'http://localhost:5000';
-    }
 
     // Production fallback for known hosted frontend domains.
     // This prevents customer-portal pages (Invoices/EMI) from failing when
@@ -269,7 +272,7 @@ const createApiError = (status, body, endpoint) => {
   switch (status) {
     case 401:
       error.isAuthError = true;
-      error.message = 'Session expired or invalid. Please login again.';
+      error.message = serverMessage || 'Session expired or invalid. Please login again.';
       error.details = serverMessage || 'Authentication failed';
       break;
 

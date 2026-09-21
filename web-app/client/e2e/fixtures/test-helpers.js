@@ -11,8 +11,8 @@ function getUniqueTimestamp() {
  * Log in as Admin / Staff
  */
 async function loginAdmin(page) {
-  await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.goto('/staff');
+  await page.waitForLoadState('domcontentloaded');
 
   // If on customer tab, switch to staff
   const staffBtn = page.locator('button.ultra-segment-btn:has-text("STAFF")');
@@ -36,7 +36,7 @@ async function loginAdmin(page) {
  */
 async function loginCustomerPortal(page, { email, password }) {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   // Switch to Customer tab
   const customerBtn = page.locator('button.ultra-segment-btn:has-text("CUSTOMER")');
@@ -62,7 +62,7 @@ async function loginCustomerPortal(page, { email, password }) {
  */
 async function registerCustomerPortal(page, { email, password }) {
   await page.goto('/');
-  await page.waitForLoadState('networkidle');
+  await page.waitForLoadState('domcontentloaded');
 
   const customerBtn = page.locator('button.ultra-segment-btn:has-text("CUSTOMER")');
   await customerBtn.click();

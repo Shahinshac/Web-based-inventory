@@ -677,42 +677,81 @@ table { border-collapse: collapse; }
   font-size: 13.5px;
   font-weight: 500;
   color: var(--text-secondary);
-  text-transform: none;
-  letter-spacing: 0;
+.input-group,
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  width: 100%;
 }
 
-.form-input, .form-select, .form-textarea {
+.input-label,
+.form-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.input-field,
+.form-input,
+.form-select,
+.form-textarea {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
   font-size: 13.5px;
   font-family: var(--font);
   color: var(--text-primary);
   outline: none;
-  transition: border-color var(--transition), box-shadow var(--transition);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
+  box-sizing: border-box;
 }
 
-.form-input::placeholder, .form-textarea::placeholder {
+.input-field::placeholder,
+.form-input::placeholder,
+.form-textarea::placeholder {
   color: var(--text-subtle);
 }
 
-.form-input:focus, .form-select:focus, .form-textarea:focus {
+.input-field:focus,
+.form-input:focus,
+.form-select:focus,
+.form-textarea:focus {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
 }
 
-.form-input:disabled, .form-select:disabled {
+.input-field--large {
+  height: 42px;
+}
+
+.input-field--small {
+  height: 32px;
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+.input-field--full {
+  width: 100%;
+}
+
+.input-field.input-error,
+.form-input.error,
+.form-select.error {
+  border-color: var(--danger);
+}
+
+.input-field:disabled,
+.form-input:disabled,
+.form-select:disabled {
   background: var(--surface-muted);
   color: var(--text-muted);
   cursor: not-allowed;
 }
-
-.form-input.error, .form-select.error { border-color: var(--danger); }
-.form-input.error:focus { box-shadow: 0 0 0 3px rgba(220,38,38,0.1); }
-
-.form-error {
   font-size: 12px;
   color: var(--danger-text);
   display: flex;
@@ -993,6 +1032,37 @@ table { border-collapse: collapse; }
 .td-name { font-weight: 600; color: var(--text-primary); }
 .td-sub  { font-size: 11.5px; color: var(--text-muted); margin-top: 1px; }
 .td-amount { font-variant-numeric: tabular-nums; font-weight: 600; }
+
+.data-table tbody tr.product-table-row:hover,
+.data-table tbody tr.customer-table-row:hover,
+.data-table tbody tr.invoice-table-row:hover {
+  background: var(--surface-subtle);
+}
+
+/* Table row resets to ensure tr with card classes remain proper table rows */
+table tr.product-card,
+table tr.product-table-row,
+table tr.customer-card,
+table tr.customer-table-row,
+table tr.invoice-card,
+table tr.invoice-table-row {
+  display: table-row !important;
+  flex-direction: unset !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  background: transparent;
+}
+
+table tr.product-card > td,
+table tr.product-table-row > td,
+table tr.customer-card > td,
+table tr.customer-table-row > td,
+table tr.invoice-card > td,
+table tr.invoice-table-row > td {
+  display: table-cell !important;
+  border-bottom: 1px solid var(--border-light);
+  vertical-align: middle;
+}
 
 /* Row actions */
 .row-actions {
@@ -1549,10 +1619,10 @@ table { border-collapse: collapse; }
    18. POS SYSTEM
    ========================================================================== */
 
-.pos-shell {
+.pos-shell,
+.pos-content {
   display: flex;
   gap: 20px;
-  height: calc(100vh - var(--topbar-height) - 48px);
   min-height: 500px;
 }
 
@@ -1583,22 +1653,170 @@ table { border-collapse: collapse; }
   outline: none;
   width: 100%;
   transition: border-color var(--transition), box-shadow var(--transition);
+  position: relative;
 }
 
-.pos-search-bar:focus {
+.pos-search-bar input {
+  border: none;
+  background: transparent;
+  outline: none;
+  width: 100%;
+  font-size: 13.5px;
+  color: var(--text-primary);
+}
+
+.pos-search-bar:focus-within {
   border-color: var(--border-focus);
   box-shadow: 0 0 0 3px rgba(79,70,229,0.1);
 }
 
-.pos-products {
+.pos-category-strip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 4px 0;
+}
+
+.pos-cat-pill {
+  padding: 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  font-size: 12.5px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+
+.pos-cat-pill.active {
+  background: var(--primary);
+  color: #fff;
+  border-color: var(--primary);
+}
+
+.pos-products,
+.pos-products-grid {
   flex: 1;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
   align-content: start;
   padding-right: 4px;
 }
+
+.pos-product-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform 100ms ease;
+}
+
+.pos-product-card:hover {
+  border-color: var(--primary);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+}
+
+.pos-card-thumb {
+  width: 100%;
+  height: 90px;
+  border-radius: var(--radius-sm);
+  background: var(--surface-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.pos-card-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.pos-card-thumb-placeholder {
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.pos-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.pos-card-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.3;
+}
+
+.pos-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 6px;
+}
+
+.pos-card-price {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: var(--primary);
+}
+
+.pos-card-stock {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--success);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.pos-add-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: var(--radius-sm);
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity var(--transition-fast);
+}
+
+.pos-stock-badge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.pos-stock-badge.out { background: var(--danger-bg); color: var(--danger); }
+.pos-stock-badge.low { background: var(--warning-bg); color: var(--warning); }
 
 .pos-products::-webkit-scrollbar { width: 5px; }
 .pos-products::-webkit-scrollbar-thumb { background: #e2e8f0; border-radius: 10px; }
@@ -2248,6 +2466,17 @@ table { border-collapse: collapse; }
 
   .login-card { padding: 24px 20px; }
   .login-heading { font-size: 20px; }
+}
+
+@media (max-width: 560px) {
+  .topbar-clock { display: none !important; }
+  .topbar-title {
+    font-size: 13px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    max-width: 180px;
+  }
 }
 
 @media (max-width: 480px) {

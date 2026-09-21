@@ -22,6 +22,47 @@
   padding: 4px;
 }
 
+.product-form input[type="text"],
+.product-form input[type="number"],
+.product-form input[type="search"],
+.product-form select,
+.product-form textarea {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  height: 40px !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  border: 1px solid var(--border, #cbd5e1) !important;
+  font-size: 13.5px !important;
+  font-family: inherit !important;
+  color: var(--text-primary, #1e293b) !important;
+  background: var(--surface, #ffffff) !important;
+  outline: none !important;
+  transition: border-color 150ms ease, box-shadow 150ms ease !important;
+}
+
+.product-form input:focus,
+.product-form select:focus,
+.product-form textarea:focus {
+  border-color: var(--primary, #4f46e5) !important;
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.12) !important;
+}
+
+.product-form .input-group {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  width: 100% !important;
+}
+
+.product-form .input-label {
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  color: var(--text-secondary, #475569) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.03em !important;
+}
+
 /* Form Row for side-by-side inputs */
 .form-row {
   display: grid;

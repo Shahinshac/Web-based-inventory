@@ -1,11 +1,13 @@
 import React, { useState, useMemo } from 'react';
 import InvoiceCard from './InvoiceCard';
 import InvoiceDetails from './InvoiceDetails';
+import InvoiceActions from './InvoiceActions';
 import SearchBar from '../Common/SearchBar';
 import Button from '../Common/Button';
 import AdminConfirmDialog from '../Common/AdminConfirmDialog';
 import Icon from '../../Icon';
-import { formatCurrency0 } from '../../constants';
+import { formatCurrency0, formatCurrency, PAYMENT_MODE_LABELS } from '../../constants';
+import { formatDateOnlyIST, formatTimeOnlyIST } from '../../utils/dateFormatter';
 
 export default function InvoicesList({
   invoices,
@@ -21,6 +23,7 @@ export default function InvoicesList({
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedInvoice, setSelectedInvoice] = useState(null);
   const [sortBy, setSortBy] = useState('newest');
+  const [viewMode, setViewMode] = useState('table'); // 'table' | 'grid'
   
   // Delete state
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -28,7 +31,6 @@ export default function InvoicesList({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const filteredInvoices = useMemo(() => {
-    // ... existing filter logic ...
     let result = invoices.filter(invoice => {
       const query = searchQuery.toLowerCase();
       const matchesSearch = 
@@ -106,96 +108,270 @@ export default function InvoicesList({
   };
 
   return (
-    <div className="invoices-list">
-      <div className="invoices-header">
-        <div>
-          <h2 className="invoices-title">
-            <Icon name="file-text" size={24} />
-            Invoices
+    <div className="erp-invoices-view invoices-list">
+      {/* Header */}
+      <div className="page-header">
+        <div className="page-header-left">
+          <h2 className="page-title">
+            <Icon name="file-text" size={22} style={{ color: 'var(--primary)', marginRight: 6 }} />
+            Billing Ledger & Invoices
           </h2>
-          <p className="invoices-subtitle">
-            {filteredInvoices.length} invoices &bull; Total: {formatCurrency0(totalRevenue)}
+          <p className="page-subtitle">
+            {filteredInvoices.length} invoices &bull; Cumulative Billing: {formatCurrency0(totalRevenue)}
             {lastRefreshTime && (
-              <span style={{ marginLeft: '8px', fontSize: '0.85em', opacity: 0.7 }}>
-                &bull; Last updated: {new Date(lastRefreshTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
+              <span style={{ marginLeft: '8px', opacity: 0.7 }}>
+                &bull; Updated: {new Date(lastRefreshTime).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' })}
               </span>
             )}
           </p>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+
+        <div className="page-actions">
+          {/* View toggle */}
+          <div className="table-actions-group" style={{ display: 'flex', gap: '4px', background: 'var(--surface-subtle)', padding: '2px', borderRadius: '6px', border: '1px solid var(--border)' }}>
+            <button
+              type="button"
+              className={`btn btn-xs ${viewMode === 'table' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setViewMode('table')}
+              title="Table View"
+            >
+              <Icon name="table" size={14} />
+              <span>Table</span>
+            </button>
+            <button
+              type="button"
+              className={`btn btn-xs ${viewMode === 'grid' ? 'btn-primary' : 'btn-ghost'}`}
+              onClick={() => setViewMode('grid')}
+              title="Card Grid"
+            >
+              <Icon name="grid" size={14} />
+              <span>Cards</span>
+            </button>
+          </div>
+
           <Button
             variant="secondary"
             onClick={onRefresh}
             icon="refresh-cw"
             disabled={isRefreshing}
-            title="Refresh invoices list"
+            className="btn-sm"
           >
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+            {isRefreshing ? 'Syncing...' : 'Sync'}
           </Button>
-          <div className="invoices-stats-pills">
-            <div className="stat-pill">
-              <Icon name="calendar" size={14} />
+
+          <div className="invoices-stats-pills" style={{ display: 'flex', gap: '8px' }}>
+            <div className="stat-pill badge badge-primary" style={{ padding: '6px 12px' }}>
               <span>Today: <strong>{todayCount}</strong></span>
             </div>
-            <div className="stat-pill">
-              <Icon name="shopping-bag" size={14} />
-              <span>All: <strong>{invoices.length}</strong></span>
+            <div className="stat-pill badge badge-gray" style={{ padding: '6px 12px' }}>
+              <span>Total: <strong>{invoices.length}</strong></span>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="invoices-controls">
-        <SearchBar 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by invoice #, customer, phone, salesperson..."
-        />
-        <div className="invoices-filter-group">
-          <select 
-            value={dateFilter}
-            onChange={(e) => setDateFilter(e.target.value)}
-            className="date-filter-select"
-          >
-            <option value="all">All Time</option>
-            <option value="today">Today</option>
-            <option value="week">Last 7 Days</option>
-            <option value="month">Last 30 Days</option>
-          </select>
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="sort-select"
-          >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="highest">Highest Amount</option>
-            <option value="lowest">Lowest Amount</option>
-          </select>
+      {/* Controls */}
+      <div className="table-wrap invoices-controls" style={{ marginBottom: '20px', padding: '12px 16px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '12px', alignItems: 'center' }}>
+          <div style={{ flex: '1 1 280px', minWidth: '220px' }}>
+            <SearchBar 
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by invoice #, customer, phone, salesperson..."
+            />
+          </div>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center' }}>
+            <select 
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="filter-select date-filter-select"
+              aria-label="Filter by Date"
+            >
+              <option value="all">All Dates</option>
+              <option value="today">Today Only</option>
+              <option value="week">Past 7 Days</option>
+              <option value="month">Past 30 Days</option>
+            </select>
+
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="sort-select"
+              aria-label="Sort Invoices"
+            >
+              <option value="newest">Sort: Newest First</option>
+              <option value="oldest">Sort: Oldest First</option>
+              <option value="highest">Sort: Highest Amount</option>
+              <option value="lowest">Sort: Lowest Amount</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="invoices-grid">
-        {filteredInvoices.length > 0 ? (
-          filteredInvoices.map(invoice => (
-            <InvoiceCard 
-              key={invoice.id}
-              invoice={invoice}
-              onView={() => setSelectedInvoice(invoice)}
-              onDelete={canDelete ? () => handleDeleteClick(invoice) : null}
-              onExport={onExportPDF}
-              onShare={onShareWhatsApp}
-            />
-          ))
-        ) : (
-          <div className="empty-state">
-            <Icon name="file-text" size={56} color="#cbd5e1" />
-            <h4>No Invoices Found</h4>
-            <p>{searchQuery ? 'Try adjusting your search or filters' : 'Complete a sale to see invoices here'}</p>
-          </div>
-        )}
-      </div>
+      {/* VIEW 1: DATA TABLE */}
+      {viewMode === 'table' ? (
+        <div className="table-wrap">
+          <div style={{ overflowX: 'auto' }}>
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Invoice #</th>
+                  <th>Date & Time</th>
+                  <th>Customer Information</th>
+                  <th>Payment Method</th>
+                  <th style={{ textAlign: 'right' }}>Total Amount</th>
+                  <th>Cashier</th>
+                  <th style={{ textAlign: 'center' }}>Status</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredInvoices.length > 0 ? (
+                  filteredInvoices.map(invoice => {
+                    const date = new Date(invoice.createdAt || invoice.billDate || invoice.date);
+                    const formattedDate = formatDateOnlyIST(date);
+                    const formattedTime = formatTimeOnlyIST(date);
+                    const billNumber = invoice.billNumber || invoice.id;
+                    const customerName = invoice.customer?.name || invoice.customerName || 'Walk-in Customer';
+                    const customerPhone = invoice.customer?.phone || invoice.customerPhone || '';
+                    const isWalkIn = customerName === 'Walk-in Customer';
 
+                    return (
+                      <tr 
+                        key={invoice.id} 
+                        className="invoice-card invoice-table-row"
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => setSelectedInvoice(invoice)}
+                      >
+                        {/* Invoice Number */}
+                        <td>
+                          <span className="tabular" style={{ fontWeight: 700, fontFamily: 'var(--font-mono)', color: 'var(--primary)' }}>
+                            #{billNumber}
+                          </span>
+                        </td>
+
+                        {/* Date & Time */}
+                        <td>
+                          <div style={{ fontSize: '13px', fontWeight: 500, color: 'var(--text-primary)' }} className="tabular">
+                            {formattedDate}
+                          </div>
+                          <div style={{ fontSize: '11px', color: 'var(--text-muted)' }} className="tabular">
+                            {formattedTime}
+                          </div>
+                        </td>
+
+                        {/* Customer */}
+                        <td>
+                          <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '13.5px' }}>
+                            {customerName}
+                          </div>
+                          {customerPhone && (
+                            <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }} className="tabular">
+                              {customerPhone}
+                            </div>
+                          )}
+                        </td>
+
+                        {/* Payment Method */}
+                        <td>
+                          <span className="badge badge-primary">
+                            {PAYMENT_MODE_LABELS[invoice.paymentMode] || invoice.paymentMode || 'CASH'}
+                          </span>
+                        </td>
+
+                        {/* Total Amount */}
+                        <td style={{ textAlign: 'right', fontWeight: 700 }} className="tabular">
+                          {formatCurrency0(invoice.total)}
+                        </td>
+
+                        {/* Cashier */}
+                        <td>
+                          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+                            {invoice.createdByUsername || 'Admin'}
+                          </span>
+                        </td>
+
+                        {/* Status */}
+                        <td style={{ textAlign: 'center' }}>
+                          <span className="badge badge-success">
+                            Paid
+                          </span>
+                        </td>
+
+                        {/* Actions */}
+                        <td style={{ textAlign: 'right', whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'inline-flex', gap: '6px' }} onClick={e => e.stopPropagation()}>
+                            <Button
+                              variant="ghost"
+                              size="small"
+                              onClick={() => setSelectedInvoice(invoice)}
+                              icon="eye"
+                              className="btn-xs"
+                            >
+                              View
+                            </Button>
+
+                            <InvoiceActions 
+                              invoice={invoice}
+                              onExport={onExportPDF}
+                              onShare={onShareWhatsApp}
+                            />
+
+                            {canDelete && (
+                              <Button
+                                variant="danger"
+                                size="small"
+                                onClick={() => handleDeleteClick(invoice)}
+                                icon="trash-2"
+                                className="btn-xs"
+                              >
+                                Delete
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan={8} style={{ textAlign: 'center', padding: '48px', color: 'var(--text-muted)' }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '10px' }}>
+                        <Icon name="file-text" size={32} style={{ color: 'var(--text-muted)' }} />
+                        <span style={{ fontSize: '14px', fontWeight: 500 }}>No billing records matched your query.</span>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      ) : (
+        /* VIEW 2: CARDS VIEW */
+        <div className="invoices-grid">
+          {filteredInvoices.length > 0 ? (
+            filteredInvoices.map(invoice => (
+              <InvoiceCard 
+                key={invoice.id}
+                invoice={invoice}
+                onView={() => setSelectedInvoice(invoice)}
+                onDelete={canDelete ? () => handleDeleteClick(invoice) : null}
+                onExport={onExportPDF}
+                onShare={onShareWhatsApp}
+              />
+            ))
+          ) : (
+            <div className="empty-state" style={{ gridColumn: '1 / -1', padding: '48px 0', textAlign: 'center' }}>
+              <Icon name="file-text" size={48} color="var(--border-strong)" />
+              <p style={{ marginTop: '12px', color: 'var(--text-muted)' }}>No invoices found</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Invoice Details Modal */}
       {selectedInvoice && (
         <InvoiceDetails 
           invoice={selectedInvoice}
@@ -211,8 +387,8 @@ export default function InvoicesList({
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={handleConfirmDelete}
         isDeleting={isDeleting}
-        title="Confirm Invoice Deletion"
-        message={`Are you sure you want to delete invoice ${invoiceToDelete?.billNumber}? This will also restock the items and delete associated warranties/EMI plans.`}
+        title="Confirm Invoice Reversal & Deletion"
+        message={`Are you sure you want to delete Invoice #${invoiceToDelete?.billNumber || invoiceToDelete?.id}? This will reverse the transaction and restore the inventory stock.`}
       />
     </div>
   );
