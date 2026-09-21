@@ -1,3 +1,9 @@
 .vercel
 test-results/
 test-report/
+playwright-report/
+screenshots_qa/
+build_error.txt
+vercel_out.txt
+*.backup
+*.bak

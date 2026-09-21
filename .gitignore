@@ -62,3 +62,11 @@ __pycache__/
 # Playwright test artifacts
 test-results/
 test-report/
+playwright-report/
+screenshots_qa/
+
+# Logs and debug files
+build_error.txt
+vercel_out.txt
+*.backup
+*.bak
