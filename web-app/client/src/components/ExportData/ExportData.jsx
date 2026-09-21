@@ -89,38 +89,75 @@ export default function ExportData({ showNotification }) {
     }
   };
 
+  const setPreset = (preset) => {
+    const today = new Date();
+    const endStr = today.toISOString().split('T')[0];
+    if (preset === 'today') {
+      setDateRange({ start: endStr, end: endStr });
+    } else if (preset === 'month') {
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+      setDateRange({ start: firstDay.toISOString().split('T')[0], end: endStr });
+    } else if (preset === 'last30') {
+      const past = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
+      setDateRange({ start: past.toISOString().split('T')[0], end: endStr });
+    } else if (preset === 'all') {
+      setDateRange({ start: '', end: '' });
+    }
+  };
+
+  const hasActiveDateFilter = Boolean(dateRange.start || dateRange.end);
+
   return (
-    <div className="feature-page export-page">
-      <div className="feature-page-header">
-        <div className="feature-page-title">
-          <Icon name="download" size={24} />
-          <div>
-            <h2>Export Data</h2>
-            <p className="feature-page-subtitle">Download your business data as CSV files</p>
+    <div className="export-page page-full-width feature-page">
+      {/* Page Header */}
+      <div className="page-header feature-page-header">
+        <div className="page-header-left feature-page-title">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}>
+              <Icon name="download" size={22} />
+            </div>
+            <div>
+              <h1 className="page-title" style={{ fontSize: '20px' }}>Data Export Center</h1>
+              <p className="page-subtitle">
+                Export and download business records in CSV format for analysis, auditing, or spreadsheet software
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Date Range Filter */}
-      <div className="export-date-filter">
+      {/* Date Range Controls Bar */}
+      <div className="export-date-filter card">
         <div className="export-date-group">
           <Icon name="calendar" size={16} />
-          <span>Date Range (optional):</span>
+          <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Date Range Filter:</span>
           <input
             type="date"
+            aria-label="Start Date"
             value={dateRange.start}
             onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
             placeholder="Start date"
           />
-          <span>to</span>
+          <span style={{ color: 'var(--text-muted)' }}>to</span>
           <input
             type="date"
+            aria-label="End Date"
             value={dateRange.end}
             onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
             placeholder="End date"
           />
-          {(dateRange.start || dateRange.end) && (
+          {hasActiveDateFilter && (
             <button
+              type="button"
               className="clear-date-btn"
               onClick={() => setDateRange({ start: '', end: '' })}
             >
@@ -129,38 +166,98 @@ export default function ExportData({ showNotification }) {
             </button>
           )}
         </div>
+
+        <div style={{ display: 'flex', gap: '6px', alignItems: 'center', marginLeft: 'auto', flexWrap: 'wrap' }}>
+          <span style={{ fontSize: '11.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, letterSpacing: '0.04em' }}>
+            Presets:
+          </span>
+          <button
+            type="button"
+            className="btn btn-secondary btn-xs"
+            onClick={() => setPreset('month')}
+          >
+            This Month
+          </button>
+          <button
+            type="button"
+            className="btn btn-secondary btn-xs"
+            onClick={() => setPreset('last30')}
+          >
+            Last 30 Days
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-xs"
+            onClick={() => setPreset('all')}
+          >
+            All Time
+          </button>
+        </div>
       </div>
 
-      {/* Export Cards */}
+      {/* Export Cards Grid */}
       <div className="export-grid">
-        {EXPORT_OPTIONS.map(option => (
-          <div key={option.id} className="export-card">
-            <div className="export-card-icon" style={{ background: `linear-gradient(135deg, ${option.color}, ${option.color}dd)` }}>
-              <Icon name={option.icon} size={28} />
+        {EXPORT_OPTIONS.map(option => {
+          const isDateFiltered = ['invoices', 'expenses', 'returns'].includes(option.id) && hasActiveDateFilter;
+          return (
+            <div key={option.id} className="export-card card">
+              <div className="export-card-header">
+                <div
+                  className="export-card-icon"
+                  style={{
+                    background: `${option.color}15`,
+                    color: option.color,
+                    border: `1px solid ${option.color}35`,
+                    boxShadow: 'none'
+                  }}
+                >
+                  <Icon name={option.icon} size={22} />
+                </div>
+                <div className="export-card-content">
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                    <h3 style={{ margin: 0 }}>{option.label}</h3>
+                    <span className="badge badge-default" style={{ fontSize: '11px', padding: '2px 8px' }}>
+                      CSV
+                    </span>
+                  </div>
+                  <p>{option.description}</p>
+                </div>
+              </div>
+
+              <div className="export-card-meta">
+                <Icon name={['invoices', 'expenses', 'returns'].includes(option.id) ? "calendar" : "layers"} size={13} style={{ color: 'var(--text-muted)' }} />
+                <span>
+                  {isDateFiltered 
+                    ? `Filtered: ${dateRange.start || 'Start'} → ${dateRange.end || 'Now'}` 
+                    : ['invoices', 'expenses', 'returns'].includes(option.id)
+                      ? 'Exports all records (or filtered range)' 
+                      : 'Exports all active records'}
+                </span>
+              </div>
+
+              <Button
+                variant="primary"
+                icon="download"
+                onClick={() => handleExport(option)}
+                disabled={exporting === option.id}
+              >
+                {exporting === option.id ? 'Exporting...' : 'Export CSV'}
+              </Button>
             </div>
-            <div className="export-card-content">
-              <h3>{option.label}</h3>
-              <p>{option.description}</p>
-            </div>
-            <Button
-              variant="primary"
-              icon="download"
-              onClick={() => handleExport(option)}
-              disabled={exporting === option.id}
-            >
-              {exporting === option.id ? 'Exporting...' : 'Export CSV'}
-            </Button>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Info Section */}
-      <div className="export-info">
-        <Icon name="info" size={18} />
+      <div className="export-info card">
+        <Icon name="info" size={20} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
         <div>
-          <strong>Export Tips</strong>
-          <p>CSV files can be opened in Excel, Google Sheets, or any spreadsheet application. 
-             Use the date range filter to export data for a specific period (applies to invoices, expenses, and returns).</p>
+          <strong>Export Format & Compatibility</strong>
+          <p>
+            All generated CSV files use standard UTF-8 encoding and can be opened directly in Microsoft Excel,
+            Google Sheets, Apple Numbers, or custom accounting systems. Applying a date range above automatically
+            filters Invoices, Expenses, and Returns exports to that timeframe.
+          </p>
         </div>
       </div>
     </div>

@@ -117,11 +117,17 @@ export const downloadInvoicePDF = async (invoiceId) => {
 
     const html = await response.text();
 
-    // Open in new window
-    console.log('[downloadInvoicePDF] 🖨️ Opening invoice in new window...');
+    // Open in new window or fallback
+    console.log('[downloadInvoicePDF] 🖨️ Opening invoice in window...');
     const printWindow = window.open('', '_blank');
-    printWindow.document.write(html);
-    printWindow.document.close();
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+    } else {
+      const blob = new Blob([html], { type: 'text/html' });
+      const url = URL.createObjectURL(blob);
+      window.location.href = url;
+    }
 
     console.log('[downloadInvoicePDF] ✅ Invoice opened successfully');
     return true;

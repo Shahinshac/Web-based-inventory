@@ -198,26 +198,32 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
       </div>
 
       {/* Important Info Box */}
-      <div style={{
-        background: 'linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%)',
-        border: '1px solid #93c5fd',
-        borderRadius: '8px',
-        padding: '12px 16px',
+      <div className="card" style={{
+        background: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: 'var(--radius-lg)',
+        padding: '16px 20px',
         marginBottom: '20px',
         fontSize: '13px',
-        color: '#1e40af'
+        color: 'var(--text-secondary)',
+        display: 'flex',
+        alignItems: 'flex-start',
+        gap: '12px'
       }}>
-        <strong>💡 How Expenses Work:</strong>
-        <ul style={{ margin: '8px 0 0 0', paddingLeft: '20px' }}>
-          <li><strong>Operating Expenses:</strong> Salary, rent, utilities, maintenance, etc. (manually added)</li>
-          <li><strong>Inventory Costs:</strong> Product purchase costs are automatically tracked and used in profit calculations. Do NOT manually add these as expenses - it causes double-counting!</li>
-        </ul>
+        <Icon name="info" size={20} style={{ color: 'var(--primary)', flexShrink: 0, marginTop: '2px' }} />
+        <div>
+          <strong style={{ color: 'var(--text-primary)', fontSize: '13.5px' }}>Expense Architecture Guidelines:</strong>
+          <ul style={{ margin: '6px 0 0 0', paddingLeft: '18px', color: 'var(--text-muted)', lineHeight: '1.6' }}>
+            <li><strong style={{ color: 'var(--text-secondary)' }}>Operating Expenses:</strong> Salary, rent, utilities, maintenance, etc. (manually recorded here).</li>
+            <li><strong style={{ color: 'var(--text-secondary)' }}>Inventory COGS:</strong> Product purchase costs are automatically tracked via POS sales and profit reports. Do NOT add inventory purchase costs manually.</li>
+          </ul>
+        </div>
       </div>
 
       {/* Summary Cards */}
       <div className="feature-summary">
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #ef4444, #dc2626)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
             <Icon name="trending-down" size={20} />
           </div>
           <div className="summary-card-data">
@@ -225,8 +231,8 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
             <span className="summary-card-label">Total Expenses</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
             <Icon name="calendar" size={20} />
           </div>
           <div className="summary-card-data">
@@ -234,8 +240,8 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
             <span className="summary-card-label">This Month</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
             <Icon name="hash" size={20} />
           </div>
           <div className="summary-card-data">
@@ -243,8 +249,8 @@ export default function Expenses({ currentUser, showNotification, canEdit = true
             <span className="summary-card-label">Total Entries</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#dcfce7', color: '#059669' }}>
             <Icon name="layers" size={20} />
           </div>
           <div className="summary-card-data">

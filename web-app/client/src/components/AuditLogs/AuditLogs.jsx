@@ -155,175 +155,133 @@ export default function AuditLogs() {
   };
 
   return (
-    <div style={{ padding: '24px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="audit-logs-page page-full-width">
       {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '24px',
-        background: 'white',
-        padding: '20px 24px',
-        borderRadius: '16px',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-          <div style={{
-            width: '48px',
-            height: '48px',
-            borderRadius: '12px',
-            background: 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            color: 'white'
-          }}>
-            <Icon name="shield" size={24} />
-          </div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '24px', fontWeight: 700, color: '#1f2937' }}>
-              Audit Logs
-            </h1>
-            <p style={{ margin: '4px 0 0', fontSize: '14px', color: '#6b7280' }}>
-              Track all system activities and changes
-            </p>
-          </div>
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Icon name="shield" size={22} style={{ color: 'var(--primary)' }} />
+            System Audit & Security Logs
+          </h1>
+          <p className="page-subtitle">
+            Comprehensive immutable audit trail of user access, product alterations, inventory changes, and transactions
+          </p>
         </div>
-        <button
-          onClick={fetchLogs}
-          disabled={loading}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            padding: '10px 20px',
-            background: loading ? '#e5e7eb' : 'linear-gradient(135deg, #8b5cf6, #6366f1)',
-            color: loading ? '#9ca3af' : 'white',
-            border: 'none',
-            borderRadius: '10px',
-            fontSize: '14px',
-            fontWeight: 600,
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s'
-          }}
-        >
-          <Icon name={loading ? 'loader' : 'refresh-cw'} size={18} />
-          {loading ? 'Loading...' : 'Refresh'}
-        </button>
+        <div className="page-actions">
+          <button
+            type="button"
+            onClick={fetchLogs}
+            disabled={loading}
+            className="btn btn-secondary"
+          >
+            <Icon name={loading ? 'loader' : 'refresh-cw'} size={15} className={loading ? 'spin' : ''} />
+            <span>{loading ? 'Refreshing...' : 'Refresh Logs'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* Filters */}
-      <div style={{
-        display: 'flex',
-        gap: '16px',
-        marginBottom: '24px',
-        flexWrap: 'wrap'
-      }}>
+      {/* Filters Bar */}
+      <div className="table-toolbar card" style={{ marginBottom: '20px' }}>
         {/* Search */}
-        <div style={{
-          flex: 1,
-          minWidth: '250px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
-          padding: '12px 16px',
-          background: 'white',
-          borderRadius: '12px',
-          border: '1px solid #e5e7eb'
-        }}>
-          <Icon name="search" size={18} style={{ color: '#9ca3af' }} />
+        <div style={{ position: 'relative', flex: 1, minWidth: '260px' }}>
+          <Icon 
+            name="search" 
+            size={16} 
+            style={{ 
+              position: 'absolute', 
+              left: '12px', 
+              top: '50%', 
+              transform: 'translateY(-50%)', 
+              color: 'var(--text-muted)',
+              pointerEvents: 'none'
+            }} 
+          />
           <input
             type="text"
-            placeholder="Search by action, user, or details..."
+            className="form-input"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{
-              flex: 1,
-              border: 'none',
-              outline: 'none',
-              fontSize: '14px',
-              background: 'transparent'
-            }}
+            placeholder="Search by action, username, IP, or details..."
+            style={{ paddingLeft: '36px', height: '38px', fontSize: '13px', width: '100%' }}
           />
-          {search && (
-            <button onClick={() => setSearch('')} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px' }}>
-              <Icon name="x" size={16} style={{ color: '#9ca3af' }} />
-            </button>
-          )}
         </div>
 
         {/* Action Filter */}
-        <select
-          value={actionFilter}
-          onChange={(e) => setActionFilter(e.target.value)}
-          style={{
-            padding: '12px 16px',
-            background: 'white',
-            border: '1px solid #e5e7eb',
-            borderRadius: '12px',
-            fontSize: '14px',
-            cursor: 'pointer',
-            minWidth: '180px'
-          }}
-        >
-          {ACTIONS.map(a => (
-            <option key={a.value} value={a.value}>{a.label}</option>
-          ))}
-        </select>
+        <div style={{ minWidth: '200px' }}>
+          <select
+            value={actionFilter}
+            onChange={(e) => setActionFilter(e.target.value)}
+            className="form-select"
+            style={{ width: '100%', height: '38px', fontSize: '13px' }}
+          >
+            {ACTIONS.map(a => (
+              <option key={a.value} value={a.value}>{a.label}</option>
+            ))}
+          </select>
+        </div>
       </div>
 
-      {/* Stats */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-        gap: '16px',
-        marginBottom: '24px'
-      }}>
-        {[
-          { label: 'Total Logs', value: total, color: '#8b5cf6' },
-          { label: 'Shown', value: filteredLogs.length, color: '#3b82f6' },
-          { label: 'Page', value: `${page} / ${totalPages || 1}`, color: '#22c55e' }
-        ].map((stat, i) => (
-          <div key={i} style={{
-            background: 'white',
-            padding: '20px',
-            borderRadius: '12px',
-            textAlign: 'center',
-            border: '1px solid #e5e7eb'
-          }}>
-            <div style={{ fontSize: '28px', fontWeight: 700, color: stat.color }}>{stat.value}</div>
-            <div style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>{stat.label}</div>
+      {/* Stats KPI Row */}
+      <div className="kpi-row">
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-icon-primary">
+            <Icon name="activity" size={20} />
           </div>
-        ))}
+          <div className="kpi-body">
+            <div className="kpi-label">Total Audit Events</div>
+            <div className="kpi-value tabular">{total}</div>
+            <div className="kpi-sub">
+              <span className="badge badge-default">Logged in Database</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-icon-info">
+            <Icon name="layers" size={20} />
+          </div>
+          <div className="kpi-body">
+            <div className="kpi-label">Filtered Results</div>
+            <div className="kpi-value tabular">{filteredLogs.length}</div>
+            <div className="kpi-sub">
+              <span className="badge badge-primary">Active Search Query</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="kpi-card">
+          <div className="kpi-icon kpi-icon-success">
+            <Icon name="file-text" size={20} />
+          </div>
+          <div className="kpi-body">
+            <div className="kpi-label">Current Page</div>
+            <div className="kpi-value tabular">{page} / {totalPages || 1}</div>
+            <div className="kpi-sub">
+              <span className="badge badge-success">50 entries per page</span>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Error */}
       {error && (
-        <div style={{
+        <div className="card" style={{
+          background: 'var(--danger-light)',
+          border: '1px solid var(--danger-border)',
+          borderRadius: 'var(--radius-lg)',
+          padding: '14px 18px',
+          marginBottom: '20px',
+          color: 'var(--danger-text)',
           display: 'flex',
           alignItems: 'center',
-          gap: '12px',
-          padding: '16px 20px',
-          background: '#fef2f2',
-          border: '1px solid #fecaca',
-          borderRadius: '12px',
-          marginBottom: '24px',
-          color: '#dc2626'
+          gap: '12px'
         }}>
           <Icon name="alert-circle" size={20} />
-          <span style={{ flex: 1 }}>{error}</span>
+          <span style={{ flex: 1, fontWeight: 500 }}>{error}</span>
           <button 
+            type="button"
             onClick={fetchLogs}
-            style={{
-              padding: '8px 16px',
-              background: '#dc2626',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '13px',
-              fontWeight: 500
-            }}
+            className="btn btn-danger btn-xs"
           >
             Retry
           </button>
@@ -331,12 +289,7 @@ export default function AuditLogs() {
       )}
 
       {/* Logs List */}
-      <div style={{
-        background: 'white',
-        borderRadius: '16px',
-        border: '1px solid #e5e7eb',
-        overflow: 'hidden'
-      }}>
+      <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
         {loading ? (
           <div style={{ padding: '60px', textAlign: 'center' }}>
             <div style={{

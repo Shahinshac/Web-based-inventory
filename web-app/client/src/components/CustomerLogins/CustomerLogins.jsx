@@ -67,85 +67,85 @@ export default function CustomerLogins({ showNotification }) {
   );
 
   return (
-    <div className="customer-logins-container" style={{ padding: '24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-        <div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#1e293b', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <Icon name="key" size={24} color="#6366f1" />
-            Customer Login Management
-          </h2>
-          <p style={{ color: '#64748b', marginTop: '4px' }}>Control customer access and reset passwords for the Customer Portal</p>
+    <div className="customer-logins-page page-full-width">
+      <div className="page-header">
+        <div className="page-header-left">
+          <h1 className="page-title" style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <Icon name="key" size={22} style={{ color: 'var(--primary)' }} />
+            Customer Portal Access Management
+          </h1>
+          <p className="page-subtitle">
+            Manage customer login accounts, reset passwords, and configure access permissions for the Customer Portal
+          </p>
         </div>
-        <Button 
-          variant="secondary" 
-          onClick={fetchCustomers} 
-          icon="refresh-cw" 
-          disabled={isRefreshing}
-        >
-          {isRefreshing ? 'Refreshing...' : 'Refresh List'}
-        </Button>
+        <div className="page-actions">
+          <Button 
+            variant="secondary" 
+            onClick={fetchCustomers} 
+            icon="refresh-cw" 
+            disabled={isRefreshing}
+          >
+            {isRefreshing ? 'Refreshing...' : 'Refresh List'}
+          </Button>
+        </div>
       </div>
 
-      <div style={{ marginBottom: '20px', maxWidth: '500px' }}>
-        <SearchBar 
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search by name, email or phone..."
-        />
+      <div className="table-toolbar" style={{ marginBottom: '16px' }}>
+        <div style={{ flex: '1', maxWidth: '400px' }}>
+          <SearchBar 
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search by name, email or phone..."
+          />
+        </div>
+        <div style={{ fontSize: '13px', color: 'var(--text-muted)', fontWeight: 600 }}>
+          {filteredCustomers.length} registered profiles
+        </div>
       </div>
 
       {loading ? (
-        <div style={{ textAlign: 'center', padding: '100px' }}>
-          <Icon name="loader" size={40} className="spin" color="#6366f1" />
-          <p style={{ marginTop: '16px', color: '#64748b' }}>Loading customer accounts...</p>
+        <div className="card" style={{ textAlign: 'center', padding: '80px 20px' }}>
+          <Icon name="loader" size={36} className="spin" style={{ color: 'var(--primary)' }} />
+          <p style={{ marginTop: '14px', color: 'var(--text-muted)' }}>Loading customer accounts...</p>
         </div>
       ) : (
-        <div className="premium-card" style={{ overflow: 'hidden' }}>
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
+        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+          <div className="table-responsive">
+            <table className="data-table">
               <thead>
-                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
-                  <th style={{ padding: '16px', color: '#64748b', fontWeight: 600 }}>Customer Name</th>
-                  <th style={{ padding: '16px', color: '#64748b', fontWeight: 600 }}>Email Address</th>
-                  <th style={{ padding: '16px', color: '#64748b', fontWeight: 600 }}>Account Status</th>
-                  <th style={{ padding: '16px', color: '#64748b', fontWeight: 600 }}>Last Login (IST)</th>
-                  <th style={{ padding: '16px', color: '#64748b', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                <tr>
+                  <th>Customer</th>
+                  <th>Email Address</th>
+                  <th>Portal Status</th>
+                  <th>Last Login (IST)</th>
+                  <th style={{ textAlign: 'right' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredCustomers.length > 0 ? (
                   filteredCustomers.map(customer => (
-                    <tr key={customer.id} style={{ borderBottom: '1px solid #f1f5f9', transition: 'background 0.2s' }} className="table-row-hover">
-                      <td style={{ padding: '16px' }}>
-                        <div style={{ fontWeight: 600, color: '#1e293b' }}>{customer.name}</div>
-                        <div style={{ fontSize: '12px', color: '#64748b' }}>📞 {customer.phone}</div>
+                    <tr key={customer.id}>
+                      <td>
+                        <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{customer.name}</div>
+                        <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>📞 {customer.phone}</div>
                       </td>
-                      <td style={{ padding: '16px', color: '#334155' }}>{customer.email}</td>
-                      <td style={{ padding: '16px' }}>
+                      <td style={{ color: 'var(--text-secondary)' }}>{customer.email}</td>
+                      <td>
                         {customer.hasAccount ? (
-                          <span style={{ 
-                            background: '#ecfdf5', color: '#059669', 
-                            padding: '4px 10px', borderRadius: '12px', 
-                            fontSize: '12px', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '4px'
-                          }}>
-                            <div style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#10b981' }} />
-                            Account Active
+                          <span className="badge badge-success">
+                            ● Account Active
                           </span>
                         ) : (
-                          <span style={{ 
-                            background: '#f1f5f9', color: '#64748b', 
-                            padding: '4px 10px', borderRadius: '12px', 
-                            fontSize: '12px', fontWeight: 500
-                          }}>
-                            No Portal Account
+                          <span className="badge badge-default">
+                            ○ No Portal Account
                           </span>
                         )}
                       </td>
-                      <td style={{ padding: '16px', color: '#64748b', fontSize: '13px' }}>
+                      <td style={{ color: 'var(--text-muted)', fontSize: '12.5px' }}>
                         {customer.lastLogin ? formatTimestampIST(customer.lastLogin) : 'Never'}
                       </td>
-                      <td style={{ padding: '16px', textAlign: 'right' }}>
-                        <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
+                      <td style={{ textAlign: 'right' }}>
+                        <div style={{ display: 'inline-flex', gap: '6px' }}>
                           <Button 
                             size="small" 
                             variant="primary" 
@@ -172,9 +172,11 @@ export default function CustomerLogins({ showNotification }) {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" style={{ padding: '48px', textAlign: 'center', color: '#94a3b8' }}>
-                      <Icon name="search" size={40} style={{ marginBottom: '16px', opacity: 0.3 }} />
-                      <p>No customers found matching your search</p>
+                    <td colSpan="5">
+                      <div className="empty-state" style={{ padding: '48px 20px' }}>
+                        <Icon name="search" size={40} style={{ opacity: 0.3, marginBottom: '12px' }} />
+                        <p style={{ margin: 0, color: 'var(--text-muted)' }}>No customers found matching your search</p>
+                      </div>
                     </td>
                   </tr>
                 )}

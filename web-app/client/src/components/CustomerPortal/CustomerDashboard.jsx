@@ -8,7 +8,7 @@ import Icon from '../../Icon';
 import { fetchDashboardStats } from '../../services/customerPortalService';
 import { formatDateOnlyIST, formatTimestampIST } from '../../utils/dateFormatter';
 
-const CustomerDashboard = ({ currentUser }) => {
+const CustomerDashboard = ({ currentUser, onNavigate }) => {
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -66,7 +66,15 @@ const CustomerDashboard = ({ currentUser }) => {
 
       {/* Stats Grid */}
       <div className="stats-grid">
-        <div className="stat-card" style={stats?.stats?.outstandingBalance > 0 ? { borderLeft: '4px solid #f59e0b', background: '#fffbeb' } : {}}>
+        <div 
+          className="stat-card" 
+          onClick={() => onNavigate?.('emi')}
+          style={{ 
+            cursor: 'pointer',
+            ...(stats?.stats?.outstandingBalance > 0 ? { borderLeft: '4px solid #f59e0b', background: '#fffbeb' } : {})
+          }}
+          title="View EMI Plans & Balance"
+        >
           <div className="stat-icon" style={{ background: stats?.stats?.outstandingBalance > 0 ? '#fef3c7' : '#ecfdf5', color: stats?.stats?.outstandingBalance > 0 ? '#b45309' : '#059669' }}>
             <Icon name="alert-circle" size={24} />
           </div>
@@ -76,34 +84,49 @@ const CustomerDashboard = ({ currentUser }) => {
               ₹{Number(stats?.stats?.outstandingBalance || 0).toLocaleString()}
             </span>
             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-              {stats?.stats?.activeEMIs ? `${stats.stats.activeEMIs} Active EMI Plans` : 'No Pending Balance'}
+              {stats?.stats?.activeEMIs ? `${stats.stats.activeEMIs} Active EMI Plans →` : 'No Pending Balance →'}
             </span>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card"
+          onClick={() => onNavigate?.('invoices')}
+          style={{ cursor: 'pointer' }}
+          title="View Billing History & Orders"
+        >
           <div className="stat-icon" style={{ background: '#eff6ff', color: '#3b82f6' }}>
             <Icon name="shopping-bag" size={24} />
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Purchases</span>
             <span className="stat-value">{stats?.stats?.totalPurchases || 0}</span>
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Verified Orders</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Verified Orders →</span>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card"
+          onClick={() => onNavigate?.('invoices')}
+          style={{ cursor: 'pointer' }}
+          title="View Lifetime Purchases"
+        >
           <div className="stat-icon" style={{ background: '#fef2f2', color: '#ef4444' }}>
             <Icon name="credit-card" size={24} />
           </div>
           <div className="stat-info">
             <span className="stat-label">Total Spent</span>
             <span className="stat-value">₹{Number(stats?.stats?.totalSpent || 0).toLocaleString()}</span>
-            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Lifetime Value</span>
+            <span style={{ fontSize: '0.75rem', color: '#64748b' }}>Lifetime Value →</span>
           </div>
         </div>
 
-        <div className="stat-card">
+        <div 
+          className="stat-card"
+          onClick={() => onNavigate?.('warranties')}
+          style={{ cursor: 'pointer' }}
+          title="View Product Warranties"
+        >
           <div className="stat-icon" style={{ background: '#f0fdf4', color: '#22c55e' }}>
             <Icon name="shield-check" size={24} />
           </div>
@@ -111,7 +134,7 @@ const CustomerDashboard = ({ currentUser }) => {
             <span className="stat-label">Active Warranties</span>
             <span className="stat-value">{stats?.stats?.activeWarranties || 0}</span>
             <span style={{ fontSize: '0.75rem', color: '#64748b' }}>
-              {stats?.stats?.expiredWarranties ? `${stats.stats.expiredWarranties} Expired` : 'All Protected'}
+              {stats?.stats?.expiredWarranties ? `${stats.stats.expiredWarranties} Expired →` : 'All Protected →'}
             </span>
           </div>
         </div>
@@ -141,7 +164,12 @@ const CustomerDashboard = ({ currentUser }) => {
                 </thead>
                 <tbody>
                   {stats.recentPurchases.map((purchase) => (
-                    <tr key={purchase.id}>
+                    <tr 
+                      key={purchase.id}
+                      onClick={() => onNavigate?.('invoices')}
+                      style={{ cursor: 'pointer' }}
+                      title="Click to view billing history"
+                    >
                       <td>
                         <span style={{ fontWeight: 700, color: '#6366f1' }}>#{purchase.invoiceNo}</span>
                       </td>
@@ -157,7 +185,13 @@ const CustomerDashboard = ({ currentUser }) => {
             {/* Mobile Cards View */}
             <div className="portal-mobile-cards">
               {stats.recentPurchases.map((purchase) => (
-                <div key={purchase.id} className="portal-mobile-card">
+                <div 
+                  key={purchase.id} 
+                  className="portal-mobile-card"
+                  onClick={() => onNavigate?.('invoices')}
+                  style={{ cursor: 'pointer' }}
+                  title="Click to view billing history"
+                >
                   <div className="card-top-row">
                     <span className="card-primary-tag">#{purchase.invoiceNo}</span>
                     <span className="card-date-badge">{formatTimestampIST(purchase.date)}</span>

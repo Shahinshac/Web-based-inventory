@@ -140,11 +140,13 @@ export default function Reports({
   };
 
   return (
-    <div className="reports">
-      <div className="reports-header">
-        <div>
-          <h2 className="reports-title">📈 Reports</h2>
-          <p className="reports-subtitle">Generate and export business reports</p>
+    <div className="reports page-full-width">
+      <div className="page-header reports-header">
+        <div className="page-header-left">
+          <h2 className="page-title reports-title">📈 Reports & Financial Analytics</h2>
+          <p className="page-subtitle reports-subtitle">
+            Comprehensive business performance, profit margins, operational expenses, and revenue breakdown
+          </p>
         </div>
       </div>
 
@@ -157,11 +159,26 @@ export default function Reports({
 
       {/* SECTION 1: PROFIT SUMMARY WITH RETURNS ADJUSTMENTS */}
       {canViewProfit && financialSummary && (
-        <div className="report-summary">
-          <h3>💰 Profit Summary</h3>
+        <div className="report-summary card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>💰 Profit Summary</h3>
+            <span className="badge badge-success" style={{ fontSize: '11px' }}>Real-time P&amp;L</span>
+          </div>
           <div className="summary-grid">
             <div className="summary-item">
-              <Icon name="dollar-sign" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="dollar-sign" size={20} />
+              </div>
               <div>
                 <span>Total Sales (incl GST)</span>
                 <strong>{formatCurrency0(financialSummary?.sales?.totalSales || financialSummary?.revenue?.totalRevenue || 0)}</strong>
@@ -173,27 +190,64 @@ export default function Reports({
 
             {/* Returns Adjustment - Show if there are returns */}
             {(financialSummary?.sales?.totalReturns || 0) > 0 && (
-              <div className="summary-item" style={{ color: '#ef4444' }}>
-                <Icon name="arrow-down" size={24} />
+              <div className="summary-item" style={{ borderLeft: '3px solid #ef4444' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--danger-light)',
+                  color: 'var(--danger)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Icon name="arrow-down" size={20} />
+                </div>
                 <div>
-                  <span>Returns & Refunds</span>
-                  <strong>-{formatCurrency0(financialSummary?.sales?.totalReturns || 0)}</strong>
+                  <span style={{ color: '#ef4444' }}>Returns & Refunds</span>
+                  <strong style={{ color: '#ef4444' }}>-{formatCurrency0(financialSummary?.sales?.totalReturns || 0)}</strong>
                   <small style={{ color: '#64748b', fontSize: '11px' }}>Refunded to customers</small>
                 </div>
               </div>
             )}
 
-            <div className="summary-item" style={{ color: '#3b82f6', fontWeight: 600 }}>
-              <Icon name="dollar-sign" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #3b82f6' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#eff6ff',
+                color: '#3b82f6',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="dollar-sign" size={20} />
+              </div>
               <div>
-                <span>Net Revenue (excl GST)</span>
+                <span style={{ color: '#3b82f6' }}>Net Revenue (excl GST)</span>
                 <strong>{formatCurrency0(financialSummary?.sales?.netRevenue || financialSummary?.revenue?.baseRevenue || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>After returns & GST</small>
               </div>
             </div>
 
             <div className="summary-item">
-              <Icon name="shopping-cart" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#f8fafc',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid var(--border)'
+              }}>
+                <Icon name="shopping-cart" size={20} />
+              </div>
               <div>
                 <span>Product Cost (COGS)</span>
                 <strong>{formatCurrency0(financialSummary?.costs?.totalCogs || 0)}</strong>
@@ -203,18 +257,42 @@ export default function Reports({
 
             {/* Return Costs Adjustment - Show if there are returns */}
             {(financialSummary?.costs?.totalReturnCost || 0) > 0 && (
-              <div className="summary-item" style={{ color: '#10b981' }}>
-                <Icon name="arrow-up" size={24} />
+              <div className="summary-item" style={{ borderLeft: '3px solid #10b981' }}>
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: '#ecfdf5',
+                  color: '#10b981',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0
+                }}>
+                  <Icon name="arrow-up" size={20} />
+                </div>
                 <div>
-                  <span>Return Costs Recovered</span>
-                  <strong>-{formatCurrency0(financialSummary?.costs?.totalReturnCost || 0)}</strong>
+                  <span style={{ color: '#10b981' }}>Return Costs Recovered</span>
+                  <strong style={{ color: '#10b981' }}>-{formatCurrency0(financialSummary?.costs?.totalReturnCost || 0)}</strong>
                   <small style={{ color: '#64748b', fontSize: '11px' }}>Cost saved from returns</small>
                 </div>
               </div>
             )}
 
-            <div className="summary-item" style={{ color: '#3b82f6', fontWeight: 600 }}>
-              <Icon name="shopping-cart" size={24} />
+            <div className="summary-item">
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#f1f5f9',
+                color: '#475569',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="shopping-cart" size={20} />
+              </div>
               <div>
                 <span>Net COGS (after returns)</span>
                 <strong>{formatCurrency0(financialSummary?.costs?.netCogs || 0)}</strong>
@@ -222,10 +300,22 @@ export default function Reports({
               </div>
             </div>
 
-            <div className="summary-item" style={{ color: '#10b981' }}>
-              <Icon name="trending-up" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #10b981' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#ecfdf5',
+                color: '#10b981',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="trending-up" size={20} />
+              </div>
               <div>
-                <span>Gross Profit</span>
+                <span style={{ color: '#10b981' }}>Gross Profit</span>
                 <strong>{formatCurrency0(financialSummary?.profitSummary?.grossProfit || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>
                   {financialSummary?.profitSummary?.grossProfitMargin || 0}% margin
@@ -234,30 +324,60 @@ export default function Reports({
             </div>
 
             <div className="summary-item" style={{
-              color: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : '#ef4444'
+              borderLeft: `3px solid ${(financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : '#ef4444'}`
             }}>
-              <Icon name="trending-up" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#ecfdf5' : 'var(--danger-light)',
+                color: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="trending-up" size={20} />
+              </div>
               <div>
-                <span>Net Profit</span>
-                <strong>{formatCurrency0(financialSummary?.profitSummary?.netProfit || 0)}</strong>
+                <span style={{ color: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : '#ef4444' }}>Net Profit</span>
+                <strong style={{ color: (financialSummary?.profitSummary?.netProfit || 0) >= 0 ? '#10b981' : '#ef4444' }}>
+                  {formatCurrency0(financialSummary?.profitSummary?.netProfit || 0)}
+                </strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>
                   {financialSummary?.profitSummary?.netProfitMargin || 0}% margin
                 </small>
               </div>
             </div>
 
-            </div>
+          </div>
         </div>
       )}
 
       {/* SECTION 2: OPERATING EXPENSES BREAKDOWN */}
       {canViewProfit && operatingExpenses.length > 0 && (
-        <div className="report-summary" style={{ marginTop: '24px' }}>
-          <h3>🏢 Operating Expenses</h3>
+        <div className="report-summary card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>🏢 Operating Expenses</h3>
+            <span className="badge badge-warning" style={{ fontSize: '11px' }}>Overhead Breakdown</span>
+          </div>
           <div className="summary-grid">
             {Object.entries(expensesByCategory).map(([category, amount]) => (
               <div key={category} className="summary-item">
-                <Icon name="credit-card" size={24} />
+                <div style={{
+                  width: '40px',
+                  height: '40px',
+                  borderRadius: 'var(--radius-md)',
+                  background: 'var(--surface-subtle)',
+                  color: 'var(--primary)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  flexShrink: 0,
+                  border: '1px solid var(--border)'
+                }}>
+                  <Icon name="credit-card" size={20} />
+                </div>
                 <div>
                   <span>{category}</span>
                   <strong>{formatCurrency0(amount)}</strong>
@@ -267,11 +387,23 @@ export default function Reports({
                 </div>
               </div>
             ))}
-            <div className="summary-item" style={{ color: '#f59e0b' }}>
-              <Icon name="credit-card" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #f59e0b' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#fffbeb',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="credit-card" size={20} />
+              </div>
               <div>
-                <span>Total Operating Expenses</span>
-                <strong>{formatCurrency0(financialSummary?.operatingExpenses.total || 0)}</strong>
+                <span style={{ color: '#d97706' }}>Total Operating Expenses</span>
+                <strong>{formatCurrency0(financialSummary?.operatingExpenses?.total || 0)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Salary, Rent, Utilities, etc.</small>
               </div>
             </div>
@@ -279,13 +411,29 @@ export default function Reports({
         </div>
       )}
 
-      {/* SECTION 3: TOTAL EXPENSES OVERVIEW (NEW) */}
+      {/* SECTION 3: TOTAL EXPENSES OVERVIEW */}
       {canViewProfit && financialSummary && (
-        <div className="report-summary" style={{ marginTop: '24px' }}>
-          <h3>📊 Total Expenses Overview</h3>
+        <div className="report-summary card">
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <h3 style={{ margin: 0 }}>📊 Total Expenses Overview</h3>
+            <span className="badge badge-default" style={{ fontSize: '11px' }}>COGS + Operations</span>
+          </div>
           <div className="summary-grid">
             <div className="summary-item">
-              <Icon name="shopping-cart" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#f8fafc',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid var(--border)'
+              }}>
+                <Icon name="shopping-cart" size={20} />
+              </div>
               <div>
                 <span>COGS (Cost of Goods Sold)</span>
                 <strong>{formatCurrency0(financialSummary.totalExpenses.cogs)}</strong>
@@ -294,7 +442,20 @@ export default function Reports({
             </div>
 
             <div className="summary-item">
-              <Icon name="building" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#f8fafc',
+                color: '#64748b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                border: '1px solid var(--border)'
+              }}>
+                <Icon name="building" size={20} />
+              </div>
               <div>
                 <span>Operating Expenses</span>
                 <strong>{formatCurrency0(financialSummary.totalExpenses.operatingExpenses)}</strong>
@@ -302,17 +463,41 @@ export default function Reports({
               </div>
             </div>
 
-            <div className="summary-item" style={{ color: '#ef4444' }}>
-              <Icon name="alert-circle" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #ef4444' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--danger-light)',
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="alert-circle" size={20} />
+              </div>
               <div>
-                <span>Total Expenses</span>
-                <strong>{formatCurrency0(financialSummary.totalExpenses.total)}</strong>
+                <span style={{ color: '#ef4444' }}>Total Expenses</span>
+                <strong style={{ color: '#ef4444' }}>{formatCurrency0(financialSummary.totalExpenses.total)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>COGS + Operating</small>
               </div>
             </div>
 
             <div className="summary-item">
-              <Icon name="info" size={24} />
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--primary-light)',
+                color: 'var(--primary)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="info" size={20} />
+              </div>
               <div>
                 <span>Formula</span>
                 <strong>Base Revenue - Total Expenses</strong>
@@ -326,11 +511,26 @@ export default function Reports({
       )}
 
       {/* PAYMENT SUMMARY SECTION */}
-      <div className="report-summary" style={{ marginTop: '24px' }}>
-        <h3>💳 Payment Summary</h3>
+      <div className="report-summary card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>💳 Payment Summary</h3>
+          <span className="badge badge-default" style={{ fontSize: '11px' }}>Cash &amp; EMI Inflow</span>
+        </div>
         <div className="summary-grid">
           <div className="summary-item">
-            <Icon name="dollar-sign" size={24} />
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Icon name="dollar-sign" size={20} />
+            </div>
             <div>
               <span>Total Billed</span>
               <strong>{formatCurrency0(filteredInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0))}</strong>
@@ -338,21 +538,45 @@ export default function Reports({
             </div>
           </div>
 
-          <div className="summary-item" style={{ color: '#10b981' }}>
-            <Icon name="check-circle" size={24} />
+          <div className="summary-item" style={{ borderLeft: '3px solid #10b981' }}>
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: '#ecfdf5',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Icon name="check-circle" size={20} />
+            </div>
             <div>
-              <span>Collected Amount</span>
-              <strong>{formatCurrency0(reportData.paymentSummary.collected)}</strong>
+              <span style={{ color: '#10b981' }}>Collected Amount</span>
+              <strong style={{ color: '#10b981' }}>{formatCurrency0(reportData.paymentSummary.collected)}</strong>
               <small style={{ color: '#64748b', fontSize: '11px' }}>Cash received</small>
             </div>
           </div>
 
           {reportData.paymentSummary.pending > 0 && (
-            <div className="summary-item" style={{ color: '#f59e0b' }}>
-              <Icon name="clock" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #f59e0b' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: '#fffbeb',
+                color: '#f59e0b',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="clock" size={20} />
+              </div>
               <div>
-                <span>Pending Amount</span>
-                <strong>{formatCurrency0(reportData.paymentSummary.pending)}</strong>
+                <span style={{ color: '#d97706' }}>Pending Amount</span>
+                <strong style={{ color: '#d97706' }}>{formatCurrency0(reportData.paymentSummary.pending)}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>{reportData.paymentSummary.emiCount} EMI invoices</small>
               </div>
             </div>
@@ -361,11 +585,27 @@ export default function Reports({
       </div>
 
       {/* BUSINESS OVERVIEW SECTION */}
-      <div className="report-summary" style={{ marginTop: '24px' }}>
-        <h3>📦 Business Overview</h3>
+      <div className="report-summary card">
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+          <h3 style={{ margin: 0 }}>📦 Business Overview</h3>
+          <span className="badge badge-default" style={{ fontSize: '11px' }}>Operational Scope</span>
+        </div>
         <div className="summary-grid">
           <div className="summary-item">
-            <Icon name="calendar" size={24} />
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: '#f8fafc',
+              color: '#64748b',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+              border: '1px solid var(--border)'
+            }}>
+              <Icon name="calendar" size={20} />
+            </div>
             <div>
               <span>Period</span>
               <strong>{reportData.period}</strong>
@@ -373,7 +613,19 @@ export default function Reports({
           </div>
 
           <div className="summary-item">
-            <Icon name="file-text" size={24} />
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: 'var(--primary-light)',
+              color: 'var(--primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Icon name="file-text" size={20} />
+            </div>
             <div>
               <span>Total Invoices</span>
               <strong>{reportData.totalInvoices}</strong>
@@ -381,7 +633,19 @@ export default function Reports({
           </div>
 
           <div className="summary-item">
-            <Icon name="package" size={24} />
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: '#eff6ff',
+              color: '#3b82f6',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Icon name="package" size={20} />
+            </div>
             <div>
               <span>Total Products</span>
               <strong>{reportData.totalProducts}</strong>
@@ -389,7 +653,19 @@ export default function Reports({
           </div>
 
           <div className="summary-item">
-            <Icon name="users" size={24} />
+            <div style={{
+              width: '40px',
+              height: '40px',
+              borderRadius: 'var(--radius-md)',
+              background: '#ecfdf5',
+              color: '#10b981',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0
+            }}>
+              <Icon name="users" size={20} />
+            </div>
             <div>
               <span>Total Customers</span>
               <strong>{reportData.totalCustomers}</strong>
@@ -397,11 +673,23 @@ export default function Reports({
           </div>
 
           {reportData.lowStockCount > 0 && (
-            <div className="summary-item" style={{ color: '#ef4444' }}>
-              <Icon name="alert-triangle" size={24} />
+            <div className="summary-item" style={{ borderLeft: '3px solid #ef4444' }}>
+              <div style={{
+                width: '40px',
+                height: '40px',
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--danger-light)',
+                color: 'var(--danger)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0
+              }}>
+                <Icon name="alert-triangle" size={20} />
+              </div>
               <div>
-                <span>Low Stock Items</span>
-                <strong>{reportData.lowStockCount}</strong>
+                <span style={{ color: '#ef4444' }}>Low Stock Items</span>
+                <strong style={{ color: '#ef4444' }}>{reportData.lowStockCount}</strong>
                 <small style={{ color: '#64748b', fontSize: '11px' }}>Need reorder</small>
               </div>
             </div>

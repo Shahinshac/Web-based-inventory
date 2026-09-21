@@ -71,7 +71,12 @@ export default function Dashboard({
       {/* KPI Metrics Row */}
       <div className="kpi-row">
         {/* Total Revenue */}
-        <div className="kpi-card">
+        <div 
+          className="kpi-card" 
+          onClick={() => onNavigate('invoices')}
+          style={{ cursor: 'pointer' }}
+          title="View Billing History & Invoices"
+        >
           <div className="kpi-icon kpi-icon-primary">
             <Icon name="trending-up" size={20} />
           </div>
@@ -79,13 +84,18 @@ export default function Dashboard({
             <div className="kpi-label">Total Revenue</div>
             <div className="kpi-value tabular">{formatCurrency0(stats.totalRevenue || 0)}</div>
             <div className="kpi-sub">
-              <span className="badge badge-success">Cumulative Billing</span>
+              <span className="badge badge-success">Cumulative Billing &rarr;</span>
             </div>
           </div>
         </div>
 
         {/* Total Sales Transactions */}
-        <div className="kpi-card">
+        <div 
+          className="kpi-card"
+          onClick={() => onNavigate('invoices')}
+          style={{ cursor: 'pointer' }}
+          title="View All Invoices & Transactions"
+        >
           <div className="kpi-icon kpi-icon-success">
             <Icon name="shopping-cart" size={20} />
           </div>
@@ -93,13 +103,18 @@ export default function Dashboard({
             <div className="kpi-label">Total Transactions</div>
             <div className="kpi-value tabular">{stats.totalSales || 0}</div>
             <div className="kpi-sub">
-              <span className="badge badge-primary">Completed Sales</span>
+              <span className="badge badge-primary">Completed Sales &rarr;</span>
             </div>
           </div>
         </div>
 
         {/* Active Products */}
-        <div className="kpi-card">
+        <div 
+          className="kpi-card"
+          onClick={() => onNavigate('products')}
+          style={{ cursor: 'pointer' }}
+          title="View Inventory & SKUs"
+        >
           <div className="kpi-icon kpi-icon-info">
             <Icon name="package" size={20} />
           </div>
@@ -108,16 +123,21 @@ export default function Dashboard({
             <div className="kpi-value tabular">{stats.totalProducts || 0}</div>
             <div className="kpi-sub">
               {stats.lowStockCount > 0 ? (
-                <span className="badge badge-warning">{stats.lowStockCount} Low Stock</span>
+                <span className="badge badge-warning">{stats.lowStockCount} Low Stock &rarr;</span>
               ) : (
-                <span className="badge badge-success">Stock Healthy</span>
+                <span className="badge badge-success">Stock Healthy &rarr;</span>
               )}
             </div>
           </div>
         </div>
 
         {/* Total Customers */}
-        <div className="kpi-card">
+        <div 
+          className="kpi-card"
+          onClick={() => onNavigate('customers')}
+          style={{ cursor: 'pointer' }}
+          title="View Customer CRM"
+        >
           <div className="kpi-icon kpi-icon-warning">
             <Icon name="users" size={20} />
           </div>
@@ -125,7 +145,7 @@ export default function Dashboard({
             <div className="kpi-label">Customer CRM</div>
             <div className="kpi-value tabular">{stats.totalCustomers || 0}</div>
             <div className="kpi-sub">
-              <span className="badge badge-gray">Active Profiles</span>
+              <span className="badge badge-gray">Active Profiles &rarr;</span>
             </div>
           </div>
         </div>
@@ -207,7 +227,12 @@ export default function Dashboard({
                   lowStockProducts.slice(0, 6).map((product, index) => {
                     const isOut = (product.quantity || 0) <= 0;
                     return (
-                      <tr key={product.id || index}>
+                      <tr 
+                        key={product.id || index}
+                        onClick={() => onNavigate('products')}
+                        style={{ cursor: 'pointer' }}
+                        title="Click to view in Inventory"
+                      >
                         <td>
                           <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{product.name}</div>
                           <div style={{ fontSize: '11.5px', color: 'var(--text-muted)' }}>{product.category || 'General'}</div>

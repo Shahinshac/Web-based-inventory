@@ -236,8 +236,8 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
 
       {/* Summary Cards */}
       <div className="feature-summary">
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #6366f1, #8b5cf6)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: 'var(--primary-light)', color: 'var(--primary)' }}>
             <Icon name="rotate-ccw" size={20} />
           </div>
           <div className="summary-card-data">
@@ -245,8 +245,8 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
             <span className="summary-card-label">Total Returns</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #ef4444, #f97316)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#fee2e2', color: '#dc2626' }}>
             <Icon name="dollar-sign" size={20} />
           </div>
           <div className="summary-card-data">
@@ -254,8 +254,8 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
             <span className="summary-card-label">Total Refunded</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #10b981, #059669)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#dcfce7', color: '#059669' }}>
             <Icon name="calendar" size={20} />
           </div>
           <div className="summary-card-data">
@@ -263,8 +263,8 @@ export default function Returns({ currentUser, isAdmin, userRole, showNotificati
             <span className="summary-card-label">Today's Returns</span>
           </div>
         </div>
-        <div className="summary-card">
-          <div className="summary-card-icon" style={{ background: 'linear-gradient(135deg, #f59e0b, #d97706)' }}>
+        <div className="summary-card card">
+          <div className="summary-card-icon" style={{ background: '#fef3c7', color: '#d97706' }}>
             <Icon name="trending-down" size={20} />
           </div>
           <div className="summary-card-data">

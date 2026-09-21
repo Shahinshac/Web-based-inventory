@@ -110,7 +110,7 @@ const CustomerPortal = ({ currentUser, onLogout }) => {
 
           {/* Clean Content View */}
           <main className="portal-content-view">
-            {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} />}
+            {activeTab === 'dashboard' && <CustomerDashboard currentUser={currentUser} onNavigate={handleTabClick} />}
             {activeTab === 'invoices' && <CustomerInvoices currentUser={currentUser} />}
             {activeTab === 'warranties' && <CustomerWarranties currentUser={currentUser} />}
             {activeTab === 'emi' && <CustomerEMI currentUser={currentUser} />}

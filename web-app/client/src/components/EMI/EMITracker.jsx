@@ -9,7 +9,7 @@ import { apiGet, apiPatch } from '../../utils/api';
 import { formatCurrency0 } from '../../constants';
 import './emi.css';
 
-const EMITracker = () => {
+const EMITracker = ({ onNavigate }) => {
   const [emiPlans, setEmiPlans] = useState([]);
   const [filteredPlans, setFilteredPlans] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -184,7 +184,7 @@ const EMITracker = () => {
       <div className="emi-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button 
-            onClick={() => window.location.hash = '#dashboard'} 
+            onClick={() => onNavigate ? onNavigate('dashboard') : (window.location.hash = '#dashboard')} 
             className="header-back-btn"
             style={{ 
               background: 'white', 

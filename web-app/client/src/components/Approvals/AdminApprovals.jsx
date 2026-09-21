@@ -3,7 +3,7 @@ import Icon from '../../Icon';
 import { API, apiGet, apiPatch, getAuthHeaders } from '../../utils/api';
 import { formatDateOnlyIST } from '../../utils/dateFormatter';
 
-const AdminApprovals = () => {
+const AdminApprovals = ({ onNavigate }) => {
   const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('pending');
@@ -50,7 +50,7 @@ const AdminApprovals = () => {
         <div className="header-main-top">
           <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
             <button 
-              onClick={() => window.location.hash = '#dashboard'} 
+              onClick={() => onNavigate ? onNavigate('dashboard') : (window.location.hash = '#dashboard')} 
               className="header-back-btn"
               style={{ 
                 background: 'white', 

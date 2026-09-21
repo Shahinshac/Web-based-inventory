@@ -9,7 +9,7 @@ import { apiGet, apiPatch, apiPost } from '../../utils/api';
 import WarrantyCard from './WarrantyCard';
 import './warranty.css';
 
-const WarrantyTracker = () => {
+const WarrantyTracker = ({ onNavigate }) => {
   const [warranties, setWarranties] = useState([]);
   const [filteredWarranties, setFilteredWarranties] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,7 +108,7 @@ const WarrantyTracker = () => {
       <div className="warranty-header">
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
           <button 
-            onClick={() => window.location.hash = '#dashboard'} 
+            onClick={() => onNavigate ? onNavigate('dashboard') : (window.location.hash = '#dashboard')} 
             className="header-back-btn"
             style={{ 
               background: 'white', 

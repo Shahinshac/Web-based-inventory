@@ -68,44 +68,25 @@ export default function UsersList({
   return (
     <div className="users-list">
       {/* Current User Profile Section */}
-      <div className="current-user-profile" style={{
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-        borderRadius: '20px',
-        padding: '32px',
-        marginBottom: '32px',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.15)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
-          <div>
-            <h3 style={{ color: 'white', fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
-              My Profile
-            </h3>
-            <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px' }}>
-              Manage your account settings and profile
-            </p>
+      {/* Current User Profile Section */}
+      <div className="current-user-profile card">
+        <div className="profile-card-header">
+          <div className="profile-title-text">
+            <h3>My Staff Profile</h3>
+            <p>Your authentication status, role privileges, and account settings</p>
           </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
+          <div style={{ display: 'flex', gap: '8px' }}>
             <Button
               variant={showSettings ? "primary" : "secondary"}
               onClick={() => setShowSettings(!showSettings)}
               icon="settings"
-              style={{
-                background: showSettings ? 'rgba(255,255,255,0.25)' : 'rgba(255,255,255,0.15)',
-                border: 'none',
-                color: 'white'
-              }}
             >
-              {showSettings ? 'Close Settings' : 'Settings'}
+              {showSettings ? 'Close Settings' : 'Account Settings'}
             </Button>
             <Button
               variant="secondary"
               onClick={onLogout}
               icon="log-out"
-              style={{
-                background: 'rgba(239,68,68,0.2)',
-                border: 'none',
-                color: 'white'
-              }}
             >
               Logout
             </Button>
@@ -113,28 +94,12 @@ export default function UsersList({
         </div>
 
         {showSettings ? (
-          <div style={{
-            background: 'rgba(255,255,255,0.1)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: '16px',
-            padding: '24px'
-          }}>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '32px', alignItems: 'start' }}>
+          <div className="profile-settings-panel">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '24px', alignItems: 'start' }}>
               {/* Profile Photo Section */}
               <div style={{ textAlign: 'center' }}>
-                <div style={{ marginBottom: '16px' }}>
-                  <div style={{
-                    width: '120px',
-                    height: '120px',
-                    borderRadius: '50%',
-                    background: 'rgba(255,255,255,0.2)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto',
-                    overflow: 'hidden',
-                    border: '4px solid rgba(255,255,255,0.3)'
-                  }}>
+                <div style={{ marginBottom: '12px' }}>
+                  <div className="profile-avatar-large" style={{ width: '90px', height: '90px', margin: '0 auto' }}>
                     {currentUser?.photo ? (
                       <img
                         src={normalizePhotoUrl(currentUser.photo)}
@@ -143,102 +108,65 @@ export default function UsersList({
                         onError={e => { e.target.style.display = 'none'; }}
                       />
                     ) : (
-                      <Icon name="user" size={48} style={{ color: 'white' }} />
+                      <Icon name="user" size={40} style={{ color: 'var(--text-muted)' }} />
                     )}
                   </div>
                 </div>
                 {onUpdateUserPhoto && (
-                  <div>
-                    <ImageUpload
-                      currentImageUrl={normalizePhotoUrl(currentUser?.photo)}
-                      onUpload={onUpdateUserPhoto}
-                      onDelete={onDeleteUserPhoto}
-                      shape="circle"
-                      size={120}
-                      label="Update Photo"
-                    />
-                  </div>
+                  <ImageUpload
+                    currentImageUrl={normalizePhotoUrl(currentUser?.photo)}
+                    onUpload={onUpdateUserPhoto}
+                    onDelete={onDeleteUserPhoto}
+                    shape="circle"
+                    size={90}
+                    label="Update Photo"
+                  />
                 )}
               </div>
 
               {/* Profile Info Section */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+              <div className="profile-info-grid">
+                <div className="profile-info-item">
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Username</span>
-                    <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{currentUser?.username || 'N/A'}</span>
+                    <span className="info-label">Username</span>
+                    <span className="info-value">{currentUser?.username || 'N/A'}</span>
                   </div>
-                  <Icon name="user" size={20} style={{ color: 'rgba(255,255,255,0.5)' }} />
+                  <Icon name="user" size={18} style={{ color: 'var(--text-muted)' }} />
                 </div>
 
-                <div style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+                <div className="profile-info-item">
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Role</span>
-                    <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{getRoleDisplay()}</span>
+                    <span className="info-label">Role</span>
+                    <span className="info-value">{getRoleDisplay()}</span>
                   </div>
-                  <Icon name="shield" size={20} style={{ color: 'rgba(255,255,255,0.5)' }} />
+                  <Icon name="shield" size={18} style={{ color: 'var(--text-muted)' }} />
                 </div>
 
-                <div style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+                <div className="profile-info-item">
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>Status</span>
-                    <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>{isOnline ? '🟢 Online' : '🔴 Offline'}</span>
+                    <span className="info-label">Network Status</span>
+                    <span className="info-value">
+                      <span className={`badge ${isOnline ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
+                        {isOnline ? 'Online' : 'Offline'}
+                      </span>
+                    </span>
                   </div>
-                  <Icon name="wifi" size={20} style={{ color: 'rgba(255,255,255,0.5)' }} />
+                  <Icon name="wifi" size={18} style={{ color: 'var(--text-muted)' }} />
                 </div>
 
-                <div style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  borderRadius: '12px',
-                  padding: '16px',
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center'
-                }}>
+                <div className="profile-info-item">
                   <div>
-                    <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: '12px', display: 'block', marginBottom: '4px' }}>App Version</span>
-                    <span style={{ color: 'white', fontSize: '16px', fontWeight: '600' }}>1.0.0</span>
+                    <span className="info-label">System Version</span>
+                    <span className="info-value">1.0.0 (Commercial ERP)</span>
                   </div>
-                  <Icon name="info" size={20} style={{ color: 'rgba(255,255,255,0.5)' }} />
+                  <Icon name="info" size={18} style={{ color: 'var(--text-muted)' }} />
                 </div>
               </div>
             </div>
           </div>
         ) : (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '24px' }}>
-            <div style={{
-              width: '80px',
-              height: '80px',
-              borderRadius: '50%',
-              background: 'rgba(255,255,255,0.2)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              overflow: 'hidden',
-              border: '3px solid rgba(255,255,255,0.3)',
-              flexShrink: 0
-            }}>
+          <div className="profile-summary-view">
+            <div className="profile-avatar-large">
               {currentUser?.photo ? (
                 <img
                   src={normalizePhotoUrl(currentUser.photo)}
@@ -247,28 +175,20 @@ export default function UsersList({
                   onError={e => { e.target.style.display = 'none'; }}
                 />
               ) : (
-                <Icon name="user" size={36} style={{ color: 'white' }} />
+                <Icon name="user" size={32} style={{ color: 'var(--text-muted)' }} />
               )}
             </div>
-            <div style={{ flex: 1 }}>
-              <h4 style={{ color: 'white', fontSize: '20px', fontWeight: '700', marginBottom: '6px' }}>
-                {currentUser?.username || 'User'}
-              </h4>
-              <p style={{ color: 'rgba(255,255,255,0.8)', fontSize: '14px', marginBottom: '8px' }}>
-                {getRoleDisplay()}
-              </p>
-              <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                <span style={{
-                  background: 'rgba(255,255,255,0.2)',
-                  padding: '4px 12px',
-                  borderRadius: '20px',
-                  fontSize: '12px',
-                  color: 'white',
-                  fontWeight: '500'
-                }}>
-                  {isOnline ? '🟢 Online' : '🔴 Offline'}
+            <div className="profile-details" style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                <h4 style={{ margin: 0 }}>{currentUser?.username || 'User'}</h4>
+                <span className="badge badge-primary" style={{ fontSize: '11px' }}>{getRoleDisplay()}</span>
+                <span className={`badge ${isOnline ? 'badge-success' : 'badge-danger'}`} style={{ fontSize: '11px' }}>
+                  {isOnline ? '● Online' : '○ Offline'}
                 </span>
               </div>
+              <p style={{ marginTop: '4px', marginBottom: 0 }}>
+                Logged in as active staff member with access to system operations
+              </p>
             </div>
           </div>
         )}

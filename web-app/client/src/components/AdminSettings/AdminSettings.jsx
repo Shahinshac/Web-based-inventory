@@ -402,15 +402,20 @@ export default function AdminSettings() {
 
       <style jsx>{`
         .admin-settings-container {
+          width: 100%;
+          max-width: none;
+          margin: 0;
           padding: 24px;
-          background: white;
-          border-radius: 12px;
-          margin: 20px;
+          background: var(--surface);
+          border: 1px solid var(--border);
+          border-radius: var(--radius-lg);
+          box-shadow: var(--shadow-xs);
+          box-sizing: border-box;
         }
 
         .settings-header {
           margin-bottom: 24px;
-          border-bottom: 2px solid #f3f4f6;
+          border-bottom: 1px solid var(--border);
           padding-bottom: 16px;
         }
 
@@ -419,8 +424,9 @@ export default function AdminSettings() {
           align-items: center;
           gap: 12px;
           margin: 0;
-          color: #1f2937;
-          font-size: 24px;
+          color: var(--text-primary);
+          font-size: 20px;
+          font-weight: 700;
         }
 
         .settings-sections {
@@ -430,10 +436,10 @@ export default function AdminSettings() {
         }
 
         .settings-section {
-          border: 1px solid #e5e7eb;
-          border-radius: 12px;
+          border: 1px solid var(--border);
+          border-radius: var(--radius-md);
           padding: 20px;
-          background: #fafafa;
+          background: var(--surface-subtle);
         }
 
         .settings-section.danger-zone {

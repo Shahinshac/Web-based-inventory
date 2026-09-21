@@ -224,6 +224,18 @@ Esc: Close modals/dialogs`;
     trackPageView(`${newTab} Tab`);
   };
 
+  // Sync window hash changes to ERP tabs
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '').toLowerCase();
+      if (hash && hash !== 'staff' && hash !== 'customer') {
+        setTab(hash);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
   // Fetch recent activity from audit logs
   const fetchRecentActivity = async () => {
     try {
@@ -1410,16 +1422,16 @@ Esc: Close modals/dialogs`;
         return <AdminTickets />;
 
       case 'warranty':
-        return <WarrantyTracker />;
+        return <WarrantyTracker onNavigate={handleTabChange} />;
 
       case 'emi':
-        return <EMITracker />;
+        return <EMITracker onNavigate={handleTabChange} />;
 
       case 'approvals':
         if (!isAdmin) {
           return <div className="error-message">Admin access required</div>;
         }
-        return <AdminApprovals />;
+        return <AdminApprovals onNavigate={handleTabChange} />;
 
       case 'admin-settings':
         if (!isAdmin) {
@@ -1456,6 +1468,7 @@ Esc: Close modals/dialogs`;
           currentUser={currentUser}
           userRole={userRole}
           isOnline={isOnline}
+          onOpenShortcuts={() => alert(getShortcutsHelp())}
         />
         <main className="erp-content app-content">
           {renderActiveTab()}

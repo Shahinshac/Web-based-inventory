@@ -89,6 +89,24 @@ export default function TopBar({
             {userRole || 'Admin'}
           </span>
         </div>
+
+        {/* Keyboard Shortcuts button */}
+        {onOpenShortcuts && (
+          <button 
+            className="topbar-status desktop-only" 
+            onClick={onOpenShortcuts}
+            title="Keyboard Shortcuts (Ctrl+H)"
+            style={{ 
+              background: 'transparent', 
+              border: '1px solid var(--border)', 
+              cursor: 'pointer',
+              color: 'var(--text-secondary)'
+            }}
+          >
+            <Icon name="help-circle" size={13} style={{ color: 'var(--primary)' }} />
+            <span>Shortcuts</span>
+          </button>
+        )}
       </div>
     </header>
   );

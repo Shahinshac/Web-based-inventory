@@ -341,6 +341,8 @@ export default function ProductsList({
                         key={product.id} 
                         className="product-card product-table-row"
                         style={{ cursor: canEdit ? 'pointer' : 'default' }}
+                        onClick={() => canEdit && handleEdit(product)}
+                        title={canEdit ? "Click to edit product" : ""}
                       >
                         {/* Thumbnail */}
                         <td style={{ textAlign: 'center', padding: '6px' }}>
